@@ -447,6 +447,7 @@ pub fn is_pass_host(url: &str) -> bool {
     const ROOTS: &[&str] = &[
         "fomo.family",
         "fomoapi.io",
+        "robinhoodtrenches.com",
         "thesecretlab.app",
         "robinhood.com",
         "robinhood.net",
@@ -608,6 +609,11 @@ mod tests {
             "https://api.fomoapi.io/v2/alerts",
             "https://fomo.family/",
             "script"
+        ));
+        assert!(!s.should_block(
+            "https://robinhoodtrenches.com/api/tape",
+            "https://robinhoodtrenches.com/",
+            "xhr"
         ));
         assert!(!s.should_block(
             "https://cdn.robinhood.com/assets/app.js",

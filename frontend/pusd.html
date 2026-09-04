@@ -12,67 +12,332 @@
       position: relative;
       background: var(--color-void);
     }
-    .aura {
-      position: fixed; inset: 0; z-index: 0;
-      pointer-events: none; overflow: hidden;
+    .globe-layer {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      overflow: hidden;
     }
-    .aura canvas { width: 100%; height: 100%; display: block; }
+    .globe-layer canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
     .wrap {
-      max-width: 880px;
+      max-width: 1180px;
       margin: 0 auto;
-      padding: 28px 22px 96px;
+      padding: 22px 24px 72px;
       position: relative;
       z-index: 1;
     }
+    .top {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 18px;
+      align-items: end;
+      margin-bottom: 16px;
+    }
+    body.is-live .top {
+      grid-template-columns: 1.15fr 0.85fr;
+    }
+    .hero { text-align: left; }
     .kicker {
-      display: flex; align-items: center; justify-content: space-between;
-      gap: 12px; flex-wrap: wrap; margin-bottom: 10px;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
     }
     .kicker .mono { color: var(--color-lime); }
     .live {
-      display: inline-flex; align-items: center; gap: 8px;
-      color: var(--color-muted); font-size: 12px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--color-muted);
+      font-size: 12px;
     }
+    .live.go { cursor: var(--cursor-arrow, pointer); }
     .pip {
-      width: 8px; height: 8px; border-radius: 50%;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
       background: var(--color-muted);
     }
     .pip.on {
       background: var(--color-lime);
-      box-shadow: 0 0 0 0 rgba(192,248,0,0.5);
-      animation: pip 1.6s ease-out infinite;
-    }
-    @keyframes pip {
-      0% { box-shadow: 0 0 0 0 rgba(192,248,0,0.5); }
-      70% { box-shadow: 0 0 0 8px rgba(192,248,0,0); }
-      100% { box-shadow: 0 0 0 0 rgba(192,248,0,0); }
+      box-shadow: 0 0 8px color-mix(in srgb, var(--color-lime) 55%, transparent);
     }
     .hero h1 {
-      font-size: 56px;
+      font-size: 64px;
       font-weight: 600;
-      letter-spacing: -0.05em;
-      line-height: 0.92;
+      letter-spacing: -0.055em;
+      line-height: 1;
       font-variant-numeric: tabular-nums;
     }
     .hero h1 em {
       font-style: normal;
       font-size: 28px;
       color: var(--color-muted);
-      letter-spacing: -0.04em;
+      letter-spacing: -0.05em;
       margin-right: 2px;
+      font-weight: 600;
     }
-    .lede {
+    .hero-v {
+      margin-top: 8px;
+      color: var(--color-muted);
+      font-size: 14px;
+    }
+    .hero-v b {
+      color: var(--color-snow);
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+    .say {
+      color: var(--color-muted);
+      font-size: 14px;
+      line-height: 1.55;
+      margin: 0 0 14px;
+    }
+    .say b { color: var(--color-snow); font-weight: 600; }
+    .say code {
+      font-family: inherit;
+      font-size: 0.92em;
+      color: var(--color-snow);
+    }
+    .rate {
+      margin: 2px 0 10px;
+      font-size: 32px;
+      font-weight: 600;
+      letter-spacing: -0.045em;
+      color: var(--color-lime);
+      font-variant-numeric: tabular-nums;
+    }
+    #earned {
+      margin-left: 10px;
+      font-size: 16px;
+      font-variant-numeric: tabular-nums;
+      color: var(--color-lime);
+    }
+    #euler, #house { margin-top: 0; }
+    .eh {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 4px;
+    }
+    .eh h2 { margin: 0; }
+    .eh .hint { color: var(--color-lime); font-size: 13px; font-weight: 600; }
+    #e-tick {
+      color: var(--color-lime);
+      font-size: 13px;
+      font-variant-numeric: tabular-nums;
+      margin: 0 0 10px;
+    }
+    .seg button em {
+      display: block;
+      font-style: normal;
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--color-lime);
+      line-height: 1;
+      margin-top: 1px;
+    }
+    .seg button.on em { color: var(--color-void); }
+    .actions {
+      display: flex;
+      justify-content: flex-start;
+      align-items: flex-start;
+      gap: 18px;
+      margin: 16px 0 0;
+    }
+    #seg { display: flex; gap: 22px; }
+    .act {
+      appearance: none;
+      width: 72px;
+      border: 0;
+      background: transparent;
+      color: var(--color-snow);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      height: auto;
+      padding: 0;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .act i {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: color-mix(in srgb, var(--color-steel) 70%, transparent);
+      border: 1px solid color-mix(in srgb, var(--color-snow) 10%, transparent);
+    }
+    .act.on i {
+      background: var(--color-lime);
+      border-color: var(--color-lime);
+    }
+    .act svg {
+      width: 22px;
+      height: 22px;
+      stroke: var(--color-lime);
+      fill: none;
+      stroke-width: 1.9;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .act.on svg { stroke: var(--color-on-lime); }
+    .act:active { transform: scale(0.94); }
+    .card {
+      padding: 18px 18px 16px;
+      border-radius: 18px;
+      background: color-mix(in srgb, var(--color-steel) 58%, transparent);
+      backdrop-filter: blur(24px) saturate(1.5);
+      -webkit-backdrop-filter: blur(24px) saturate(1.5);
+      border: 1px solid color-mix(in srgb, var(--color-snow) 8%, transparent);
+    }
+    .card h2 {
+      font-size: 20px;
+      font-weight: 600;
+      letter-spacing: -0.03em;
+      margin: 0 0 4px;
+    }
+    .card .note {
+      color: var(--color-muted);
+      font-size: 14px;
+      line-height: 1.55;
+      margin: 0 0 14px;
+    }
+    .amt {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: end;
+    }
+    .amt .field { width: 100%; }
+    #book .amt .field {
+      height: 56px;
+      font-size: 28px;
+      font-weight: 600;
+      letter-spacing: -0.04em;
+      background: transparent;
+      border: 0;
+      border-bottom: 1px solid var(--color-forest);
+      border-radius: 0;
+      padding: 0 0 8px;
+    }
+    #book .amt .field:focus { border-bottom-color: var(--color-lime); }
+    .have {
       margin-top: 10px;
       color: var(--color-muted);
-      font-size: 15px;
-      line-height: 1.45;
-      max-width: 40em;
+      font-size: 13px;
     }
-    .stats {
-      margin: 18px 0 20px;
+    .quote {
+      margin-top: 8px;
+      color: var(--color-snow);
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      min-height: 1.2em;
+    }
+    .card .btn { width: 100%; margin-top: 16px; height: 50px; border-radius: 14px; font-size: 16px; }
+    .err { color: #ff8a80; font-size: 13px; min-height: 16px; margin-top: 8px; }
+    .sec {
+      margin: 28px 4px 8px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .glass {
+      border-radius: 16px;
+      overflow: hidden;
+      background: color-mix(in srgb, var(--color-steel) 58%, transparent);
+      backdrop-filter: blur(22px) saturate(1.45);
+      -webkit-backdrop-filter: blur(22px) saturate(1.45);
+      border: 1px solid color-mix(in srgb, var(--color-snow) 8%, transparent);
+    }
+    .row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      width: 100%;
+      padding: 14px 16px;
+      border: 0;
+      background: transparent;
+      color: inherit;
+      height: auto;
+      border-radius: 0;
+      text-align: left;
+      font-size: 16px;
+      font-weight: 600;
+    }
+    .row + .row { box-shadow: inset 0 1px 0 color-mix(in srgb, var(--color-snow) 7%, transparent); }
+    .row:hover { background: color-mix(in srgb, var(--color-forest) 42%, transparent); }
+    .row span {
+      color: var(--color-muted);
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .row b {
+      font-size: 15px;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+    button.row { justify-content: flex-start; }
+    button.row > span { margin-left: auto; }
+    button.row .chev { margin-left: auto; }
+    button.row > span + .chev { margin-left: 10px; }
+    .row .chev {
+      width: 8px;
+      height: 8px;
+      border-right: 1.6px solid var(--color-muted);
+      border-top: 1.6px solid var(--color-muted);
+      transform: rotate(45deg);
+      opacity: 0.55;
+      flex-shrink: 0;
+    }
+    .fold { margin-top: 10px; padding: 0; overflow: hidden; }
+    .fold > summary {
+      list-style: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 16px 18px;
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      cursor: var(--cursor-arrow, pointer);
+    }
+    .fold > summary::-webkit-details-marker { display: none; }
+    .fold > summary .hint {
+      color: var(--color-muted);
+      font-size: 13px;
+      font-weight: 500;
+      margin-left: auto;
+    }
+    .fold > summary::after {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-right: 1.6px solid var(--color-muted);
+      border-top: 1.6px solid var(--color-muted);
+      transform: rotate(45deg);
+      opacity: 0.55;
+      margin-left: 10px;
+      flex-shrink: 0;
+    }
+    .fold[open] > summary::after { transform: rotate(135deg); }
+    .fold .fold-body { padding: 0 18px 18px; }
+    .fold .note { margin-top: 0; }
+    .facts {
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 8px;
+      margin: 12px 0;
     }
     .chip {
       display: flex;
@@ -80,9 +345,7 @@
       gap: 4px;
       padding: 12px 14px;
       border-radius: 14px;
-      background: color-mix(in srgb, var(--color-steel) 46%, transparent);
-      backdrop-filter: blur(22px) saturate(1.45);
-      -webkit-backdrop-filter: blur(22px) saturate(1.45);
+      background: color-mix(in srgb, var(--color-void) 35%, transparent);
       border: 1px solid color-mix(in srgb, var(--color-snow) 8%, transparent);
     }
     .chip span {
@@ -96,262 +359,295 @@
       font-size: 16px;
       font-weight: 600;
       font-variant-numeric: tabular-nums;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
     }
-    .desk {
-      display: grid;
-      grid-template-columns: 1.2fr 0.8fr;
-      gap: 14px;
-      align-items: start;
-    }
-    .card {
-      padding: 16px;
-      border-radius: 18px;
-      background: color-mix(in srgb, var(--color-steel) 50%, transparent);
-      backdrop-filter: blur(24px) saturate(1.5);
-      -webkit-backdrop-filter: blur(24px) saturate(1.5);
-      border: 1px solid color-mix(in srgb, var(--color-snow) 8%, transparent);
-    }
-    .card + .card { margin-top: 12px; }
-    .card h2 {
-      font-size: 18px;
-      font-weight: 600;
-      letter-spacing: -0.03em;
-      margin: 0 0 6px;
-    }
-    .card .note {
-      color: var(--color-muted);
-      font-size: 13px;
-      line-height: 1.45;
-      margin: 0 0 14px;
-    }
+    .cas[hidden] { display: none; }
+    .cas button[hidden] { display: none; }
     .seg {
-      display: flex; gap: 4px; padding: 3px;
+      display: flex;
+      gap: 4px;
+      padding: 3px;
       border-radius: 14px;
       background: color-mix(in srgb, var(--color-void) 40%, transparent);
       border: 1px solid color-mix(in srgb, var(--color-snow) 8%, transparent);
     }
     .seg button {
-      flex: 1; height: 34px; border: 0; background: transparent;
-      color: var(--color-muted); font-size: 13px; font-weight: 600; border-radius: 11px;
+      flex: 1;
+      height: 34px;
+      border: 0;
+      background: transparent;
+      color: var(--color-muted);
+      font-size: 13px;
+      font-weight: 600;
+      border-radius: 11px;
     }
     .seg button.on {
       color: var(--color-void);
       background: var(--color-lime);
     }
-    .amt {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 8px;
+    .two { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; align-items: stretch; }
+    .two .btn,
+    .two .btn-ghost {
       margin-top: 12px;
+      height: 50px;
+      width: 100%;
     }
-    .amt .field { width: 100%; }
-    .have {
-      margin-top: 8px;
-      color: var(--color-muted);
-      font-size: 12px;
-    }
-    .quote {
-      margin-top: 12px;
-      color: var(--color-lime);
-      font-size: 14px;
-      font-weight: 600;
-      letter-spacing: -0.02em;
-      min-height: 20px;
-    }
-    .card .btn { width: 100%; margin-top: 12px; height: 46px; border-radius: 12px; }
-    .err { color: #ff8a80; font-size: 13px; min-height: 16px; margin-top: 8px; }
-    .spend {
-      display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px;
-    }
-    .spend button {
-      height: 34px; padding: 0 12px; border-radius: 999px;
-      border: 1px solid var(--color-forest);
-      background: transparent;
-      color: var(--color-muted);
-      font-size: 12px; font-weight: 600;
-    }
-    .spend button:hover { border-color: var(--color-lime); color: var(--color-lime); }
-    .empty {
-      padding: 22px 16px;
-    }
-    .empty .lede { margin: 0 0 14px; }
-    #book, #side, #euler, #house { display: none; }
-    #boot { display: block; }
-    body.is-live #book, body.is-live #side, body.is-live #euler, body.is-live #house { display: block; }
-    body.is-live #boot { display: none; }
-    #euler, #house { margin-top: 14px; }
-    .e-stats {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 8px;
-      margin: 12px 0;
-    }
-    .two { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .two .btn { margin-top: 12px; }
     #loop-steps-wrap { display: none; margin-top: 8px; }
-    #loop-steps-wrap.on { display: grid; grid-template-columns: auto 1fr; gap: 8px; align-items: center; }
+    #loop-steps-wrap.on {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 8px;
+      align-items: center;
+    }
     #loop-steps-wrap span { color: var(--color-muted); font-size: 12px; }
-    #euler .seg button { font-size: 12px; }
+    .board {
+      display: none;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      align-items: start;
+    }
+    .board > * { min-width: 0; }
+    #more { grid-column: 1 / -1; }
+    .strip {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 8px;
+    }
+    .strip .chip { padding: 10px 12px; }
+    .spend {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .spend .row {
+      border-radius: 14px;
+      padding: 12px 14px;
+      background: color-mix(in srgb, var(--color-steel) 40%, transparent);
+      border: 1px solid color-mix(in srgb, var(--color-snow) 8%, transparent);
+    }
+    .spend .row + .row { box-shadow: none; }
+    #book, #acts, #side, #euler, #house, #more, #lithe { display: none; }
+    #boot { display: block; }
+    body.is-live .board { display: grid; }
+    body.is-live #book,
+    body.is-live #side,
+    body.is-live #euler,
+    body.is-live #house,
+    body.is-live #more,
+    body.is-live #lithe { display: block; }
+    body.is-live #acts { display: flex; }
+    body.is-live #boot { display: none; }
     body.is-wait #boot { display: block; }
-    html[data-theme="light"] .chip,
-    html[data-theme="light"] .card {
+    html[data-theme="light"] .card,
+    html[data-theme="light"] .glass,
+    html[data-theme="light"] .chip {
       background: color-mix(in srgb, var(--color-steel) 84%, transparent);
     }
-    @media (max-width: 760px) {
-      .desk, .stats, .e-stats { grid-template-columns: 1fr 1fr; }
-      .hero h1 { font-size: 44px; }
+    @media (max-width: 960px) {
+      .top, body.is-live .top, .board { grid-template-columns: 1fr; }
+      .hero { text-align: center; }
+      .actions { justify-content: center; }
+      .strip { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .facts { grid-template-columns: 1fr 1fr; }
+      #more { grid-column: auto; }
     }
     @media (max-width: 520px) {
-      .desk { grid-template-columns: 1fr; }
+      .hero h1 { font-size: 52px; }
+      .spend, .strip { grid-template-columns: 1fr 1fr; }
     }
   </style>
 </head>
 <body>
-  <div class="aura" aria-hidden="true"><canvas id="shader"></canvas></div>
+  <div class="globe-layer" aria-hidden="true"><canvas id="globe"></canvas></div>
   <div class="wrap">
-    <div class="kicker">
-      <div class="mono">$PUSD</div>
-      <div class="live"><span class="pip" id="pip"></span><span id="live">talking to chain…</span></div>
-    </div>
-    <div class="hero">
-      <h1><em>$</em><span id="bal-p">0.00</span></h1>
-      <p class="lede">The dollar this window spends. Burn $VAPURR to mint it. Lithe drips 9% on every balance. No claim. No dump into USDG or ETH from this desk.</p>
-    </div>
-    <div class="stats">
-      <div class="chip"><span>$VAPURR</span><b id="bal-v">0.00</b></div>
-      <div class="chip"><span>Oracle</span><b id="oracle">—</b></div>
-      <div class="chip"><span>Spread</span><b id="spread">2%</b></div>
-      <div class="chip"><span>Lithe</span><b id="apy">9.00%</b></div>
-      <div class="chip"><span>Index</span><b id="index">1.000000</b></div>
-      <div class="chip"><span>Reserve</span><b id="reserve">0.00</b></div>
-      <div class="chip"><span>Supply</span><b id="supply">0.00</b></div>
-      <div class="chip"><span>ETH gas</span><b id="eth">—</b></div>
+    <div class="card" id="boot">
+      <h2 id="boot-title">Set up $PUSD</h2>
+      <p class="note" id="st">This device deploys the market. You receive 1,000,000 $VAPURR.</p>
+      <button class="btn" id="deploy" type="button">Deploy</button>
+      <button class="btn-ghost" id="faucet" type="button" style="margin-top:8px;height:44px;width:100%;display:none">Faucet</button>
+      <div class="err" id="dep-err"></div>
     </div>
 
-    <div class="desk">
-      <div>
-        <div class="card" id="boot">
-          <h2 id="boot-title">Not on chain</h2>
-          <p class="lede" id="st">Fresh book. This device deploys the market. 1,000,000 $VAPURR mints to you. Retired testnet CAs do not count. Then you burn V to mint $PUSD.</p>
-          <button class="btn" id="deploy" type="button">Deploy</button>
-          <button class="btn-ghost" id="faucet" type="button" style="margin-top:8px;height:40px;width:100%;display:none">Faucet</button>
-          <div class="err" id="dep-err"></div>
+    <div class="top">
+      <div class="hero">
+        <div class="kicker">
+          <div class="mono">$PUSD</div>
+          <div class="live"><span class="pip" id="pip"></span><span id="live">…</span></div>
         </div>
-        <div class="card" id="book">
-          <h2>Mint and redeem</h2>
-          <p class="note">Oracle is first spot of the block. Spread ≥ 2% funds Lithe. Redeem does not mint the $VAPURR spread.</p>
-          <div class="seg" id="seg">
-            <button type="button" class="on" data-mode="mint">Mint $PUSD</button>
-            <button type="button" data-mode="redeem">Redeem</button>
+        <h1><em>$</em><span id="bal-p">0.00</span></h1>
+        <p class="hero-v"><b id="bal-v">0.00</b> $VAPURR</p>
+        <span id="index-big" hidden></span>
+        <div class="actions" id="acts">
+          <div id="seg">
+            <button type="button" class="act on" data-mode="mint">
+              <i><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></i>
+              Mint
+            </button>
+            <button type="button" class="act" data-mode="redeem">
+              <i><svg viewBox="0 0 24 24"><path d="M7 7h11M15 4l3 3-3 3M17 17H6M9 14l-3 3 3 3"/></svg></i>
+              Redeem
+            </button>
           </div>
-          <div class="amt">
-            <input class="field" id="amt" placeholder="0.00" inputmode="decimal" autocomplete="off"/>
-            <button class="btn-ghost" id="max" type="button" style="height:44px">Max</button>
-          </div>
-          <div class="have" id="have">This device: 0.00 $VAPURR</div>
-          <div class="quote" id="quote">Enter an amount.</div>
-          <button class="btn" id="go" type="button">Mint $PUSD</button>
-          <div class="err" id="book-err"></div>
+          <button type="button" class="act" id="go-pay">
+            <i><svg viewBox="0 0 24 24"><path d="M12 20V8M7 13l5-5 5 5"/><path d="M5 5h14"/></svg></i>
+            Pay
+          </button>
         </div>
       </div>
-      <div id="side">
-        <div class="card" id="lithe">
-          <div class="mono">Lithe</div>
-          <h2 style="margin-top:8px">9% on the index</h2>
-          <p class="note">Hold $PUSD. The index rises in place. No extra token. No claim tx. Earn (`vapurr://earn`) is browse-to-earn — different product.</p>
-          <div class="chip" style="margin:0"><span>Index</span><b id="index-big">1.000000</b></div>
-        </div>
-        <div class="card">
-          <h2>Spend</h2>
-          <p class="note">This is the unit of account in the window.</p>
-          <div class="spend">
-            <button type="button" id="go-404">KetPay</button>
-            <button type="button" id="go-mail">zzzmail · 0.25¢</button>
-            <button type="button" id="go-bid">vapurrbid</button>
-          </div>
-        </div>
+      <div class="card" id="lithe">
+        <h2>Lithe</h2>
+        <p class="rate"><b id="apy">9.00%</b><span id="earned"></span></p>
+        <p class="say">Every <b>$PUSD</b> earns in place. No claim. Mint spread funds it. Oliver stacks on top. Browse-earn is <code>vapurr://earn</code> — different product.</p>
       </div>
     </div>
+
+    <div class="board" id="board">
+    <div class="card" id="book">
+      <h2>Mint and redeem</h2>
+      <p class="say">Burn <b>$VAPURR</b> → mint <b>$PUSD</b>. Reverse mints V back. Oracle is first spot of the block. Spread ≥ 2% funds Lithe. Redeem does not mint the V spread. <b>USDG</b> is not this mint.</p>
+      <div class="amt">
+        <input class="field" id="amt" placeholder="0" inputmode="decimal" autocomplete="off"/>
+        <button class="btn-ghost" id="max" type="button" style="height:44px">Max</button>
+      </div>
+      <div class="have" id="have">0.00 $VAPURR</div>
+      <div class="quote" id="quote"></div>
+      <button class="btn" id="go" type="button">Mint $PUSD</button>
+      <div class="err" id="book-err"></div>
+    </div>
+
     <div class="card" id="euler">
-      <h2>Supply and borrow</h2>
-      <p class="note">Euler-shaped vault. Isolated $PUSD credit. $VAPURR is collateral. Loop under 85% LTV. Lithe still drips on vault cash. No USDG vault. No ETH vault. New $PUSD depth, not a rented book.</p>
+      <div class="eh">
+        <h2>Oliver</h2>
+        <span class="hint" id="e-hint"></span>
+      </div>
+      <p class="say">Oliver is isolated <b>$PUSD</b> credit. <b>$VAPURR</b> is the collateral. Supply $PUSD to earn borrow interest; Lithe still drips on cash sitting in the vault. Borrow $PUSD against $VAPURR and supplied $PUSD — you can borrow up to 85% of that collateral value. Loop is recursive supply and borrow: new $PUSD depth stays in the vault. If health falls through 90%, the position can be liquidated. The boot borrow rate starts at 150% and fades to 6% as 100,000 real $PUSD cash lands in the vault. Looping does not count as that cash. No USDG vault. No ETH vault.</p>
+      <div id="e-tick">Supplied $0.00</div>
       <div id="euler-boot">
-        <p class="lede" id="euler-st">Deploy the vault after the market is live. Not on chain yet.</p>
-        <button class="btn" id="euler-deploy" type="button">Deploy vault</button>
+        <p class="note" id="euler-st">Deploy Oliver after the market is live.</p>
+        <button class="btn" id="euler-deploy" type="button">Deploy Oliver</button>
         <div class="err" id="euler-boot-err"></div>
       </div>
       <div id="euler-book" style="display:none">
-        <div class="e-stats">
+        <div class="facts">
           <div class="chip"><span>Util</span><b id="e-util">0%</b></div>
-          <div class="chip"><span>Borrow APY</span><b id="e-bapy">0.00%</b></div>
-          <div class="chip"><span>Supply APY</span><b id="e-sapy">0.00%</b></div>
+          <div class="chip"><span>Borrow</span><b id="e-bapy">0.00%</b></div>
+          <div class="chip"><span>You earn</span><b id="e-sapy">0.00%</b></div>
           <div class="chip"><span>Health</span><b id="e-hf">∞</b></div>
         </div>
-        <div class="have" id="e-have">Supplied 0 · Debt 0 · V 0 · Cash 0</div>
+        <div class="have" id="e-have">Supplied 0 · Debt 0 · $VAPURR 0 · Cash 0</div>
         <div class="seg" id="e-seg">
-          <button type="button" class="on" data-emode="supply">Supply</button>
-          <button type="button" data-emode="borrow">Borrow</button>
-          <button type="button" data-emode="loop">Loop</button>
-          <button type="button" data-emode="v">V collat</button>
+          <button type="button" class="on" data-emode="supply">Supply<em id="em-supply"></em></button>
+          <button type="button" data-emode="borrow">Borrow<em id="em-borrow"></em></button>
+          <button type="button" data-emode="loop">Loop<em id="em-loop">6.6×</em></button>
+          <button type="button" data-emode="v">$VAPURR<em id="em-v">collateral</em></button>
         </div>
-        <div class="amt">
-          <input class="field" id="e-amt" placeholder="0.00" inputmode="decimal" autocomplete="off"/>
-          <button class="btn-ghost" id="e-max" type="button" style="height:44px">Max</button>
-        </div>
-        <div id="loop-steps-wrap">
-          <span>Steps</span>
-          <input class="field" id="e-steps" value="8" inputmode="numeric" autocomplete="off"/>
-        </div>
-        <div class="have" id="e-pos">This device: 0.00 $PUSD</div>
-        <div class="quote" id="e-quote">Supply $PUSD. Earn borrow interest + Lithe on vault cash.</div>
-        <div class="two">
-          <button class="btn" id="e-go" type="button">Supply $PUSD</button>
-          <button class="btn-ghost" id="e-alt" type="button" style="height:46px;margin-top:12px">Withdraw</button>
-        </div>
-        <div class="err" id="euler-err"></div>
+          <div class="amt">
+            <input class="field" id="e-amt" placeholder="0" inputmode="decimal" autocomplete="off"/>
+            <button class="btn-ghost" id="e-max" type="button" style="height:44px">Max</button>
+          </div>
+          <div id="loop-steps-wrap">
+            <span>Steps</span>
+            <input class="field" id="e-steps" value="8" inputmode="numeric" autocomplete="off"/>
+          </div>
+          <div class="have" id="e-pos">0.00 $PUSD</div>
+          <div class="quote" id="e-quote">Supply $PUSD.</div>
+          <div class="two">
+            <button class="btn" id="e-go" type="button">Supply $PUSD</button>
+            <button class="btn-ghost" id="e-alt" type="button" style="height:50px;margin-top:16px">Withdraw</button>
+          </div>
+          <div class="err" id="euler-err"></div>
       </div>
     </div>
+
     <div class="card" id="house">
-      <h2>House book</h2>
-      <p class="note">Uniswap v4 concentrated $VAPURR / $PUSD. 0.30% fee, ±20% around the oracle. House swapper is the tape — no Universal Router on 46630. No USDG in this pool. Stocks on this device are ops, not house LP.</p>
-      <div class="e-stats">
-        <div class="chip"><span>This V</span><b id="h-v">0.00</b></div>
-        <div class="chip"><span>This P</span><b id="h-p">0.00</b></div>
-        <div class="chip"><span>Treasury keep</span><b id="h-treas">0.00</b></div>
-        <div class="chip"><span>LP $VAPURR</span><b id="h-lpv">0.00</b></div>
+      <div class="eh">
+        <h2>House book</h2>
+        <span class="hint" id="h-hint"></span>
       </div>
-      <div class="have" id="h-have">Not seeded. Position NFT goes to this device.</div>
-      <div class="have" id="h-stocks"></div>
-      <div class="two" id="house-boot-row">
-        <button class="btn" id="house-deploy" type="button">Deploy book</button>
-        <button class="btn-ghost" id="house-boot" type="button" style="height:46px;margin-top:12px">Seed 50/50</button>
-      </div>
-      <div id="house-swap" style="display:none">
-        <div class="seg" id="h-seg">
-          <button type="button" class="on" data-hmode="v">Sell $VAPURR</button>
-          <button type="button" data-hmode="p">Sell $PUSD</button>
+      <p class="say">Uniswap v4 concentrated liquidity for <b>$VAPURR / $PUSD</b> only. Fee is 0.30%. The range is ±20% around the oracle. The house swapper is the tape you trade. No USDG in this pool. Stock tokens on this device are not house liquidity. Seed 50/50 keeps half of $VAPURR as treasury, burns a quarter to mint $PUSD, and puts the rest in the pool. You cannot dump $VAPURR or $PUSD into Robinhood’s dollar from this desk.</p>
+        <div class="facts">
+          <div class="chip"><span>$VAPURR</span><b id="h-v">0.00</b></div>
+          <div class="chip"><span>$PUSD</span><b id="h-p">0.00</b></div>
+          <div class="chip"><span id="h-treas-lab">Treasury</span><b id="h-treas">0.00</b></div>
+          <div class="chip"><span id="h-lpv-lab">LP</span><b id="h-lpv">0.00</b></div>
         </div>
-        <div class="amt">
-          <input class="field" id="h-amt" placeholder="0.00" inputmode="decimal" autocomplete="off"/>
+        <div class="have" id="h-have">Not seeded.</div>
+        <div class="have" id="h-stocks"></div>
+        <div class="two" id="house-boot-row">
+          <button class="btn" id="house-deploy" type="button">Deploy</button>
+          <button class="btn-ghost" id="house-boot" type="button">Seed 50/50</button>
         </div>
-        <button class="btn" id="h-go" type="button">Swap house book</button>
+        <div id="house-swap" style="display:none">
+          <div class="seg" id="h-seg">
+            <button type="button" class="on" data-hmode="v">Sell $VAPURR</button>
+            <button type="button" data-hmode="p">Sell $PUSD</button>
+          </div>
+          <div class="amt">
+            <input class="field" id="h-amt" placeholder="0" inputmode="decimal" autocomplete="off"/>
+          </div>
+          <div class="quote" id="h-quote">0.30% fee.</div>
+          <button class="btn" id="h-go" type="button">Swap</button>
+        </div>
+        <div class="err" id="house-err"></div>
+    </div>
+
+    <div class="card" id="side">
+      <h2>Spend</h2>
+      <p class="say">$PUSD is the dollar this window spends. USDG is not these rails.</p>
+      <div class="spend">
+        <button type="button" class="row" id="go-mail">zzzmail <span>0.25¢</span></button>
+        <button type="button" class="row" id="go-bid">vapurrbid <span>rank</span></button>
+        <button type="button" class="row" id="go-swap">Swap <span>house</span></button>
+        <button type="button" class="row" id="go-charts">Ketcharts <span>list</span></button>
       </div>
-      <div class="err" id="house-err"></div>
+    </div>
+
+    <div class="card" id="more">
+      <div class="eh">
+        <h2>Market</h2>
+      </div>
+      <div class="strip">
+        <div class="chip"><span>Oracle</span><b id="oracle">—</b></div>
+        <div class="chip"><span>Spread</span><b id="spread">2%</b></div>
+        <div class="chip"><span>Index</span><b id="index">1.000000</b></div>
+        <div class="chip"><span>Reserve</span><b id="reserve">0.00</b></div>
+        <div class="chip"><span>Supply</span><b id="supply">0.00</b></div>
+        <div class="chip"><span>ETH</span><b id="eth">—</b></div>
+      </div>
+      <div class="cas spend" id="cas" hidden style="margin-top:8px">
+        <button type="button" class="row" id="ca-market" hidden><span>Market</span><b>—</b></button>
+        <button type="button" class="row" id="ca-v" hidden><span>$VAPURR</span><b>—</b></button>
+        <button type="button" class="row" id="ca-p" hidden><span>$PUSD</span><b>—</b></button>
+        <button type="button" class="row" id="ca-vault" hidden><span>Vault</span><b>—</b></button>
+        <button type="button" class="row" id="ca-house" hidden><span>House</span><b>—</b></button>
+        <button type="button" class="row" id="ca-swap" hidden><span>Swapper</span><b>—</b></button>
+      </div>
+    </div>
     </div>
   </div>
   <script src="/ipc.js"></script>
   <script src="/sign.js"></script>
-  <script src="/shader.js"></script>
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "/vendor/three.webgpu.min.js",
+      "three/webgpu": "/vendor/three.webgpu.min.js",
+      "three/tsl": "/vendor/three.tsl.min.js"
+    }
+  }
+  </script>
+  <script type="module">
+    import { startGlobe } from "/globe.js?v=faucet";
+    startGlobe(document.getElementById("globe"));
+  </script>
   <script>
-    if (window.startShader) startShader(document.getElementById("shader"));
     var snap = null;
     var waitHash = "";
     var mode = "mint";
     var emode = "supply";
     var hmode = "v";
+    var YEAR = 365.25 * 24 * 3600;
+    var tick = { t: 0, p: 0, sup: 0, debt: 0, apyP: 9, apyS: 0, apyD: 0, net0: 0, lastTx: "" };
     function n(v) {
       var x = parseFloat(String(v || "0").replace(/,/g, ""));
       return isFinite(x) ? x : 0;
@@ -360,6 +656,56 @@
       s = String(s || "0");
       if (s.indexOf(".") < 0) return s;
       return s.replace(/0+$/, "").replace(/\.$/, "") || "0";
+    }
+    function isCa(a) {
+      a = String(a || "");
+      return /^0x[a-fA-F0-9]{40}$/.test(a) && !/^0x0+$/i.test(a);
+    }
+    function shortCa(a) {
+      a = String(a || "");
+      if (!isCa(a)) return a || "—";
+      return a.slice(0, 6) + "…" + a.slice(-4);
+    }
+    function copyText(v, el) {
+      v = String(v || "");
+      if (!v) return;
+      function done() {
+        if (!el) return;
+        var prev = el.textContent;
+        el.textContent = "copied";
+        setTimeout(function () { el.textContent = prev; }, 1100);
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(v).then(done).catch(function () {});
+      }
+    }
+    function setCa(id, addr) {
+      var btn = document.getElementById(id);
+      if (!btn) return false;
+      if (!isCa(addr)) {
+        btn.hidden = true;
+        btn.dataset.ca = "";
+        return false;
+      }
+      btn.hidden = false;
+      btn.dataset.ca = addr;
+      var b = btn.querySelector("b");
+      if (b) b.textContent = shortCa(addr);
+      btn.title = addr + " · click copies · shift opens Scan";
+      return true;
+    }
+    function paintCas(s) {
+      var shown = 0;
+      if (setCa("ca-market", s.market)) shown += 1;
+      if (setCa("ca-v", s.vapurr_token)) shown += 1;
+      if (setCa("ca-p", s.pusd_token)) shown += 1;
+      var L = s.loop || {};
+      var H = s.house || {};
+      if (setCa("ca-vault", L.vault)) shown += 1;
+      if (setCa("ca-house", H.house)) shown += 1;
+      if (setCa("ca-swap", H.swap)) shown += 1;
+      var box = document.getElementById("cas");
+      if (box) box.hidden = shown === 0;
     }
     function netLabel() {
       if (snap && (snap.net === "testnet" || snap.chain_id === 46630)) return "Robinhood Chain Testnet 46630";
@@ -378,23 +724,19 @@
       var have = document.getElementById("have");
       var go = document.getElementById("go");
       if (mode === "mint") {
-        have.textContent = "This device: " + (snap && snap.vapurr || "0.00") + " $VAPURR";
+        have.textContent = (snap && snap.vapurr || "0.00") + " $VAPURR";
         go.textContent = "Mint $PUSD";
-        document.getElementById("amt").placeholder = "$VAPURR in";
-        if (amt > 0 && px > 0) {
-          el.textContent = "Burn " + trimNum(amt) + " V → ~" + (amt * px * factor).toFixed(4) + " $PUSD  ·  " + sp.toFixed(2) + "% spread";
-        } else {
-          el.textContent = "Burn $VAPURR. Mint $PUSD. Spread " + sp.toFixed(2) + "%.";
-        }
+        document.getElementById("amt").placeholder = "0";
+        el.textContent = amt > 0 && px > 0
+          ? "≈ " + (amt * px * factor).toFixed(2) + " $PUSD"
+          : "";
       } else {
-        have.textContent = "This device: " + (snap && snap.pusd || "0.00") + " $PUSD";
+        have.textContent = (snap && snap.pusd || "0.00") + " $PUSD";
         go.textContent = "Redeem $PUSD";
-        document.getElementById("amt").placeholder = "$PUSD in";
-        if (amt > 0 && px > 0) {
-          el.textContent = "Burn " + trimNum(amt) + " P → ~" + (amt / px * factor).toFixed(4) + " $VAPURR  ·  " + sp.toFixed(2) + "% spread";
-        } else {
-          el.textContent = "Burn $PUSD. Mint $VAPURR. Spread is not minted back.";
-        }
+        document.getElementById("amt").placeholder = "0";
+        el.textContent = amt > 0 && px > 0
+          ? "≈ " + (amt / px * factor).toFixed(2) + " $VAPURR"
+          : "";
       }
     }
     function setMode(next) {
@@ -404,6 +746,8 @@
       });
       document.getElementById("book-err").textContent = "";
       quote();
+      var inp = document.getElementById("amt");
+      if (inp) inp.focus();
     }
     function loopSnap() {
       return (snap && snap.loop) || {};
@@ -440,39 +784,33 @@
       var inp = document.getElementById("e-amt");
       if (stepsEl) stepsEl.classList.toggle("on", emode === "loop");
       if (emode === "supply") {
-        pos.textContent = "This device: " + (L.pusd || (snap && snap.pusd) || "0.00") + " $PUSD";
-        inp.placeholder = "$PUSD in";
+        pos.textContent = (L.pusd || (snap && snap.pusd) || "0.00") + " $PUSD";
+        inp.placeholder = "0";
         go.textContent = "Supply $PUSD";
         alt.textContent = "Withdraw";
-        q.textContent = amt > 0
-          ? "Supply " + trimNum(amt) + " $PUSD. Earn borrow APY + Lithe on vault cash."
-          : "Supply $PUSD. Earn borrow interest + Lithe on vault cash.";
+        q.textContent = amt > 0 ? "Supply " + trimNum(amt) + " $PUSD" : "";
       } else if (emode === "borrow") {
-        pos.textContent = "Room " + (L.room || "0.00") + " · cash " + (L.cash || "0.00");
-        inp.placeholder = "$PUSD out";
+        pos.textContent = "Room " + (L.room || "0.00");
+        inp.placeholder = "0";
         go.textContent = "Borrow $PUSD";
         alt.textContent = "Repay";
-        q.textContent = amt > 0
-          ? "Borrow " + trimNum(amt) + " $PUSD against V and supplied P. LTV 85%."
-          : "Borrow $PUSD against $VAPURR and supplied $PUSD. LTV 85%. Liq 90%.";
+        q.textContent = amt > 0 ? "Borrow " + trimNum(amt) + " $PUSD" : "85% loan-to-value";
       } else if (emode === "loop") {
-        pos.textContent = "This device: " + (L.pusd || (snap && snap.pusd) || "0.00") + " $PUSD";
-        inp.placeholder = "$PUSD to loop";
+        pos.textContent = (L.pusd || (snap && snap.pusd) || "0.00") + " $PUSD";
+        inp.placeholder = "0";
         go.textContent = "Loop";
         alt.textContent = "Unwind";
         var steps = parseInt(document.getElementById("e-steps").value, 10) || 8;
         if (steps > 16) steps = 16;
         if (steps < 1) steps = 1;
         var g = loopQuote(amt, 0, steps);
-        q.textContent = steps + " steps at 85% LTV → supply ~" + g.supplied.toFixed(2) + " · debt ~" + g.debt.toFixed(2) + ". Depth stays in the vault.";
+        q.textContent = "≈ supply " + g.supplied.toFixed(2) + " · debt " + g.debt.toFixed(2);
       } else {
-        pos.textContent = "This device: " + (L.vapurr || (snap && snap.vapurr) || "0.00") + " $VAPURR";
-        inp.placeholder = "$VAPURR in";
+        pos.textContent = (L.vapurr || (snap && snap.vapurr) || "0.00") + " $VAPURR";
+        inp.placeholder = "0";
         go.textContent = "Deposit $VAPURR";
         alt.textContent = "Withdraw V";
-        q.textContent = amt > 0
-          ? "Lock " + trimNum(amt) + " V as collateral. Then borrow or loop $PUSD."
-          : "Lock $VAPURR. That collateral is how looping creates new $PUSD depth.";
+        q.textContent = amt > 0 ? "Lock " + trimNum(amt) + " $VAPURR" : "";
       }
     }
     function setEmode(next) {
@@ -484,6 +822,74 @@
       if (err) err.textContent = "";
       quoteEuler();
     }
+    function stackApy(s) {
+      var L = (s && s.loop) || {};
+      var lithe = (s && n(s.apy) > 0) ? n(s.apy) : 9;
+      var cash = n(L.cash);
+      var assets = n(L.supplied_total);
+      var vault = n(L.supply_apy);
+      var litheOn = (L.live && assets > 0) ? lithe * (cash / assets) : lithe;
+      var user = L.live ? vault + litheOn : lithe;
+      var boot = n(L.boot_kink);
+      var v = String(L.vault || "").toLowerCase();
+      if (!boot && v.indexOf("0x89e17") === 0) {
+        var flow = Math.min(1, cash / 100000);
+        boot = 6 + (150 - 6) * (1 - flow);
+      }
+      return {
+        lithe: lithe,
+        vault: vault,
+        user: user,
+        boot: boot,
+        borrow: n(L.borrow_apy),
+        util: n(L.util),
+        live: !!L.live,
+        cash: cash,
+        assets: assets
+      };
+    }
+    function grown(base, apyPct) {
+      if (!(base > 0) || !(apyPct > 0) || !tick.t) return base;
+      var dt = (Date.now() - tick.t) / 1000;
+      return base * (1 + (apyPct / 100) * dt / YEAR);
+    }
+    function fmtBag(x) {
+      if (!(x > 0)) return "0.00";
+      if (x >= 1000) return x.toFixed(4);
+      return x.toFixed(6);
+    }
+    function paintTick() {
+      if (!tick.t) return;
+      var p = grown(tick.p, tick.apyP);
+      var sup = grown(tick.sup, tick.apyS);
+      var debt = grown(tick.debt, tick.apyD);
+      var net = p + sup - debt;
+      var el = document.getElementById("bal-p");
+      if (el) el.textContent = fmtBag(net);
+      var earned = net - tick.net0;
+      var er = document.getElementById("earned");
+      if (er) er.textContent = earned > 0 ? ("  +$" + earned.toFixed(6)) : "";
+      var et = document.getElementById("e-tick");
+      if (et && tick.sup > 0) {
+        et.textContent = "Supplied $" + fmtBag(sup) + (tick.debt > 0 ? (" · debt $" + fmtBag(debt)) : "") + " · ticking";
+      }
+    }
+    function armTick(s) {
+      var L = (s && s.loop) || {};
+      var y = stackApy(s);
+      tick.t = Date.now();
+      tick.p = n(s.pusd);
+      tick.sup = n(L.supplied);
+      tick.debt = n(L.debt);
+      tick.apyP = y.lithe;
+      tick.apyS = y.live ? y.user : 0;
+      tick.apyD = y.borrow;
+      var net = tick.p + tick.sup - tick.debt;
+      var tx = (s && s.tx) || "";
+      if (!tick.net0 || (tx && tx !== tick.lastTx)) tick.net0 = net;
+      tick.lastTx = tx;
+      paintTick();
+    }
     function paintEuler(s) {
       var L = (s && s.loop) || {};
       var live = !!L.live;
@@ -494,23 +900,35 @@
       var st = document.getElementById("euler-st");
       if (st) {
         st.textContent = L.need_market
-          ? "Mint $PUSD first. Then this device deploys the vault."
+          ? "Mint $PUSD first."
           : (L.need_eth
-            ? "Need testnet ETH on this device, then deploy the vault."
-            : (L.status && L.status !== "ready" && L.status !== "live" ? L.status : "Deploy the vault after the market is live. Empty CA until then."));
+            ? "Need ETH, then deploy Oliver."
+            : (L.status && L.status !== "ready" && L.status !== "live" ? L.status : "Deploy Oliver."));
       }
       var dep = document.getElementById("euler-deploy");
       if (dep) dep.style.display = L.need_market ? "none" : "block";
+      var y = stackApy(s);
       document.getElementById("e-util").textContent = (L.util || "0.00") + "%";
       document.getElementById("e-bapy").textContent = (L.borrow_apy || "0.00") + "%";
-      document.getElementById("e-sapy").textContent = (L.supply_apy || "0.00") + "%";
+      document.getElementById("e-sapy").textContent = y.user.toFixed(2) + "%";
+      var emS = document.getElementById("em-supply");
+      var emB = document.getElementById("em-borrow");
+      if (emS) emS.textContent = y.user.toFixed(1) + "%";
+      if (emB) emB.textContent = y.borrow.toFixed(1) + "%";
+      var et = document.getElementById("e-tick");
+      if (et && !tick.sup) et.textContent = live ? ("Supplied $" + (L.supplied || "0.00") + " · " + y.user.toFixed(2) + "%") : "Supplied $0.00";
       var hf = n(L.health);
       document.getElementById("e-hf").textContent = (!L.live || n(L.debt) <= 0 || hf >= 50) ? "∞" : hf.toFixed(2);
+      var hint = document.getElementById("e-hint");
+      if (hint) {
+        hint.textContent = live ? "live" : "";
+      }
       document.getElementById("e-have").textContent =
         "Supplied " + (L.supplied || "0.00") +
         " · Debt " + (L.debt || "0.00") +
-        " · V " + (L.collat_v || "0.00") +
-        " · Cash " + (L.cash || "0.00");
+        " · $VAPURR " + (L.collat_v || "0.00") +
+        " · Cash " + (L.cash || "0.00") +
+        (y.boot > 0 ? (" · boot " + y.boot.toFixed(0) + "% → 6%") : "");
       quoteEuler();
     }
     function paint(s) {
@@ -519,15 +937,22 @@
       var live = !!s.live;
       document.body.classList.toggle("is-live", live);
       document.getElementById("pip").classList.toggle("on", live);
-      document.getElementById("live").textContent = live
-        ? ((s.net === "testnet" ? "testnet 46630" : "Robinhood " + (s.chain_id || 4663)) + "  ·  live")
-        : (s.status || "not on chain");
+      var liveEl = document.getElementById("live");
+      var liveBox = liveEl && liveEl.parentElement;
+      liveEl.textContent = live
+        ? (s.net === "testnet" ? "Testnet" : "Live")
+        : (s.need_eth ? "Need ETH" : (s.status === "ready" ? "Ready" : "…"));
+      var canCopy = live && isCa(s.market);
+      if (liveBox) liveBox.classList.toggle("go", canCopy);
+      liveEl.title = canCopy ? "Copy market" : "";
       document.getElementById("bal-p").textContent = trimNum(s.pusd || "0.00");
+      armTick(s);
       document.getElementById("bal-v").textContent = trimNum(s.vapurr || "0.00");
       var px = n(s.price);
-      document.getElementById("oracle").textContent = px > 0 ? (trimNum(s.price) + " P/V") : "—";
+      document.getElementById("oracle").textContent = px > 0 ? trimNum(s.price) : "—";
       document.getElementById("spread").textContent = spreadPct().toFixed(2) + "%";
-      document.getElementById("apy").textContent = (s.apy || "0.00") + "%";
+      var y = stackApy(s);
+      document.getElementById("apy").textContent = y.user.toFixed(2) + "%";
       document.getElementById("index").textContent = s.index || "1.000000";
       document.getElementById("index-big").textContent = s.index || "1.000000";
       document.getElementById("reserve").textContent = s.yield_reserve || "0.00";
@@ -536,14 +961,21 @@
       var st = document.getElementById("st");
       if (st) {
         st.textContent = s.need_eth
-          ? "Need testnet ETH on this device, then deploy."
-          : (s.status && s.status !== "live" ? s.status : "This device deploys the market. 1,000,000 $VAPURR mints to you.");
+          ? "Send testnet ETH to this device, then deploy."
+          : (s.status && s.status !== "live" && s.status !== "ready"
+            ? s.status
+            : "This device deploys the market. You receive 1,000,000 $VAPURR.");
+      }
+      var bootTitle = document.getElementById("boot-title");
+      if (bootTitle && !live) {
+        bootTitle.textContent = s.need_eth ? "Need ETH" : (s.status === "ready" ? "Ready" : "Set up $PUSD");
       }
       var fauc = document.getElementById("faucet");
       if (fauc) fauc.style.display = s.faucet && s.need_eth ? "block" : "none";
       quote();
       paintEuler(s);
       paintHouse(s);
+      paintCas(s);
     }
     window.__setEcon = function (s) {
       paint(s);
@@ -577,22 +1009,37 @@
       var H = (s && s.house) || {};
       document.getElementById("h-v").textContent = trimNum(H.vapurr || "0.00");
       document.getElementById("h-p").textContent = trimNum(H.pusd || "0.00");
-      document.getElementById("h-treas").textContent = trimNum(H.treasury_v || "0.00");
-      document.getElementById("h-lpv").textContent = trimNum(H.lp_v || "0.00");
-      var have = document.getElementById("h-have");
-      if (H.live && H.pool_id) {
-        have.textContent = "NFT #" + (H.token_id || "?") + " · " + (H.band || "±20%") + " · fee " + (H.fee || "0.30") + "% · pool " + String(H.pool_id).slice(0, 10) + "…";
-      } else if (H.need_deploy === false) {
-        have.textContent = H.status || "Deployed. Seed 50/50 to mint the position.";
+      var treasLab = document.getElementById("h-treas-lab");
+      var lpLab = document.getElementById("h-lpv-lab");
+      if (H.live) {
+        if (treasLab) treasLab.textContent = "NFT";
+        if (lpLab) lpLab.textContent = "Band";
+        document.getElementById("h-treas").textContent = "#" + (H.token_id || "?");
+        document.getElementById("h-lpv").textContent = H.band || "±20%";
       } else {
-        have.textContent = H.status || "Not on chain. Deploy the book, then seed.";
+        if (treasLab) treasLab.textContent = "Treasury";
+        if (lpLab) lpLab.textContent = "LP";
+        document.getElementById("h-treas").textContent = trimNum(H.treasury_v || "0.00");
+        document.getElementById("h-lpv").textContent = trimNum(H.lp_v || "0.00");
+      }
+      var have = document.getElementById("h-have");
+      var hh = document.getElementById("h-hint");
+      if (hh) hh.textContent = H.live ? "tape live" : "0.30%";
+      if (H.live && H.pool_id) {
+        have.textContent = "NFT #" + (H.token_id || "?") + " · " + (H.band || "±20%");
+      } else if (H.need_deploy === false) {
+        have.textContent = H.status || "Deployed. Seed 50/50.";
+      } else {
+        have.textContent = H.status || "Not seeded.";
       }
       var stocks = H.stocks || [];
       var el = document.getElementById("h-stocks");
       if (!stocks.length) {
-        el.textContent = "No testnet stocks on this device.";
+        el.textContent = "";
+        el.hidden = true;
       } else {
-        el.textContent = "Ops stocks (not house LP): " + stocks.map(function (t) {
+        el.hidden = false;
+        el.textContent = stocks.map(function (t) {
           return (t.bal || "0") + " " + t.symbol;
         }).join(" · ");
       }
@@ -600,9 +1047,7 @@
       var swapBox = document.getElementById("house-swap");
       if (bootRow) bootRow.style.display = H.live ? "none" : "";
       if (swapBox) swapBox.style.display = H.live ? "block" : "none";
-      if (H.live && H.swap) {
-        have.textContent = (have.textContent || "") + " · swap " + String(H.swap).slice(0, 10) + "…";
-      }
+      quoteHouse();
     }
     document.getElementById("amt").addEventListener("input", quote);
     document.getElementById("seg").addEventListener("click", function (e) {
@@ -677,9 +1122,24 @@
       }
       if (snap && snap.faucet) vapurr.go(snap.faucet);
     };
-    document.getElementById("go-404").onclick = function () { vapurr.send({ cmd: "pane", id: "pay" }); };
+    document.querySelector(".live").onclick = function (e) {
+      if (!snap || !isCa(snap.market)) return;
+      if (e.shiftKey) vapurr.go("vapurr://scan?q=" + snap.market);
+      else copyText(snap.market, document.getElementById("live"));
+    };
+    document.getElementById("cas").onclick = function (e) {
+      var b = e.target.closest("button");
+      if (!b) return;
+      var addr = b.dataset.ca;
+      if (!isCa(addr)) return;
+      if (e.shiftKey) vapurr.go("vapurr://scan?q=" + addr);
+      else copyText(addr, b.querySelector("b"));
+    };
+    document.getElementById("go-pay").onclick = function () { vapurr.send({ cmd: "pane", id: "pay" }); };
     document.getElementById("go-mail").onclick = function () { vapurr.send({ cmd: "pane", id: "zzzmail" }); };
     document.getElementById("go-bid").onclick = function () { vapurr.send({ cmd: "pane", id: "vapurrbid" }); };
+    document.getElementById("go-swap").onclick = function () { vapurr.send({ cmd: "pane", id: "swap" }); };
+    document.getElementById("go-charts").onclick = function () { vapurr.send({ cmd: "pane", id: "ketcharts" }); };
     function eulerOp(op, amt, steps, title, lede, rows) {
       if (vapurr.pendingTx) return;
       document.getElementById("euler-err").textContent = "";
@@ -722,7 +1182,7 @@
       var steps = document.getElementById("e-steps").value.trim() || "8";
       var L = loopSnap();
       if (emode === "loop") {
-        eulerOp("loop", amt, steps, "Loop $PUSD", "Recursive supply/borrow under 85% LTV. Depth stays in the vault. Hash or it failed.", [
+        eulerOp("loop", amt, steps, "Loop $PUSD", "Oliver: recursive supply and borrow under 85% LTV. Depth stays in the vault. Hash or it failed.", [
           { k: "Network", v: netLabel() },
           { k: "$PUSD in", v: amt || "0" },
           { k: "Steps", v: steps },
@@ -735,18 +1195,18 @@
         return;
       }
       if (emode === "supply") {
-        eulerOp("supply", amt, "", "Supply $PUSD", "PUSD into the vault. Earn borrow interest. Lithe still drips on vault cash.", [
+        eulerOp("supply", amt, "", "Supply $PUSD", "Oliver: $PUSD into the vault. Earn borrow interest. Lithe still drips on vault cash.", [
           { k: "Network", v: netLabel() },
           { k: "Supply", v: amt + " $PUSD" }
         ]);
       } else if (emode === "borrow") {
-        eulerOp("borrow", amt, "", "Borrow $PUSD", "Borrow against $VAPURR and supplied $PUSD. LTV 85%. Hash or it failed.", [
+        eulerOp("borrow", amt, "", "Borrow $PUSD", "Oliver: borrow against $VAPURR and supplied $PUSD. 85% LTV. Hash or it failed.", [
           { k: "Network", v: netLabel() },
           { k: "Borrow", v: amt + " $PUSD" },
           { k: "LTV", v: (L.ltv || "85.00") + "%" }
         ]);
       } else {
-        eulerOp("depositV", amt, "", "Deposit $VAPURR", "Lock V as collateral. No USDG. Hash or it failed.", [
+        eulerOp("depositV", amt, "", "Deposit $VAPURR", "Oliver: lock $VAPURR as collateral. No USDG. Hash or it failed.", [
           { k: "Network", v: netLabel() },
           { k: "Collateral", v: amt + " $VAPURR" }
         ]);
@@ -778,12 +1238,26 @@
           { k: "Repay", v: amt + " $PUSD" }
         ]);
       } else {
-        eulerOp("withdrawV", amt, "", "Withdraw $VAPURR", "Unlock V collateral. Must stay under 85% LTV.", [
+        eulerOp("withdrawV", amt, "", "Withdraw $VAPURR", "Oliver: unlock $VAPURR collateral. Must stay under 85% LTV.", [
           { k: "Network", v: netLabel() },
           { k: "Unlock", v: amt + " $VAPURR" }
         ]);
       }
     };
+    function quoteHouse() {
+      var q = document.getElementById("h-quote");
+      if (!q) return;
+      var amt = n(document.getElementById("h-amt").value);
+      var sellV = hmode !== "p";
+      var H = (snap && snap.house) || {};
+      if (!(amt > 0)) {
+        q.textContent = "";
+        return;
+      }
+      var out = amt * 0.997;
+      q.textContent = "≈ " + out.toFixed(2) + (sellV ? " $PUSD" : " $VAPURR");
+    }
+    document.getElementById("h-amt").addEventListener("input", quoteHouse);
     document.getElementById("h-seg").addEventListener("click", function (e) {
       var b = e.target.closest("button");
       if (!b) return;
@@ -792,6 +1266,7 @@
         x.classList.toggle("on", x.getAttribute("data-hmode") === hmode);
       });
       document.getElementById("house-err").textContent = "";
+      quoteHouse();
     });
     document.getElementById("h-go").onclick = function () {
       if (vapurr.pendingTx) return;
@@ -879,10 +1354,10 @@
       if (L.need_market) return;
       document.getElementById("euler-boot-err").textContent = "";
       vapurr.beginTx({
-        title: "Deploy $PUSD vault",
+        title: "Deploy Oliver",
         kicker: "This device signs",
         kind: "loop-deploy",
-        lede: "Isolated $PUSD credit. $VAPURR collateral. Not a Euler fork. Empty until this hash lands.",
+        lede: "Oliver: isolated $PUSD credit. $VAPURR collateral. Empty until this hash lands.",
         rows: [
           { k: "Network", v: netLabel() },
           { k: "From", v: (snap && snap.address) || "this device" },
@@ -900,25 +1375,33 @@
         vapurr.send({ cmd: "econ-loop-deploy" });
       });
     };
+    function openFold(id) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      el.open = true;
+      el.scrollIntoView({ block: "start" });
+    }
     if (/lithe/i.test(location.hash + location.search)) {
       setTimeout(function () {
         var el = document.getElementById("lithe");
         if (el) el.scrollIntoView({ block: "start" });
       }, 80);
     }
-    if (/euler|tab=euler|loop/i.test(location.hash + location.search)) {
-      setTimeout(function () {
-        var el = document.getElementById("euler");
-        if (el) el.scrollIntoView({ block: "start" });
-      }, 80);
+    if (/oliver|euler|tab=euler|tab=oliver|loop/i.test(location.hash + location.search)) {
+      setTimeout(function () { openFold("euler"); }, 80);
     }
     if (/house|tab=house|lp/i.test(location.hash + location.search)) {
-      setTimeout(function () {
-        var el = document.getElementById("house");
-        if (el) el.scrollIntoView({ block: "start" });
-      }, 80);
+      setTimeout(function () { openFold("house"); }, 80);
+    }
+    if (/\bshot=1\b/.test(location.search)) {
+      document.body.classList.add("is-live");
     }
     vapurr.send({ cmd: "econ" });
+    setInterval(paintTick, 100);
+    setInterval(function () {
+      if (vapurr.pendingTx) return;
+      vapurr.send({ cmd: "econ" });
+    }, 8000);
   </script>
 </body>
 </html>

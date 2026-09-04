@@ -82,3 +82,7 @@ frontend/ketflix/trailers/*.mp4
 
 # One-off grinders
 crates/vapurr-wallet/examples/vanity.rs
+
+# Local slop / ads — not the product zip
+docs/slop/
+frontend/commercial/

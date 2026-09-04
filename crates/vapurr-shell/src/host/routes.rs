@@ -48,6 +48,21 @@ pub fn serve(
             .body(Cow::Owned(stamped.into_bytes()))
             .unwrap();
     }
+    if let Some(rest) = rel.strip_prefix("trenches/api") {
+        let rest = rest.trim_start_matches('/');
+        let (kind, stuffed) = match rest.split_once('?') {
+            Some((k, q)) => (k.trim_end_matches('/'), q),
+            None => (rest.trim_end_matches('/'), ""),
+        };
+        let q = if query.is_empty() { stuffed } else { query };
+        let body = vapurr_fomo::trenches_json(kind, q);
+        return Response::builder()
+            .header(CONTENT_TYPE, "application/json; charset=utf-8")
+            .header("Access-Control-Allow-Origin", "*")
+            .header("Cache-Control", "no-store")
+            .body(Cow::Owned(body.into_bytes()))
+            .unwrap();
+    }
     let rel = rel.split('?').next().unwrap_or(rel);
     let rel = if rel == "ketbook" || rel == "ketbook/" {
         "ketbook/index.html"
@@ -66,6 +81,15 @@ pub fn serve(
     }
     if rel == "fomo/api/desk" {
         let body = vapurr_fomo::desk_json();
+        return Response::builder()
+            .header(CONTENT_TYPE, "application/json; charset=utf-8")
+            .header("Access-Control-Allow-Origin", "*")
+            .header("Cache-Control", "no-store")
+            .body(Cow::Owned(body.into_bytes()))
+            .unwrap();
+    }
+    if rel == "fomo/api/trenches" {
+        let body = vapurr_fomo::trenches_json("", query);
         return Response::builder()
             .header(CONTENT_TYPE, "application/json; charset=utf-8")
             .header("Access-Control-Allow-Origin", "*")

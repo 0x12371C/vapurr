@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>Trenches</title>
+  <link rel="stylesheet" href="/tokens.css"/>
+  <link rel="stylesheet" href="/chrome.css"/>
+  <style>
+    body { overflow: auto; }
+    .wrap { padding: 32px 40px 64px; }
+    .hero { margin-bottom: 24px; }
+    h1 { font-size: 28px; font-weight: 600; letter-spacing: -0.03em; }
+    .lede { color: var(--color-muted); margin-top: 8px; max-width: 52ch; }
+    .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+    .chip { border: 1px solid var(--color-forest); padding: 6px 10px; font-size: 12px; }
+    .chip b { color: var(--color-lime); margin-left: 6px; }
+    .sec { margin-top: 28px; }
+    .sec .mono { margin-bottom: 10px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--color-forest); }
+    th { color: var(--color-muted); font-weight: 600; letter-spacing: 0.08em; font-size: 11px; text-transform: uppercase; }
+    td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; }
+    .buy { color: var(--color-lime); }
+    .sell { color: #ff6b6b; }
+    .note { color: var(--color-muted); margin-top: 16px; font-size: 12px; }
+    a { color: var(--color-lime); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="hero">
+      <div class="mono">TRENCHES</div>
+      <h1>Our tape</h1>
+      <p class="lede">Robinhood Chain fills, closed books, trader PnL, copy-flow, and fresh pools. JSON at /trenches/api.</p>
+      <div class="meta" id="meta"></div>
+    </div>
+    <div class="sec">
+      <div class="mono">Live tape</div>
+      <table><thead><tr><th>side</th><th>token</th><th class="n">usd</th><th>trader</th><th>tx</th></tr></thead><tbody id="tape"></tbody></table>
+    </div>
+    <div class="sec">
+      <div class="mono">Traders</div>
+      <table><thead><tr><th>handle</th><th class="n">fills</th><th class="n">volume</th><th class="n">net</th></tr></thead><tbody id="board"></tbody></table>
+    </div>
+    <p class="note" id="note"></p>
+  </div>
+  <script src="/ipc.js"></script>
+  <script>
+    function usd(n) {
+      if (n == null || !isFinite(n)) return "—";
+      var a = Math.abs(n);
+      if (a >= 1e6) return "$" + (n / 1e6).toFixed(2) + "M";
+      if (a >= 1e3) return "$" + (n / 1e3).toFixed(1) + "K";
+      return "$" + n.toFixed(2);
+    }
+    function esc(s) {
+      return String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;");
+    }
+    fetch("/trenches/api").then(function (r) { return r.json(); }).then(function (d) {
+      var st = d.status || {};
+      var ov = d.overview || {};
+      var meta = document.getElementById("meta");
+      [
+        ["wallets", st.wallets],
+        ["fills", st.fills],
+        ["block", st.block],
+        ["24h vol", usd(ov.volume)],
+        ["win", ov.win_rate != null ? Math.round(ov.win_rate * 100) + "%" : "—"]
+      ].forEach(function (row) {
+        var c = document.createElement("div");
+        c.className = "chip";
+        c.innerHTML = "<span>" + esc(row[0]) + "</span><b>" + esc(row[1]) + "</b>";
+        meta.appendChild(c);
+      });
+      var tb = document.getElementById("tape");
+      (d.tape || []).slice(0, 24).forEach(function (f) {
+        var tr = document.createElement("tr");
+        var href = (f.href && f.href.tx) || "";
+        tr.innerHTML =
+          "<td class='" + (f.side === "sell" ? "sell" : "buy") + "'>" + esc(f.side) + "</td>" +
+          "<td>" + esc(f.symbol) + "</td>" +
+          "<td class='n'>" + usd(f.usd) + "</td>" +
+          "<td>" + esc(f.handle) + "</td>" +
+          "<td>" + (href ? "<a href='" + esc(href) + "'>" + esc(String(f.tx || "").slice(0, 10)) + "</a>" : "—") + "</td>";
+        tb.appendChild(tr);
+      });
+      var board = document.getElementById("board");
+      (d.traders || []).slice(0, 16).forEach(function (t) {
+        var tr = document.createElement("tr");
+        tr.innerHTML =
+          "<td>" + esc(t.handle) + "</td>" +
+          "<td class='n'>" + esc(t.fills) + "</td>" +
+          "<td class='n'>" + usd(t.volume) + "</td>" +
+          "<td class='n'>" + usd(t.net) + "</td>";
+        board.appendChild(tr);
+      });
+      document.getElementById("note").textContent =
+        (d.ingest || []).join(" + ") + " · GET /trenches/api · /tape · /closed · /traders · /tokens · /flow · /radar";
+    }).catch(function () {
+      document.getElementById("note").textContent = "Tape wait.";
+    });
+  </script>
+</body>
+</html>

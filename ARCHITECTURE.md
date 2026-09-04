@@ -60,7 +60,7 @@ Robinhood Chain (`eip155:4663`). Constants: `crates/vapurr-rhc/src/lib.rs`.
 - Gas: ETH
 - Account abstraction: ERC-4337 EntryPoint v0.7 / v0.8, **EIP-7702** so an existing address gains batching/session keys/paymaster without migrating
 
-Econ deploys on **testnet 46630** until mainnet has gas (`TESTNET_RPC_HTTP`, faucet `https://faucet.testnet.chain.robinhood.com`). Official Paxos testnet USDG is not mintable; the desk deploys `contracts/MockUsdg.sol` instead. Product v1 is still Robinhood Chain in the chrome — testnet is the bootstrap rail, not a second home chain.
+Econ deploys on **testnet 46630** until mainnet has gas (`TESTNET_RPC_HTTP`, faucet `https://faucet.testnet.chain.robinhood.com`). Pinned mainnet CREATE vanity (not live): `MAINNET_MARKET_VANITY` `0xC47f00D61F8379337f9fb42E6DcC695AE2d6EBD2` from deployer `0x48043E2Cda4D403c10dbB1F4614c4F6ad0f9AeA5` nonce 0. Official Paxos testnet USDG is not mintable; the desk deploys `contracts/MockUsdg.sol` instead. Product v1 is still Robinhood Chain in the chrome — testnet is the bootstrap rail, not a second home chain.
 
 Public RPC only. No Alchemy key required for read. Bundlers/paymasters are optional and behind config.
 

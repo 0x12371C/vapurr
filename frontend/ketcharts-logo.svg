@@ -3,10 +3,10 @@
   <text
     x="4"
     y="72"
-    font-family="Arial Black, Impact, Haettenschweiler, Franklin Gothic Bold, sans-serif"
+    font-family="Sora, Arial Black, Impact, sans-serif"
     font-size="72"
-    font-weight="900"
-    fill="#E50914"
-    letter-spacing="-4"
+    font-weight="700"
+    fill="#F2F3F4"
+    letter-spacing="-3"
   >KETCHARTS</text>
 </svg>

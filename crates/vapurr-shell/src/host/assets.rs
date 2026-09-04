@@ -4,6 +4,7 @@ use super::*;
 #[folder = "../../frontend"]
 #[exclude = "*.zip"]
 #[exclude = "*.mp4"]
+#[exclude = "commercial/*"]
 pub(crate) struct Frontend;
 
 pub fn frontend_root() -> PathBuf {

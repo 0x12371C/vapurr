@@ -72,14 +72,24 @@ contract HouseSwap {
         require(amountIn > 0, "TINY");
         IERC20 inn = sellV ? vapurr : pusd;
         IERC20 outt = sellV ? pusd : vapurr;
+        // $PUSD is shares×index. Pull then swap the balance we actually got.
+        uint256 before = inn.balanceOf(address(this));
         require(inn.transferFrom(msg.sender, address(this), amountIn), "PULL");
-        bytes memory raw = pm.unlock(abi.encode(msg.sender, sellV, amountIn, minOut));
+        uint256 got = inn.balanceOf(address(this)) - before;
+        require(got > 0, "TINY");
+        // Leave a hair so a rebasing $PUSD transfer still covers the settle.
+        uint256 use = got > 1e12 ? got - 1e12 : got;
+        bytes memory raw = pm.unlock(abi.encode(msg.sender, sellV, use, minOut));
         outAmt = abi.decode(raw, (uint256));
-        emit Swap(msg.sender, sellV, amountIn, outAmt);
-        uint256 dust = inn.balanceOf(address(this));
-        if (dust > 0) require(inn.transfer(msg.sender, dust), "PUSD");
-        dust = outt.balanceOf(address(this));
-        if (dust > 0) require(outt.transfer(msg.sender, dust), "PUSD");
+        emit Swap(msg.sender, sellV, use, outAmt);
+        _sweep(inn, msg.sender);
+        _sweep(outt, msg.sender);
+    }
+
+    function _sweep(IERC20 t, address to) internal {
+        uint256 dust = t.balanceOf(address(this));
+        if (dust <= 1e12) return;
+        try t.transfer(to, dust) {} catch {}
     }
 
     function unlockCallback(bytes calldata data) external returns (bytes memory) {
@@ -134,24 +144,28 @@ contract HouseSwap {
         bool zeroForOne
     ) internal returns (uint256 outAmt) {
         if (d0 < 0) {
-            uint256 owe = uint256(uint128(-d0));
-            pm.sync(key.currency0);
-            require(IERC20(key.currency0).transfer(address(pm), owe), "PUSD");
-            pm.settle();
+            _pay(key.currency0, uint256(uint128(-d0)));
         } else if (d0 > 0) {
             uint256 got = uint256(uint128(d0));
             pm.take(key.currency0, trader, got);
             if (!zeroForOne) outAmt = got;
         }
         if (d1 < 0) {
-            uint256 owe = uint256(uint128(-d1));
-            pm.sync(key.currency1);
-            require(IERC20(key.currency1).transfer(address(pm), owe), "PUSD");
-            pm.settle();
+            _pay(key.currency1, uint256(uint128(-d1)));
         } else if (d1 > 0) {
             uint256 got = uint256(uint128(d1));
             pm.take(key.currency1, trader, got);
             if (zeroForOne) outAmt = got;
         }
+    }
+
+    function _pay(address token, uint256 owe) internal {
+        uint256 have = IERC20(token).balanceOf(address(this));
+        require(have > 0, "PUSD");
+        pm.sync(token);
+        require(IERC20(token).transfer(address(pm), have), "PUSD");
+        uint256 paid = pm.settle();
+        require(paid >= owe, "PUSD");
+        if (paid > owe) pm.take(token, address(this), paid - owe);
     }
 }

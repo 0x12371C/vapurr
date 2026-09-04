@@ -12,11 +12,11 @@
   <div class="wrap">
     <div class="hero">
       <div class="mono">SWAP</div>
-      <h1 id="receive">—</h1>
-      <p class="lede">Best simulated net. Full route. Small $VAPURR refund. Sign on this device to send.</p>
+      <h1 id="receive" hidden></h1>
+      <p class="lede">Full route. Small $VAPURR refund. This device simulates, then you sign.</p>
       <div class="meta">
         <div class="chip"><span>Refund</span><b>0.05%</b></div>
-        <div class="chip"><span>Sim</span><b id="chip-sim">—</b></div>
+        <div class="chip"><span>Sim</span><b id="chip-sim">idle</b></div>
         <div class="chip"><span>Route</span><b id="chip-hops">—</b></div>
       </div>
     </div>
@@ -27,7 +27,7 @@
           <div class="leg-head"><span class="mono">You pay</span><button type="button" class="max" id="from-max">MAX</button></div>
           <div class="leg-row">
             <input class="amt" id="amt" placeholder="0" inputmode="decimal"/>
-            <select class="field" id="from-tok"></select>
+            <button class="tok" id="from-tok" type="button"></button>
           </div>
           <div class="bal" id="from-bal"></div>
         </div>
@@ -37,18 +37,26 @@
         <div class="leg">
           <div class="leg-head"><span class="mono">You get</span></div>
           <div class="leg-row">
-            <div class="get" id="to-amt">—</div>
-            <select class="field" id="to-tok"></select>
+            <div class="get" id="to-amt">0</div>
+            <button class="tok" id="to-tok" type="button"></button>
           </div>
           <div class="bal" id="to-bal"></div>
         </div>
       </div>
-      <div class="quote" id="route"><div class="empty">Enter an amount.</div></div>
+      <div class="quote" id="route"></div>
     </div>
     <button class="btn go" type="button" id="go" disabled>Swap</button>
   </div>
+  <div id="tok-sheet" hidden>
+    <div class="dimmer" id="tok-dim"></div>
+    <div class="tok-card">
+      <div class="mono">Token</div>
+      <div id="tok-list"></div>
+    </div>
+  </div>
   <script src="/ipc.js"></script>
   <script src="/sign.js"></script>
+  <script src="/tokens.js"></script>
   <script src="/route.js"></script>
   <script type="importmap">
   {

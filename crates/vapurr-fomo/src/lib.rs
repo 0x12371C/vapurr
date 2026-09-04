@@ -18,6 +18,9 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use vapurr_rhc::{CHAIN_ID, CHAIN_NAME, EXPLORER, RPC_HTTP};
 
+mod trenches;
+pub use trenches::api_json as trenches_json;
+
 const FOMO_API: &str = "https://api.fomoapi.io";
 const FAMILY: &str = "https://fomo.family";
 const CACHE_MS: u128 = 8_000;
@@ -80,6 +83,7 @@ static LOOP: AtomicBool = AtomicBool::new(false);
 
 pub fn warm() {
     kick();
+    trenches::warm();
 }
 
 fn kick() {

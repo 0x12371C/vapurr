@@ -40,7 +40,7 @@ Relic: *"initial 50% of token creation goes to LP creation, so half of the $VAPU
 
 ## Open (still)
 
-- **Fresh gen-4 is live on 46630.** Market `0x47Aca529…3617`, house NFT #2273 at `0x667bFcAF…1bf7`, vault `0xC4d4BC75…39Bb`, swapper `0xb699c0CD…4FE2`. Retired CAs do not count.
+- **Fresh gen-4 is live on 46630.** Market `0x47Aca529…3617`, house NFT #2273 at `0x667bFcAF…1bf7`, vault `0x89E17eef…4521` (boot 150%→6% kink), swapper `0x6304419b…4dD2`. Retired CAs do not count.
 
 ## Non-goals (for this shape)
 

@@ -12,6 +12,13 @@ fn say(ok: bool, line: &str) {
         eprintln!("{line}");
         let _ = io::stderr().flush();
     }
+    if let Ok(mut f) = std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open("target/pulse.log")
+    {
+        let _ = writeln!(f, "{line}");
+    }
 }
 
 fn main() {

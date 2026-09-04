@@ -4,7 +4,7 @@ use super::*;
 pub(crate) fn native_usd() -> Option<f64> {
     crate::liq::token_hit(WETH)
         .and_then(|t| t.get("price_usd").and_then(|v| v.as_f64()))
-        .filter(|p| *p > 0.0)
+        .and_then(crate::liq::sane_eth_px)
 }
 
 

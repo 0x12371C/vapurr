@@ -28,8 +28,14 @@ contract PusdLoop {
     uint256 public constant LIQ_BONUS_BPS = 500;
     uint256 public constant RESERVE_BPS = 1000;
     uint256 public constant KINK = 9e17;
-    uint256 public constant SLOPE1 = 6e16;
+    /// Steady kink borrow APY once real $PUSD cash has filled the book.
+    uint256 public constant BASE_SLOPE1 = 6e16;
+    /// Cold-start kink borrow APY. Fades as exogenous cash arrives.
+    uint256 public constant BOOT_SLOPE1 = 15e17;
     uint256 public constant SLOPE2 = 1e18;
+    /// $PUSD cash at which boot slope has fully faded to BASE_SLOPE1.
+    /// Looping does not raise cash — only real supply / Lithe drip does.
+    uint256 public constant BOOT_CASH = 100_000 * DEC;
     uint256 public constant MAX_STEPS = 16;
 
     address public immutable owner;
@@ -305,13 +311,16 @@ contract PusdLoop {
         address pusdToken;
         address market_;
         uint256 room;
+        uint256 bootBps;
+        uint256 flowWad;
+        uint256 cashTarget;
     }
 
     function snapshot(address a) external view returns (Snap memory s) {
         uint256 cash = pusd.balanceOf(address(this));
         uint256 borrows = _previewBorrows();
         uint256 assets = cash + borrows;
-        uint256 rate = _irm(borrows, assets);
+        uint256 rate = _irm(borrows, assets, cash);
         s.cash = cash;
         s.totalSupplyAssets = assets;
         s.totalBorrowAssets_ = borrows;
@@ -335,6 +344,9 @@ contract PusdLoop {
         s.market_ = address(market);
         uint256 maxDebt = (s.collatValue * LTV_BPS) / 10_000;
         s.room = s.debt >= maxDebt ? 0 : maxDebt - s.debt;
+        s.bootBps = (_slope1(cash) * 10_000) / DEC;
+        s.flowWad = _flow(cash);
+        s.cashTarget = BOOT_CASH;
     }
 
     function _accrue() internal {
@@ -345,7 +357,7 @@ contract PusdLoop {
         uint256 b = totalBorrowAssets;
         if (b == 0) return;
         uint256 cash = pusd.balanceOf(address(this));
-        uint256 rate = _irm(b, cash + b);
+        uint256 rate = _irm(b, cash + b, cash);
         uint256 interest = ((b * rate) / DEC * dt) / YEAR;
         if (interest == 0) return;
         totalBorrowAssets = b + interest;
@@ -364,12 +376,25 @@ contract PusdLoop {
         emit Accrue(interest, totalBorrowAssets);
     }
 
-    function _irm(uint256 borrows, uint256 assets) internal pure returns (uint256) {
+    function _flow(uint256 cash) internal pure returns (uint256) {
+        if (cash >= BOOT_CASH) return DEC;
+        return (cash * DEC) / BOOT_CASH;
+    }
+
+    function _slope1(uint256 cash) internal pure returns (uint256) {
+        uint256 f = _flow(cash);
+        return BASE_SLOPE1 + ((BOOT_SLOPE1 - BASE_SLOPE1) * (DEC - f)) / DEC;
+    }
+
+    /// Borrow rate. Wild while cash is thin. Fades to 6% kink as real $PUSD shows up.
+    /// Recursive loop does not raise cash — only exogenous supply / Lithe does.
+    function _irm(uint256 borrows, uint256 assets, uint256 cash) internal pure returns (uint256) {
         if (assets == 0 || borrows == 0) return 0;
-        if (borrows >= assets) return SLOPE1 + SLOPE2;
+        uint256 s1 = _slope1(cash);
+        if (borrows >= assets) return s1 + SLOPE2;
         uint256 util = (borrows * DEC) / assets;
-        if (util <= KINK) return (SLOPE1 * util) / KINK;
-        return SLOPE1 + (SLOPE2 * (util - KINK)) / (DEC - KINK);
+        if (util <= KINK) return (s1 * util) / KINK;
+        return s1 + (SLOPE2 * (util - KINK)) / (DEC - KINK);
     }
 
     function _pull(IERC20 t, uint256 amt) internal returns (uint256 got) {
@@ -440,7 +465,7 @@ contract PusdLoop {
         if (dt == 0 || b == 0) return b;
         if (dt > 2 * YEAR) dt = 2 * YEAR;
         uint256 cash = pusd.balanceOf(address(this));
-        uint256 rate = _irm(b, cash + b);
+        uint256 rate = _irm(b, cash + b, cash);
         uint256 interest = ((b * rate) / DEC * dt) / YEAR;
         return b + interest;
     }

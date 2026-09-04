@@ -47,10 +47,13 @@
       low === "family" ||
       low === "fomo.family" ||
       low === "live trenches" ||
-      low === "trenches" ||
       low === "live-trenches"
     ) {
       send({ cmd: "go", url: "https://fomo.family" });
+      return;
+    }
+    if (low === "trenches" || low === "hood-tape" || low === "tape") {
+      send({ cmd: "go", url: "vapurr://trenches" });
       return;
     }
     var panes = {
@@ -87,6 +90,8 @@
       ketcharts: "ketcharts",
       charts: "ketcharts",
       chart: "ketcharts",
+      trenches: "trenches",
+      tape: "trenches",
       settings: "settings",
       history: "history",
       bookmarks: "bookmarks",

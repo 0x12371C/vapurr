@@ -1008,9 +1008,16 @@ fn main() {
                 let _ = wallet_tx.send(vapurr_wallet::WalletCmd::Logout);
             }
             Event::UserEvent(Msg::WalletSnap(snap)) => {
-                *last_wallet.borrow_mut() = snap.clone();
-                if let Some(a) = snap.get("address").and_then(|x| x.as_str()) {
-                    host::adopt_wallet_address(a);
+                if wallet_is_bag(&snap) {
+                    let mut bag = snap.clone();
+                    if let Some(obj) = bag.as_object_mut() {
+                        obj.remove("seed");
+                        obj.remove("hex_key");
+                    }
+                    *last_wallet.borrow_mut() = bag;
+                    if let Some(a) = snap.get("address").and_then(|x| x.as_str()) {
+                        host::adopt_wallet_address(a);
+                    }
                 }
                 let _ = page.borrow().evaluate_script(&js_set_wallet(&snap));
             }

@@ -10,9 +10,9 @@ Two tokens. One dollar the browser actually spends.
 
 House liquidity is **$VAPURR / $PUSD** only. No house pool vs USDG or ETH. You cannot dump V or P into Robinhood’s dollar from this desk. $PUSD has to be the dollar.
 
-**Supply and borrow** (Euler-shaped, not a Euler fork) is how that dollar gets its own depth. Isolated `$PUSD` credit. `$VAPURR` is collateral. Supply P, borrow P, loop under 85% LTV. Utilization sets the rate. Liquidations at 90%. Lithe still drips on vault-held `$PUSD`. Vault `0xC4d4BC75…39Bb` is live on 46630. See [Supply and borrow](euler.md).
+**Supply and borrow** (Euler-shaped, not a Euler fork) is how that dollar gets its own depth. Isolated `$PUSD` credit. `$VAPURR` is collateral. Supply P, borrow P, loop under 85% LTV. Utilization sets the rate. Liquidations at 90%. Lithe still drips on vault-held `$PUSD`. Vault `0x89E17eef…4521` is live on 46630. Boot kink 150% → 6% as 100k cash lands. See [Supply and borrow](euler.md).
 
-The **house book** is a Uniswap v4 concentrated `$VAPURR` / `$PUSD` position (0.30%, ±20% around the oracle). 50% of genesis `$VAPURR` stays treasury. Of the LP half, burn half to mint `$PUSD` and keep half as `$VAPURR`. No house `$PUSD/USDG`. House `0x667bFcAF…1bf7` · swapper `0xb699c0CD…4FE2`. `vapurr://house`
+The **house book** is a Uniswap v4 concentrated `$VAPURR` / `$PUSD` position (0.30%, ±20% around the oracle). 50% of genesis `$VAPURR` stays treasury. Of the LP half, burn half to mint `$PUSD` and keep half as `$VAPURR`. No house `$PUSD/USDG`. House `0x667bFcAF…1bf7` · swapper `0x6304419b…4dD2`. `vapurr://house`
 
 ## Spend (the browser)
 

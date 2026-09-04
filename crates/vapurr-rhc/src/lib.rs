@@ -32,9 +32,9 @@ pub const TESTNET_OUTBID: &str = "";
 /// Ketcharts $PUSD listing board (`KetList.sol`). Empty until this device deploys it.
 pub const TESTNET_KETLIST: &str = "";
 /// Isolated $PUSD vault (`PusdLoop.sol`). Deployed 2026-09-04 on gen-4.
-pub const TESTNET_LOOP: &str = "0xC4d4BC75EAB5FA1dF4d81599E006C25318a239Bb";
+pub const TESTNET_LOOP: &str = "0x89E17eefa58B99d025145970c0FBAe7768a14521";
 /// House v4 exact-in swapper. Live 2026-09-04.
-pub const TESTNET_SWAP: &str = "0xb699c0CDA2C41f28A458e8Fd59Fa7e68d06e4FE2";
+pub const TESTNET_SWAP: &str = "0x6304419b838Efb12D0Cdf931dd9579c5b4084dD2";
 /// House Uniswap v4 CL (`HouseLp.sol`) $VAPURR / $PUSD. Seeded 2026-09-04.
 pub const TESTNET_HOUSE: &str = "0x667bFcAF9D3Ee809336788Bf52511D35AE9C1bf7";
 /// Official testnet stock tokens. Ops liquidity — not the house book.
@@ -57,12 +57,38 @@ pub const NATIVE_DECIMALS: u8 = 18;
 pub const USDG: &str = "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168";
 pub const USDG_DECIMALS: u8 = 6;
 
-/// PusdMarket on mainnet 4663. Empty until that net has gas and a funded deploy.
+/// PusdMarket on mainnet 4663. Empty until the vanity deploy tx lands.
 pub const VAPURR_MARKET: &str = "";
 pub const VAPURR_TOKEN: &str = "";
 pub const PUSD_TOKEN: &str = "";
+/// Pinned CREATE nonce-0 vanity for the first mainnet PusdMarket.
+/// Deployer first outbound tx **must** be `PusdMarket` (receiving ETH does not bump nonce).
+/// Do not copy these into `VAPURR_MARKET` until the receipt is on 4663.
+pub const MAINNET_DEPLOYER: &str = "0x48043E2Cda4D403c10dbB1F4614c4F6ad0f9AeA5";
+pub const MAINNET_MARKET_VANITY: &str = "0xC47f00D61F8379337f9fb42E6DcC695AE2d6EBD2";
+pub const MAINNET_VAPURR_VANITY: &str = "0x526323EfAe2465e9e5b8Bad6277A8F10B1D6c75e";
+pub const MAINNET_PUSD_VANITY: &str = "0x98c35e266f4E38F90580cA074a5f382D49400F5f";
 pub const VAPURR_LOOP: &str = "";
 pub const WETH: &str = "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73";
+
+/// Official Robinhood Stock Tokens on mainnet 4663. Address is the token, not the ticker.
+/// Source: Robinhood contracts registry. Lookalikes that reuse these tickers are not these.
+pub const STOCKS: &[(&str, &str, &str)] = &[
+    ("AAPL", "Apple", "0xaF3D76f1834A1d425780943C99Ea8A608f8a93f9"),
+    ("AMD", "AMD", "0x86923f96303D656E4aa86D9d42D1e57ad2023fdC"),
+    ("AMZN", "Amazon", "0x12f190a9F9d7D37a250758b26824B97CE941bF54"),
+    ("COIN", "Coinbase", "0x6330D8C3178a418788dF01a47479c0ce7CCF450b"),
+    ("GOOGL", "Alphabet Class A", "0x2e0847E8910a9732eB3fb1bb4b70a580ADAD4FE3"),
+    ("INTC", "Intel", "0xc72b96e0E48ecd4DC75E1e45396e26300BC39681"),
+    ("META", "Meta Platforms", "0xc0D6457C16Cc70d6790Dd43521C899C87ce02f35"),
+    ("MSFT", "Microsoft", "0xe93237C50D904957Cf27E7B1133b510C669c2e74"),
+    ("NVDA", "NVIDIA", "0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC"),
+    ("ORCL", "Oracle", "0xb0992820E760d836549ba69BC7598b4af75dEE03"),
+    ("PLTR", "Palantir Technologies", "0x894E1EC2D74FFE5AEF8Dc8A9e84686acCB964F2A"),
+    ("TSLA", "Tesla", "0x322F0929c4625eD5bAd873c95208D54E1c003b2d"),
+    ("SPY", "SPDR S&P 500 ETF", "0x117cc2133c37B721F49dE2A7a74833232B3B4C0C"),
+    ("QQQ", "Invesco QQQ", "0xD5f3879160bc7c32ebb4dC785F8a4F505888de68"),
+];
 
 /// Canonical Uniswap v3 factory on 4663. PoolCreated is the on-chain pool list.
 pub const UNI_V3_FACTORY: &str = "0x1f7d7550B1b028f7571E69A784071F0205FD2EfA";
@@ -199,12 +225,24 @@ mod tests {
         assert!(TESTNET_MOCK_USDG.is_empty());
         assert!(VAPURR_MARKET.is_empty());
         assert!(PUSD_TOKEN.is_empty());
+        assert_eq!(MAINNET_MARKET_VANITY.len(), 42);
+        assert!(MAINNET_MARKET_VANITY
+            .to_ascii_lowercase()
+            .starts_with("0xc47f00d"));
+        assert_eq!(MAINNET_DEPLOYER.len(), 42);
+        assert_eq!(MAINNET_VAPURR_VANITY.len(), 42);
+        assert_eq!(MAINNET_PUSD_VANITY.len(), 42);
         assert_eq!(TESTNET_LOOP.len(), 42);
         assert_eq!(TESTNET_SWAP.len(), 42);
         assert!(TESTNET_KETLIST.is_empty());
         assert_eq!(TESTNET_HOUSE.len(), 42);
         assert!(VAPURR_LOOP.is_empty());
         assert_eq!(TESTNET_STOCKS.len(), 5);
+        assert_eq!(STOCKS.len(), 14);
+        assert!(STOCKS.iter().any(|(s, _, a)| *s == "NVDA" && a.len() == 42));
+        assert!(STOCKS.iter().any(|(s, _, _)| *s == "TSLA"));
+        assert!(STOCKS.iter().any(|(s, _, _)| *s == "MSFT"));
+        assert!(STOCKS.iter().any(|(s, _, _)| *s == "PLTR"));
     }
 
     #[test]

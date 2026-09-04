@@ -31,6 +31,11 @@ pub(crate) struct MarketCfg {
     pub(crate) net: String,
 }
 
+fn dead_swap(s: &str) -> bool {
+    let l = s.trim().to_ascii_lowercase();
+    l.starts_with("0xb699") || l.starts_with("0xb10d") || l.starts_with("0xbd6b")
+}
+
 impl MarketCfg {
     fn path() -> std::path::PathBuf {
         vapurr_wallet::data_dir().join("market.json")
@@ -67,8 +72,10 @@ impl MarketCfg {
         if self.house.is_empty() && !rhc::TESTNET_HOUSE.is_empty() {
             self.house = rhc::TESTNET_HOUSE.into();
         }
-        if self.swap.is_empty() && !rhc::TESTNET_SWAP.is_empty() {
-            self.swap = rhc::TESTNET_SWAP.into();
+        if self.swap.is_empty() || dead_swap(&self.swap) {
+            if !rhc::TESTNET_SWAP.is_empty() {
+                self.swap = rhc::TESTNET_SWAP.into();
+            }
         }
     }
 
@@ -132,6 +139,18 @@ mod tests {
         assert_eq!(rhc::TESTNET_HOUSE.len(), 42);
         assert_eq!(rhc::TESTNET_LOOP.len(), 42);
         assert_eq!(rhc::TESTNET_SWAP.len(), 42);
+        assert_eq!(c.swap, rhc::TESTNET_SWAP);
+    }
+
+    #[test]
+    fn dead_swapper_is_replaced() {
+        let mut c = MarketCfg {
+            net: "testnet".into(),
+            swap: "0xb699c0CDA2C41f28A458e8Fd59Fa7e68d06e4FE2".into(),
+            ..MarketCfg::default()
+        };
+        c.fill_canonical();
+        assert_eq!(c.swap, rhc::TESTNET_SWAP);
     }
 
     #[test]

@@ -253,6 +253,7 @@ pub fn chrome_label(url: &str) -> Option<&'static str> {
         "floor.html" => "Floor",
         "ketflix.html" => "Ketflix",
         "ketcharts.html" => "Ketcharts",
+        "trenches.html" => "Trenches",
         "earn.html" => "Earn",
         "history.html" => "History",
         "bookmarks.html" => "Bookmarks",
@@ -283,6 +284,10 @@ mod tests {
         assert_eq!(
             chrome_label("http://vapurr.localhost/ketcharts.html"),
             Some("Ketcharts")
+        );
+        assert_eq!(
+            chrome_label("http://vapurr.localhost/trenches.html"),
+            Some("Trenches")
         );
         assert_eq!(
             chrome_label("https://fomo.family/foo"),

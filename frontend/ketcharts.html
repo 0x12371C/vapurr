@@ -11,24 +11,7 @@
       display: flex;
       flex-direction: column;
       overflow: hidden;
-      background:
-        radial-gradient(1200px 560px at 8% -8%, rgba(192,248,0,0.09), transparent 52%),
-        radial-gradient(900px 480px at 100% 0%, rgba(88,70,255,0.10), transparent 48%),
-        radial-gradient(700px 380px at 70% 110%, rgba(229,9,20,0.07), transparent 50%),
-        #0e0e0e;
-    }
-    body::before {
-      content: "";
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      z-index: 0;
-      opacity: 0.35;
-      background-image:
-        linear-gradient(rgba(242,243,244,0.035) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(242,243,244,0.035) 1px, transparent 1px);
-      background-size: 56px 56px;
-      mask-image: radial-gradient(ellipse at 50% 20%, #000 35%, transparent 80%);
+      background: var(--color-void);
     }
     .top, .chartbar {
       position: relative;
@@ -36,49 +19,66 @@
       flex-shrink: 0;
       display: flex;
       align-items: center;
-      gap: 10px;
-    }
-    .top { padding: 8px 12px 4px; }
-    .chartbar, .fxbar {
-      padding: 0 12px 6px;
       gap: 8px;
-      flex-wrap: nowrap;
-      min-height: 32px;
-      overflow-x: auto;
     }
-    .fxbar { padding-bottom: 8px; }
+    .top { padding: 6px 12px 2px; }
+    .chartbar {
+      padding: 0 12px 6px;
+      gap: 6px;
+      flex-wrap: wrap;
+      min-height: 30px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .chartbar::-webkit-scrollbar { display: none; }
     .brand { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-    .cat { width: 28px; height: 28px; object-fit: contain; display: block; }
-    .logo { height: 20px; width: auto; display: block; }
-    .tabs { display: flex; gap: 2px; flex-shrink: 0; }
+    .cat { width: 26px; height: 26px; object-fit: contain; display: block; }
+    .logo { height: 16px; width: auto; display: block; }
+    .tabs {
+      display: flex;
+      gap: 2px;
+      flex-shrink: 1;
+      min-width: 0;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .tabs::-webkit-scrollbar { display: none; }
     #favn:not(:empty)::before { content: "· "; }
     #favn { font-variant-numeric: tabular-nums; }
     .search {
-      width: min(180px, 22vw);
-      height: 30px;
+      width: min(200px, 18vw);
+      height: 28px;
       border-radius: 8px;
       padding: 0 10px;
       font-size: 12px;
     }
-    .pills { display: flex; gap: 3px; flex-wrap: nowrap; align-items: center; }
+    .pills { display: flex; gap: 2px; flex-wrap: nowrap; align-items: center; }
     .sep {
       width: 1px;
-      height: 16px;
+      height: 14px;
       background: color-mix(in srgb, var(--color-snow) 12%, transparent);
       flex-shrink: 0;
     }
     .pill, .tabs .pill {
-      height: 26px;
+      height: 24px;
       padding: 0 8px;
       border: 0;
-      border-radius: 7px;
+      border-radius: 6px;
       background: transparent;
       color: var(--color-muted);
       font-size: 11px;
       font-weight: 600;
+      white-space: nowrap;
     }
     .pill:hover { color: var(--color-snow); background: color-mix(in srgb, var(--color-forest) 55%, transparent); }
-    .pill.on { color: var(--color-void); background: var(--color-lime); }
+    .pill.on {
+      color: var(--color-lime);
+      background: color-mix(in srgb, var(--color-forest) 78%, transparent);
+    }
+    .tabs .pill.on, #tfs .pill.on {
+      color: var(--color-void);
+      background: var(--color-lime);
+    }
     .grow { flex: 1; min-width: 8px; }
     .live {
       display: flex; align-items: center; gap: 6px;
@@ -95,36 +95,41 @@
       font-size: 11px;
       font-weight: 600;
       margin-left: auto;
-      max-width: 240px;
+      max-width: 220px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    .vela { color: var(--color-muted); font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-decoration: none; flex-shrink: 0; }
+    .vela { color: var(--color-muted); font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-decoration: none; flex-shrink: 0; }
     .vela:hover { color: var(--color-snow); text-decoration: none; }
     .desk {
       position: relative;
       z-index: 1;
       flex: 1;
       min-height: 0;
+      width: 100%;
       display: grid;
-      grid-template-columns: minmax(200px, 260px) minmax(0, 1fr) minmax(210px, 240px);
+      grid-template-columns: 300px minmax(0, 1fr) 300px;
       gap: 8px;
       padding: 0 10px 10px;
+      overflow: hidden;
     }
     .desk > .col { min-width: 0; }
+    .rail {
+      min-width: 0;
+      z-index: 4;
+    }
     .col {
       min-height: 0;
       display: flex;
       flex-direction: column;
       border: 1px solid color-mix(in srgb, var(--color-snow) 8%, transparent);
       border-radius: 14px;
-      background: color-mix(in srgb, var(--color-void) 55%, transparent);
+      background: color-mix(in srgb, var(--color-steel) 42%, var(--color-void));
       overflow: hidden;
     }
-    .rail { overflow: auto; }
     .head {
-      padding: 10px 12px 6px;
+      padding: 10px 12px 4px;
       color: var(--color-muted);
       font-size: 11px;
       letter-spacing: 0.12em;
@@ -133,13 +138,14 @@
     }
     .cols {
       display: grid;
-      grid-template-columns: 22px 22px 62px 1fr 50px 50px 50px;
-      gap: 4px;
-      padding: 0 10px 6px;
+      grid-template-columns: 22px 26px minmax(0, 1fr) 70px 56px;
+      gap: 6px;
+      padding: 0 10px 4px;
       flex-shrink: 0;
+      align-items: center;
     }
     .cols button {
-      height: 22px;
+      height: 20px;
       padding: 0;
       border: 0;
       border-radius: 4px;
@@ -153,11 +159,18 @@
     }
     .cols button.num { text-align: right; }
     .cols button.on { color: var(--color-lime); }
-    #rows { flex: 1; overflow: auto; }
+    #rows {
+      flex: 1;
+      overflow: auto;
+      scrollbar-width: thin;
+      scrollbar-color: #2a3800 transparent;
+    }
     .pair {
       display: grid;
-      grid-template-columns: 22px 22px 62px 1fr 50px 50px 50px;
-      gap: 4px;
+      grid-template-columns: 22px 26px minmax(0, 1fr) 70px 56px;
+      grid-template-rows: auto auto;
+      column-gap: 6px;
+      row-gap: 1px;
       width: 100%;
       text-align: left;
       padding: 7px 10px;
@@ -168,15 +181,28 @@
       height: auto;
       align-items: center;
     }
-    .pair .ico, .qico {
-      width: 22px; height: 22px; border-radius: 50%; object-fit: cover;
-      background: #121412; display: block;
+    .pair .star { grid-column: 1; grid-row: 1 / 3; }
+    .pair .ico-wrap { grid-column: 2; grid-row: 1 / 3; }
+    .pair .mid { grid-column: 3; grid-row: 1 / 3; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+    .pair .px { grid-column: 4; grid-row: 1 / 3; }
+    .pair .chg { grid-column: 5; grid-row: 1 / 3; }
+    .pair .ico, .qico, .av {
+      width: 28px; height: 28px; border-radius: 50%; object-fit: cover;
+      background: #121412; display: grid; place-items: center;
     }
-    .qico { width: 28px; height: 28px; }
+    .pair .ico, .pair .av { width: 26px; height: 26px; }
+    .av {
+      color: var(--color-lime);
+      font-size: 8px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
     .pair:hover { background: color-mix(in srgb, var(--color-forest) 40%, transparent); }
-    .pair.on { background: color-mix(in srgb, var(--color-forest) 70%, transparent); }
-    .pair.fresh { box-shadow: inset 2px 0 0 var(--color-lime); }
-    .pair .age { font-size: 11px; color: var(--color-lime); font-variant-numeric: tabular-nums; }
+    .pair.on {
+      background: color-mix(in srgb, var(--color-forest) 70%, transparent);
+      box-shadow: inset 2px 0 0 var(--color-lime);
+    }
+    .pair.fresh { box-shadow: inset 2px 0 0 color-mix(in srgb, var(--color-lime) 55%, transparent); }
     .star {
       width: 22px;
       height: 22px;
@@ -188,8 +214,26 @@
       line-height: 1;
     }
     .star.on { color: var(--color-lime); }
-    .pair .sym { font-weight: 600; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: flex; align-items: center; gap: 4px; min-width: 0; }
+    .pair .sym {
+      font-weight: 600;
+      font-size: 12px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      min-width: 0;
+    }
     .pair .sym .lab { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+    .pair .sub {
+      font-size: 10px;
+      color: var(--color-muted);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
     .pair .tag {
       flex-shrink: 0;
       font-size: 8px;
@@ -202,8 +246,7 @@
       font-weight: 700;
       line-height: 1.4;
     }
-    .pair .paid { font-size: 11px; font-variant-numeric: tabular-nums; color: var(--color-lime); }
-    .pair .px, .pair .chg, .pair .vol, .pair .liq {
+    .pair .px, .pair .chg {
       font-size: 11px;
       font-variant-numeric: tabular-nums;
       text-align: right;
@@ -211,22 +254,34 @@
       text-overflow: ellipsis;
       white-space: nowrap;
     }
-    .pair .px { text-align: left; }
+    .pair .px { font-weight: 600; color: var(--color-snow); }
+    .pair .chg { font-weight: 600; }
     .up { color: var(--color-lime); }
     .dn { color: #e50914; }
     .empty { padding: 16px; color: var(--color-muted); font-size: 13px; }
-    .stage { position: relative; min-height: 0; }
+    .stage {
+      position: relative;
+      min-height: 0 !important;
+      min-width: 0 !important;
+      overflow: hidden;
+      isolation: isolate;
+      z-index: 1;
+      contain: paint;
+      clip-path: inset(0);
+    }
+    .quote[hidden], .ohlcbar[hidden] { display: none !important; }
     .quote {
       flex-shrink: 0;
       display: flex;
-      align-items: baseline;
-      gap: 12px;
-      padding: 8px 12px 0;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
       min-width: 0;
-      flex-wrap: wrap;
+      border-bottom: 1px solid color-mix(in srgb, var(--color-snow) 8%, transparent);
     }
-    .quote .sym { font-size: 18px; font-weight: 600; letter-spacing: -0.03em; }
-    .quote .last { font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; }
+    .quote .qico-wrap { position: relative; flex-shrink: 0; }
+    .quote .sym { font-size: 16px; font-weight: 600; letter-spacing: -0.03em; white-space: nowrap; }
+    .quote .last { font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums; }
     .quote .chg { font-size: 13px; font-weight: 600; }
     .quote .meta {
       display: flex;
@@ -235,15 +290,38 @@
       color: var(--color-muted);
       font-variant-numeric: tabular-nums;
       min-width: 0;
+      margin-left: auto;
+      overflow: hidden;
     }
     .quote .meta b { color: var(--color-snow); font-weight: 600; }
+    .plot-wrap {
+      position: relative;
+      flex: 1 1 0;
+      min-height: 180px;
+      width: 100%;
+      overflow: hidden;
+      transform: translate3d(0, 0, 0);
+      contain: paint;
+      clip-path: inset(0);
+    }
+    #plot {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      overflow: hidden;
+    }
+    #plot canvas, #plot > * {
+      max-width: 100% !important;
+    }
     .ohlcbar {
       flex-shrink: 0;
       display: flex;
       align-items: baseline;
       gap: 10px;
-      padding: 4px 12px 4px;
       min-width: 0;
+      padding: 2px 12px 6px;
     }
     .ohlcbar .name {
       font-size: 11px;
@@ -252,30 +330,18 @@
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+      max-width: 28%;
     }
     .ohlcbar .ohlc {
       display: flex;
       gap: 10px;
-      font-size: 12px;
+      font-size: 11px;
       font-variant-numeric: tabular-nums;
       color: var(--color-muted);
       flex-shrink: 0;
     }
     .ohlcbar .ohlc b { color: var(--color-snow); font-weight: 600; }
     .ohlcbar .utc { margin-left: auto; font-size: 10px; color: var(--color-muted); letter-spacing: 0.08em; }
-    .plot-wrap {
-      position: relative;
-      flex: 1 1 0;
-      min-height: 180px;
-      width: 100%;
-    }
-    #plot {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 1;
-    }
     .load {
       position: absolute;
       inset: 0;
@@ -292,7 +358,31 @@
       background: color-mix(in srgb, var(--color-void) 35%, transparent);
     }
     .load[hidden] { display: none !important; }
-    #trench, #paper, #alerts { padding: 0 12px 12px; }
+    .rail-tabs {
+      display: flex;
+      gap: 2px;
+      padding: 8px 8px 6px;
+      flex-shrink: 0;
+      border-bottom: 1px solid color-mix(in srgb, var(--color-snow) 8%, transparent);
+    }
+    .rail-tabs .pill { flex: 1; height: 26px; }
+    .rail-tabs .pill.on {
+      color: var(--color-void);
+      background: var(--color-lime);
+    }
+    .rail-tabs .pill.hot:not(.on) { color: var(--color-lime); }
+    .rail-pane {
+      display: none;
+      flex: 1;
+      min-height: 0;
+      overflow: auto;
+      flex-direction: column;
+      scrollbar-width: thin;
+      scrollbar-color: #2a3800 transparent;
+    }
+    .rail-pane.on { display: flex; }
+    #txns { padding: 0 12px 12px; }
+    #trench, #paper, #alerts { padding: 10px 12px 12px; }
     .stats {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -302,15 +392,9 @@
     }
     .stats span { color: var(--color-muted); }
     .stats b { font-variant-numeric: tabular-nums; text-align: right; display: block; }
-    .conv { display: flex; align-items: baseline; gap: 8px; margin: 4px 0 10px; }
-    .conv b { font-size: 36px; font-weight: 600; letter-spacing: -0.04em; }
-    .conv span { color: var(--color-lime); font-size: 12px; font-weight: 600; letter-spacing: 0.1em; }
-    .dims { display: flex; flex-direction: column; gap: 6px; }
-    .dim { display: flex; justify-content: space-between; font-size: 12px; }
-    .dim b { font-variant-numeric: tabular-nums; }
     .hint { color: var(--color-muted); font-size: 11px; line-height: 1.4; margin-top: 10px; }
     .paper-row { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; margin: 6px 0; }
-    .paper-row b { font-variant-numeric: tabular-nums; text-align: right; }
+    .paper-row b { font-variant-numeric: tabular-nums; text-align: right; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
     .notional, .alert-px {
       width: 100%;
       height: 32px;
@@ -328,21 +412,21 @@
     }
     .flash { color: var(--color-lime); font-size: 11px; font-weight: 600; min-height: 16px; margin-top: 8px; }
     .life {
-      margin: 0 0 10px;
-      padding: 10px 0 8px;
-      border-bottom: 1px solid color-mix(in srgb, var(--color-snow) 8%, transparent);
+      margin: 12px 0 0;
+      padding: 10px 0 0;
+      border-top: 1px solid color-mix(in srgb, var(--color-snow) 8%, transparent);
     }
     .life .kicker { color: var(--color-muted); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 600; }
-    .life .real { font-size: 28px; font-weight: 600; letter-spacing: -0.04em; line-height: 1.1; margin: 4px 0 8px; }
+    .life .real { font-size: 18px; font-weight: 600; letter-spacing: -0.04em; line-height: 1.2; margin: 4px 0 8px; }
     .life .grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1fr auto;
       gap: 4px 10px;
       font-size: 12px;
     }
     .life .grid span { color: var(--color-muted); }
-    .life .grid b { font-variant-numeric: tabular-nums; }
-    .book { margin-top: 10px; max-height: 160px; overflow: auto; }
+    .life .grid b { font-variant-numeric: tabular-nums; text-align: right; }
+    .book { margin-top: 10px; max-height: 180px; overflow: auto; }
     .book .row {
       display: grid;
       grid-template-columns: 1fr auto auto;
@@ -378,7 +462,8 @@
     .txn .amt { text-align: right; }
     .pair-acts { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 8px 0; }
     .pair-acts .btn { height: 32px; font-size: 11px; margin: 0; }
-    #go-list { grid-column: 1 / -1; }
+    #list-sheet { pointer-events: none; }
+    #list-sheet.open { pointer-events: auto; }
     #slip {
       position: fixed; inset: 0; z-index: 20;
       display: flex; align-items: center; justify-content: center;
@@ -406,9 +491,14 @@
     .card .btn { width: 100%; margin-top: 8px; height: 40px; }
     #list-sheet {
       position: fixed; inset: 0; z-index: 21;
-      display: flex; align-items: center; justify-content: center;
+      display: none !important;
+      align-items: center; justify-content: center;
+      pointer-events: none;
     }
-    #list-sheet[hidden] { display: none !important; }
+    #list-sheet.open {
+      display: flex !important;
+      pointer-events: auto;
+    }
     #list-sheet .card { width: min(440px, 94vw); max-height: 92vh; overflow: auto; }
     #list-sheet .field { width: 100%; margin-top: 8px; height: 36px; border-radius: 10px; padding: 0 12px; font-size: 13px; }
     #list-sheet textarea.field {
@@ -430,6 +520,10 @@
     html[data-theme="light"] body { background: var(--color-void); }
     html[data-theme="light"] .quote .meta b,
     html[data-theme="light"] .ohlcbar .ohlc b { color: var(--color-snow); }
+    @media (max-width: 1280px) {
+      .desk { grid-template-columns: 260px minmax(0, 1fr) 260px; }
+      .quote .meta span:nth-child(n+4) { display: none; }
+    }
   </style>
 </head>
 <body>
@@ -447,7 +541,7 @@
       <button class="pill" type="button" data-tab="fav">Watch <span id="favn"></span></button>
       <button class="pill" type="button" data-tab="majors">CEX</button>
     </div>
-    <input class="field search" id="q" placeholder="Search a pair"/>
+    <input class="field search" id="q" placeholder="Pair, ticker, CA"/>
     <button class="pill" type="button" id="list-token">List</button>
     <div class="grow"></div>
     <div class="live" id="live"><i class="pip"></i><span class="lab">rhc</span></div>
@@ -461,12 +555,11 @@
     <div class="pills" id="scale"></div>
     <i class="sep"></i>
     <div class="pills" id="range"></div>
+    <i class="sep"></i>
+    <div class="pills" id="inds"></div>
     <button class="pill" type="button" id="share-pair">Share</button>
     <button class="pill" type="button" id="shot">Shot</button>
     <div class="tape-note" id="tape-note"></div>
-  </div>
-  <div class="fxbar">
-    <div class="pills" id="inds"></div>
   </div>
   <div class="desk">
     <div class="col">
@@ -476,7 +569,10 @@
     </div>
     <div class="col stage">
       <div class="quote" id="quote" hidden>
-        <img class="qico" id="qico" alt=""/>
+        <div class="qico-wrap">
+          <img class="qico" id="qico" alt=""/>
+          <span class="av" id="qav" hidden></span>
+        </div>
         <div class="sym">—</div>
         <div class="last">—</div>
         <div class="chg">—</div>
@@ -506,55 +602,63 @@
       </div>
     </div>
     <div class="col rail">
-      <div class="head">Txns</div>
-      <div id="txns"><div class="empty">Pick a pair.</div></div>
-      <div class="head">Pair</div>
-      <div id="trench"></div>
-      <div class="head">Alert</div>
-      <div id="alerts">
-        <input class="field alert-px" id="alert-px" type="number" step="any" placeholder="Price"/>
-        <div class="acts">
-          <button class="btn ghost" id="alert-up" type="button">Above</button>
-          <button class="btn ghost" id="alert-dn" type="button">Below</button>
-        </div>
-        <div id="alert-list"></div>
-        <p class="hint">Local only. Fires once at the last print. Not a broker.</p>
+      <div class="rail-tabs" id="rail-tabs">
+        <button class="pill on" type="button" data-rail="txns">Txns</button>
+        <button class="pill" type="button" data-rail="pair">Pair</button>
+        <button class="pill" type="button" data-rail="paper">Paper</button>
       </div>
-      <div class="head">Paper</div>
-      <div id="paper">
-        <div class="life">
-          <div class="kicker">Lifetime realized</div>
-          <div class="real" id="life-real">$0.00</div>
-          <div class="grid">
-            <span>Gross loss</span><b class="dn" id="life-gl">$0</b>
-            <span>Gross win</span><b class="up" id="life-gp">$0</b>
-            <span>W–L</span><b id="life-wl">0–0</b>
-            <span>Win %</span><b id="life-wr">—</b>
-            <span>Worst</span><b class="dn" id="life-maxl">—</b>
-            <span>Refills</span><b id="life-refill">0</b>
+      <div class="rail-pane on" id="rail-txns">
+        <div class="head">Txns</div>
+        <div id="txns"><div class="empty">Pick a pair.</div></div>
+      </div>
+      <div class="rail-pane" id="rail-pair">
+        <div id="trench"></div>
+        <div class="head">Alert</div>
+        <div id="alerts">
+          <input class="field alert-px" id="alert-px" type="number" step="any" placeholder="Price"/>
+          <div class="acts">
+            <button class="btn ghost" id="alert-up" type="button">Above</button>
+            <button class="btn ghost" id="alert-dn" type="button">Below</button>
           </div>
+          <div id="alert-list"></div>
+          <p class="hint">Local only. Fires once at the last print. Not a broker.</p>
         </div>
-        <div class="paper-row"><span>Cash</span><b id="cash">$10,000</b></div>
-        <div class="paper-row"><span>Pos</span><b id="pos">Flat</b></div>
-        <div class="paper-row"><span>Mark</span><b id="mark">—</b></div>
-        <div class="paper-row"><span>Open</span><b id="pnl">—</b></div>
-        <div class="pills" id="risk" style="margin-top:8px"></div>
-        <input class="field notional" id="notional" type="number" min="1" step="50" value="500" placeholder="Size USD"/>
-        <div class="acts">
-          <button class="btn" id="buy" type="button">Long</button>
-          <button class="btn ghost" id="short" type="button">Short</button>
+      </div>
+      <div class="rail-pane" id="rail-paper">
+        <div id="paper">
+          <div class="paper-row"><span>Cash</span><b id="cash">$10,000</b></div>
+          <div class="paper-row"><span>Pos</span><b id="pos">Flat</b></div>
+          <div class="paper-row"><span>Mark</span><b id="mark">—</b></div>
+          <div class="paper-row"><span>Open</span><b id="pnl">—</b></div>
+          <div class="pills" id="risk"></div>
+          <input class="field notional" id="notional" type="number" min="1" step="50" value="500" placeholder="Size USD"/>
+          <div class="acts">
+            <button class="btn" id="buy" type="button">Long</button>
+            <button class="btn ghost" id="short" type="button">Short</button>
+          </div>
+          <div class="acts">
+            <input class="field alert-px" id="tp" type="number" step="any" placeholder="Take profit"/>
+            <input class="field alert-px" id="sl" type="number" step="any" placeholder="Stop"/>
+          </div>
+          <button class="btn ghost" id="flat" type="button" style="width:100%;margin-top:6px;height:36px;font-size:12px">Close</button>
+          <button class="btn ghost" id="reset" type="button" style="width:100%;margin-top:6px;height:32px;font-size:11px">Refill $10k</button>
+          <div class="flash" id="flash"></div>
+          <div class="life">
+            <div class="kicker">Book</div>
+            <div class="real" id="life-real">$0.00</div>
+            <div class="grid">
+              <span>Gross loss</span><b class="dn" id="life-gl">$0</b>
+              <span>Gross win</span><b class="up" id="life-gp">$0</b>
+              <span>W–L</span><b id="life-wl">0–0</b>
+              <span>Win %</span><b id="life-wr">—</b>
+              <span>Worst</span><b class="dn" id="life-maxl">—</b>
+              <span>Refills</span><b id="life-refill">0</b>
+            </div>
+          </div>
+          <div class="book" id="book"></div>
+          <p class="hint">Refill resets cash only. Realized P&amp;L and losses stay. Local paper, not a fill.</p>
+          <p class="keys">1–8 time · C B N type · G log · J K pairs · L long S short X close / search</p>
         </div>
-        <div class="acts">
-          <input class="field alert-px" id="tp" type="number" step="any" placeholder="Take profit"/>
-          <input class="field alert-px" id="sl" type="number" step="any" placeholder="Stop"/>
-        </div>
-        <button class="btn ghost" id="flat" type="button" style="width:100%;margin-top:6px;height:36px;font-size:12px">Close</button>
-        <button class="btn ghost" id="copyca" type="button" style="width:100%;margin-top:6px;height:32px;font-size:11px">Copy pool</button>
-        <button class="btn ghost" id="reset" type="button" style="width:100%;margin-top:6px;height:32px;font-size:11px">Refill $10k</button>
-        <div class="book" id="book"></div>
-        <div class="flash" id="flash"></div>
-        <p class="hint">Refill resets cash only. Realized P&amp;L and losses stay. Local paper, not a fill.</p>
-        <p class="keys">1–8 time · C B N type · G log · J K pairs · L long S short X close / search</p>
       </div>
     </div>
   </div>
@@ -574,7 +678,7 @@
       <input class="field" id="list-sym" placeholder="Ticker" maxlength="16" autocomplete="off"/>
       <input class="field" id="list-name" placeholder="Name" maxlength="64" autocomplete="off"/>
       <input class="field" id="list-web" placeholder="Website https://" autocomplete="off" spellcheck="false"/>
-      <input class="field" id="list-x" placeholder="X / Twitter @handle" maxlength="32" autocomplete="off" spellcheck="false"/>
+      <input class="field" id="list-tw" placeholder="X / Twitter @handle" maxlength="32" autocomplete="off" spellcheck="false"/>
       <input class="field" id="list-tg" placeholder="Telegram" maxlength="64" autocomplete="off" spellcheck="false"/>
       <input class="field" id="list-dc" placeholder="Discord" maxlength="64" autocomplete="off" spellcheck="false"/>
       <input class="field" id="list-logo" placeholder="Logo URL" autocomplete="off" spellcheck="false"/>
@@ -584,7 +688,7 @@
       <button class="btn" id="list-go" type="button">List</button>
       <button class="btn ghost" id="list-deploy" type="button" style="display:none">Open the list</button>
       <div class="err" id="list-err"></div>
-      <button class="btn ghost" id="list-x" type="button">Cancel</button>
+      <button class="btn ghost" id="list-cancel" type="button">Cancel</button>
     </div>
   </div>
   <div id="slip" hidden>

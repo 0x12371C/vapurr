@@ -140,7 +140,7 @@
       btn.disabled = paying || !!vapurr.pendingTx;
     }
     window.__setWallet = function (s) {
-      if (!s || (s.hex_key && !s.assets) || (s.seed && !s.assets)) return;
+      if (!s || !Array.isArray(s.assets)) return;
       snap = s;
       paint();
       if (paying && s.tx && s.tx !== waitHash) {

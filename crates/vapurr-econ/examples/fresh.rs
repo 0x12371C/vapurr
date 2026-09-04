@@ -8,16 +8,38 @@ fn main() {
         "house" => c.run(vapurr_econ::EconCmd::HouseDeploy),
         "bootstrap" => c.run(vapurr_econ::EconCmd::HouseBootstrap),
         "loop" => c.run(vapurr_econ::EconCmd::LoopDeploy),
+        "reloop" => c.run(vapurr_econ::EconCmd::LoopReplace),
+        "unwind" => c.run(vapurr_econ::EconCmd::LoopOp {
+            op: "unwind".into(),
+            amt: "".into(),
+            steps: "16".into(),
+        }),
+        "withdraw" => c.run(vapurr_econ::EconCmd::LoopOp {
+            op: "withdraw".into(),
+            amt: "999999999".into(),
+            steps: "".into(),
+        }),
+        "withdrawv" => c.run(vapurr_econ::EconCmd::LoopOp {
+            op: "withdrawV".into(),
+            amt: std::env::args().nth(2).unwrap_or_else(|| "3000".into()),
+            steps: "".into(),
+        }),
         "swap" => c.run(vapurr_econ::EconCmd::SwapDeploy),
+        "reswap" => c.run(vapurr_econ::EconCmd::SwapReplace),
         "mint" => c.run(vapurr_econ::EconCmd::Mint("200".into())),
         "supply" => c.run(vapurr_econ::EconCmd::LoopOp {
             op: "supply".into(),
-            amt: "50".into(),
+            amt: std::env::args().nth(2).unwrap_or_else(|| "50".into()),
             steps: "".into(),
         }),
         "collat" => c.run(vapurr_econ::EconCmd::LoopOp {
             op: "depositV".into(),
-            amt: "200".into(),
+            amt: std::env::args().nth(2).unwrap_or_else(|| "200".into()),
+            steps: "".into(),
+        }),
+        "borrow" => c.run(vapurr_econ::EconCmd::LoopOp {
+            op: "borrow".into(),
+            amt: std::env::args().nth(2).unwrap_or_else(|| "40".into()),
             steps: "".into(),
         }),
         "eloop" => c.run(vapurr_econ::EconCmd::LoopOp {

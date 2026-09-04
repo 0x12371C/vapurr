@@ -5,8 +5,8 @@ use serde_json::{json, Value};
 use vapurr_rhc::{self as rhc, Rpc, USDG, USDG_DECIMALS, WETH};
 
 use crate::{
-    addr_from_hex, decode_hex_bytes, decode_word_addr, decode_word_u128, encode_fn_addr_u256,
-    encode_fn_str, hex0x, Address, DeviceKey, Tx, WalletError,
+    addr_from_hex, decode_hex_bytes, decode_word_addr, decode_word_u128, encode_fn_addr,
+    encode_fn_addr_u256, encode_fn_str, hex0x, Address, DeviceKey, Tx, WalletError,
 };
 
 const MIN_GAS_MAIN: u128 = 2_000_000_000_000_000;
@@ -53,6 +53,7 @@ struct Net {
     usdg: String,
     pusd: String,
     vapurr: String,
+    loop_vault: String,
     testnet: bool,
     faucet: String,
 }
@@ -100,12 +101,16 @@ fn load_net() -> Net {
     let testnet = v.get("net").and_then(|x| x.as_str()).unwrap_or("testnet") != "mainnet";
     let mut pusd = cfg_str(&v, "pusd");
     let mut vapurr = cfg_str(&v, "vapurr");
+    let mut loop_vault = cfg_str(&v, "loop");
     if testnet {
         if pusd.is_empty() {
             pusd = rhc::TESTNET_PUSD.to_string();
         }
         if vapurr.is_empty() {
             vapurr = rhc::TESTNET_VAPURR.to_string();
+        }
+        if loop_vault.is_empty() {
+            loop_vault = rhc::TESTNET_LOOP.to_string();
         }
         let usdg = {
             let s = cfg_str(&v, "usdg");
@@ -123,6 +128,7 @@ fn load_net() -> Net {
             usdg,
             pusd,
             vapurr,
+            loop_vault,
             testnet: true,
             faucet: rhc::TESTNET_FAUCET.into(),
         }
@@ -135,6 +141,7 @@ fn load_net() -> Net {
             usdg: USDG.into(),
             pusd,
             vapurr,
+            loop_vault,
             testnet: false,
             faucet: String::new(),
         }
@@ -151,6 +158,7 @@ pub struct Desk {
     usdg: String,
     pusd: String,
     vapurr: String,
+    loop_vault: String,
     testnet: bool,
     faucet: String,
 }
@@ -168,6 +176,7 @@ impl Desk {
             usdg: n.usdg,
             pusd: n.pusd,
             vapurr: n.vapurr,
+            loop_vault: n.loop_vault,
             testnet: n.testnet,
             faucet: n.faucet,
         }
@@ -182,6 +191,7 @@ impl Desk {
         self.usdg = n.usdg;
         self.pusd = n.pusd;
         self.vapurr = n.vapurr;
+        self.loop_vault = n.loop_vault;
         self.testnet = n.testnet;
         self.faucet = n.faucet;
     }
@@ -274,6 +284,9 @@ impl Desk {
                 "pusd": "0",
                 "pusd_raw": "0",
                 "pusd_token": "",
+                "pusd_supplied": "0",
+                "pusd_debt": "0",
+                "loop": "",
                 "vapurr": "0",
                 "vapurr_raw": "0",
                 "weth": "0",
@@ -302,43 +315,58 @@ impl Desk {
         let usdg = if self.usdg.is_empty() {
             0
         } else {
-            token_bal(&self.rpc, &self.usdg, &from).unwrap_or(0)
+            match token_bal(&self.rpc, &self.usdg, &from) {
+                Ok(v) => v,
+                Err(e) => {
+                    if err.is_empty() {
+                        err = e.to_string();
+                    }
+                    0
+                }
+            }
         };
         let pusd = if self.pusd.is_empty() {
             0
         } else {
-            token_bal(&self.rpc, &self.pusd, &from).unwrap_or(0)
+            match token_bal(&self.rpc, &self.pusd, &from) {
+                Ok(v) => v,
+                Err(e) => {
+                    if err.is_empty() {
+                        err = e.to_string();
+                    }
+                    0
+                }
+            }
         };
         let vapurr = if self.vapurr.is_empty() {
             0
         } else {
-            token_bal(&self.rpc, &self.vapurr, &from).unwrap_or(0)
+            match token_bal(&self.rpc, &self.vapurr, &from) {
+                Ok(v) => v,
+                Err(e) => {
+                    if err.is_empty() {
+                        err = e.to_string();
+                    }
+                    0
+                }
+            }
         };
         let weth = if self.testnet {
             0
         } else {
             token_bal(&self.rpc, WETH, &from).unwrap_or(0)
         };
+        let loop_pos = loop_pos(&self.rpc, &self.loop_vault, self.key.address);
         let nonce = self.rpc.eth_nonce(&from).unwrap_or(0);
         let usdg_s = fmt_units(usdg, USDG_DECIMALS);
         let pusd_s = fmt_units(pusd, 18);
+        let supplied_s = fmt_units(loop_pos.supplied, 18);
+        let debt_s = fmt_units(loop_pos.debt, 18);
         let vapurr_s = fmt_units(vapurr, 18);
         let eth_s = fmt_units(eth, 18);
         let weth_s = fmt_units(weth, 18);
         let activity = chain_activity(&from, &self.explorer, self.testnet);
         let mut assets = Vec::new();
-        if !self.vapurr.is_empty() {
-            assets.push(asset(
-                "vapurr",
-                "VAPURR",
-                "Equity. Book burns it to mint $PUSD",
-                &vapurr_s,
-                vapurr,
-                false,
-                &self.vapurr,
-                18,
-            ));
-        }
         if !self.pusd.is_empty() {
             assets.push(asset(
                 "pusd",
@@ -349,6 +377,20 @@ impl Desk {
                 true,
                 &self.pusd,
                 18,
+                false,
+            ));
+        }
+        if loop_pos.supplied > 0 || loop_pos.debt > 0 {
+            assets.push(asset(
+                "pusd-loop",
+                "PUSD",
+                &loop_hint(&loop_pos),
+                &supplied_s,
+                loop_pos.supplied,
+                true,
+                &self.loop_vault,
+                18,
+                true,
             ));
         }
         if !self.usdg.is_empty() {
@@ -365,9 +407,25 @@ impl Desk {
                 true,
                 &self.usdg,
                 USDG_DECIMALS,
+                false,
             ));
         }
-        assets.push(asset("eth", "ETH", "Gas", &eth_s, eth, false, "", 18));
+        if !self.vapurr.is_empty() {
+            assets.push(asset(
+                "vapurr",
+                "VAPURR",
+                "Equity. Book burns it to mint $PUSD",
+                &vapurr_s,
+                vapurr,
+                false,
+                &self.vapurr,
+                18,
+                false,
+            ));
+        }
+        assets.push(asset(
+            "eth", "ETH", "Gas", &eth_s, eth, false, "", 18, false,
+        ));
         if !self.testnet {
             assets.push(asset(
                 "weth",
@@ -378,9 +436,10 @@ impl Desk {
                 false,
                 WETH,
                 18,
+                false,
             ));
         }
-        let total = fmt_usd_bag(pusd, usdg);
+        let total = fmt_usd_bag(pusd, loop_pos.supplied, loop_pos.debt, usdg);
         json!({
             "ok": err.is_empty(),
             "live": err.is_empty(),
@@ -401,6 +460,9 @@ impl Desk {
             "pusd": pusd_s,
             "pusd_raw": pusd.to_string(),
             "pusd_token": self.pusd,
+            "pusd_supplied": supplied_s,
+            "pusd_debt": debt_s,
+            "loop": self.loop_vault,
             "vapurr": vapurr_s,
             "vapurr_raw": vapurr.to_string(),
             "weth": weth_s,
@@ -857,6 +919,85 @@ fn token_bal(rpc: &Rpc, token: &str, holder: &str) -> Result<u128, WalletError> 
     Ok(decode_word_u128(&bytes, 0).unwrap_or(0))
 }
 
+struct LoopPos {
+    supplied: u128,
+    debt: u128,
+    apy_bps: u128,
+}
+
+/// `PusdLoop.snapshot` ABI: 20 words. supplied @ 9, debt @ 11, supply APY bps @ 5.
+fn decode_loop_pos(bytes: &[u8]) -> LoopPos {
+    if bytes.len() < 20 * 32 {
+        return LoopPos {
+            supplied: 0,
+            debt: 0,
+            apy_bps: 0,
+        };
+    }
+    LoopPos {
+        supplied: decode_word_u128(bytes, 9).unwrap_or(0),
+        debt: decode_word_u128(bytes, 11).unwrap_or(0),
+        apy_bps: decode_word_u128(bytes, 5).unwrap_or(0),
+    }
+}
+
+fn loop_pos(rpc: &Rpc, vault: &str, holder: Address) -> LoopPos {
+    if vault.is_empty() {
+        return LoopPos {
+            supplied: 0,
+            debt: 0,
+            apy_bps: 0,
+        };
+    }
+    let data = hex0x(&encode_fn_addr("snapshot(address)", holder));
+    let raw = match rpc.eth_call(&holder.to_hex(), Some(vault), &data) {
+        Ok(s) => s,
+        Err(_) => {
+            return LoopPos {
+                supplied: 0,
+                debt: 0,
+                apy_bps: 0,
+            }
+        }
+    };
+    let bytes = match decode_hex_bytes(&raw) {
+        Ok(b) => b,
+        Err(_) => {
+            return LoopPos {
+                supplied: 0,
+                debt: 0,
+                apy_bps: 0,
+            }
+        }
+    };
+    decode_loop_pos(&bytes)
+}
+
+fn loop_hint(p: &LoopPos) -> String {
+    let mut h = "Euler supplied".to_string();
+    if p.apy_bps > 0 {
+        h.push_str(" · ");
+        h.push_str(&fmt_apy_bps(p.apy_bps));
+        h.push_str(" APY");
+    }
+    if p.debt > 0 {
+        h.push_str(" · ");
+        h.push_str(&fmt_units(p.debt, 18));
+        h.push_str(" debt");
+    }
+    h
+}
+
+fn fmt_apy_bps(bps: u128) -> String {
+    let whole = bps / 100;
+    let frac = bps % 100;
+    if frac == 0 {
+        format!("{whole}%")
+    } else {
+        format!("{whole}.{frac:02}%")
+    }
+}
+
 fn asset(
     id: &str,
     symbol: &str,
@@ -866,6 +1007,7 @@ fn asset(
     dollar: bool,
     token: &str,
     decimals: u8,
+    locked: bool,
 ) -> Value {
     json!({
         "id": id,
@@ -877,14 +1019,19 @@ fn asset(
         "dollar": dollar,
         "token": token,
         "decimals": decimals,
+        "locked": locked,
+        "spendable": !locked,
     })
 }
 
-fn fmt_usd_bag(pusd: u128, usdg: u128) -> String {
-    let p = pusd as f64 / 1e18;
+fn fmt_usd_bag(pusd: u128, supplied: u128, debt: u128, usdg: u128) -> String {
+    let p = (pusd as f64 + supplied as f64 - debt as f64) / 1e18;
     let u = usdg as f64 / 1e6;
     let t = p + u;
-    if !t.is_finite() || t <= 0.0 {
+    if !t.is_finite() {
+        return "0.00".into();
+    }
+    if t <= 0.0 {
         return "0.00".into();
     }
     format!("{t:.2}")
@@ -1043,8 +1190,32 @@ mod tests {
 
     #[test]
     fn usd_bag_sums_dollars() {
-        assert_eq!(fmt_usd_bag(0, 0), "0.00");
-        assert_eq!(fmt_usd_bag(2 * 10u128.pow(18), 1_500_000), "3.50");
+        assert_eq!(fmt_usd_bag(0, 0, 0, 0), "0.00");
+        assert_eq!(fmt_usd_bag(2 * 10u128.pow(18), 0, 0, 1_500_000), "3.50");
+        assert_eq!(
+            fmt_usd_bag(10u128.pow(18), 2 * 10u128.pow(18), 5 * 10u128.pow(17), 0),
+            "2.50"
+        );
+    }
+
+    #[test]
+    fn loop_snap_reads_supplied_and_debt() {
+        let mut bytes = vec![0u8; 20 * 32];
+        let supplied = 7 * 10u128.pow(18);
+        let debt = 3 * 10u128.pow(18);
+        let apy = 412u128;
+        bytes[5 * 32 + 16..5 * 32 + 32].copy_from_slice(&apy.to_be_bytes());
+        bytes[9 * 32 + 16..9 * 32 + 32].copy_from_slice(&supplied.to_be_bytes());
+        bytes[11 * 32 + 16..11 * 32 + 32].copy_from_slice(&debt.to_be_bytes());
+        let p = super::decode_loop_pos(&bytes);
+        assert_eq!(p.supplied, supplied);
+        assert_eq!(p.debt, debt);
+        assert_eq!(p.apy_bps, apy);
+        let h = super::loop_hint(&p);
+        assert!(h.contains("Supplied in Loop"), "{h}");
+        assert!(h.contains("4.12% APY"), "{h}");
+        assert!(h.contains("3 debt"), "{h}");
+        assert_eq!(super::decode_loop_pos(&[]).supplied, 0);
     }
 
     #[test]

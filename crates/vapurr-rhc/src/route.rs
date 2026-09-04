@@ -12,8 +12,9 @@ use std::time::{Duration, Instant};
 use serde_json::{json, Value};
 
 use crate::{
-    CHAIN_ID, NATIVE, ROUTE_FEE_BPS, ROUTE_FEE_MINT_SPREAD_BPS, ROUTE_INTEGRATOR, ROUTE_REFUND_BPS,
-    USDG, USDG_DECIMALS, WETH,
+    CHAIN_ID, NATIVE, PUSD_TOKEN, ROUTE_FEE_BPS, ROUTE_FEE_MINT_SPREAD_BPS, ROUTE_INTEGRATOR,
+    ROUTE_REFUND_BPS, STOCKS, TESTNET_CHAIN_ID, TESTNET_PUSD, TESTNET_STOCKS, TESTNET_SWAP,
+    TESTNET_USDG, TESTNET_VAPURR, USDG, USDG_DECIMALS, VAPURR_TOKEN, WETH,
 };
 
 const LIFI: &str = "https://li.quest/v1";
@@ -21,11 +22,14 @@ const QUOTE_ADDR: &str = "0x552008c0f6870c2f77e5cC1d2eb9bdff03e30Ea0";
 const AVAX_USDC: &str = "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E";
 const ETH_USDC: &str = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
 
+#[allow(dead_code)]
 struct Cache<T> {
     val: T,
 }
 
+#[allow(dead_code)]
 static TOKENS: Mutex<Option<Cache<Value>>> = Mutex::new(None);
+#[allow(dead_code)]
 static TOKEN_LOOP: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 static QUOTE_CACHE: Mutex<Option<(Instant, String, Value)>> = Mutex::new(None);
 static GAS_CACHE: Mutex<Option<(Instant, u64, u128)>> = Mutex::new(None);
@@ -79,28 +83,17 @@ fn cache_put(query: &str, v: Value) {
     if v.get("ok").and_then(|x| x.as_bool()) != Some(true) {
         return;
     }
+    // Don't freeze an approve-needed quote — the next poll must see the new allowance.
+    if v.get("payable").and_then(|x| x.as_bool()) != Some(true) {
+        return;
+    }
     if let Ok(mut g) = QUOTE_CACHE.lock() {
         *g = Some((Instant::now(), cache_key(query), v));
     }
 }
 
 pub fn tokens(chain: Option<&str>) -> Value {
-    let rails = rail_tokens();
-    let extra = lifi_tokens();
-    let mut out = rails;
-    if let Some(arr) = extra.as_array() {
-        for t in arr {
-            let addr = t.get("address").and_then(|x| x.as_str()).unwrap_or("");
-            let cid = t.get("chain_id").and_then(|x| x.as_u64()).unwrap_or(0);
-            let dup = out.iter().any(|x| {
-                x.get("address").and_then(|a| a.as_str()) == Some(addr)
-                    && x.get("chain_id").and_then(|a| a.as_u64()) == Some(cid)
-            });
-            if !dup && !addr.is_empty() {
-                out.push(t.clone());
-            }
-        }
-    }
+    let mut out = rail_tokens();
     if let Some(c) = chain.and_then(|s| s.parse::<u64>().ok()) {
         out.retain(|t| t.get("chain_id").and_then(|x| x.as_u64()) == Some(c));
     }
@@ -126,17 +119,42 @@ fn chains() -> Value {
 }
 
 fn rail_tokens() -> Vec<Value> {
-    vec![
-        tok(CHAIN_ID, NATIVE, "ETH", "Ether", 18),
-        tok(CHAIN_ID, WETH, "WETH", "Wrapped ETH", 18),
-        tok(CHAIN_ID, USDG, "USDG", "USDG", USDG_DECIMALS as u32),
-        tok(1, NATIVE, "ETH", "Ether", 18),
-        tok(1, ETH_USDC, "USDC", "USD Coin", 6),
-        tok(43114, NATIVE, "AVAX", "Avalanche", 18),
-        tok(43114, AVAX_USDC, "USDC", "USD Coin", 6),
-        tok(8453, NATIVE, "ETH", "Ether", 18),
-        tok(42161, NATIVE, "ETH", "Ether", 18),
-    ]
+    let mut out = Vec::new();
+    push_tok(&mut out, CHAIN_ID, NATIVE, "ETH", "Ether", 18);
+    push_tok(&mut out, CHAIN_ID, VAPURR_TOKEN, "VAPURR", "VAPURR", 18);
+    push_tok(&mut out, CHAIN_ID, PUSD_TOKEN, "PUSD", "PUSD", 18);
+    push_tok(&mut out, CHAIN_ID, USDG, "USDG", "USDG", USDG_DECIMALS as u32);
+    for (sym, name, addr) in STOCKS {
+        push_tok(&mut out, CHAIN_ID, addr, sym, name, 18);
+    }
+    push_tok(&mut out, TESTNET_CHAIN_ID, NATIVE, "ETH", "Ether", 18);
+    push_tok(&mut out, TESTNET_CHAIN_ID, TESTNET_VAPURR, "VAPURR", "VAPURR", 18);
+    push_tok(&mut out, TESTNET_CHAIN_ID, TESTNET_PUSD, "PUSD", "PUSD", 18);
+    push_tok(&mut out, TESTNET_CHAIN_ID, TESTNET_USDG, "USDG", "USDG", 6);
+    for (sym, addr) in TESTNET_STOCKS {
+        push_tok(&mut out, TESTNET_CHAIN_ID, addr, sym, sym, 18);
+    }
+    push_tok(&mut out, 1, NATIVE, "ETH", "Ether", 18);
+    push_tok(&mut out, 1, ETH_USDC, "USDC", "USD Coin", 6);
+    push_tok(&mut out, 43114, NATIVE, "AVAX", "Avalanche", 18);
+    push_tok(&mut out, 43114, AVAX_USDC, "USDC", "USD Coin", 6);
+    push_tok(&mut out, 8453, NATIVE, "ETH", "Ether", 18);
+    push_tok(&mut out, 42161, NATIVE, "ETH", "Ether", 18);
+    out
+}
+
+fn push_tok(
+    out: &mut Vec<Value>,
+    chain: u64,
+    address: &str,
+    symbol: &str,
+    name: &str,
+    decimals: u32,
+) {
+    if address.is_empty() {
+        return;
+    }
+    out.push(tok(chain, address, symbol, name, decimals));
 }
 
 fn tok(chain: u64, address: &str, symbol: &str, name: &str, decimals: u32) -> Value {
@@ -150,6 +168,7 @@ fn tok(chain: u64, address: &str, symbol: &str, name: &str, decimals: u32) -> Va
     })
 }
 
+#[allow(dead_code)]
 fn kick_tokens() {
     use std::sync::atomic::Ordering;
     if TOKEN_LOOP.swap(true, Ordering::SeqCst) {
@@ -162,6 +181,7 @@ fn kick_tokens() {
         });
 }
 
+#[allow(dead_code)]
 fn lifi_tokens() -> Value {
     kick_tokens();
     if let Ok(g) = TOKENS.lock() {
@@ -172,6 +192,7 @@ fn lifi_tokens() -> Value {
     json!([])
 }
 
+#[allow(dead_code)]
 fn fetch_lifi_tokens() -> Value {
     let http = match client() {
         Some(c) => c,
@@ -216,6 +237,7 @@ fn fetch_lifi_tokens() -> Value {
     val
 }
 
+#[derive(Clone)]
 struct QuoteReq {
     kind: &'static str,
     from_chain: u64,
@@ -323,6 +345,22 @@ pub fn gas_in_out_units(gas_usd: f64, to_usd: f64, gross_out: u128) -> u128 {
 fn quote(query: &str) -> Result<Value, String> {
     let t0 = Instant::now();
     let req = parse_req(query)?;
+    if let Some(mut house) = house_cand(&req) {
+        let bag = house_bag(&req);
+        simulate_house(&mut house, &req);
+        let mut v = pack_ranked(&req, std::slice::from_ref(&house), None);
+        house_pay_flags(&mut v, &req, &bag);
+        if let Some(obj) = v.as_object_mut() {
+            obj.insert("ms".into(), json!(t0.elapsed().as_millis() as u64));
+        }
+        return Ok(v);
+    }
+    if req.from_chain == TESTNET_CHAIN_ID && req.to_chain == TESTNET_CHAIN_ID {
+        return Ok(fallback_quote(
+            &req,
+            "no house book for this pair — $VAPURR / $PUSD only",
+        ));
+    }
     let amt = req.from_amount.to_string();
     let bridge = req.from_chain != req.to_chain;
     let (quote_res, cheap_res, fast_res) = std::thread::scope(|s| {
@@ -456,6 +494,307 @@ fn parse_req(query: &str) -> Result<QuoteReq, String> {
         from_amount,
         from_address,
     })
+}
+
+fn addr_eq(a: &str, b: &str) -> bool {
+    a.eq_ignore_ascii_case(b)
+}
+
+fn is_vapurr(chain: u64, addr: &str) -> bool {
+    (chain == TESTNET_CHAIN_ID && addr_eq(addr, TESTNET_VAPURR))
+        || (chain == CHAIN_ID && !VAPURR_TOKEN.is_empty() && addr_eq(addr, VAPURR_TOKEN))
+}
+
+fn is_pusd(chain: u64, addr: &str) -> bool {
+    (chain == TESTNET_CHAIN_ID && addr_eq(addr, TESTNET_PUSD))
+        || (chain == CHAIN_ID && !PUSD_TOKEN.is_empty() && addr_eq(addr, PUSD_TOKEN))
+}
+
+fn house_swapper(chain: u64) -> Option<&'static str> {
+    if chain == TESTNET_CHAIN_ID && !TESTNET_SWAP.is_empty() {
+        Some(TESTNET_SWAP)
+    } else {
+        None
+    }
+}
+
+fn house_cand(req: &QuoteReq) -> Option<Cand> {
+    if req.from_chain != req.to_chain {
+        return None;
+    }
+    let sell_v = is_vapurr(req.from_chain, &req.from_token) && is_pusd(req.to_chain, &req.to_token);
+    let sell_p = is_pusd(req.from_chain, &req.from_token) && is_vapurr(req.to_chain, &req.to_token);
+    if !sell_v && !sell_p {
+        return None;
+    }
+    let swapper = house_swapper(req.from_chain)?;
+    let data = encode_swap_exact(sell_v, req.from_amount, 0);
+    let est = req.from_amount.saturating_mul(997) / 1000;
+    Some(finish_cand(
+        Cand {
+            id: "house".into(),
+            provider: "vapurr".into(),
+            tool: "house".into(),
+            hops: vec![json!({
+                "tool": "house",
+                "name": "House v4",
+                "type": "swap",
+            })],
+            gross_out: 0,
+            net_out: 0,
+            fee_out: 0,
+            to_min_net: 0,
+            gas_usd: 0.0,
+            to_usd: 0.0,
+            from_usd: 0.0,
+            duration: 4,
+            tx: json!({
+                "to": swapper,
+                "data": data,
+                "value": "0x0",
+                "chainId": req.from_chain,
+                "from": req.from_address,
+            }),
+            step: None,
+            sim: SimReport::default(),
+        },
+        est,
+        0,
+    ))
+}
+
+fn encode_swap_exact(sell_v: bool, amt: u128, min_out: u128) -> String {
+    let mut d = Vec::with_capacity(100);
+    d.extend_from_slice(&[0x67, 0xb7, 0x47, 0x9a]);
+    let mut word = [0u8; 32];
+    if sell_v {
+        word[31] = 1;
+    }
+    d.extend_from_slice(&word);
+    d.extend_from_slice(&u256_be(amt));
+    d.extend_from_slice(&u256_be(min_out));
+    format!("0x{}", hex::encode(d))
+}
+
+const MAX_WORD: &str =
+    "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff";
+const HOUSE_GAS: u64 = 220_000;
+
+#[derive(Clone, Default)]
+struct HouseBag {
+    allowance: u128,
+    balance: u128,
+}
+
+fn keccak(bytes: &[u8]) -> [u8; 32] {
+    use sha3::{Digest, Keccak256};
+    Keccak256::digest(bytes).into()
+}
+
+fn abi_addr_word(addr: &str) -> [u8; 32] {
+    let mut w = [0u8; 32];
+    let h = addr.trim().trim_start_matches("0x").trim_start_matches("0X");
+    if let Ok(b) = hex::decode(h) {
+        if b.len() <= 20 {
+            w[32 - b.len()..].copy_from_slice(&b);
+        }
+    }
+    w
+}
+
+fn map_slot(addr: &str, slot: u64) -> [u8; 32] {
+    let mut buf = [0u8; 64];
+    buf[..32].copy_from_slice(&abi_addr_word(addr));
+    buf[32..].copy_from_slice(&u256_be(slot as u128));
+    keccak(&buf)
+}
+
+fn nest_slot(addr: &str, inner: &[u8; 32]) -> [u8; 32] {
+    let mut buf = [0u8; 64];
+    buf[..32].copy_from_slice(&abi_addr_word(addr));
+    buf[32..].copy_from_slice(inner);
+    keccak(&buf)
+}
+
+fn word_hex(w: &[u8; 32]) -> String {
+    format!("0x{}", hex::encode(w))
+}
+
+fn encode_balance_of(owner: &str) -> String {
+    let mut d = Vec::with_capacity(36);
+    d.extend_from_slice(&[0x70, 0xa0, 0x82, 0x31]);
+    d.extend_from_slice(&abi_addr_word(owner));
+    format!("0x{}", hex::encode(d))
+}
+
+fn encode_allowance(owner: &str, spender: &str) -> String {
+    let mut d = Vec::with_capacity(68);
+    d.extend_from_slice(&[0xdd, 0x62, 0xed, 0x3e]);
+    d.extend_from_slice(&abi_addr_word(owner));
+    d.extend_from_slice(&abi_addr_word(spender));
+    format!("0x{}", hex::encode(d))
+}
+
+fn encode_approve(spender: &str) -> String {
+    let mut d = Vec::with_capacity(68);
+    d.extend_from_slice(&[0x09, 0x5e, 0xa7, 0xb3]);
+    d.extend_from_slice(&abi_addr_word(spender));
+    d.extend_from_slice(&[0xff; 32]);
+    format!("0x{}", hex::encode(d))
+}
+
+fn token_u128(rpc: &crate::rpc::Rpc, token: &str, data: &str) -> u128 {
+    rpc.eth_call(QUOTE_ADDR, Some(token), data)
+        .ok()
+        .and_then(|r| parse_ret_u128(&r))
+        .unwrap_or(0)
+}
+
+fn house_bag(req: &QuoteReq) -> HouseBag {
+    let Some(rpc_url) = rpc_for(req.from_chain) else {
+        return HouseBag::default();
+    };
+    let Some(swapper) = house_swapper(req.from_chain) else {
+        return HouseBag::default();
+    };
+    let rpc = crate::rpc::Rpc::at_timeout(rpc_url, 6);
+    HouseBag {
+        balance: token_u128(&rpc, &req.from_token, &encode_balance_of(&req.from_address)),
+        allowance: token_u128(
+            &rpc,
+            &req.from_token,
+            &encode_allowance(&req.from_address, swapper),
+        ),
+    }
+}
+
+fn house_override(req: &QuoteReq) -> Option<Value> {
+    let swapper = house_swapper(req.from_chain)?;
+    let sell_v = is_vapurr(req.from_chain, &req.from_token);
+    let (bal_slot, allow_slot) = if sell_v { (1u64, 2u64) } else { (2, 3) };
+    let bal = map_slot(&req.from_address, bal_slot);
+    let allow = nest_slot(swapper, &map_slot(&req.from_address, allow_slot));
+    let token = req.from_token.to_ascii_lowercase();
+    Some(json!({
+        token: {
+            "stateDiff": {
+                word_hex(&bal): MAX_WORD,
+                word_hex(&allow): MAX_WORD,
+            }
+        }
+    }))
+}
+
+fn set_tx_data(c: &mut Cand, data: String) {
+    if let Some(obj) = c.tx.as_object_mut() {
+        obj.insert("data".into(), json!(data));
+    }
+}
+
+fn simulate_house(c: &mut Cand, req: &QuoteReq) {
+    let sell_v = is_vapurr(req.from_chain, &req.from_token);
+    set_tx_data(c, encode_swap_exact(sell_v, req.from_amount, 0));
+    let ov = house_override(req);
+    c.sim = rpc_sim_state(c, &req.from_address, ov.as_ref());
+    if c.sim.ok {
+        if c.sim.gas == 0 {
+            c.sim.gas = HOUSE_GAS;
+        }
+        if let Some(out) = parse_ret_u128(&c.sim.ret) {
+            if out > 0 {
+                c.gross_out = out;
+                c.net_out = out;
+                c.to_min_net = out.saturating_mul(99) / 100;
+            }
+        }
+        set_tx_data(
+            c,
+            encode_swap_exact(sell_v, req.from_amount, c.to_min_net),
+        );
+    } else if !c.sim.ran {
+        c.sim.ran = true;
+        c.sim.ok = false;
+        if c.sim.revert.is_empty() {
+            c.sim.revert = "house sim did not run".into();
+        }
+    }
+}
+
+fn real_wallet(addr: &str) -> bool {
+    let t = addr.trim();
+    !t.is_empty() && !addr_eq(t, QUOTE_ADDR) && t.len() >= 42
+}
+
+fn house_pay_flags(v: &mut Value, req: &QuoteReq, bag: &HouseBag) {
+    let Some(obj) = v.as_object_mut() else {
+        return;
+    };
+    let sim_ok = obj
+        .get("sim")
+        .and_then(|s| s.get("ok"))
+        .and_then(|x| x.as_bool())
+        == Some(true);
+    let have_wallet = real_wallet(&req.from_address);
+    let funded = bag.balance >= req.from_amount;
+    let needs_approve = bag.allowance < req.from_amount;
+    let payable = sim_ok && have_wallet && funded && !needs_approve;
+    obj.insert("payable".into(), json!(payable));
+    obj.insert("funded".into(), json!(funded));
+    obj.insert(
+        "needs_approve".into(),
+        json!(sim_ok && have_wallet && funded && needs_approve),
+    );
+    if sim_ok && have_wallet && needs_approve {
+        if let Some(swapper) = house_swapper(req.from_chain) {
+            obj.insert(
+                "approve".into(),
+                json!({
+                    "to": req.from_token,
+                    "spender": swapper,
+                    "data": encode_approve(swapper),
+                    "chainId": req.from_chain,
+                    "value": "0x0",
+                }),
+            );
+        }
+    }
+    let sym = req.from_sym.trim_start_matches('$');
+    let note = if payable {
+        "House $VAPURR / $PUSD. 0.30%. This device signs.".to_string()
+    } else if !sim_ok {
+        obj.get("sim")
+            .and_then(|s| s.get("revert"))
+            .and_then(|x| x.as_str())
+            .map(|r| format!("Simulation reverted: {r}"))
+            .unwrap_or_else(|| "Simulation reverted.".into())
+    } else if !have_wallet {
+        "Simulated on the house book. Unlock this device to sign.".into()
+    } else if !funded {
+        format!("Simulated. Not enough ${sym} on this device.")
+    } else if needs_approve {
+        format!("Simulated. Approve ${sym} then swap.")
+    } else {
+        obj.get("note")
+            .and_then(|x| x.as_str())
+            .unwrap_or("")
+            .to_string()
+    };
+    obj.insert("note".into(), json!(note));
+}
+
+fn u256_be(n: u128) -> [u8; 32] {
+    let mut w = [0u8; 32];
+    w[16..].copy_from_slice(&n.to_be_bytes());
+    w
+}
+
+fn parse_ret_u128(ret: &str) -> Option<u128> {
+    let s = ret.trim().trim_start_matches("0x");
+    if s.is_empty() {
+        return None;
+    }
+    let take = if s.len() > 32 { &s[s.len() - 32..] } else { s };
+    u128::from_str_radix(take, 16).ok()
 }
 
 fn score_of(c: &Cand, req: &QuoteReq) -> i128 {
@@ -680,6 +1019,10 @@ fn simulate_cand(c: &mut Cand, from: &str) {
 }
 
 fn rpc_sim(c: &Cand, from: &str) -> SimReport {
+    rpc_sim_state(c, from, None)
+}
+
+fn rpc_sim_state(c: &Cand, from: &str, state: Option<&Value>) -> SimReport {
     let mut s = SimReport {
         from: from.to_string(),
         source: "rpc".into(),
@@ -709,31 +1052,35 @@ fn rpc_sim(c: &Cand, from: &str) -> SimReport {
     let to_s = to.map(|x| x.to_string());
     let data_s = data.to_string();
     let val_s = value.map(|x| x.to_string());
+    let state_call = state.cloned();
+    let state_est = state.cloned();
     let (call_res, gas_res) = std::thread::scope(|sc| {
-        let call = sc.spawn(|| {
-            crate::rpc::Rpc::at_timeout(rpc, 6).eth_call_tx(
+        let call = sc.spawn(move || {
+            crate::rpc::Rpc::at_timeout(rpc, 6).eth_call_tx_state(
                 &from_s,
                 to_s.as_deref(),
                 &data_s,
                 val_s.as_deref(),
+                state_call.as_ref(),
             )
         });
         let from_g = from.to_string();
         let to_g = to.map(|x| x.to_string());
         let data_g = data.to_string();
         let est = sc.spawn(move || {
-            crate::rpc::Rpc::at_timeout(rpc, 6).eth_estimate_gas_value(
+            crate::rpc::Rpc::at_timeout(rpc, 6).eth_estimate_gas_value_state(
                 &from_g,
                 to_g.as_deref(),
                 &data_g,
                 wei,
+                state_est.as_ref(),
             )
         });
         (call.join(), est.join())
     });
     match call_res {
         Ok(Ok(ret)) => {
-            s.ret = clip_hex(&ret, 18);
+            s.ret = ret;
             s.ok = true;
             if let Ok(Ok(g)) = gas_res {
                 s.gas = g;
@@ -863,11 +1210,40 @@ pub fn impact_pct(from_usd: f64, to_usd: f64) -> String {
     format!("{p:.2}%")
 }
 
+fn house_allowance_block(revert: &str) -> bool {
+    let r = revert.to_ascii_uppercase();
+    r.contains("PULL")
+        || r.contains("ALLOWANCE")
+        || r.contains("TRANSFERFROM")
+        || r.contains("INSUFFICIENT")
+}
+
 fn pack_ranked(req: &QuoteReq, cands: &[Cand], baseline: Option<&Cand>) -> Value {
     let winner = &cands[0];
-    let payable = winner.sim.ok && winner.tx.is_object();
-    let fee = fee_plan(req, winner);
-    let refund = refund_plan(req, winner);
+    let house = winner.tool == "house";
+    let payable = if house {
+        winner.tx.is_object() && (winner.sim.ok || house_allowance_block(&winner.sim.revert))
+    } else {
+        winner.sim.ok && winner.tx.is_object()
+    };
+    let fee = if house {
+        json!({
+            "bps": 30,
+            "label": "0.30% house book. No LI.FI cut.",
+        })
+    } else {
+        fee_plan(req, winner)
+    };
+    let refund = if house {
+        json!({
+            "bps": 0,
+            "asset": "",
+            "display": "",
+            "label": "none",
+        })
+    } else {
+        refund_plan(req, winner)
+    };
     let refund_disp = refund
         .get("display")
         .and_then(|x| x.as_str())
@@ -932,7 +1308,9 @@ fn pack_ranked(req: &QuoteReq, cands: &[Cand], baseline: Option<&Cand>) -> Value
         "refund": refund,
         "fee_sink": fee,
         "routes": alts,
-        "note": if payable {
+        "note": if house && payable {
+            "House $VAPURR / $PUSD. 0.30%. This device signs.".to_string()
+        } else if payable {
             "RPC simulated. Full route. Small $VAPURR refund. Remainder of 0.25% burns to $PUSD.".to_string()
         } else if !winner.sim.ran {
             "No RPC simulation yet. We will not let this pay.".to_string()
@@ -956,7 +1334,7 @@ fn sim_json(s: &SimReport) -> Value {
         "gas_price": s.gas_price.to_string(),
         "gas_eth": if gas_wei > 0 { fmt_units(&gas_wei.to_string(), 18) } else { String::new() },
         "revert": s.revert,
-        "return": s.ret,
+        "return": clip_hex(&s.ret, 18),
         "label": if !s.ran {
             "not simulated"
         } else if s.ok {
@@ -1226,7 +1604,10 @@ fn fallback_quote(req: &QuoteReq, why: &str) -> Value {
         tx: Value::Null,
         step: None,
         sim: SimReport {
+            ran: true,
+            ok: false,
             revert: why.into(),
+            source: "none".into(),
             ..SimReport::default()
         },
     };
@@ -1237,6 +1618,7 @@ fn fallback_quote(req: &QuoteReq, why: &str) -> Value {
         "estimate": true,
         "payable": false,
         "simulated": false,
+        "sim": sim_json(&dummy.sim),
         "error": why,
         "fee_bps": ROUTE_FEE_BPS,
         "fee": "0.25%",
@@ -1454,6 +1836,158 @@ mod tests {
             from_amount: 1_000_000,
             from_address: QUOTE_ADDR.into(),
         }
+    }
+
+    #[test]
+    fn swap_list_is_house_and_stocks_not_lifi_junk() {
+        let v = tokens(Some("4663"));
+        let list = v["tokens"].as_array().unwrap();
+        let syms: Vec<&str> = list
+            .iter()
+            .filter_map(|t| t.get("symbol").and_then(|x| x.as_str()))
+            .collect();
+        assert!(syms.contains(&"ETH"));
+        assert!(syms.contains(&"USDG"));
+        assert!(syms.contains(&"NVDA"));
+        assert!(syms.contains(&"TSLA"));
+        assert!(syms.contains(&"MSFT"));
+        assert!(syms.contains(&"PLTR"));
+        assert!(!syms.contains(&"WETH"));
+        assert!(
+            list.iter().all(|t| t.get("chain_id").and_then(|x| x.as_u64()) == Some(4663))
+        );
+        assert!(
+            list.len() <= 20,
+            "swap picker must not dump LI.FI, got {}",
+            list.len()
+        );
+        let nvda = list.iter().find(|t| t["symbol"] == "NVDA").unwrap();
+        assert_eq!(
+            nvda["address"].as_str().unwrap().to_ascii_lowercase(),
+            "0xd0601ce157db5bdc3162bbac2a2c8af5320d9eec"
+        );
+    }
+
+    #[test]
+    fn house_book_is_vapurr_pusd_only() {
+        let v = house_cand(&QuoteReq {
+            kind: "swap",
+            from_chain: TESTNET_CHAIN_ID,
+            to_chain: TESTNET_CHAIN_ID,
+            from_token: TESTNET_VAPURR.into(),
+            to_token: TESTNET_PUSD.into(),
+            from_sym: "VAPURR".into(),
+            to_sym: "PUSD".into(),
+            from_dec: 18,
+            to_dec: 18,
+            from_amount: 10u128.pow(18),
+            from_address: QUOTE_ADDR.into(),
+        });
+        let c = v.expect("house V→P");
+        assert_eq!(c.tool, "house");
+        assert!(c.tx.is_object());
+        let data = c.tx.get("data").and_then(|x| x.as_str()).unwrap();
+        assert!(data.starts_with("0x67b7479a"), "{data}");
+        assert!(house_cand(&test_req()).is_none());
+    }
+
+    #[test]
+    fn vapurr_storage_slots_match_live_layout() {
+        let user = "0xc8ae558F58BaF209cF371e64b7baa84181A90060";
+        let swap = TESTNET_SWAP;
+        assert_eq!(
+            word_hex(&map_slot(user, 1)),
+            "0x2ad8ebf0121af7723680bd40677af08ff2590074d0ff41e13d9989aefaeaeddd"
+        );
+        assert_eq!(
+            word_hex(&nest_slot(swap, &map_slot(user, 2))),
+            "0x9aefae72636686b1451a6aeefdc2154ce235c2a0958f74ae73493b7bd4987638"
+        );
+        assert_eq!(
+            word_hex(&map_slot(user, 2)),
+            "0x1ea0867a89f779cb607cb1e73bdc67e52ab43cc0b006fbbe1c3db96e4e7ee584"
+        );
+        assert_eq!(
+            word_hex(&nest_slot(swap, &map_slot(user, 3))),
+            "0x48890ae5cc0225ea43a499ca60375b84e0df77a7271c165e541dc7611ee0d52d"
+        );
+    }
+
+    #[test]
+    fn approve_is_unlimited_spender() {
+        let d = encode_approve(TESTNET_SWAP);
+        assert!(d.starts_with("0x095ea7b3"), "{d}");
+        assert!(d.ends_with(&"f".repeat(64)), "{d}");
+    }
+
+    #[test]
+    fn house_flags_block_pay_until_approve() {
+        let req = QuoteReq {
+            kind: "swap",
+            from_chain: TESTNET_CHAIN_ID,
+            to_chain: TESTNET_CHAIN_ID,
+            from_token: TESTNET_VAPURR.into(),
+            to_token: TESTNET_PUSD.into(),
+            from_sym: "VAPURR".into(),
+            to_sym: "PUSD".into(),
+            from_dec: 18,
+            to_dec: 18,
+            from_amount: 10u128.pow(18),
+            from_address: "0xc8ae558F58BaF209cF371e64b7baa84181A90060".into(),
+        };
+        let mut c = house_cand(&req).unwrap();
+        c.sim = SimReport {
+            ran: true,
+            ok: true,
+            source: "rpc".into(),
+            ret: format!("0x{:064x}", 10u128.pow(18) * 995 / 1000),
+            gas: 202_496,
+            ..SimReport::default()
+        };
+        c.gross_out = 10u128.pow(18) * 995 / 1000;
+        c.net_out = c.gross_out;
+        c.to_min_net = c.net_out * 99 / 100;
+        let mut v = pack_ranked(&req, std::slice::from_ref(&c), None);
+        house_pay_flags(
+            &mut v,
+            &req,
+            &HouseBag {
+                allowance: 0,
+                balance: 10u128.pow(18),
+            },
+        );
+        assert_eq!(v["payable"], false);
+        assert_eq!(v["needs_approve"], true);
+        assert_eq!(v["funded"], true);
+        assert!(v["approve"]["data"].as_str().unwrap().starts_with("0x095ea7b3"));
+        assert!(v["note"].as_str().unwrap().contains("Approve"));
+    }
+
+    #[test]
+    fn unpayable_quote_is_not_cached() {
+        let v = fallback_quote(&test_req(), "no route");
+        cache_put("fromChain=4663&amount=1", v);
+        assert!(cache_get("fromChain=4663&amount=1").is_none());
+    }
+
+    #[test]
+    fn live_house_quote_optional() {
+        let q = format!(
+            "fromChain={TESTNET_CHAIN_ID}&toChain={TESTNET_CHAIN_ID}&fromToken={TESTNET_VAPURR}&toToken={TESTNET_PUSD}&fromSymbol=VAPURR&toSymbol=PUSD&fromDecimals=18&toDecimals=18&amount=1&fromAddress=0xc8ae558F58BaF209cF371e64b7baa84181A90060"
+        );
+        let s = quote_json(&q);
+        let v: Value = serde_json::from_str(&s).unwrap();
+        eprintln!("house quote {s}");
+        if v.get("sim").and_then(|x| x.get("ran")).and_then(|x| x.as_bool()) != Some(true) {
+            return;
+        }
+        assert_eq!(v["ok"], true);
+        assert_eq!(v["tool"], "house");
+        assert_eq!(v["sim"]["ok"], true, "override sim must finish ok: {s}");
+        assert_eq!(v["payable"], false, "user bag is empty");
+        let out: u128 = v["to_amount"].as_str().unwrap().parse().unwrap();
+        assert!(out > 0, "quoted out {out}");
+        assert!(v["ms"].as_u64().unwrap_or(99_000) < 8_000, "sim hung: {s}");
     }
 
     #[test]

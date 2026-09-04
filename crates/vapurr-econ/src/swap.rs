@@ -99,15 +99,18 @@ impl Client {
             let collat_v = json_f64(&vault, "collat_v");
             let debt = json_f64(&vault, "debt");
             let room = json_f64(&vault, "room");
+            let cash = json_f64(&vault, "cash");
             let p_bal = self.token_raw(pusd, from);
             let v_bal = self.token_raw(vapurr, from);
-            if debt > 0.0 && hf > 0.0 && hf < 1.18 {
-                match self.euler_op("unwind", "", "1") {
-                    Ok(_) => notes.push("unwind".into()),
-                    Err(e) => notes.push(format!("unwind:{e}")),
+            // loop() one step maxes LTV. unwind() one step clears all debt.
+            // Small borrow/repay is the util tape.
+            if debt > 0.0 && hf > 0.0 && hf < 1.10 {
+                match self.euler_op("repay", "15", "") {
+                    Ok(_) => notes.push("repay".into()),
+                    Err(e) => notes.push(format!("repay:{e}")),
                 }
-            } else if util < 80.0 && p_bal >= 30 * DEC {
-                match self.euler_op("supply", "25", "") {
+            } else if cash < 80.0 && p_bal >= 30 * DEC {
+                match self.euler_op("supply", "20", "") {
                     Ok(_) => notes.push("supply".into()),
                     Err(e) => notes.push(format!("supply:{e}")),
                 }
@@ -116,10 +119,15 @@ impl Client {
                     Ok(_) => notes.push("collatV".into()),
                     Err(e) => notes.push(format!("collatV:{e}")),
                 }
-            } else if util < 85.0 && room > 40.0 && hf >= 1.25 {
-                match self.euler_op("loop", "", "1") {
-                    Ok(_) => notes.push("loop".into()),
-                    Err(e) => notes.push(format!("loop:{e}")),
+            } else if util > 72.0 && debt > 25.0 {
+                match self.euler_op("repay", "25", "") {
+                    Ok(_) => notes.push("repay".into()),
+                    Err(e) => notes.push(format!("repay:{e}")),
+                }
+            } else if util < 45.0 && cash > 40.0 && room > 40.0 && (debt == 0.0 || hf >= 1.40) {
+                match self.euler_op("borrow", "40", "") {
+                    Ok(_) => notes.push("borrow".into()),
+                    Err(e) => notes.push(format!("borrow:{e}")),
                 }
             }
         }

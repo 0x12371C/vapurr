@@ -188,6 +188,9 @@ impl Client {
             "vapurr": fmt_tok(s.vapurr_bal),
             "pusd": fmt_tok(s.pusd_bal),
             "room": fmt_tok(s.room),
+            "boot_kink": fmt_bps(s.boot_bps),
+            "flow": fmt_pct_wad(s.flow_wad),
+            "cash_target": fmt_tok(s.cash_target),
             "max_steps": 16,
             "status": "live",
         }))
@@ -225,6 +228,9 @@ impl Client {
             "vapurr": "0.00",
             "pusd": "0.00",
             "room": "0.00",
+            "boot_kink": "150.00",
+            "flow": "0.00",
+            "cash_target": "100000.00",
             "max_steps": 16,
             "status": if err.is_empty() { "not on chain" } else { err },
             "error": err,
@@ -341,9 +347,12 @@ struct LoopSnap {
     pusd_token: String,
     market: String,
     room: u128,
+    boot_bps: u128,
+    flow_wad: u128,
+    cash_target: u128,
 }
 
-/// `PusdLoop.snapshot` ABI: 20 words.
+/// `PusdLoop.snapshot` ABI: 20 words, boot fields from word 20.
 fn decode_loop_snap(bytes: &[u8]) -> Result<LoopSnap, EconError> {
     if bytes.len() < 20 * 32 {
         return Err(EconError::Rpc("vault snapshot decode".into()));
@@ -375,6 +384,9 @@ fn decode_loop_snap(bytes: &[u8]) -> Result<LoopSnap, EconError> {
             .map(|a| a.to_checksum())
             .unwrap_or_default(),
         room: decode_word_u128(bytes, 19).unwrap_or(0),
+        boot_bps: decode_word_u128(bytes, 20).unwrap_or(0),
+        flow_wad: decode_word_u128(bytes, 21).unwrap_or(0),
+        cash_target: decode_word_u128(bytes, 22).unwrap_or(0),
     })
 }
 

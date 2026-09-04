@@ -49,6 +49,7 @@ Source of truth: `crates/vapurr-rhc/src/lib.rs`.
 - RPC `https://rpc.mainnet.chain.robinhood.com`
 - Explorer `https://robinhoodchain.blockscout.com`
 - Testnet `46630` for econ bootstrap until mainnet has gas
+- Mainnet PusdMarket vanity (not live): `0xC47f00D61F8379337f9fb42E6DcC695AE2d6EBD2`
 
 ## Docs
 

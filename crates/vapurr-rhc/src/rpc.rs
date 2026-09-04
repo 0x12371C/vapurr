@@ -137,6 +137,17 @@ impl Rpc {
         data: &str,
         value: Option<&str>,
     ) -> Result<String, RpcError> {
+        self.eth_call_tx_state(from, to, data, value, None)
+    }
+
+    pub fn eth_call_tx_state(
+        &self,
+        from: &str,
+        to: Option<&str>,
+        data: &str,
+        value: Option<&str>,
+        state: Option<&Value>,
+    ) -> Result<String, RpcError> {
         let mut obj = serde_json::Map::new();
         obj.insert("from".into(), json!(from));
         if let Some(t) = to {
@@ -149,7 +160,11 @@ impl Rpc {
                 obj.insert("value".into(), json!(t));
             }
         }
-        let v = self.call("eth_call", json!([Value::Object(obj), "latest"]))?;
+        let params = match state {
+            Some(s) => json!([Value::Object(obj), "latest", s]),
+            None => json!([Value::Object(obj), "latest"]),
+        };
+        let v = self.call("eth_call", params)?;
         Ok(v.as_str().unwrap_or("0x").into())
     }
 
@@ -169,6 +184,17 @@ impl Rpc {
         data: &str,
         value: u128,
     ) -> Result<u64, RpcError> {
+        self.eth_estimate_gas_value_state(from, to, data, value, None)
+    }
+
+    pub fn eth_estimate_gas_value_state(
+        &self,
+        from: &str,
+        to: Option<&str>,
+        data: &str,
+        value: u128,
+        state: Option<&Value>,
+    ) -> Result<u64, RpcError> {
         let mut obj = serde_json::Map::new();
         obj.insert("from".into(), json!(from));
         if let Some(t) = to {
@@ -178,7 +204,11 @@ impl Rpc {
         if value > 0 {
             obj.insert("value".into(), json!(format!("0x{value:x}")));
         }
-        let v = self.call("eth_estimateGas", json!([Value::Object(obj)]))?;
+        let params = match state {
+            Some(s) => json!([Value::Object(obj), "latest", s]),
+            None => json!([Value::Object(obj)]),
+        };
+        let v = self.call("eth_estimateGas", params)?;
         Ok(hex_u64(&v))
     }
 

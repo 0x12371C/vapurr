@@ -1,0 +1,25 @@
+{
+  "next_index": 1,
+  "version": 1,
+  "arc_beat": 0,
+  "episodes": [
+    {
+      "ts": "2026-09-04T13:07:06",
+      "slug": "the-ketrix",
+      "kind": "title",
+      "beat_i": 0,
+      "seed": 581552545,
+      "file": "C:\\Users\\jfren\\ComfyUI\\output\\ketflix_slop\\the-ketrix_b0_581552545.mp4",
+      "prompt": "Cinematic Ketflix trailer beat, 16:9, 21fps, five seconds. Lime-green cat Neo in black coat and sunglasses stands in green digital rain, stop-hand toward camera, photoreal, no text. Always the same vapurr lime-green cat (#c0f800 fur). Photoreal, shallow depth, no dialogue, no readable UI text, no watermark."
+    }
+  ],
+  "threads": {
+    "spoon_status": "intact",
+    "gigs_remaining": 1.21,
+    "emerald_holder": null,
+    "wick_revenge": "simmering",
+    "eth_flag_planted": false
+  },
+  "fps": 21,
+  "length": 107
+}

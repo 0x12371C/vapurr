@@ -110,6 +110,7 @@
   var listBusy = false;
   var listWaitHash = "";
   var listAmtDirty = false;
+  var railTab = "txns";
   (function loadPref() {
     try {
       var raw = JSON.parse(localStorage.getItem(PREF_KEY) || "null");
@@ -119,17 +120,57 @@
       if (raw.pct) pctScale = true;
       if (raw.tf) timeframe = raw.tf;
       if (raw.tab === "meme") tab = "hot";
+      else if (raw.tab === "listed") tab = "new";
       else if (raw.tab) tab = raw.tab;
       if (raw.pool) lastPool = raw.pool;
+      if (tab !== "majors" && String(lastPool).indexOf("binance:") === 0) lastPool = "";
+      if (raw.rail === "pair" || raw.rail === "paper" || raw.rail === "txns") railTab = raw.rail;
     } catch (e) {}
   })();
   function savePref() {
     try {
       localStorage.setItem(PREF_KEY, JSON.stringify({
         style: priceStyle, log: logScale, pct: pctScale, tf: timeframe, tab: tab,
-        pool: selected && selected.pool
+        pool: selected && selected.pool, rail: railTab
       }));
     } catch (e) {}
+  }
+  function tabRows() {
+    return tab === "majors" ? MAJORS.map(majorRow) : visible();
+  }
+  function poolInRows(pool, rows) {
+    if (!pool || !rows) return null;
+    var i;
+    for (i = 0; i < rows.length; i++) if (rows[i].pool === pool) return rows[i];
+    return null;
+  }
+  function ensureSelected() {
+    var rows = tabRows();
+    var hit = selected ? poolInRows(selected.pool, rows) : null;
+    if (hit) { selected = hit; return selected; }
+    if (lastPool) {
+      hit = poolInRows(lastPool, rows);
+      if (hit) { selected = hit; return selected; }
+    }
+    selected = rows[0] || null;
+    return selected;
+  }
+  function paintRail() {
+    document.querySelectorAll("[data-rail]").forEach(function (el) {
+      var id = el.getAttribute("data-rail");
+      el.classList.toggle("on", id === railTab);
+      el.classList.toggle("hot", id === "paper" && !!paper.pos);
+    });
+    ["txns", "pair", "paper"].forEach(function (id) {
+      var pane = document.getElementById("rail-" + id);
+      if (pane) pane.classList.toggle("on", id === railTab);
+    });
+  }
+  function setRail(id) {
+    if (id !== "txns" && id !== "pair" && id !== "paper") return;
+    railTab = id;
+    savePref();
+    paintRail();
   }
   function loadFavs() {
     try {
@@ -294,13 +335,7 @@
   function hydrateFromCache() {
     restoreBars();
     restoreTape();
-    if (!selected && lastPool) {
-      var i;
-      for (i = 0; i < pairs.length; i++) {
-        if (pairs[i].pool === lastPool) { selected = pairs[i]; break; }
-      }
-    }
-    if (!selected) selected = visible()[0] || pairs[0] || null;
+    ensureSelected();
     if (selected && selected.source !== "binance") {
       var hit = cachedBars(selected.pool, timeframe);
       if (realBars(hit)) {
@@ -869,26 +904,25 @@
       document.querySelectorAll("[data-tab]").forEach(function (x) {
         x.classList.toggle("on", x.getAttribute("data-tab") === tab);
       });
-      if (!selected && lastPool && !(tab === "majors" && lastPool.indexOf("binance:") !== 0)) {
-        var i;
-        for (i = 0; i < pairs.length; i++) if (pairs[i].pool === lastPool) { selected = pairs[i]; break; }
-      }
-      if (!selected) selected = visible()[0] || null;
+      ensureSelected();
       paintList();
       paintTrench();
       paintTxns();
       return loadPaprika("volume_usd_24h").then(function () {
+        ensureSelected();
         paintList();
         return loadGecko("trending_pools");
       }).then(function () {
         paintList();
         return loadDex();
       }).then(function () {
-        if (!selected) selected = visible()[0] || null;
+        var had = selected && selected.pool;
+        ensureSelected();
         paintList();
         paintTrench();
         paintHud();
         persistTapeSoon();
+        if (selected && selected.pool !== had) bootChart();
       }).catch(function () {});
     });
   }
@@ -938,29 +972,15 @@
     box.innerHTML = "";
     box.appendChild(document.createElement("span"));
     box.appendChild(document.createElement("span"));
-    var cols = tab === "new"
-      ? [
-          { k: "sym", lab: "Pair" },
-          { k: "created", lab: "Age" },
-          { k: "px", lab: "Price" },
-          { k: "liq", lab: "Liq", num: 1 },
-          { k: "vol", lab: "Vol", num: 1 }
-        ]
-      : tab === "listed"
-      ? [
-          { k: "sym", lab: "Pair" },
-          { k: "listedPaid", lab: "Paid", num: 1 },
-          { k: "px", lab: "Price" },
-          { k: "vol", lab: "Vol", num: 1 },
-          { k: "liq", lab: "Liq", num: 1 }
-        ]
-      : [
-          { k: "sym", lab: "Pair" },
-          { k: "px", lab: "Price" },
-          { k: "chg", lab: "24h", num: 1 },
-          { k: "vol", lab: "Vol", num: 1 },
-          { k: "liq", lab: "Liq", num: 1 }
-        ];
+    var cols = [
+      { k: "sym", lab: "Pair" },
+      { k: "px", lab: "Last", num: 1 },
+      {
+        k: tab === "new" ? "created" : tab === "listed" ? "listedPaid" : "chg",
+        lab: tab === "new" ? "Age" : tab === "listed" ? "Paid" : "24h",
+        num: 1
+      }
+    ];
     cols.forEach(function (c) {
       var b = document.createElement("button");
       b.type = "button";
@@ -977,7 +997,7 @@
   }
 
   function paintList() {
-    stampListed();
+    try { stampListed(); } catch (e) {}
     var head = document.getElementById("feed-head");
     if (head) head.textContent = feedTitle();
     paintCols();
@@ -990,11 +1010,24 @@
     if (!box) return;
     box.innerHTML = "";
     var rows = tab === "majors" ? MAJORS.map(majorRow) : visible();
+    var picked = false;
+    if (rows.length && (!selected || !poolInRows(selected.pool, rows))) {
+      var pick = rows[0];
+      var i;
+      for (i = 0; i < rows.length; i++) {
+        if (n(rows[i].px) > 0 || rows[i].source === "binance") { pick = rows[i]; break; }
+      }
+      selected = pick;
+      picked = true;
+    }
     if (!rows.length) {
       box.innerHTML = "<div class='empty'>" +
         (tab === "listed"
           ? "Pay $PUSD to list a token. Organic pairs stay on New / Hot."
-          : tab === "fav" ? "Star pairs to build a watchlist." : tab === "stock" ? "No RHC stock pools in this cut yet." : "No pairs in this cut.") +
+          : tab === "fav" ? "Star pairs to build a watchlist."
+          : tab === "stock" ? "No RHC stock pools in this cut yet."
+          : pairs.length ? "No pairs in this cut."
+          : "Fetching RHC pairs…") +
         "</div>";
       return;
     }
@@ -1003,48 +1036,38 @@
       b.type = "button";
       b.className = "pair" + (selected && selected.pool === p.pool ? " on" : "");
       var up = n(p.chg) >= 0;
-      var fresh = p.seen && (Date.now() - p.seen) < 20000;
+      var fresh = p.created && (Date.now() - p.created) < 300000;
       if (fresh) b.className += " fresh";
       if (p.created) b.setAttribute("data-created", String(p.created));
-      if (tab === "new") {
-        b.innerHTML =
-          "<span class='star'></span>" +
-          "<img class='ico' alt=''/>" +
-          "<span class='sym'></span>" +
-          "<span class='age'></span>" +
-          "<span class='px'></span>" +
-          "<span class='liq'></span>" +
-          "<span class='vol'></span>";
-      } else if (tab === "listed") {
-        b.innerHTML =
-          "<span class='star'></span>" +
-          "<img class='ico' alt=''/>" +
-          "<span class='sym'></span>" +
-          "<span class='paid'></span>" +
-          "<span class='px'></span>" +
-          "<span class='vol'></span>" +
-          "<span class='liq'></span>";
-      } else {
-        b.innerHTML =
-          "<span class='star'></span>" +
-          "<img class='ico' alt=''/>" +
-          "<span class='sym'></span>" +
-          "<span class='px'></span>" +
-          "<span class='chg'></span>" +
-          "<span class='vol'></span>" +
-          "<span class='liq'></span>";
-      }
+      b.innerHTML =
+        "<span class='star'></span>" +
+        "<span class='ico-wrap'><img class='ico' alt=''/><span class='av'></span></span>" +
+        "<span class='mid'><span class='sym'></span><span class='sub'></span></span>" +
+        "<span class='px'></span>" +
+        "<span class='chg'></span>";
       var st = b.querySelector(".star");
       st.textContent = favs[p.pool] ? "★" : "☆";
       st.className = "star" + (favs[p.pool] ? " on" : "");
       var ico = b.querySelector(".ico");
+      var av = b.querySelector(".av");
       var src = pairIcon(p);
-      if (src) ico.src = src;
-      else ico.style.visibility = "hidden";
+      function showAv() {
+        ico.style.display = "none";
+        av.style.display = "grid";
+        av.textContent = String(p.sym || "?").slice(0, 2).toUpperCase();
+      }
+      if (src) {
+        ico.src = src;
+        ico.style.display = "block";
+        av.style.display = "none";
+        ico.onerror = showAv;
+      } else {
+        showAv();
+      }
       var symEl = b.querySelector(".sym");
       var lab = document.createElement("span");
       lab.className = "lab";
-      lab.textContent = p.quote_sym ? (p.sym + "/" + p.quote_sym) : p.sym;
+      lab.textContent = p.sym || "???";
       symEl.textContent = "";
       symEl.appendChild(lab);
       if (p.listed) {
@@ -1053,18 +1076,24 @@
         tag.textContent = "LIST";
         symEl.appendChild(tag);
       }
-      var paidEl = b.querySelector(".paid");
-      if (paidEl) paidEl.textContent = p.listedPaid ? (Math.floor(n(p.listedPaid)) + " P") : "—";
+      var bits = [];
+      if (tab === "new") bits.push(ageTxt(p.created));
+      if (tab === "listed") bits.push(p.listedPaid ? (Math.floor(n(p.listedPaid)) + " PUSD") : "unlisted");
+      if (p.source !== "binance" && p.vol) bits.push(usd(p.vol));
+      else if (p.name && p.name !== p.sym) bits.push(p.name);
+      b.querySelector(".sub").textContent = bits.join(" · ");
       b.querySelector(".px").textContent = p.px ? usd(p.px) : "—";
-      var ageEl = b.querySelector(".age");
-      if (ageEl) ageEl.textContent = ageTxt(p.created);
       var ch = b.querySelector(".chg");
-      if (ch) {
-        ch.textContent = p.source === "binance" ? "—" : pct(p.chg);
+      if (tab === "new") {
+        ch.textContent = ageTxt(p.created);
+        ch.className = "chg";
+      } else if (tab === "listed") {
+        ch.textContent = p.listedPaid ? (Math.floor(n(p.listedPaid)) + " P") : "—";
+        ch.className = "chg";
+      } else {
+        ch.textContent = pct(p.chg);
         ch.className = "chg " + (up ? "up" : "dn");
       }
-      b.querySelector(".vol").textContent = p.source === "binance" ? "—" : usd(p.vol);
-      b.querySelector(".liq").textContent = p.source === "binance" ? "—" : usd(p.liq);
       b.onclick = function (ev) {
         if (ev.target && ev.target.classList && ev.target.classList.contains("star")) {
           if (favs[p.pool]) delete favs[p.pool];
@@ -1088,6 +1117,8 @@
     });
     var on = box.querySelector(".pair.on");
     if (on && on.scrollIntoView) on.scrollIntoView({ block: "nearest" });
+    if (picked) savePref();
+    return picked;
   }
 
   function ageTxt(ms) {
@@ -1128,6 +1159,9 @@
   }
 
   function paintTrench() {
+    try { paintTrenchInner(); } catch (e) {}
+  }
+  function paintTrenchInner() {
     var p = selected;
     var el = document.getElementById("trench");
     if (!el) return;
@@ -1158,7 +1192,7 @@
         "<button class='btn ghost' type='button' id='go-swap'>Swap</button>" +
         "<button class='btn ghost' type='button' id='copy-token'>Copy CA</button>" +
         "<button class='btn ghost' type='button' id='copy-pool'>Copy pool</button>" +
-        "<button class='btn' type='button' id='go-list'>" + (p.listed ? "Raise listing" : "List · $PUSD") + "</button>" +
+        "<button class='btn ghost' type='button' id='go-list'>" + (p.listed ? "Raise list" : "List") + "</button>" +
         (p.dx ? "<button class='btn ghost' type='button' id='go-dx'>DexScreener</button>" : "") +
         (p.links || []).slice(0, 3).map(function (l, i) {
           var lab = l.label || l.type || "link";
@@ -1180,7 +1214,8 @@
       if (p.pool && navigator.clipboard) navigator.clipboard.writeText(p.pool);
       flashPaper("Copied pool");
     };
-    document.getElementById("go-list").onclick = function () { openListSheet(p); };
+    var listBtn = document.getElementById("go-list");
+    if (listBtn) listBtn.onclick = function () { openListSheet(p); };
     var dxb = document.getElementById("go-dx");
     if (dxb && p.dx) {
       dxb.onclick = function () { g.vapurr.go(p.dx); };
@@ -1277,9 +1312,11 @@
   }
 
   function paintAges() {
+    if (tab !== "new") return;
     document.querySelectorAll("#rows .pair[data-created]").forEach(function (el) {
-      var a = el.querySelector(".age");
-      if (a) a.textContent = ageTxt(n(el.getAttribute("data-created")));
+      var t = ageTxt(n(el.getAttribute("data-created")));
+      var ch = el.querySelector(".chg");
+      if (ch) ch.textContent = t;
     });
   }
 
@@ -1406,6 +1443,7 @@
         });
       }
     }
+    paintRail();
   }
 
   function flashPaper(msg) {
@@ -1542,10 +1580,27 @@
     var dlt = n(o) > 0 ? ((n(c) - n(o)) / n(o)) * 100 : 0;
     if (quote) {
       var qico = document.getElementById("qico");
+      var qav = document.getElementById("qav");
+      var src = pairIcon(p);
       if (qico) {
-        var src = pairIcon(p);
-        qico.hidden = !src;
-        if (src) qico.src = src;
+        if (src) {
+          qico.hidden = false;
+          qico.src = src;
+          qico.onerror = function () {
+            qico.hidden = true;
+            if (qav) {
+              qav.hidden = false;
+              qav.textContent = String(p.sym || "?").slice(0, 2).toUpperCase();
+            }
+          };
+          if (qav) qav.hidden = true;
+        } else {
+          qico.hidden = true;
+          if (qav) {
+            qav.hidden = false;
+            qav.textContent = String(p.sym || "?").slice(0, 2).toUpperCase();
+          }
+        }
       }
       quote.querySelector(".sym").textContent = p.quote_sym ? (p.sym + " / " + p.quote_sym) : p.sym;
       quote.querySelector(".last").textContent = px ? usd(px) : "—";
@@ -2498,6 +2553,7 @@
         paper.pos.adds.push({ at: Date.now(), px: px, cost: usdAmt, qty: addQty });
         savePaper();
         paintPaper();
+        paintRail();
         flashPaper("Added " + usd(usdAmt) + " " + selected.sym + " @ " + pxTxt(px) + " · avg " + pxTxt(paper.pos.entry));
         return;
       }
@@ -2634,7 +2690,7 @@
   }
 
   function stampListed() {
-    var map = (ketSnap && ketSnap.by_token) || {};
+    var map = (ketSnap && ketSnap.live && ketSnap.by_token) || {};
     pairs.forEach(function (p) {
       var row = map[tokenKey(p.token)];
       if (row) {
@@ -2648,6 +2704,7 @@
         p.listedRank = 0;
       }
     });
+    if (tab !== "listed") return;
     var list = (ketSnap && ketSnap.listings) || [];
     list.forEach(function (r) {
       var tok = tokenKey(r.token);
@@ -2667,7 +2724,7 @@
         listedPaid: n(r.paid),
         listedRank: r.rank,
         kind: "meme",
-        source: "rhc",
+        source: "listed",
         px: 0, chg: 0, vol: 0, liq: 0
       };
       applyListingProfile(stub, r);
@@ -2706,7 +2763,7 @@
   function packListMeta() {
     var o = {};
     var w = (document.getElementById("list-web").value || "").trim();
-    var x = (document.getElementById("list-x").value || "").trim().replace(/^@/, "");
+    var x = (document.getElementById("list-tw").value || "").trim().replace(/^@/, "");
     var t = (document.getElementById("list-tg").value || "").trim();
     var d = (document.getElementById("list-dc").value || "").trim();
     var b = (document.getElementById("list-bio").value || "").trim().slice(0, 160);
@@ -2723,7 +2780,7 @@
   function fillListProfile(row) {
     if (!row) return;
     if (row.website) document.getElementById("list-web").value = row.website;
-    if (row.twitter) document.getElementById("list-x").value = row.twitter;
+    if (row.twitter) document.getElementById("list-tw").value = row.twitter;
     if (row.telegram) document.getElementById("list-tg").value = row.telegram;
     if (row.discord) document.getElementById("list-dc").value = row.discord;
     if (row.logo) document.getElementById("list-logo").value = row.logo;
@@ -2745,6 +2802,7 @@
     var sheet = document.getElementById("list-sheet");
     if (!sheet) return;
     sheet.hidden = false;
+    sheet.classList.add("open");
     document.getElementById("list-err").textContent = "";
     if (p && p.token) {
       document.getElementById("list-ca").value = p.token;
@@ -2764,7 +2822,10 @@
   function closeListSheet() {
     if (g.vapurr && g.vapurr.pendingTx) return;
     var sheet = document.getElementById("list-sheet");
-    if (sheet) sheet.hidden = true;
+    if (sheet) {
+      sheet.classList.remove("open");
+      sheet.hidden = true;
+    }
   }
 
   function paintListSheet() {
@@ -2789,11 +2850,13 @@
   }
 
   function quoteList() {
-    var amt = wholePusd(document.getElementById("list-amt").value);
-    var token = (document.getElementById("list-ca").value || "").trim();
-    var pool = (document.getElementById("list-pool").value || "").trim();
+    var amtEl = document.getElementById("list-amt");
     var q = document.getElementById("list-quote");
     var btn = document.getElementById("list-go");
+    if (!amtEl || !q || !btn) return;
+    var amt = wholePusd(amtEl.value);
+    var token = (document.getElementById("list-ca") && document.getElementById("list-ca").value || "").trim();
+    var pool = (document.getElementById("list-pool") && document.getElementById("list-pool").value || "").trim();
     q.className = "hint";
     q.onclick = null;
     btn.disabled = true;
@@ -2934,11 +2997,13 @@
     var was = listBusy;
     ketSnap = s;
     listBusy = false;
-    stampListed();
-    paintList();
-    paintTrench();
-    if (document.getElementById("list-sheet") && !document.getElementById("list-sheet").hidden) {
-      paintListSheet();
+    try { stampListed(); } catch (e) {}
+    var sheet = document.getElementById("list-sheet");
+    if (sheet && sheet.classList.contains("open")) {
+      try { paintListSheet(); } catch (e2) {}
+    }
+    if (tab === "listed") {
+      try { paintList(); paintTrench(); } catch (e3) {}
     }
     if (!g.vapurr || !g.vapurr.pendingTx) return;
     if (s.tx && s.tx !== listWaitHash) {
@@ -2955,7 +3020,10 @@
     if (g.vapurr && g.vapurr.pendingTx) g.vapurr.finishTx(false, { error: msg || "failed" });
     var el = document.getElementById("list-err");
     if (el) el.textContent = msg || "";
-    quoteList();
+    var sheet = document.getElementById("list-sheet");
+    if (sheet && sheet.classList.contains("open")) {
+      try { quoteList(); } catch (e) {}
+    }
   };
 
   function bind() {
@@ -2978,27 +3046,37 @@
             kind: "cash", source: "binance"
           };
           hydrateMajors();
-        } else if (!selected || (tab === "stock" && selected.kind !== "stock") || (tab === "listed" && selected && !selected.listed) || (tab === "fav" && selected && !favs[selected.pool])) {
-          selected = visible()[0] || selected;
+        } else {
+          ensureSelected();
         }
         savePref();
         paintList();
         paintTrench();
         paintHud();
         paintAlerts();
+        paintRail();
         bootChart();
       };
     });
-    document.getElementById("list-token").onclick = function () { openListSheet(selected); };
-    document.getElementById("list-go").onclick = submitList;
-    document.getElementById("list-deploy").onclick = deployList;
-    document.getElementById("list-x").onclick = closeListSheet;
-    document.getElementById("list-dim").onclick = closeListSheet;
-    ["list-ca", "list-pool", "list-sym", "list-name", "list-web", "list-x", "list-tg", "list-dc", "list-logo", "list-bio"].forEach(function (id) {
+    function on(id, fn) {
+      var el = document.getElementById(id);
+      if (el) el.onclick = fn;
+    }
+    on("list-token", function () { openListSheet(selected); });
+    on("list-go", submitList);
+    on("list-deploy", deployList);
+    on("list-cancel", closeListSheet);
+    on("list-x", closeListSheet);
+    on("list-dim", closeListSheet);
+    document.querySelectorAll("[data-rail]").forEach(function (el) {
+      el.onclick = function () { setRail(el.getAttribute("data-rail")); };
+    });
+    ["list-ca", "list-pool", "list-sym", "list-name", "list-web", "list-tw", "list-tg", "list-dc", "list-logo", "list-bio"].forEach(function (id) {
       var el = document.getElementById(id);
       if (el) el.addEventListener("input", quoteList);
     });
-    document.getElementById("list-amt").addEventListener("input", function () {
+    var amtEl = document.getElementById("list-amt");
+    if (amtEl) amtEl.addEventListener("input", function () {
       listAmtDirty = true;
       quoteList();
     });
@@ -3040,16 +3118,19 @@
       var st = bookStats();
       flashPaper("Cash refilled. Lifetime still " + signedUsd(st.realized) + (st.gl ? (" · gross loss " + usd(st.gl)) : ""));
     };
-    document.getElementById("copyca").onclick = function () {
-      if (!selected || !selected.pool || selected.source === "binance") {
-        flashPaper("No pool on this cut.");
-        return;
-      }
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(selected.pool);
-        flashPaper("Copied " + selected.pool.slice(0, 10) + "…");
-      }
-    };
+    var copyca = document.getElementById("copyca");
+    if (copyca) {
+      copyca.onclick = function () {
+        if (!selected || !selected.pool || selected.source === "binance") {
+          flashPaper("No pool on this cut.");
+          return;
+        }
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(selected.pool);
+          flashPaper("Copied " + selected.pool.slice(0, 10) + "…");
+        }
+      };
+    }
     document.addEventListener("keydown", function (e) {
       var tag = (e.target && e.target.tagName) || "";
       if (tag === "INPUT" || tag === "TEXTAREA") {
@@ -3100,13 +3181,17 @@
     paintRange();
     paintRisk();
     paintAlerts();
+    paintRail();
     paintHud();
     hydrateMajors();
-    hydrateFromCache();
+    try { hydrateFromCache(); } catch (e) {}
     var hadChart = !!selected;
     if (hadChart) bootChart();
     loadBoard().then(function () {
       if (!hadChart && selected) bootChart();
+    }).catch(function () {
+      paintList();
+      if (selected) bootChart();
     });
     if (g.vapurr && g.vapurr.send) g.vapurr.send({ cmd: "ketlist" });
     setInterval(tickBoard, 12000);

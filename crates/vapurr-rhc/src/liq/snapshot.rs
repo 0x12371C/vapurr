@@ -209,7 +209,57 @@ pub(crate) fn side_addr<'a>(p: &'a Value, side: &str) -> Option<&'a str> {
 }
 
 
+fn scrub_eth_dollar(v: &mut Value) {
+    let weth = WETH.to_ascii_lowercase();
+    let scrub = |t: &mut Value, keys: &[&str]| {
+        let addr = t
+            .get("address")
+            .or_else(|| t.get("id"))
+            .and_then(|x| x.as_str())
+            .unwrap_or("");
+        if !addr.eq_ignore_ascii_case(&weth) {
+            return;
+        }
+        let px = keys
+            .iter()
+            .find_map(|k| t.get(*k).and_then(|x| x.as_f64()))
+            .unwrap_or(0.0);
+        if sane_eth_px(px).is_some() {
+            return;
+        }
+        if let Some(obj) = t.as_object_mut() {
+            for k in keys {
+                obj.insert((*k).into(), json!(0.0));
+            }
+        }
+    };
+    if let Some(arr) = v.get_mut("tokens").and_then(|x| x.as_array_mut()) {
+        for t in arr {
+            scrub(t, &["price_usd"]);
+        }
+    }
+    if let Some(arr) = v.get_mut("pools").and_then(|x| x.as_array_mut()) {
+        for p in arr {
+            for side in ["base", "quote"] {
+                if let Some(t) = p.get_mut(side) {
+                    scrub(t, &["price_usd"]);
+                }
+            }
+        }
+    }
+    if let Some(arr) = v
+        .pointer_mut("/graph/nodes")
+        .and_then(|x| x.as_array_mut())
+    {
+        for n in arr {
+            scrub(n, &["price", "price_usd"]);
+        }
+    }
+}
+
 pub(crate) fn remember(v: Value) {
+    let mut v = v;
+    scrub_eth_dollar(&mut v);
     let incoming_ok = v.get("ok").and_then(|x| x.as_bool()) == Some(true);
     {
         let Ok(mut g) = CACHE.lock() else {

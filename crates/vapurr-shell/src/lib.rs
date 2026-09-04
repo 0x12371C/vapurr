@@ -21,6 +21,30 @@ mod ketflix_guard {
 }
 
 #[cfg(test)]
+mod wallet_guard {
+    #[test]
+    fn bag_shows_loop_pusd_and_ignores_status_wipes() {
+        let html = include_str!("../../../frontend/wallet.html");
+        assert!(
+            html.contains("!Array.isArray(s.assets)"),
+            "login-status / resolve must not paint $0 over a live bag"
+        );
+        assert!(
+            html.contains("pusd-loop"),
+            "supplied $PUSD in Loop is a wallet row"
+        );
+        assert!(
+            html.contains("cmd: \"pane\", id: \"loop\""),
+            "Loop $PUSD opens the desk, not send"
+        );
+        assert!(
+            html.contains("!a.locked"),
+            "supplied $PUSD is not a send asset"
+        );
+    }
+}
+
+#[cfg(test)]
 mod pusd_guard {
     #[test]
     fn pusd_is_the_mint_desk() {
@@ -28,19 +52,22 @@ mod pusd_guard {
         assert!(html.contains("data-mode=\"mint\""), "one book, mint/redeem");
         assert!(html.contains("id=\"lithe\""), "Lithe lives on this desk");
         assert!(html.contains("id=\"euler\""), "Euler vault lives on this desk");
+        assert!(html.contains("data-emode=\"loop\""), "Loop is an Euler strat");
+        assert!(html.contains("id=\"earned\""), "money ticks on the hero");
         assert!(html.contains("id=\"house\""), "House Uni v4 book lives on this desk");
         assert!(html.contains("econ-loop"), "desk talks to the vault if deployed");
         assert!(html.contains("econ-house"), "desk talks to the house book if deployed");
         assert!(html.contains("econ-swap"), "desk swaps the house book");
         let nav = include_str!("nav.rs");
         assert!(
-            nav.contains("\"euler\" | \"loop\""),
-            "vapurr://euler and vapurr://loop open the PUSD desk"
+            nav.contains("\"euler\" | \"loop\" | \"oliver\""),
+            "vapurr://oliver and vapurr://loop open the PUSD desk"
         );
         assert!(
-            !html.contains("globe.js"),
-            "PUSD is a money desk, not the globe clone"
+            html.contains("globe.js"),
+            "globe stays under the money"
         );
+        assert!(html.contains("id=\"apy\""), "APY is on the hero");
         let low = html.to_ascii_lowercase();
         assert!(!low.contains("terra"), "no Terra in PUSD copy");
         assert!(!low.contains("anchor"), "no Anchor in PUSD copy");

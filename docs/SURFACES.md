@@ -27,11 +27,11 @@ If you add a `vapurr://` id, add a row here in the same change.
 | `zzzmail` | `zmail`, `mail` | `zzzmail.html` | glass inbox. `.hood` names (ENS-shaped). Seal â†’ CID pin â†’ 0.25Â¢ gasless postage. `zmail.html` is a redirect stub |
 | `id` | | `id.html` | zer0ID. Start KYC opens https://www.thesecretlab.app/kyc. Does not fake Proven. Not Shield |
 | `defi` | `finance` | `defi.html` | House DeFi hub â€” Swap, Bridge, PUSD, vapurrbid, PNS, Liquidity. Rail button. |
-| `swap` | | `swap.html` | Best simulated net. Sign on this device broadcasts. MAX, balances, impact, `$VAPURR` refund |
-| `stake` | `pusd`, `vapurr`, `mint`, `lithe`, `euler`, `loop`, `house`, `lp` | `pusd.html` | $VAPURR / $PUSD desk. **Lithe** is 9% on $PUSD. Euler vault `?tab=euler`. House Uni v4 CL `?tab=house`. Empty CAs until deploy. |
+| `swap` | | `swap.html` | Simulate, then sign and broadcast. MAX, balances, impact, `$VAPURR` refund |
+| `stake` | `pusd`, `vapurr`, `mint`, `lithe`, `euler`, `loop`, `house`, `lp` | `pusd.html` | $VAPURR / $PUSD desk. **Lithe** is 9% on $PUSD. Vault `?tab=euler`. House Uni v4 CL `?tab=house`. CAs in `vapurr-rhc`. |
 | `vapurrbid` | `outbid`, `bid`, `board` | `vapurrbid.html` | $PUSD pay-to-rank. `outbid.html` redirects here |
 | `pns` | `hood`, `names` | `pns.html` | Purr Name Service. TLD `.hood`. On-chain registry |
-| `bridge` | | `bridge.html` | Same as swap across chains. Sign on this device |
+| `bridge` | | `bridge.html` | Same as swap across chains. Simulate, then sign and broadcast |
 | `dapps` | | `dapps.html` | |
 | `scan` | `explorer`, `xray`, `blocks`, `gas`, `gwei` | `explorer.html` | query string kept; `gas`/`gwei` open `?tab=gas` |
 | `floor` | `list`, `projects` | `floor.html` | |

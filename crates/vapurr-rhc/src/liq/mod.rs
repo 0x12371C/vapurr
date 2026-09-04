@@ -35,6 +35,7 @@ mod tape;
 
 pub use snapshot::{warm, snapshot, snapshot_json, cached_ok, stats_if_ready, token_hit, pools_for, token_list};
 pub use tape::{tape_json, trades_json};
+pub(crate) use price::sane_eth_px;
 use crawl::*;
 use price::*;
 use swaps::*;
@@ -134,6 +135,49 @@ mod tests {
         let (a, b) = sort_pair(USDG, WETH);
         assert!(a < b);
         assert_eq!(a, WETH.to_ascii_lowercase());
+    }
+
+    #[test]
+    fn weth_is_not_a_dollar() {
+        assert!(sane_eth_px(1.0).is_none(), "ETH is not a dollar");
+        assert!(sane_eth_px(2448.0).is_some());
+        let weth = WETH.to_ascii_lowercase();
+        let usdg = USDG.to_ascii_lowercase();
+        let hub = PoolRow {
+            address: "0x52e65b17fb6e5ba00ed806f37afcd2daa50271ca".into(),
+            token0: weth.clone(),
+            token1: usdg.clone(),
+            fee: 100,
+            dex: "uniswap v3".into(),
+        };
+        let one_one = PoolRow {
+            address: "0x1111111111111111111111111111111111111111".into(),
+            token0: weth.clone(),
+            token1: usdg.clone(),
+            fee: 3000,
+            dex: "uniswap v3".into(),
+        };
+        let mut prices = std::collections::HashMap::new();
+        prices.insert(usdg, 1.0);
+        prices.insert(weth.clone(), 1.0);
+        pin_weth_from_usdg(
+            &mut prices,
+            &[&hub, &one_one],
+            &[(4.86, 11_900_000.0), (1.0, 1.0)],
+            &[Some(2448.0), Some(1.0)],
+        );
+        let px = *prices.get(&weth).expect("WETH px");
+        assert!(
+            (px - 2448.0).abs() < 1.0,
+            "hub slot0 must beat a 1:1 print, got {px}"
+        );
+        let mut pegged = std::collections::HashMap::new();
+        pegged.insert(weth.clone(), 1.0);
+        pin_weth_from_usdg(&mut pegged, &[&one_one], &[(1.0, 1.0)], &[Some(1.0)]);
+        assert!(
+            pegged.get(&weth).is_none(),
+            "1:1 WETH/USDG must not print ETH at $1"
+        );
     }
 
     #[test]

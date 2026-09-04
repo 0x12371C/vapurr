@@ -11,6 +11,7 @@
   g.tokenIconUrl = function (id, symbol) {
     var k = String(id || symbol || "").toLowerCase().replace(/^\$/, "");
     if (MAP[k]) return MAP[k];
+    if (k === "pusd-loop" || k === "pusdloop") return MAP.pusd;
     if (k === "purr usd") return MAP.pusd;
     return "";
   };

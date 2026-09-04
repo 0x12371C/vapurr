@@ -168,6 +168,12 @@ pub(crate) fn js_set_wallet(v: &serde_json::Value) -> String {
     format!("window.__setWallet && window.__setWallet({})", v)
 }
 
+/// Bag snaps carry `assets`. Login status, resolve, seed, and key export do not.
+/// Caching those as the wallet bag paints $0 over a live $PUSD row.
+pub(crate) fn wallet_is_bag(v: &serde_json::Value) -> bool {
+    v.get("assets").map(|a| a.is_array()).unwrap_or(false)
+}
+
 pub(crate) fn wants_wallet_snap(url: &str) -> bool {
     url.contains("wallet.html") || url.contains("pay.html") || url.contains("swap.html") || url.contains("bridge.html")
 }
@@ -636,6 +642,25 @@ mod tests {
         assert!(wants_wallet_snap("http://vapurr.localhost/swap.html"));
         assert!(wants_wallet_snap("http://vapurr.localhost/bridge.html"));
         assert!(!wants_wallet_snap("http://vapurr.localhost/home.html"));
+    }
+
+    #[test]
+    fn login_status_is_not_a_wallet_bag() {
+        assert!(!wallet_is_bag(&serde_json::json!({
+            "ok": true,
+            "logged_in": true,
+            "has_key": true,
+            "address": "0xabc"
+        })));
+        assert!(wallet_is_bag(&serde_json::json!({
+            "ok": true,
+            "assets": [],
+            "pusd": "1.00"
+        })));
+        assert!(!wallet_is_bag(&serde_json::json!({
+            "resolved": "0xabc",
+            "ok": true
+        })));
     }
 
     #[test]

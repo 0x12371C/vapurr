@@ -143,6 +143,8 @@ pub(crate) fn price_pools(rpc: &Rpc, rows: &[PoolRow]) -> Vec<Value> {
             set_ratio(&mut prices, &t0, &t1, r1 / r0, false);
         }
     }
+    // Last write: ETH is not a dollar. A 1:1 slot0 / reserve print must not stick.
+    pin_weth_from_usdg(&mut prices, &chosen, &reserves, &slots);
     let mut out = Vec::new();
     for (i, p) in chosen.iter().enumerate() {
         let t0 = p.token0.to_ascii_lowercase();
@@ -193,6 +195,77 @@ pub(crate) fn sane_px(x: f64) -> Option<f64> {
     }
 }
 
+/// Native ETH / WETH is not a dollar. $1.00 is a 1:1 slot or a peg leak.
+pub(crate) fn sane_eth_px(x: f64) -> Option<f64> {
+    let x = sane_px(x)?;
+    if (50.0..100_000.0).contains(&x) {
+        Some(x)
+    } else {
+        None
+    }
+}
+
+fn is_weth(addr: &str) -> bool {
+    addr.eq_ignore_ascii_case(WETH) || addr.eq_ignore_ascii_case(crate::NATIVE)
+}
+
+fn put_px(prices: &mut HashMap<String, f64>, addr: &str, px: f64) {
+    let px = if is_weth(addr) {
+        sane_eth_px(px)
+    } else {
+        sane_px(px)
+    };
+    if let Some(px) = px {
+        prices.insert(addr.to_ascii_lowercase(), px);
+    }
+}
+
+/// USDG/WETH hubs only. Slot0 if sane, else reserve ratio. Deepest USDG side wins.
+pub(crate) fn pin_weth_from_usdg(
+    prices: &mut HashMap<String, f64>,
+    chosen: &[&PoolRow],
+    reserves: &[(f64, f64)],
+    slots: &[Option<f64>],
+) {
+    let weth = WETH.to_ascii_lowercase();
+    let usdg = USDG.to_ascii_lowercase();
+    prices.remove(&weth);
+    let mut best: Option<(f64, f64)> = None;
+    for (i, p) in chosen.iter().enumerate() {
+        let t0 = p.token0.to_ascii_lowercase();
+        let t1 = p.token1.to_ascii_lowercase();
+        let w0 = t0 == weth;
+        let w1 = t1 == weth;
+        let u0 = t0 == usdg;
+        let u1 = t1 == usdg;
+        if !(w0 || w1) || !(u0 || u1) {
+            continue;
+        }
+        let (r0, r1) = reserves.get(i).copied().unwrap_or((0.0, 0.0));
+        let (weth_amt, usdg_amt) = if w0 { (r0, r1) } else { (r1, r0) };
+        let mut px = None;
+        if let Some(ratio) = slots.get(i).copied().flatten() {
+            px = if w0 {
+                sane_eth_px(ratio)
+            } else {
+                sane_eth_px(1.0 / ratio)
+            };
+        }
+        if px.is_none() && weth_amt > 1e-4 && usdg_amt > 10.0 {
+            px = sane_eth_px(usdg_amt / weth_amt);
+        }
+        let Some(px) = px else {
+            continue;
+        };
+        let depth = usdg_amt.max(0.0);
+        if best.map(|(d, _)| depth > d).unwrap_or(true) {
+            best = Some((depth, px));
+        }
+    }
+    if let Some((_, px)) = best {
+        prices.insert(weth, px);
+    }
+}
 
 pub(crate) fn is_peg(addr: &str) -> bool {
     addr.eq_ignore_ascii_case(USDG) || addr.eq_ignore_ascii_case(USDE)
@@ -204,40 +277,30 @@ pub(crate) fn set_ratio(prices: &mut HashMap<String, f64>, t0: &str, t1: &str, t
         return;
     }
     if is_peg(t0) {
-        prices.insert(t0.to_string(), 1.0);
+        prices.insert(t0.to_ascii_lowercase(), 1.0);
         if !is_peg(t1) {
-            if let Some(px) = sane_px(1.0 / t1_per_t0) {
-                prices.insert(t1.to_string(), px);
-            }
+            put_px(prices, t1, 1.0 / t1_per_t0);
         }
         return;
     }
     if is_peg(t1) {
-        prices.insert(t1.to_string(), 1.0);
+        prices.insert(t1.to_ascii_lowercase(), 1.0);
         if !is_peg(t0) {
-            if let Some(px) = sane_px(t1_per_t0) {
-                prices.insert(t0.to_string(), px);
-            }
+            put_px(prices, t0, t1_per_t0);
         }
         return;
     }
-    let p0 = prices.get(t0).copied();
-    let p1 = prices.get(t1).copied();
+    let p0 = prices.get(&t0.to_ascii_lowercase()).copied();
+    let p1 = prices.get(&t1.to_ascii_lowercase()).copied();
     match (p0, p1) {
         (Some(a), None) => {
-            if let Some(px) = sane_px(a / t1_per_t0) {
-                prices.insert(t1.to_string(), px);
-            }
+            put_px(prices, t1, a / t1_per_t0);
         }
         (None, Some(b)) => {
-            if let Some(px) = sane_px(b * t1_per_t0) {
-                prices.insert(t0.to_string(), px);
-            }
+            put_px(prices, t0, b * t1_per_t0);
         }
         (Some(a), Some(_)) if force => {
-            if let Some(px) = sane_px(a / t1_per_t0) {
-                prices.insert(t1.to_string(), px);
-            }
+            put_px(prices, t1, a / t1_per_t0);
         }
         _ => {}
     }

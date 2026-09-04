@@ -101,6 +101,7 @@ pub enum EconCmd {
     },
     KetListDeploy,
     LoopDeploy,
+    LoopReplace,
     LoopOp {
         op: String,
         amt: String,
@@ -113,6 +114,7 @@ pub enum EconCmd {
     },
     HouseBootstrap,
     SwapDeploy,
+    SwapReplace,
     HouseSwap {
         sell_v: bool,
         amt: String,
@@ -164,6 +166,7 @@ impl Client {
         if let Some(k) = DeviceKey::load() {
             self.key = k;
         }
+        self.cfg = MarketCfg::load();
         let which = match &cmd {
             EconCmd::Snap => "snap",
             EconCmd::Mint(_) => "mint",
@@ -174,12 +177,12 @@ impl Client {
             EconCmd::OutbidDeploy => "deploy",
             EconCmd::KetList | EconCmd::KetListPay { .. } => "ketlist",
             EconCmd::KetListDeploy => "deploy",
-            EconCmd::LoopDeploy | EconCmd::LoopOp { .. } => "loop",
+            EconCmd::LoopDeploy | EconCmd::LoopReplace | EconCmd::LoopOp { .. } => "loop",
             EconCmd::HouseDeploy
             | EconCmd::HouseSeed { .. }
             | EconCmd::HouseBootstrap
             | EconCmd::HouseSwap { .. } => "house",
-            EconCmd::SwapDeploy | EconCmd::Pulse => "pulse",
+            EconCmd::SwapDeploy | EconCmd::SwapReplace | EconCmd::Pulse => "pulse",
         };
         match self.run_inner(cmd) {
             Ok(v) => Ok(v),
@@ -235,6 +238,11 @@ impl Client {
                 self.euler_deploy()?;
                 Ok(self.snapshot())
             }
+            EconCmd::LoopReplace => {
+                self.cfg.loop_vault.clear();
+                self.euler_deploy()?;
+                Ok(self.book_snap())
+            }
             EconCmd::LoopOp { op, amt, steps } => self.euler_op(&op, &amt, &steps),
             EconCmd::HouseDeploy => {
                 self.house_deploy()?;
@@ -245,6 +253,11 @@ impl Client {
             EconCmd::SwapDeploy => {
                 self.swap_deploy()?;
                 Ok(self.snapshot())
+            }
+            EconCmd::SwapReplace => {
+                self.cfg.swap.clear();
+                self.swap_deploy()?;
+                Ok(self.book_snap())
             }
             EconCmd::HouseSwap { sell_v, amt } => {
                 let n = parse_amt(&amt)?;

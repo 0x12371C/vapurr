@@ -161,6 +161,26 @@
       padding: 28px 18px; text-align: center; color: var(--color-muted);
       font-size: 13px; line-height: 1.45;
     }
+    .act-day {
+      padding: 10px 14px 2px;
+      color: var(--color-muted);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+    .act-day:first-child { padding-top: 12px; }
+    .act-more {
+      width: 100%; height: 42px; border: 0; border-radius: 0;
+      background: transparent; color: var(--color-muted);
+      font-size: 13px; font-weight: 600;
+      box-shadow: inset 0 1px 0 color-mix(in srgb, var(--color-snow) 7%, transparent);
+    }
+    .act-more:hover { color: var(--color-snow); background: color-mix(in srgb, var(--color-forest) 42%, transparent); }
+    .asset.act { grid-template-columns: 44px 1fr auto; }
+    .asset.act .amt { font-size: 15px; }
+    .asset.act .sub-amt { display: block; font-size: 12px; font-weight: 400; margin-top: 2px; text-align: right; color: var(--color-muted); }
+    .asset.act .sub-amt.in { color: var(--color-lime); }
     .sheet {
       position: absolute; inset: 0; z-index: 8;
       display: none; align-items: flex-end; justify-content: center;
@@ -304,7 +324,7 @@
     <header class="top">
       <div class="nav">
         <button class="icon-btn" id="go-settings" type="button" title="Wallet settings" aria-label="Wallet settings">
-          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v2M12 19v2M4.9 6.3l1.5 1.5M17.6 16.2l1.5 1.5M3 12h2M19 12h2M4.9 17.7l1.5-1.5M17.6 7.8l1.5-1.5"/></svg>
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.2a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.2a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.2a1.7 1.7 0 001.1 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9c.3.6.9 1 1.5 1.1H21a2 2 0 110 4h-.2a1.7 1.7 0 00-1.4.9z"/></svg>
         </button>
       </div>
       <div class="hero">
@@ -348,7 +368,7 @@
         </div>
         <div class="sec">Tokens <span id="rpc-lab">testnet 46630</span></div>
         <div class="glass" id="list"></div>
-        <div class="sec" style="margin-top:26px">Activity</div>
+        <div class="sec" id="act-sec" style="margin-top:26px">Activity <span id="act-n"></span></div>
         <div class="glass" id="activity">
           <div class="empty" id="act-empty">Nothing yet.</div>
         </div>
@@ -436,6 +456,16 @@
       <button class="btn ghost" data-close="1" type="button">Done</button>
     </div>
   </div>
+  <div class="sheet" id="sheet-act" hidden>
+    <div class="dim" data-close="1"></div>
+    <div class="panel" style="max-height:88vh;overflow:auto">
+      <div class="grab"></div>
+      <h2>Activity</h2>
+      <p>On this device. Opens Scan for the hash.</p>
+      <div class="glass" id="act-full"></div>
+      <button class="btn ghost" data-close="1" type="button" style="margin-top:16px">Done</button>
+    </div>
+  </div>
   <div class="sheet" id="sheet-settings" hidden>
     <div class="dim" data-close="1"></div>
     <div class="panel" style="max-height:88vh;overflow:auto">
@@ -502,12 +532,15 @@
     var secretArmed = "";
     var hood = "";
     var nick = "";
+    var YEAR = 365.25 * 24 * 3600;
+    var wtick = { t: 0, usd: 0, apy: 9 };
     try { nick = localStorage.getItem("vapurr.wallet.nick") || ""; } catch (e) {}
     var backedUp = false;
     try { backedUp = localStorage.getItem("vapurr.wallet.backedUp") === "1"; } catch (e) {}
     var resolvedTo = "";
     var resolveTimer = 0;
     var tokenId = "";
+    var lastAct = [];
 
     function shortAddr(a) {
       if (!a || a.length < 12) return a || "—";
@@ -661,7 +694,7 @@
       if (!box) return;
       var ids = [];
       (s.assets || []).forEach(function (a) {
-        if (a && a.id) ids.push(a.id);
+        if (a && a.id && !a.locked) ids.push(a.id);
       });
       if (!ids.length) ids = ["eth"];
       if (ids.indexOf(asset) < 0) asset = ids[0];
@@ -740,7 +773,11 @@
           "<span><span class=\"amt\"></span><span class=\"usd-s\"></span></span><span class=\"chev\"></span>";
         b.replaceChild(tokenIconEl(a.id, a.symbol), b.querySelector(".slot"));
         b.querySelector("b").textContent = prettySym(a.symbol);
-        b.querySelector(".hint").textContent = a.hint || "";
+        var hint = a.hint || "";
+        if (!hint && (a.id === "pusd" || String(a.symbol || "").toUpperCase() === "PUSD")) {
+          hint = "Lithe 9% · vault stacks";
+        }
+        b.querySelector(".hint").textContent = hint;
         b.querySelector(".amt").textContent = fmtAmt(a.amount || "0");
         b.querySelector(".usd-s").textContent = a.dollar ? ("$" + fmtUsd(a.amount || "0")) : "";
         b.onclick = function () { openToken(a.id); };
@@ -756,17 +793,150 @@
       if (kind === "unstake") return "Unstaked" + (sym ? " " + sym : "");
       return inbound ? ("Received" + (sym ? " " + sym : "")) : ("Sent" + (sym ? " " + sym : ""));
     }
+    function actTime(ts) {
+      if (ts == null || ts === "") return 0;
+      if (typeof ts === "number") return ts < 1e12 ? ts * 1000 : ts;
+      return Date.parse(ts) || 0;
+    }
+    function actDay(ms) {
+      if (!ms) return "Earlier";
+      var d = new Date(ms);
+      var now = new Date();
+      var a = Date.UTC(d.getFullYear(), d.getMonth(), d.getDate());
+      var b = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+      var diff = Math.round((b - a) / 864e5);
+      if (diff === 0) return "Today";
+      if (diff === 1) return "Yesterday";
+      if (diff > 1 && diff < 7) return d.toLocaleDateString(undefined, { weekday: "long" });
+      return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+    }
+    function foldActivity(rows) {
+      var map = {};
+      var order = [];
+      rows.forEach(function (r) {
+        var k = r.tx ? String(r.tx).toLowerCase() : ("row-" + order.length + "-" + (r.ts || ""));
+        if (!map[k]) { map[k] = []; order.push(k); }
+        map[k].push(r);
+      });
+      return order.map(function (k) {
+        var legs = map[k];
+        var first = legs[0];
+        var inbound = first.dir === "in" || first.kind === "mint" || first.kind === "unstake";
+        var ins = 0;
+        var outs = 0;
+        var t = 0;
+        var syms = [];
+        legs.forEach(function (x) {
+          if (x.dir === "in" || x.kind === "mint" || x.kind === "unstake") ins += 1;
+          else outs += 1;
+          t = Math.max(t, actTime(x.ts));
+          var sy = prettySym(x.symbol);
+          if (sy && syms.indexOf(sy) < 0) syms.push(sy);
+        });
+        var title;
+        var swap = ins > 0 && outs > 0 && legs.length > 1;
+        if (first.amount === "pending") title = "Sending";
+        else if (swap) title = "Swap" + (syms.length ? " · " + syms.join(" / ") : "");
+        else if (legs.length > 1) title = (inbound ? "Received" : "Sent") + (syms.length ? " " + syms.join(" · ") : "");
+        else title = actTitle(first, inbound);
+        return {
+          legs: legs,
+          title: title,
+          inbound: swap ? true : inbound,
+          swap: swap,
+          ts: t || actTime(first.ts),
+          peer: first.peer || (inbound ? first.from : first.to) || "",
+          url: first.url,
+          pending: first.amount === "pending",
+          symbol: first.symbol,
+          kind: first.kind
+        };
+      });
+    }
+    function actRow(g) {
+      var b = document.createElement("button");
+      b.className = "asset act";
+      b.type = "button";
+      var inbound = g.inbound;
+      var actId = (g.symbol || "").toLowerCase();
+      b.innerHTML =
+        "<span class=\"slot\"></span><span><b></b><span class=\"hint\"></span></span>" +
+        "<span class=\"right\"><span class=\"amt\"></span></span>";
+      var ico = tokenIconUrl(actId, g.symbol)
+        ? tokenIconEl(actId, g.symbol)
+        : tokenIconEl("", inbound ? "↓" : "↑");
+      if (!tokenIconUrl(actId, g.symbol)) {
+        ico.className = "dot " + (g.swap ? "eth" : (inbound ? "in" : "out"));
+        ico.textContent = g.swap ? "⇄" : (inbound ? "↓" : "↑");
+      }
+      b.replaceChild(ico, b.querySelector(".slot"));
+      b.querySelector("b").textContent = g.title;
+      var peer = g.peer ? shortAddr(String(g.peer)) : "";
+      var when = ago(g.ts || (g.legs[0] && g.legs[0].ts));
+      b.querySelector(".hint").textContent = [peer, when].filter(Boolean).join(" · ");
+      var right = b.querySelector(".right");
+      var amt = b.querySelector(".amt");
+      if (g.pending) {
+        amt.textContent = "…";
+      } else if (g.swap) {
+        amt.textContent = "";
+        g.legs.slice(0, 2).forEach(function (x) {
+          var line = document.createElement("span");
+          var inn = x.dir === "in" || x.kind === "mint" || x.kind === "unstake";
+          line.className = "sub-amt" + (inn ? " in" : "");
+          line.textContent = (inn ? "+" : "−") + fmtAmt(x.amount || "") + (x.symbol ? " " + prettySym(x.symbol) : "");
+          right.appendChild(line);
+        });
+      } else {
+        var qty = (typeof g.legs[0].amount === "string" ? g.legs[0].amount : "") || "—";
+        amt.textContent = (inbound ? "+" : "−") + fmtAmt(qty);
+        if (inbound) amt.classList.add("in");
+        if (g.legs.length > 1) {
+          var more = document.createElement("span");
+          more.className = "sub-amt";
+          more.textContent = g.legs.length + " transfers";
+          right.appendChild(more);
+        }
+      }
+      b.onclick = function () { if (g.url) vapurr.go(g.url); };
+      return b;
+    }
+    function fillActBox(box, groups, opts) {
+      box.innerHTML = "";
+      var byDay = [];
+      groups.forEach(function (g) {
+        var lab = actDay(g.ts);
+        if (!byDay.length || byDay[byDay.length - 1].lab !== lab) {
+          byDay.push({ lab: lab, rows: [] });
+        }
+        byDay[byDay.length - 1].rows.push(g);
+      });
+      var showDays = opts.days && byDay.length > 1;
+      byDay.forEach(function (d) {
+        if (showDays) {
+          var h = document.createElement("div");
+          h.className = "act-day";
+          h.textContent = d.lab;
+          box.appendChild(h);
+        }
+        d.rows.forEach(function (g) { box.appendChild(actRow(g)); });
+      });
+    }
     function paintActivity(s) {
       var box = document.getElementById("activity");
+      var nEl = document.getElementById("act-n");
       var rows = (s.activity || []).slice();
-      box.innerHTML = "";
       if (s.tx && sending) {
         rows.unshift({
           tx: s.tx, url: s.tx_url, kind: "out", dir: "out",
           amount: "pending", symbol: "", peer: "", ts: Date.now()
         });
       }
-      if (!rows.length) {
+      var groups = foldActivity(rows);
+      lastAct = groups;
+      if (nEl) nEl.textContent = groups.length ? String(groups.length) : "";
+      if (!groups.length) {
+        box.innerHTML = "";
         var empty = document.createElement("div");
         empty.className = "empty";
         empty.id = "act-empty";
@@ -774,34 +944,21 @@
         box.appendChild(empty);
         return;
       }
-      rows.forEach(function (row) {
-        var b = document.createElement("button");
-        b.className = "asset";
-        b.type = "button";
-        var inbound = row.dir === "in" || row.kind === "mint" || row.kind === "unstake";
-        var peer = row.peer || (inbound ? row.from : row.to) || "";
-        var actId = (row.symbol || "").toLowerCase();
-        b.innerHTML =
-          "<span class=\"slot\"></span><span><b></b><span class=\"hint\"></span></span>" +
-          "<span class=\"amt\"></span><span class=\"chev\"></span>";
-        var ico = tokenIconUrl(actId, row.symbol)
-          ? tokenIconEl(actId, row.symbol)
-          : tokenIconEl("", inbound ? "↓" : "↑");
-        if (!tokenIconUrl(actId, row.symbol)) {
-          ico.className = "dot " + (inbound ? "in" : "out");
-          ico.textContent = inbound ? "↓" : "↑";
-        }
-        b.replaceChild(ico, b.querySelector(".slot"));
-        b.querySelector("b").textContent = actTitle(row, inbound);
-        var when = ago(row.ts);
-        b.querySelector(".hint").textContent = [peer ? shortAddr(String(peer)) : "", when].filter(Boolean).join(" · ");
-        var amt = b.querySelector(".amt");
-        var qty = (typeof row.amount === "string" ? row.amount : "") || "—";
-        amt.textContent = qty === "pending" ? "…" : ((inbound ? "+" : "−") + qty);
-        if (inbound) amt.classList.add("in");
-        b.onclick = function () { if (row.url) vapurr.go(row.url); };
-        box.appendChild(b);
-      });
+      var home = groups.slice(0, 5);
+      fillActBox(box, home, { days: groups.length > 5 });
+      if (groups.length > 5) {
+        var more = document.createElement("button");
+        more.type = "button";
+        more.className = "act-more";
+        more.textContent = (groups.length - 5) + " earlier";
+        more.onclick = function () { openActSheet(groups); };
+        box.appendChild(more);
+      }
+    }
+    function openActSheet(groups) {
+      var full = document.getElementById("act-full");
+      fillActBox(full, groups || [], { days: true });
+      openSheet("sheet-act");
     }
     function paintBanners(s) {
       var gas = document.getElementById("gas-ban");
@@ -863,6 +1020,10 @@
     function openToken(id) {
       tokenId = id;
       var a = assetRow(id);
+      if (id === "pusd-loop" || (a && a.locked)) {
+        vapurr.send({ cmd: "pane", id: "loop" });
+        return;
+      }
       if (!a) { setAsset(id); openSheet("sheet-send"); return; }
       var hero = document.getElementById("tok-dot");
       hero.innerHTML = "";
@@ -914,9 +1075,14 @@
 
     window.__setWallet = function (s) {
       if (!s) return;
-      if (s.hex_key && !s.assets) { showSecret(s.hex_key, "hex"); return; }
-      if (s.seed && !s.assets) { showSecret(s.seed, "seed"); return; }
-      if (s.resolved != null && !s.assets) { paintResolve(s); return; }
+      if (!Array.isArray(s.assets)) {
+        if (s.hex_key) { showSecret(s.hex_key, "hex"); return; }
+        if (s.seed) { showSecret(s.seed, "seed"); return; }
+        if (s.resolved != null) { paintResolve(s); return; }
+        return;
+      }
+      if (s.hex_key) showSecret(s.hex_key, "hex");
+      if (s.seed) showSecret(s.seed, "seed");
       snap = s;
       addr = s.address || "";
       document.getElementById("full-addr").textContent = addr || "—";
@@ -925,6 +1091,9 @@
       paintWho();
       document.getElementById("pip").classList.toggle("on", !!s.ok);
       document.getElementById("usd").innerHTML = "<em>$</em>" + fmtUsd(s.total_usd || "0");
+      wtick.t = Date.now();
+      wtick.usd = parseFloat(String(s.total_usd || "0").replace(/,/g, "")) || 0;
+      wtick.apy = 9;
       var test = s.net === "testnet" || s.chain_id === 46630;
       document.getElementById("net-pill").textContent = test ? "Testnet" : "Mainnet";
       document.getElementById("rpc-lab").textContent = (s.net || "") + " " + String(s.chain_id || "");
@@ -1056,6 +1225,9 @@
     document.getElementById("gas-ban").onclick = function () { openSheet("sheet-recv"); };
     document.getElementById("backup-ban").onclick = openSettings;
     document.getElementById("go-settings").onclick = openSettings;
+    document.getElementById("act-sec").onclick = function () {
+      if (lastAct.length) openActSheet(lastAct);
+    };
     document.getElementById("net-test").onclick = function () { pickNet("testnet"); };
     document.getElementById("net-main").onclick = function () { pickNet("mainnet"); };
     function toggleHideZero() {
@@ -1221,6 +1393,17 @@
     }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
     vapurr.send({ cmd: "wallet" });
     setTimeout(function () { if (!snap) vapurr.send({ cmd: "wallet" }); }, 400);
+    setInterval(function () {
+      if (!wtick.t || wtick.usd <= 0) return;
+      var dt = (Date.now() - wtick.t) / 1000;
+      var x = wtick.usd * (1 + (wtick.apy / 100) * dt / YEAR);
+      var el = document.getElementById("usd");
+      if (el) el.innerHTML = "<em>$</em>" + x.toFixed(4);
+    }, 100);
+    setInterval(function () {
+      if (vapurr.pendingTx) return;
+      vapurr.send({ cmd: "wallet" });
+    }, 10000);
     setTimeout(function () { if (!snap) vapurr.send({ cmd: "wallet" }); }, 1600);
   </script>
 </body>
