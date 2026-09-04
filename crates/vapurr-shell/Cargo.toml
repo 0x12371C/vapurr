@@ -29,6 +29,7 @@ vapurr-fomo.workspace = true
 vapurr-econ.workspace = true
 vapurr-wallet.workspace = true
 vapurr-zmail.workspace = true
+vapurr-id.workspace = true
 wry = "0.47"
 
 [target.'cfg(windows)'.dependencies]

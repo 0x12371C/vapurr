@@ -21,7 +21,7 @@ Use-GnuCc
 Set-Location $PSScriptRoot
 Remove-Item Env:RUSTFLAGS -ErrorAction SilentlyContinue
 
-$ver = "0.1.0"
+$ver = "1.1.0"
 $m = Select-String -Path (Join-Path $PSScriptRoot "Cargo.toml") -Pattern '^\s*version\s*=\s*"([^"]+)"' | Select-Object -First 1
 if ($m) { $ver = $m.Matches[0].Groups[1].Value }
 

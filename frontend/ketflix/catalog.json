@@ -1,0 +1,188 @@
+{
+  "brand": "Ketflix",
+  "hero": "the-ketrix",
+  "rows": [
+    {
+      "id": "originals",
+      "label": "Ketflix Originals",
+      "slugs": [
+        "the-ketrix",
+        "ketbreaking-bad",
+        "the-lion-of-ketdah",
+        "pirates-of-ketibbean",
+        "keterman",
+        "home-alone-ketsters",
+        "the-ketfather",
+        "attack-on-ket",
+        "back-to-the-keture",
+        "the-lord-of-the-ket",
+        "joket",
+        "john-wick-ketribution"
+      ]
+    },
+    {
+      "id": "trending",
+      "label": "Trending on Ket",
+      "slugs": [
+        "the-ketrix",
+        "ketbreaking-bad",
+        "joket",
+        "john-wick-ketribution",
+        "the-ketfather",
+        "attack-on-ket"
+      ]
+    },
+    {
+      "id": "crime",
+      "label": "Cat crime",
+      "slugs": [
+        "the-ketfather",
+        "john-wick-ketribution",
+        "joket",
+        "ketbreaking-bad"
+      ]
+    },
+    {
+      "id": "worlds",
+      "label": "Worlds beyond",
+      "slugs": [
+        "the-ketrix",
+        "keterman",
+        "the-lord-of-the-ket",
+        "the-lion-of-ketdah"
+      ]
+    },
+    {
+      "id": "chaos",
+      "label": "Chaos & heists",
+      "slugs": [
+        "pirates-of-ketibbean",
+        "attack-on-ket",
+        "home-alone-ketsters",
+        "back-to-the-keture"
+      ]
+    }
+  ],
+  "titles": [
+    {
+      "slug": "the-ketrix",
+      "title": "THE KETRIX",
+      "tag": "There is no spoon.",
+      "year": 2026,
+      "kind": "Movie",
+      "rating": "K",
+      "runtime": "10s",
+      "badge": "Ketflix Original"
+    },
+    {
+      "slug": "ketbreaking-bad",
+      "title": "Ketbreaking Bad",
+      "tag": "I am the one who vapes.",
+      "year": 2026,
+      "kind": "Series",
+      "rating": "K",
+      "runtime": "10s",
+      "badge": "Ketflix Original"
+    },
+    {
+      "slug": "the-lion-of-ketdah",
+      "title": "THE LION OF KETDAH",
+      "tag": "Everything the light touches is ket.",
+      "year": 2026,
+      "kind": "Movie",
+      "rating": "K",
+      "runtime": "10s",
+      "badge": "Ketflix Original"
+    },
+    {
+      "slug": "pirates-of-ketibbean",
+      "title": "PIRATES of the KETIBBEAN",
+      "tag": "The Curse of the Lost Slop.",
+      "year": 2026,
+      "kind": "Movie",
+      "rating": "K",
+      "runtime": "10s",
+      "badge": "Ketflix Original"
+    },
+    {
+      "slug": "keterman",
+      "title": "KETERMAN",
+      "tag": "One small slop for man, one giant rip for ketkind.",
+      "year": 2026,
+      "kind": "Movie",
+      "rating": "K",
+      "runtime": "10s",
+      "badge": "Ketflix Original"
+    },
+    {
+      "slug": "home-alone-ketsters",
+      "title": "HOME ALONe",
+      "tag": "A Family Ketsters.",
+      "year": 2026,
+      "kind": "Movie",
+      "rating": "K",
+      "runtime": "10s",
+      "badge": "Ketflix Original"
+    },
+    {
+      "slug": "the-ketfather",
+      "title": "The Ketfather",
+      "tag": "An offer you can't refuse... unless it's mids.",
+      "year": 2026,
+      "kind": "Movie",
+      "rating": "K",
+      "runtime": "10s",
+      "badge": "Ketflix Original"
+    },
+    {
+      "slug": "attack-on-ket",
+      "title": "Attack on Ket",
+      "tag": "Walls. Titans. Ket.",
+      "year": 2026,
+      "kind": "Series",
+      "rating": "K",
+      "runtime": "10s",
+      "badge": "Ketflix Original"
+    },
+    {
+      "slug": "back-to-the-keture",
+      "title": "BACK TO THE KETURE",
+      "tag": "1.21 gigs?!???",
+      "year": 2026,
+      "kind": "Movie",
+      "rating": "K",
+      "runtime": "10s",
+      "badge": "Ketflix Original"
+    },
+    {
+      "slug": "the-lord-of-the-ket",
+      "title": "THE LORD OF THE KET",
+      "tag": "One slop to rule them all.",
+      "year": 2026,
+      "kind": "Movie",
+      "rating": "K",
+      "runtime": "10s",
+      "badge": "Ketflix Original"
+    },
+    {
+      "slug": "joket",
+      "title": "JOKET",
+      "tag": "We live in a slopciety.",
+      "year": 2026,
+      "kind": "Movie",
+      "rating": "K",
+      "runtime": "10s",
+      "badge": "Ketflix Original"
+    },
+    {
+      "slug": "john-wick-ketribution",
+      "title": "JOHN WICK: KETRIBUTION",
+      "tag": "You stole his slop. Now he wants it back.",
+      "year": 2026,
+      "kind": "Movie",
+      "rating": "K",
+      "runtime": "10s",
+      "badge": "Ketflix Original"
+    }
+  ]
+}

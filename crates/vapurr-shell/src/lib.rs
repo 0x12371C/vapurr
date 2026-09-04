@@ -4,12 +4,39 @@ pub mod desk;
 pub mod tabs;
 
 #[cfg(test)]
+mod ketflix_guard {
+    #[test]
+    fn browse_uses_hosted_posters() {
+        let html = include_str!("../../../frontend/ketflix.html");
+        assert!(
+            html.contains("/ketflix/posters/"),
+            "hero/row must hit chrome host"
+        );
+        assert!(html.contains("/ketflix/catalog.json"));
+        assert!(html.contains("/ketflix/trailers/"));
+        let cat = include_str!("../../../frontend/ketflix/catalog.json");
+        assert!(cat.contains("the-ketrix"));
+        assert!(cat.contains("john-wick-ketribution"));
+    }
+}
+
+#[cfg(test)]
 mod pusd_guard {
     #[test]
     fn pusd_is_the_mint_desk() {
         let html = include_str!("../../../frontend/pusd.html");
         assert!(html.contains("data-mode=\"mint\""), "one book, mint/redeem");
         assert!(html.contains("id=\"lithe\""), "Lithe lives on this desk");
+        assert!(html.contains("id=\"euler\""), "Euler vault lives on this desk");
+        assert!(html.contains("id=\"house\""), "House Uni v4 book lives on this desk");
+        assert!(html.contains("econ-loop"), "desk talks to the vault if deployed");
+        assert!(html.contains("econ-house"), "desk talks to the house book if deployed");
+        assert!(html.contains("econ-swap"), "desk swaps the house book");
+        let nav = include_str!("nav.rs");
+        assert!(
+            nav.contains("\"euler\" | \"loop\""),
+            "vapurr://euler and vapurr://loop open the PUSD desk"
+        );
         assert!(
             !html.contains("globe.js"),
             "PUSD is a money desk, not the globe clone"
@@ -25,7 +52,10 @@ mod liq_guard {
     #[test]
     fn explorer_liq_is_native_svg() {
         let js = include_str!("../../../frontend/explorer.js");
-        assert!(js.contains("function drawLiqGraph"), "Scan must paint the map as SVG");
+        assert!(
+            js.contains("function drawLiqGraph"),
+            "Scan must paint the map as SVG"
+        );
         assert!(
             !js.contains("vis-network"),
             "vis-network must not come back — it paints 0×0 in WebView2"
@@ -63,10 +93,7 @@ mod liq_guard {
         check("scan/gas", || vapurr_rhc::scan::api("gas", ""));
         check("scan/liq", || vapurr_rhc::scan::api("liq", ""));
         check("scan/token-usdg", || {
-            vapurr_rhc::scan::api(
-                "token",
-                "a=0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
-            )
+            vapurr_rhc::scan::api("token", "a=0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168")
         });
         check("zzzmail/pns-status", || {
             vapurr_zmail::chain::status_snapshot("0x0000000000000000000000000000000000000001")

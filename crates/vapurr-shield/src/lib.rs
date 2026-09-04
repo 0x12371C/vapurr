@@ -154,7 +154,7 @@ impl Shield {
         if is_pass_host(url) || is_pass_host(source_url) {
             return false;
         }
-        if is_google_surface(source_url) || is_challenge(url) {
+        if is_google_surface(source_url) || is_challenge(url) || is_faucet_page(source_url) {
             return false;
         }
         if resource_type == "main_frame" || resource_type == "document" {
@@ -179,7 +179,7 @@ impl Shield {
 
     pub fn cosmetic_css(&self, page_url: &str) -> String {
         let prefs = self.prefs();
-        if !prefs.enabled || !prefs.cosmetic || is_chrome(page_url) || is_pass_host(page_url) || is_google_surface(page_url) {
+        if !prefs.enabled || !prefs.cosmetic || is_chrome(page_url) || is_pass_host(page_url) || is_google_surface(page_url) || is_faucet_page(page_url) {
             return String::new();
         }
         let Ok(guard) = self.engine.lock() else {
@@ -201,7 +201,7 @@ impl Shield {
 
     pub fn extra_hide_css(&self, page_url: &str, classes: &[String], ids: &[String]) -> String {
         let prefs = self.prefs();
-        if !prefs.enabled || !prefs.cosmetic || is_chrome(page_url) || is_pass_host(page_url) || is_google_surface(page_url) {
+        if !prefs.enabled || !prefs.cosmetic || is_chrome(page_url) || is_pass_host(page_url) || is_google_surface(page_url) || is_faucet_page(page_url) {
             return String::new();
         }
         if classes.is_empty() && ids.is_empty() {
@@ -447,6 +447,7 @@ pub fn is_pass_host(url: &str) -> bool {
     const ROOTS: &[&str] = &[
         "fomo.family",
         "fomoapi.io",
+        "thesecretlab.app",
         "robinhood.com",
         "robinhood.net",
         "walletconnect.com",
@@ -460,6 +461,12 @@ pub fn is_pass_host(url: &str) -> bool {
 }
 
 /// Google Search / YouTube / reCAPTCHA. EasyPrivacy on these looks like a bot.
+fn is_faucet_page(url: &str) -> bool {
+    let h = host(url);
+    h == "faucet.testnet.chain.robinhood.com"
+        || h.ends_with(".faucet.testnet.chain.robinhood.com")
+}
+
 fn is_google_surface(url: &str) -> bool {
     let h = host(url);
     let h = h.trim_start_matches("www.");
@@ -572,6 +579,24 @@ mod tests {
     }
 
     #[test]
+    fn faucet_page_is_not_stripped() {
+        let s = Shield::new();
+        assert!(!s.should_block(
+            "https://accounts.google.com/gsi/client",
+            "https://faucet.testnet.chain.robinhood.com/",
+            "script"
+        ));
+        assert!(!s.should_block(
+            "https://challenges.cloudflare.com/turnstile/v0/api.js",
+            "https://faucet.testnet.chain.robinhood.com/",
+            "script"
+        ));
+        assert!(s
+            .cosmetic_css("https://faucet.testnet.chain.robinhood.com/")
+            .is_empty());
+    }
+
+    #[test]
     fn passes_fomo_family() {
         let s = Shield::new();
         assert!(!s.should_block(
@@ -604,6 +629,12 @@ mod tests {
             "https://fomo.family/",
             "xhr"
         ));
+        assert!(!s.should_block(
+            "https://thesecretlab.app/kyc",
+            "https://thesecretlab.app/kyc",
+            "xhr"
+        ));
+        assert!(s.cosmetic_css("https://thesecretlab.app/kyc").is_empty());
     }
 
     #[test]

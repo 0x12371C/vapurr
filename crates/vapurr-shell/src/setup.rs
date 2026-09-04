@@ -67,11 +67,100 @@ pub fn is_setup_name(stem: &str) -> bool {
 pub fn install_dir() -> PathBuf {
     let base = std::env::var_os("LOCALAPPDATA")
         .map(PathBuf::from)
-        .or_else(|| {
-            std::env::var_os("USERPROFILE").map(|h| PathBuf::from(h).join("AppData/Local"))
-        })
+        .or_else(|| std::env::var_os("USERPROFILE").map(|h| PathBuf::from(h).join("AppData/Local")))
         .unwrap_or_else(|| PathBuf::from("."));
     base.join("Programs").join("vapurr")
+}
+
+/// `%LOCALAPPDATA%\vapurr\install_id` — profile, not Programs\vapurr.
+pub fn install_id_path() -> PathBuf {
+    crate::desk::Desk::profile_dir().join("install_id")
+}
+
+fn is_uuid(s: &str) -> bool {
+    let b = s.as_bytes();
+    if b.len() != 36 {
+        return false;
+    }
+    let hex = |c: u8| c.is_ascii_hexdigit();
+    b[8] == b'-'
+        && b[13] == b'-'
+        && b[18] == b'-'
+        && b[23] == b'-'
+        && b.iter()
+            .enumerate()
+            .all(|(i, &c)| matches!(i, 8 | 13 | 18 | 23) || hex(c))
+}
+
+fn new_uuid_v4() -> String {
+    #[cfg(windows)]
+    {
+        if let Ok(g) = windows::core::GUID::new() {
+            return format!("{g:?}").to_ascii_lowercase();
+        }
+    }
+    use sha2::{Digest, Sha256};
+    let mut h = Sha256::new();
+    h.update(
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_nanos().to_le_bytes())
+            .unwrap_or_default(),
+    );
+    h.update(std::process::id().to_le_bytes());
+    let d = h.finalize();
+    let mut b = [0u8; 16];
+    b.copy_from_slice(&d[..16]);
+    b[6] = (b[6] & 0x0f) | 0x40;
+    b[8] = (b[8] & 0x3f) | 0x80;
+    format!(
+        "{:02x}{:02x}{:02x}{:02x}-{:02x}{:02x}-{:02x}{:02x}-{:02x}{:02x}-{:02x}{:02x}{:02x}{:02x}{:02x}{:02x}",
+        b[0], b[1], b[2], b[3], b[4], b[5], b[6], b[7], b[8], b[9], b[10], b[11], b[12], b[13],
+        b[14], b[15]
+    )
+}
+
+fn read_install_id_at(path: &Path) -> Option<String> {
+    let raw = std::fs::read_to_string(path).ok()?;
+    let t = raw.trim();
+    if is_uuid(t) {
+        Some(t.to_ascii_lowercase())
+    } else {
+        None
+    }
+}
+
+pub fn read_install_id() -> Option<String> {
+    read_install_id_at(&install_id_path())
+}
+
+fn ensure_install_id_at(path: &Path) -> Result<String, String> {
+    if let Some(id) = read_install_id_at(path) {
+        return Ok(id);
+    }
+    let id = new_uuid_v4();
+    if let Some(dir) = path.parent() {
+        std::fs::create_dir_all(dir).map_err(|e| format!("install_id dir: {e}"))?;
+    }
+    let tmp = path.with_extension("tmp");
+    std::fs::write(&tmp, format!("{id}\n")).map_err(|e| format!("install_id write: {e}"))?;
+    match std::fs::rename(&tmp, path) {
+        Ok(()) => Ok(id),
+        Err(_) => {
+            if let Some(existing) = read_install_id_at(path) {
+                let _ = std::fs::remove_file(&tmp);
+                return Ok(existing);
+            }
+            std::fs::copy(&tmp, path).map_err(|e| format!("install_id persist: {e}"))?;
+            let _ = std::fs::remove_file(&tmp);
+            Ok(id)
+        }
+    }
+}
+
+/// Mint once. Reinstall keeps the same UUID.
+pub fn ensure_install_id() -> Result<String, String> {
+    ensure_install_id_at(&install_id_path())
 }
 
 fn exe_stem() -> String {
@@ -176,16 +265,10 @@ fn write_lnk(path: &Path, target: &Path) -> Result<(), String> {
     }
 }
 
-fn reg_set_sz(
-    key: windows::Win32::System::Registry::HKEY,
-    name: windows::core::PCWSTR,
-    val: &str,
-) {
+fn reg_set_sz(key: windows::Win32::System::Registry::HKEY, name: windows::core::PCWSTR, val: &str) {
     use windows::Win32::System::Registry::{RegSetValueExW, REG_SZ};
     let data = wide(val);
-    let bytes = unsafe {
-        std::slice::from_raw_parts(data.as_ptr() as *const u8, data.len() * 2)
-    };
+    let bytes = unsafe { std::slice::from_raw_parts(data.as_ptr() as *const u8, data.len() * 2) };
     let _ = unsafe { RegSetValueExW(key, name, 0, REG_SZ, Some(bytes)) };
 }
 
@@ -223,7 +306,10 @@ fn write_uninstall_key(exe: &Path, dir: &Path) {
     }
     let uninst = format!("\"{}\" --uninstall", exe.display());
     let icon = format!("{},0", exe.display());
-    let size_kb = (std::fs::metadata(exe).map(|m| m.len()).unwrap_or(21_000_000) / 1024) as u32
+    let size_kb = (std::fs::metadata(exe)
+        .map(|m| m.len())
+        .unwrap_or(21_000_000)
+        / 1024) as u32
         + 180;
     let st = unsafe { GetLocalTime() };
     let date = format!("{:04}{:02}{:02}", st.wYear, st.wMonth, st.wDay);
@@ -280,6 +366,13 @@ fn do_install(desktop: bool) -> Result<PathBuf, String> {
         }
     }
     write_uninstall_key(&target, &dest);
+    match ensure_install_id() {
+        Ok(id) => {
+            let short = id.get(..8).unwrap_or(&id);
+            crash::log(&format!("install_id {short}"));
+        }
+        Err(e) => crash::log(&format!("install_id: {e}")),
+    }
     crash::log(&format!("installed {}", target.display()));
     Ok(target)
 }
@@ -294,9 +387,9 @@ fn spawn_process(exe: &Path, cmdline: &str, dir: &Path, hidden: bool) -> Result<
     use windows::core::{PCWSTR, PWSTR};
     use windows::Win32::Foundation::{CloseHandle, HANDLE};
     use windows::Win32::System::Threading::{
-        CreateProcessW, CREATE_BREAKAWAY_FROM_JOB, CREATE_NEW_PROCESS_GROUP,
-        CREATE_NO_WINDOW, CREATE_UNICODE_ENVIRONMENT, DETACHED_PROCESS, PROCESS_INFORMATION,
-        STARTF_USESHOWWINDOW, STARTUPINFOW,
+        CreateProcessW, CREATE_BREAKAWAY_FROM_JOB, CREATE_NEW_PROCESS_GROUP, CREATE_NO_WINDOW,
+        CREATE_UNICODE_ENVIRONMENT, DETACHED_PROCESS, PROCESS_INFORMATION, STARTF_USESHOWWINDOW,
+        STARTUPINFOW,
     };
     use windows::Win32::UI::WindowsAndMessaging::SW_SHOWNORMAL;
     let exe_w = wide(exe);
@@ -307,7 +400,8 @@ fn spawn_process(exe: &Path, cmdline: &str, dir: &Path, hidden: bool) -> Result<
     si.dwFlags = STARTF_USESHOWWINDOW;
     si.wShowWindow = if hidden { 0 } else { SW_SHOWNORMAL.0 as u16 };
     let mut pi = PROCESS_INFORMATION::default();
-    let mut flags = CREATE_BREAKAWAY_FROM_JOB | CREATE_NEW_PROCESS_GROUP | CREATE_UNICODE_ENVIRONMENT;
+    let mut flags =
+        CREATE_BREAKAWAY_FROM_JOB | CREATE_NEW_PROCESS_GROUP | CREATE_UNICODE_ENVIRONMENT;
     if hidden {
         flags |= CREATE_NO_WINDOW | DETACHED_PROCESS;
     }
@@ -383,6 +477,7 @@ fn info_json() -> String {
         "installed": already_installed(),
         "dest": install_dir().display().to_string(),
         "version": SETUP_VER,
+        "install_id": read_install_id(),
     })
     .to_string()
 }
@@ -451,7 +546,9 @@ fn setup_http(
         let _ = proxy.send_event(Msg::Quit);
         return Some(json_resp(serde_json::json!({ "ok": true })));
     }
-    Some(json_resp(serde_json::json!({ "ok": false, "error": "unknown" })))
+    Some(json_resp(
+        serde_json::json!({ "ok": false, "error": "unknown" }),
+    ))
 }
 
 fn center_window(window: &tao::window::Window) {
@@ -480,7 +577,7 @@ pub fn run() {
     let mut window_b = WindowBuilder::new()
         .with_title("Install vapurr")
         .with_theme(Some(Theme::Dark))
-        .with_inner_size(LogicalSize::new(440.0, 580.0))
+        .with_inner_size(LogicalSize::new(420.0, 508.0))
         .with_resizable(false)
         .with_visible(false)
         .with_window_icon(app_icon(32));
@@ -525,11 +622,7 @@ pub fn run() {
     {
         page_b = page_b.with_additional_browser_args(host::WV_ARGS);
     }
-    let page = Rc::new(
-        page_b
-            .build(&window)
-            .unwrap_or_else(|e| fatal("page", e)),
-    );
+    let page = Rc::new(page_b.build(&window).unwrap_or_else(|e| fatal("page", e)));
     window.set_visible(true);
 
     let mut started = false;
@@ -652,5 +745,39 @@ mod tests {
         assert!(!install_desktop("install/0", b""));
         assert!(install_desktop("install", b""));
         assert!(!install_desktop("install", br#"{"desktop":false}"#));
+    }
+
+    #[test]
+    fn install_id_path_is_profile_not_programs() {
+        let s = install_id_path().to_string_lossy().replace('/', "\\");
+        assert!(s.ends_with("vapurr\\install_id"), "{s}");
+        assert!(!s.contains("Programs"));
+    }
+
+    #[test]
+    fn uuid_shape() {
+        assert!(is_uuid("550e8400-e29b-41d4-a716-446655440000"));
+        assert!(is_uuid("550E8400-E29B-41D4-A716-446655440000"));
+        assert!(!is_uuid("not-a-uuid"));
+        assert!(!is_uuid(""));
+        let minted = new_uuid_v4();
+        assert!(is_uuid(&minted), "{minted}");
+        assert_eq!(minted, minted.to_ascii_lowercase());
+    }
+
+    #[test]
+    fn install_id_idempotent() {
+        let dir = std::env::temp_dir().join(format!("vapurr-id-test-{}", std::process::id()));
+        let _ = std::fs::create_dir_all(&dir);
+        let path = dir.join("install_id");
+        let _ = std::fs::remove_file(&path);
+        let a = ensure_install_id_at(&path).expect("mint");
+        let b = ensure_install_id_at(&path).expect("again");
+        assert_eq!(a, b);
+        assert!(is_uuid(&a));
+        let disk = std::fs::read_to_string(&path).unwrap();
+        assert_eq!(disk.trim(), a);
+        let _ = std::fs::remove_file(&path);
+        let _ = std::fs::remove_dir(&dir);
     }
 }

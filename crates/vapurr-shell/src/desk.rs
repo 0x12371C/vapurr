@@ -2,6 +2,7 @@
 //! Earn payload is host + https + time. No path, query, cookies, or title.
 
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 use std::fs;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -10,7 +11,9 @@ use vapurr_core::SiteKey;
 
 const HISTORY_CAP: usize = 400;
 const VISIT_CAP: usize = 2000;
-const USDG_MINOR_PER_VISIT: u128 = 1_000; // $0.001 USDG
+const VISIT_DWELL: u64 = 30 * 60;
+const RECEIPT_HOSTS: usize = 48;
+const PUSD_MINOR_PER_VISIT: u128 = 1_000; // $0.001 $PUSD
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Bookmark {
@@ -34,14 +37,43 @@ pub struct Visit {
     pub ts: u64,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Receipt {
     pub id: u64,
     pub ts: u64,
+    #[serde(default)]
+    pub from: u64,
+    #[serde(default)]
+    pub to: u64,
     pub visits: u32,
     pub hosts: u32,
+    #[serde(default)]
+    pub https: u32,
+    #[serde(default)]
+    pub host_list: Vec<String>,
     pub usdg_minor: u128,
+    #[serde(default)]
+    pub pusd_minor: u128,
     pub status: String,
+    #[serde(default)]
+    pub hash: String,
+}
+
+impl Receipt {
+    fn amount(&self) -> u128 {
+        if self.pusd_minor > 0 {
+            self.pusd_minor
+        } else {
+            self.usdg_minor
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum EarnClaim {
+    Empty,
+    Sealed(Receipt),
+    Queued(Receipt),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -123,6 +155,8 @@ pub struct Desk {
     pub prefs: Prefs,
     #[serde(default)]
     pub last_url: String,
+    #[serde(skip)]
+    pub last_earn_error: Option<String>,
 }
 
 impl Default for Desk {
@@ -138,6 +172,7 @@ impl Default for Desk {
             next_receipt: 1,
             prefs: Prefs::default(),
             last_url: String::new(),
+            last_earn_error: None,
         }
     }
 }
@@ -148,7 +183,9 @@ impl Desk {
             .ok()
             .map(PathBuf::from)
             .or_else(|| {
-                std::env::var("USERPROFILE").ok().map(|h| PathBuf::from(h).join("AppData/Local"))
+                std::env::var("USERPROFILE")
+                    .ok()
+                    .map(|h| PathBuf::from(h).join("AppData/Local"))
             })
             .unwrap_or_else(|| PathBuf::from("."));
         base.join("vapurr")
@@ -237,7 +274,9 @@ impl Desk {
                 last.host = host.clone();
                 last.ts = ts;
                 changed = true;
-            } else if last.host == host && ts.saturating_sub(last.ts) <= 8 && looks_like_hop(&last.url)
+            } else if last.host == host
+                && ts.saturating_sub(last.ts) <= 8
+                && looks_like_hop(&last.url)
             {
                 last.url = url.clone();
                 last.title = better_title(&last.title, &title, &host);
@@ -260,11 +299,9 @@ impl Desk {
             changed = true;
         }
         if self.opt_in {
-            let same_visit = self
-                .visits
-                .last()
-                .map(|v| v.host == host && ts.saturating_sub(v.ts) <= 8)
-                .unwrap_or(false);
+            let same_visit = self.visits.iter().rev().any(|v| {
+                v.host == host && ts.saturating_sub(v.ts) <= VISIT_DWELL
+            });
             if !same_visit {
                 self.visits.push(Visit { host, https, ts });
                 if self.visits.len() > VISIT_CAP {
@@ -363,7 +400,10 @@ impl Desk {
             });
         }
         let changed = out.len() != old.len()
-            || out.iter().zip(old.iter()).any(|(a, b)| a.url != b.url || a.title != b.title);
+            || out
+                .iter()
+                .zip(old.iter())
+                .any(|(a, b)| a.url != b.url || a.title != b.title);
         self.bookmarks = out;
         changed
     }
@@ -491,32 +531,88 @@ impl Desk {
         self.save();
     }
 
-    pub fn submit(&mut self) -> Option<Receipt> {
-        if self.visits.is_empty() {
-            return None;
+    pub fn submit(&mut self, kyc_proven: bool) -> EarnClaim {
+        let out = self.submit_inner(kyc_proven, Self::now());
+        if matches!(out, EarnClaim::Queued(_)) {
+            self.save();
         }
-        let visits = self.visits.len() as u32;
-        let mut hosts: Vec<&str> = self.visits.iter().map(|v| v.host.as_str()).collect();
+        out
+    }
+
+    pub fn submit_inner(&mut self, kyc_proven: bool, ts: u64) -> EarnClaim {
+        if self.visits.is_empty() {
+            self.last_earn_error = if kyc_proven {
+                None
+            } else {
+                Some("Seal a window first. Payout still needs KYC.".into())
+            };
+            if kyc_proven {
+                self.promote_held();
+            }
+            return EarnClaim::Empty;
+        }
+        let rec = self.seal_window(ts, kyc_proven);
+        if kyc_proven {
+            self.promote_held();
+            self.last_earn_error = None;
+            EarnClaim::Queued(rec)
+        } else {
+            self.last_earn_error = Some(
+                "Receipt sealed. Payout needs zer0ID KYC on this install.".into(),
+            );
+            EarnClaim::Sealed(rec)
+        }
+    }
+
+    fn seal_window(&mut self, ts: u64, kyc_proven: bool) -> Receipt {
+        let visits_n = self.visits.len() as u32;
+        let https = self.visits.iter().filter(|v| v.https).count() as u32;
+        let from = self.visits.iter().map(|v| v.ts).min().unwrap_or(ts);
+        let to = self.visits.iter().map(|v| v.ts).max().unwrap_or(ts);
+        let mut hosts: Vec<String> = self.visits.iter().map(|v| v.host.clone()).collect();
         hosts.sort();
         hosts.dedup();
-        let usdg_minor = (visits as u128) * USDG_MINOR_PER_VISIT;
+        if hosts.len() > RECEIPT_HOSTS {
+            hosts.truncate(RECEIPT_HOSTS);
+        }
+        let host_n = hosts.len() as u32;
+        let minor = (visits_n as u128) * PUSD_MINOR_PER_VISIT;
+        let id = self.next_receipt;
+        let hash = receipt_hash(id, from, to, visits_n, &hosts);
+        let status = if kyc_proven { "queued" } else { "held" };
         let rec = Receipt {
-            id: self.next_receipt,
-            ts: Self::now(),
-            visits,
-            hosts: hosts.len() as u32,
-            usdg_minor,
-            status: "queued".into(),
+            id,
+            ts,
+            from,
+            to,
+            visits: visits_n,
+            hosts: host_n,
+            https,
+            host_list: hosts,
+            usdg_minor: minor,
+            pusd_minor: minor,
+            status: status.into(),
+            hash,
         };
         self.next_receipt += 1;
-        self.pending_usdg_minor = self.pending_usdg_minor.saturating_add(usdg_minor);
+        if kyc_proven {
+            self.pending_usdg_minor = self.pending_usdg_minor.saturating_add(minor);
+        }
         self.visits.clear();
         self.receipts.insert(0, rec.clone());
         if self.receipts.len() > 50 {
             self.receipts.truncate(50);
         }
-        self.save();
-        Some(rec)
+        rec
+    }
+
+    fn promote_held(&mut self) {
+        for r in &mut self.receipts {
+            if r.status == "held" {
+                r.status = "queued".into();
+                self.pending_usdg_minor = self.pending_usdg_minor.saturating_add(r.amount());
+            }
+        }
     }
 
     pub fn snapshot(&self) -> serde_json::Value {
@@ -557,22 +653,56 @@ impl Desk {
         let downloads = std::env::var("USERPROFILE")
             .map(|h| format!("{h}\\Downloads"))
             .unwrap_or_else(|_| ".".into());
+        let pending = format!("{:.3}", self.pending_usdg_minor as f64 / 1_000_000.0);
+        let paid = format!("{:.3}", self.paid_usdg_minor as f64 / 1_000_000.0);
+        let kyc = vapurr_id::load_verified(&Self::profile_dir());
+        let install_id = fs::read_to_string(Self::profile_dir().join("install_id"))
+            .ok()
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty());
+        let window_minor = (self.visits.len() as u128) * PUSD_MINOR_PER_VISIT;
+        let window = if self.visits.is_empty() {
+            serde_json::Value::Null
+        } else {
+            let https = self.visits.iter().filter(|v| v.https).count();
+            serde_json::json!({
+                "visits": self.visits.len(),
+                "hosts": hosts.len(),
+                "host_list": hosts,
+                "https": https,
+                "from": self.visits.iter().map(|v| v.ts).min(),
+                "to": self.visits.iter().map(|v| v.ts).max(),
+                "pusd_minor": window_minor,
+                "pusd": format!("{:.3}", window_minor as f64 / 1_000_000.0),
+            })
+        };
         serde_json::json!({
             "opt_in": self.opt_in,
             "pending_visits": self.visits.len(),
-            "pending_usdg": format!("{:.3}", self.pending_usdg_minor as f64 / 1_000_000.0),
+            "window_pusd": format!("{:.3}", window_minor as f64 / 1_000_000.0),
+            "window_pusd_minor": window_minor,
+            "pending_usdg": pending,
             "pending_usdg_minor": self.pending_usdg_minor,
-            "paid_usdg": format!("{:.3}", self.paid_usdg_minor as f64 / 1_000_000.0),
-            "rate": "$0.001 / visit",
+            "pending_pusd": pending,
+            "pending_pusd_minor": self.pending_usdg_minor,
+            "paid_usdg": paid,
+            "paid_pusd": paid,
+            "rate": "$0.001 / host session",
             "bookmarks": bookmarks,
             "history": history,
             "receipts": self.receipts,
             "hosts_unsubmitted": hosts,
+            "window": window,
+            "install_id": install_id,
             "prefs": self.prefs,
             "zoom": self.prefs.zoom,
             "zoom_pct": (self.prefs.zoom * 100.0).round() as i64,
             "downloads": downloads,
             "last_url": self.last_url,
+            "kyc_proven": kyc.as_ref().map(vapurr_id::payout_ready).unwrap_or(false),
+            "kyc_handle": kyc.as_ref().map(|a| a.handle.clone()),
+            "kyc_url": vapurr_id::KYC_URL,
+            "earn_error": self.last_earn_error,
         })
     }
 }
@@ -604,6 +734,10 @@ pub fn chrome_url(raw: &str) -> Option<String> {
     if let Some(rest) = raw.strip_prefix("vapurr://") {
         let id = rest.trim_matches('/').split('?').next().unwrap_or("home");
         let id = if id.is_empty() { "home" } else { id };
+        let id = match id {
+            "ketpay" => "pay",
+            other => other,
+        };
         return Some(format!("vapurr://{id}"));
     }
     if raw.contains("vapurr.localhost") {
@@ -614,6 +748,10 @@ pub fn chrome_url(raw: &str) -> Option<String> {
         }
         let stem = page.trim_end_matches('/').trim_end_matches(".html");
         let id = if stem.is_empty() { "home" } else { stem };
+        let id = match id {
+            "ketpay" => "pay",
+            other => other,
+        };
         return Some(format!("vapurr://{id}"));
     }
     None
@@ -635,7 +773,8 @@ pub fn canonicalize_url(raw: &str) -> String {
         let h = h.to_ascii_lowercase();
         let _ = u.set_host(Some(&h));
     }
-    if (u.scheme() == "https" && u.port() == Some(443)) || (u.scheme() == "http" && u.port() == Some(80))
+    if (u.scheme() == "https" && u.port() == Some(443))
+        || (u.scheme() == "http" && u.port() == Some(80))
     {
         let _ = u.set_port(None);
     }
@@ -699,6 +838,17 @@ pub fn display_url(raw: &str) -> String {
     } else {
         format!("{host}{path}")
     }
+}
+
+fn receipt_hash(id: u64, from: u64, to: u64, visits: u32, hosts: &[String]) -> String {
+    let mut h = Sha256::new();
+    h.update(b"vapurr-earn/1\n");
+    h.update(format!("{id}\n{from}\n{to}\n{visits}\n").as_bytes());
+    for host in hosts {
+        h.update(host.as_bytes());
+        h.update(b"\n");
+    }
+    h.finalize().iter().map(|b| format!("{b:02x}")).collect()
 }
 
 pub fn is_history_noise(url: &str) -> bool {
@@ -801,7 +951,10 @@ mod tests {
     fn canonicalize_strips_tracking_and_slash() {
         let u = canonicalize_url("https://WWW.Example.com/path/?utm_source=x&v=1#frag");
         assert_eq!(u, "https://www.example.com/path?v=1");
-        assert_eq!(canonicalize_url("https://youtube.com/"), "https://youtube.com");
+        assert_eq!(
+            canonicalize_url("https://youtube.com/"),
+            "https://youtube.com"
+        );
     }
 
     #[test]
@@ -881,10 +1034,89 @@ mod tests {
     fn touch_title_upgrades_host_placeholder() {
         let mut d = Desk::default();
         d.ingest_nav("https://veil.markets/", "veil.markets", 1);
-        assert!(d.touch_title(
-            "https://veil.markets/",
-            "VEIL - Private Execution Network"
-        ));
+        assert!(d.touch_title("https://veil.markets/", "VEIL - Private Execution Network"));
         assert!(d.history[0].title.starts_with("VEIL"));
+    }
+
+    #[test]
+    fn ketpay_aliases_pay() {
+        assert_eq!(chrome_url("vapurr://ketpay"), Some("vapurr://pay".into()));
+        assert_eq!(chrome_url("vapurr://pay"), Some("vapurr://pay".into()));
+    }
+
+    #[test]
+    fn same_host_session_is_one_visit() {
+        let mut d = Desk::default();
+        d.opt_in = true;
+        assert!(d.ingest_nav("https://example.com/", "Example", 100));
+        assert!(d.ingest_nav("https://example.com/a", "A", 100 + 60));
+        assert_eq!(d.visits.len(), 1);
+        assert!(d.ingest_nav("https://other.dev/", "Other", 100 + 90));
+        assert_eq!(d.visits.len(), 2);
+        assert!(d.ingest_nav("https://example.com/b", "B", 100 + VISIT_DWELL + 1));
+        assert_eq!(d.visits.len(), 3);
+    }
+
+    #[test]
+    fn submit_without_kyc_seals_held() {
+        let mut d = Desk::default();
+        d.visits.push(Visit {
+            host: "example.com".into(),
+            https: true,
+            ts: 10,
+        });
+        d.visits.push(Visit {
+            host: "other.dev".into(),
+            https: true,
+            ts: 40,
+        });
+        match d.submit_inner(false, 50) {
+            EarnClaim::Sealed(r) => {
+                assert_eq!(r.status, "held");
+                assert_eq!(r.visits, 2);
+                assert_eq!(r.hosts, 2);
+                assert_eq!(r.from, 10);
+                assert_eq!(r.to, 40);
+                assert_eq!(r.hash.len(), 64);
+                assert!(r.host_list.contains(&"example.com".into()));
+                assert_eq!(r.pusd_minor, 2_000);
+            }
+            other => panic!("{other:?}"),
+        }
+        assert!(d.visits.is_empty());
+        assert_eq!(d.pending_usdg_minor, 0);
+        assert_eq!(d.receipts.len(), 1);
+    }
+
+    #[test]
+    fn submit_with_kyc_queues_and_promotes_held() {
+        let mut d = Desk::default();
+        d.visits.push(Visit {
+            host: "example.com".into(),
+            https: true,
+            ts: 1,
+        });
+        match d.submit_inner(false, 2) {
+            EarnClaim::Sealed(r) => assert_eq!(r.status, "held"),
+            other => panic!("{other:?}"),
+        }
+        assert_eq!(d.pending_usdg_minor, 0);
+        d.visits.push(Visit {
+            host: "next.dev".into(),
+            https: true,
+            ts: 3,
+        });
+        match d.submit_inner(true, 4) {
+            EarnClaim::Queued(r) => {
+                assert_eq!(r.pusd_minor, 1_000);
+                assert_eq!(r.status, "queued");
+                assert_eq!(r.hash.len(), 64);
+            }
+            other => panic!("{other:?}"),
+        }
+        assert!(d.visits.is_empty());
+        assert_eq!(d.pending_usdg_minor, 2_000);
+        assert_eq!(d.receipts[0].status, "queued");
+        assert_eq!(d.receipts[1].status, "queued");
     }
 }

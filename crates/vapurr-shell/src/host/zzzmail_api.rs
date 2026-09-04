@@ -1,6 +1,5 @@
 use super::*;
 
-
 pub(crate) fn office() -> MutexGuard<'static, vapurr_zmail::PostOffice> {
     static OFFICE: OnceLock<Mutex<vapurr_zmail::PostOffice>> = OnceLock::new();
     let m = OFFICE.get_or_init(|| {
@@ -16,7 +15,6 @@ pub(crate) fn office() -> MutexGuard<'static, vapurr_zmail::PostOffice> {
     m.lock().unwrap_or_else(|e| e.into_inner())
 }
 
-
 pub(crate) fn json_body(v: serde_json::Value) -> Response<Cow<'static, [u8]>> {
     Response::builder()
         .header(CONTENT_TYPE, "application/json; charset=utf-8")
@@ -27,7 +25,6 @@ pub(crate) fn json_body(v: serde_json::Value) -> Response<Cow<'static, [u8]>> {
         .body(Cow::Owned(v.to_string().into_bytes()))
         .unwrap()
 }
-
 
 pub(crate) fn sign_voucher(v: &mut vapurr_zmail::Voucher) {
     let Some(key) = vapurr_wallet::DeviceKey::load() else {
@@ -41,22 +38,20 @@ pub(crate) fn sign_voucher(v: &mut vapurr_zmail::Voucher) {
     }
 }
 
-
 pub fn zzzmail_send_json(to: &str, body: &str, asset: &str) -> serde_json::Value {
     match office().send(to, "", body, asset) {
         Ok(mut r) => {
             sign_voucher(&mut r.voucher);
-            serde_json::to_value(&r).unwrap_or_else(|_| serde_json::json!({ "ok": true, "cid": r.cid }))
+            serde_json::to_value(&r)
+                .unwrap_or_else(|_| serde_json::json!({ "ok": true, "cid": r.cid }))
         }
         Err(e) => mail_err(e),
     }
 }
 
-
 pub fn zzzmail_inbox_json() -> serde_json::Value {
     office().snapshot()
 }
-
 
 pub(crate) fn mail_err(e: vapurr_zmail::ZmailError) -> serde_json::Value {
     serde_json::json!({
@@ -75,8 +70,11 @@ pub(crate) fn mail_err(e: vapurr_zmail::ZmailError) -> serde_json::Value {
     })
 }
 
-
-pub(crate) fn zzzmail_api(rel: &str, method: &Method, body: &[u8]) -> Option<Response<Cow<'static, [u8]>>> {
+pub(crate) fn zzzmail_api(
+    rel: &str,
+    method: &Method,
+    body: &[u8],
+) -> Option<Response<Cow<'static, [u8]>>> {
     let kind = rel.strip_prefix("zzzmail/api/")?;
     let kind = kind.trim_end_matches('/');
     if kind == "pns" || kind.starts_with("pns/") {
@@ -106,7 +104,8 @@ pub(crate) fn zzzmail_api(rel: &str, method: &Method, body: &[u8]) -> Option<Res
             Some(json_body(snap))
         }
         "send" => {
-            let v: serde_json::Value = serde_json::from_slice(body).unwrap_or(serde_json::Value::Null);
+            let v: serde_json::Value =
+                serde_json::from_slice(body).unwrap_or(serde_json::Value::Null);
             let to = v.get("to").and_then(|x| x.as_str()).unwrap_or("");
             let text = v.get("body").and_then(|x| x.as_str()).unwrap_or("");
             let subject = v.get("subject").and_then(|x| x.as_str()).unwrap_or("");
@@ -114,9 +113,9 @@ pub(crate) fn zzzmail_api(rel: &str, method: &Method, body: &[u8]) -> Option<Res
             match office().send(to, subject, text, asset) {
                 Ok(mut r) => {
                     sign_voucher(&mut r.voucher);
-                    Some(json_body(serde_json::to_value(&r).unwrap_or_else(|_| {
-                        serde_json::json!({ "ok": true, "cid": r.cid })
-                    })))
+                    Some(json_body(serde_json::to_value(&r).unwrap_or_else(
+                        |_| serde_json::json!({ "ok": true, "cid": r.cid }),
+                    )))
                 }
                 Err(e) => Some(json_body(mail_err(e))),
             }
@@ -161,10 +160,13 @@ pub(crate) fn zzzmail_api(rel: &str, method: &Method, body: &[u8]) -> Option<Res
             let cid = other.trim_start_matches("letter/");
             match office().open_cid(cid) {
                 Ok(item) => Some(json_body(serde_json::json!({ "ok": true, "letter": item }))),
-                Err(e) => Some(json_body(serde_json::json!({ "ok": false, "error": e.to_string() }))),
+                Err(e) => Some(json_body(
+                    serde_json::json!({ "ok": false, "error": e.to_string() }),
+                )),
             }
         }
-        _ => Some(json_body(serde_json::json!({ "ok": false, "error": "unknown" }))),
+        _ => Some(json_body(
+            serde_json::json!({ "ok": false, "error": "unknown" }),
+        )),
     }
 }
-

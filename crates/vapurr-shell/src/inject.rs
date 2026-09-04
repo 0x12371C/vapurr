@@ -1,7 +1,6 @@
+use crate::desk::Desk;
 use std::collections::HashSet;
 use std::sync::{Arc, Mutex};
-use crate::desk::Desk;
-
 
 pub(crate) fn js_set_zoom(pct: i64, show: bool, ctrl_scroll: bool) -> String {
     format!(
@@ -11,7 +10,6 @@ pub(crate) fn js_set_zoom(pct: i64, show: bool, ctrl_scroll: bool) -> String {
     )
 }
 
-
 pub(crate) fn js_set_url(url: &str) -> String {
     format!(
         "window.__setUrl && window.__setUrl({})",
@@ -19,38 +17,21 @@ pub(crate) fn js_set_url(url: &str) -> String {
     )
 }
 
-
 pub(crate) fn js_set_chain(json: &str) -> String {
-    format!(
-        "window.__setChain && window.__setChain({0});",
-        json
-    )
+    format!("window.__setChain && window.__setChain({0});", json)
 }
-
 
 pub(crate) fn js_set_tabs(v: &serde_json::Value) -> String {
-    format!(
-        "window.__setTabs && window.__setTabs({})",
-        v.to_string()
-    )
+    format!("window.__setTabs && window.__setTabs({})", v.to_string())
 }
-
 
 pub(crate) fn js_set_blobs(v: &serde_json::Value) -> String {
-    format!(
-        "window.__setBlobs && window.__setBlobs({})",
-        v.to_string()
-    )
+    format!("window.__setBlobs && window.__setBlobs({})", v.to_string())
 }
-
 
 pub(crate) fn js_set_mail(v: &serde_json::Value) -> String {
-    format!(
-        "window.__setMail && window.__setMail({})",
-        v
-    )
+    format!("window.__setMail && window.__setMail({})", v)
 }
-
 
 pub(crate) fn js_on_boost(on: bool, vault: &serde_json::Value, hosts: &[String]) -> String {
     let mut v = serde_json::json!({
@@ -70,7 +51,6 @@ pub(crate) fn js_on_boost(on: bool, vault: &serde_json::Value, hosts: &[String])
     }
     format!("window.__onBoost && window.__onBoost({})", v)
 }
-
 
 pub(crate) fn is_warm_url(url: &str) -> bool {
     let u = url.to_ascii_lowercase();
@@ -116,7 +96,6 @@ fn is_captcha_bait(url: &str) -> bool {
         || host.contains(".google.")
 }
 
-
 pub(crate) fn boost_targets(desk: &Desk) -> Vec<String> {
     let mut out = Vec::new();
     let mut seen = HashSet::new();
@@ -138,7 +117,6 @@ pub(crate) fn boost_targets(desk: &Desk) -> Vec<String> {
     out
 }
 
-
 pub(crate) fn boost_hosts(urls: &[String]) -> Vec<String> {
     urls.iter()
         .filter_map(|u| {
@@ -158,7 +136,6 @@ pub(crate) fn boost_hosts(urls: &[String]) -> Vec<String> {
         .collect()
 }
 
-
 pub(crate) fn js_boost_warm(urls: &[String]) -> String {
     if urls.is_empty() {
         return "window.__vapurrBoostClear && window.__vapurrBoostClear()".into();
@@ -166,7 +143,6 @@ pub(crate) fn js_boost_warm(urls: &[String]) -> String {
     let json = serde_json::to_string(urls).unwrap_or_else(|_| "[]".into());
     format!("window.__vapurrBoostWarm && window.__vapurrBoostWarm({json})")
 }
-
 
 pub(crate) fn snap_desk(desk: &Desk, vault: &std::cell::RefCell<vapurr_blob::Vault>) {
     if !desk.prefs.boost {
@@ -177,7 +153,6 @@ pub(crate) fn snap_desk(desk: &Desk, vault: &std::cell::RefCell<vapurr_blob::Vau
     }
 }
 
-
 pub(crate) fn js_set_boost(on: bool) -> String {
     format!(
         "window.__setBoost && window.__setBoost({})",
@@ -185,21 +160,204 @@ pub(crate) fn js_set_boost(on: bool) -> String {
     )
 }
 
-
 pub(crate) fn js_set_econ(v: &serde_json::Value) -> String {
     format!("window.__setEcon && window.__setEcon({})", v)
 }
-
 
 pub(crate) fn js_set_wallet(v: &serde_json::Value) -> String {
     format!("window.__setWallet && window.__setWallet({})", v)
 }
 
+pub(crate) fn wants_wallet_snap(url: &str) -> bool {
+    url.contains("wallet.html") || url.contains("pay.html") || url.contains("swap.html") || url.contains("bridge.html")
+}
+
+pub(crate) fn is_faucet_host(url: &str) -> bool {
+    let h = url::Url::parse(url)
+        .ok()
+        .and_then(|u| u.host_str().map(|s| s.to_ascii_lowercase()))
+        .unwrap_or_default();
+    h == "faucet.testnet.chain.robinhood.com"
+        || h.ends_with(".faucet.testnet.chain.robinhood.com")
+}
+
+/// Robinhood's faucet is a Connect-wallet SPA. We are not a dapp browser —
+/// this bridge exists only on that host so Connect / Add testnet / Import
+/// see this device. Writes never leave the page; they reject.
+pub(crate) fn js_faucet_attach(addr: &str) -> String {
+    let addr = serde_json::to_string(addr).unwrap_or_else(|_| "\"\"".into());
+    let rpc = serde_json::to_string(vapurr_rhc::TESTNET_RPC_HTTP)
+        .unwrap_or_else(|_| "\"\"".into());
+    format!(
+        r#"(function(){{
+  var addr = {addr};
+  if (!addr || addr.length < 42) return 0;
+  var chainId = "{chain}";
+  var netVer = "{cid}";
+  var rpc = {rpc};
+  function fill() {{
+    try {{
+      document.querySelectorAll("input,textarea").forEach(function (el) {{
+        var t = (el.type || "text").toLowerCase();
+        if (t === "password" || t === "hidden" || t === "checkbox" || t === "radio" || t === "file") return;
+        var ph = ((el.placeholder || "") + " " + (el.name || "") + " " + (el.id || "") + " " + (el.getAttribute("aria-label") || "")).toLowerCase();
+        if (el.value && /^0x[0-9a-fA-F]{{40}}$/.test(el.value.trim())) return;
+        if (ph.indexOf("address") < 0 && ph.indexOf("0x") < 0 && ph.indexOf("ens") < 0 && ph.indexOf("wallet") < 0) return;
+        var proto = Object.getOwnPropertyDescriptor(window.HTMLInputElement && HTMLInputElement.prototype, "value")
+          || Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement && HTMLTextAreaElement.prototype, "value");
+        var prev = el.value;
+        if (proto && proto.set) proto.set.call(el, addr);
+        else el.value = addr;
+        try {{ if (el._valueTracker) el._valueTracker.setValue(prev || ""); }} catch (e0) {{}}
+        el.dispatchEvent(new Event("input", {{ bubbles: true }}));
+        el.dispatchEvent(new Event("change", {{ bubbles: true }}));
+      }});
+    }} catch (e) {{}}
+  }}
+  function rpcCall(method, params) {{
+    return fetch(rpc, {{
+      method: "POST",
+      headers: {{ "content-type": "application/json" }},
+      body: JSON.stringify({{ jsonrpc: "2.0", id: 1, method: method, params: params || [] }})
+    }}).then(function (r) {{ return r.json(); }}).then(function (j) {{
+      if (j.error) {{ var e = new Error(j.error.message || "rpc"); e.code = j.error.code; throw e; }}
+      return j.result;
+    }});
+  }}
+  function sameChain(id) {{
+    var s = String(id || "").toLowerCase();
+    if (s === chainId || s === "0xb626") return true;
+    var n = s.indexOf("0x") === 0 ? parseInt(s, 16) : parseInt(s, 10);
+    return n === {cid};
+  }}
+  function emit(ev, val) {{
+    var a = (eth && eth._on && eth._on[ev]) || [];
+    for (var i = 0; i < a.length; i++) {{
+      try {{ a[i](val); }} catch (e1) {{}}
+    }}
+  }}
+  function live(args) {{
+    var m = (args && args.method) || "";
+    var p = (args && args.params) || [];
+    if (m === "eth_requestAccounts") {{
+      emit("connect", {{ chainId: chainId }});
+      emit("accountsChanged", [addr]);
+      emit("chainChanged", chainId);
+      return Promise.resolve([addr]);
+    }}
+    if (m === "eth_accounts") return Promise.resolve([addr]);
+    if (m === "eth_chainId") return Promise.resolve(chainId);
+    if (m === "net_version") return Promise.resolve(netVer);
+    if (m === "eth_coinbase") return Promise.resolve(addr);
+    if (m === "wallet_getPermissions" || m === "wallet_requestPermissions")
+      return Promise.resolve([{{ parentCapability: "eth_accounts" }}]);
+    if (m === "wallet_switchEthereumChain") {{
+      if (sameChain(p[0] && p[0].chainId)) {{
+        emit("chainChanged", chainId);
+        return Promise.resolve(null);
+      }}
+      var err = new Error("Unrecognized chain"); err.code = 4902; return Promise.reject(err);
+    }}
+    if (m === "wallet_addEthereumChain") {{
+      if (!p[0] || sameChain(p[0].chainId)) {{
+        emit("chainChanged", chainId);
+        return Promise.resolve(null);
+      }}
+      var addErr = new Error("Unrecognized chain"); addErr.code = 4902; return Promise.reject(addErr);
+    }}
+    if (m === "wallet_watchAsset") return Promise.resolve(true);
+    if (m === "eth_sendTransaction" || m === "eth_signTransaction" || m === "eth_sign" || m === "personal_sign" || m.indexOf("eth_signTypedData") === 0) {{
+      var rej = new Error("Sign in vapurr Wallet, not the faucet page."); rej.code = 4001; return Promise.reject(rej);
+    }}
+    if (m.indexOf("eth_") === 0 || m === "net_listening" || m === "web3_clientVersion")
+      return rpcCall(m, p);
+    var u = new Error("unsupported " + m); u.code = 4200; return Promise.reject(u);
+  }}
+  function announce() {{
+    try {{
+      var info = Object.freeze({{
+        uuid: "8f3c2a91-6b0e-4d17-9c4a-1a2b3c4d5e6f",
+        name: "vapurr",
+        icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32'><rect width='32' height='32' rx='8' fill='%23C0F800'/></svg>",
+        rdns: "app.vapurr"
+      }});
+      window.dispatchEvent(new CustomEvent("eip6963:announceProvider", {{
+        detail: Object.freeze({{ info: info, provider: eth }})
+      }}));
+    }} catch (e2) {{}}
+  }}
+  var eth = window.ethereum;
+  if (!eth || !eth.isVapurr) {{
+    eth = {{
+      isVapurr: true,
+      isMetaMask: true,
+      isConnected: function () {{ return true; }},
+      enable: function () {{ return live({{ method: "eth_requestAccounts" }}); }},
+      on: function (ev, fn) {{ (eth._on[ev] = eth._on[ev] || []).push(fn); }},
+      removeListener: function (ev, fn) {{
+        var a = eth._on[ev] || [];
+        eth._on[ev] = a.filter(function (x) {{ return x !== fn; }});
+      }},
+      _on: {{}},
+      _metamask: {{ isUnlocked: function () {{ return Promise.resolve(true); }} }}
+    }};
+    window.ethereum = eth;
+  }}
+  eth.isVapurr = true;
+  eth.isMetaMask = true;
+  eth.chainId = chainId;
+  eth.networkVersion = netVer;
+  eth.selectedAddress = addr;
+  eth.providers = [eth];
+  eth._metamask = eth._metamask || {{ isUnlocked: function () {{ return Promise.resolve(true); }} }};
+  eth._live = live;
+  eth.request = function (a) {{ return live(a); }};
+  eth.send = function (payload, cb) {{
+    if (typeof payload === "string") {{
+      return live({{ method: payload, params: Array.isArray(cb) ? cb : [] }});
+    }}
+    var p = live(payload);
+    if (typeof cb === "function") {{
+      p.then(function (r) {{ cb(null, {{ jsonrpc: "2.0", id: payload && payload.id, result: r }}); }}, function (e) {{ cb(e); }});
+      return;
+    }}
+    return p;
+  }};
+  eth.sendAsync = eth.send;
+  eth.enable = function () {{ return live({{ method: "eth_requestAccounts" }}); }};
+  if (!window.__vapurrFaucet6963) {{
+    window.__vapurrFaucet6963 = true;
+    try {{ window.addEventListener("eip6963:requestProvider", announce); }} catch (e3) {{}}
+  }}
+  if (typeof eth._flush === "function") eth._flush();
+  fill();
+  announce();
+  try {{
+    if (!window.__vapurrFaucetObs) {{
+      window.__vapurrFaucetObs = new MutationObserver(fill);
+      window.__vapurrFaucetObs.observe(document.documentElement, {{ childList: true, subtree: true }});
+    }}
+  }} catch (e) {{}}
+  try {{ window.dispatchEvent(new Event("ethereum#initialized")); }} catch (e) {{}}
+  emit("connect", {{ chainId: chainId }});
+  emit("accountsChanged", [addr]);
+  emit("chainChanged", chainId);
+  return 1;
+}})();"#,
+        addr = addr,
+        chain = vapurr_rhc::TESTNET_CHAIN_ID_HEX,
+        cid = vapurr_rhc::TESTNET_CHAIN_ID,
+        rpc = rpc
+    )
+}
 
 pub(crate) fn js_set_outbid(v: &serde_json::Value) -> String {
     format!("window.__setOutbid && window.__setOutbid({})", v)
 }
 
+pub(crate) fn js_set_ketlist(v: &serde_json::Value) -> String {
+    format!("window.__setKetList && window.__setKetList({})", v)
+}
 
 pub(crate) fn js_econ_err(which: &str, msg: &str) -> String {
     format!(
@@ -209,14 +367,9 @@ pub(crate) fn js_econ_err(which: &str, msg: &str) -> String {
     )
 }
 
-
 pub(crate) fn js_set_desk(v: &serde_json::Value) -> String {
-    format!(
-        "window.__setDesk && window.__setDesk({})",
-        v.to_string()
-    )
+    format!("window.__setDesk && window.__setDesk({})", v.to_string())
 }
-
 
 pub(crate) fn set_page_url(slot: &Arc<Mutex<String>>, url: &str) {
     if let Ok(mut g) = slot.lock() {
@@ -224,6 +377,15 @@ pub(crate) fn set_page_url(slot: &Arc<Mutex<String>>, url: &str) {
     }
 }
 
+pub(crate) fn inject_faucet(page: &wry::WebView, url: &str) {
+    if !is_faucet_host(url) {
+        return;
+    }
+    let Some(addr) = vapurr_wallet::peek_address() else {
+        return;
+    };
+    let _ = page.evaluate_script(&js_faucet_attach(&addr));
+}
 
 pub(crate) fn inject_shield(page: &wry::WebView, shield: &vapurr_shield::Shield, url: &str) {
     if crate::host::is_chrome_url(url) || vapurr_shield::is_pass_host(url) {
@@ -234,7 +396,6 @@ pub(crate) fn inject_shield(page: &wry::WebView, shield: &vapurr_shield::Shield,
         let _ = page.evaluate_script(&js);
     }
 }
-
 
 pub(crate) fn js_apply_theme(theme: &str) -> String {
     let t = if theme.eq_ignore_ascii_case("light") {
@@ -248,7 +409,6 @@ pub(crate) fn js_apply_theme(theme: &str) -> String {
     )
 }
 
-
 pub(crate) const BOOT_JS: &str = r#"
 (function(){
   var chrome = false;
@@ -259,6 +419,62 @@ pub(crate) const BOOT_JS: &str = r#"
       var t = localStorage.getItem("vapurr.theme");
       if (t !== "light") t = "dark";
       document.documentElement.setAttribute("data-theme", t);
+    }
+    if (host === "faucet.testnet.chain.robinhood.com" && !(window.ethereum && window.ethereum.isVapurr)) {
+      var q = [];
+      var eth = {
+        isVapurr: true,
+        isMetaMask: true,
+        isConnected: function () { return true; },
+        chainId: "0xb626",
+        networkVersion: "46630",
+        request: function (a) {
+          if (eth._live) return eth._live(a);
+          return new Promise(function (ok, no) { q.push([a, ok, no]); });
+        },
+        enable: function () { return eth.request({ method: "eth_requestAccounts" }); },
+        send: function (payload, cb) {
+          if (typeof payload === "string") {
+            return eth.request({ method: payload, params: Array.isArray(cb) ? cb : [] });
+          }
+          var p = eth.request(payload);
+          if (typeof cb === "function") {
+            p.then(function (r) { cb(null, { jsonrpc: "2.0", id: payload && payload.id, result: r }); }, function (e) { cb(e); });
+            return;
+          }
+          return p;
+        },
+        on: function (ev, fn) { (eth._on[ev] = eth._on[ev] || []).push(fn); },
+        removeListener: function (ev, fn) {
+          var a = eth._on[ev] || [];
+          eth._on[ev] = a.filter(function (x) { return x !== fn; });
+        },
+        _on: {},
+        _metamask: { isUnlocked: function () { return Promise.resolve(true); } },
+        _flush: function () {
+          var x;
+          while ((x = q.shift())) eth.request(x[0]).then(x[1], x[2]);
+        }
+      };
+      eth.sendAsync = eth.send;
+      eth.providers = [eth];
+      window.ethereum = eth;
+      function announce() {
+        try {
+          var info = Object.freeze({
+            uuid: "8f3c2a91-6b0e-4d17-9c4a-1a2b3c4d5e6f",
+            name: "vapurr",
+            icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32'><rect width='32' height='32' rx='8' fill='%23C0F800'/></svg>",
+            rdns: "app.vapurr"
+          });
+          window.dispatchEvent(new CustomEvent("eip6963:announceProvider", {
+            detail: Object.freeze({ info: info, provider: eth })
+          }));
+        } catch (e3) {}
+      }
+      try { window.addEventListener("eip6963:requestProvider", announce); } catch (e4) {}
+      announce();
+      try { window.dispatchEvent(new Event("ethereum#initialized")); } catch (e2) {}
     }
   } catch (e) {}
   // Lime cursor is chrome-only. Do not paint over fomo.family / WalletConnect modals.
@@ -414,9 +630,45 @@ mod tests {
     use crate::desk::Desk;
 
     #[test]
+    fn ketpay_gets_wallet_snap() {
+        assert!(wants_wallet_snap("http://vapurr.localhost/pay.html"));
+        assert!(wants_wallet_snap("http://vapurr.localhost/wallet.html"));
+        assert!(wants_wallet_snap("http://vapurr.localhost/swap.html"));
+        assert!(wants_wallet_snap("http://vapurr.localhost/bridge.html"));
+        assert!(!wants_wallet_snap("http://vapurr.localhost/home.html"));
+    }
+
+    #[test]
+    fn faucet_bridge_is_host_only() {
+        assert!(is_faucet_host("https://faucet.testnet.chain.robinhood.com/"));
+        assert!(is_faucet_host(
+            "https://faucet.testnet.chain.robinhood.com/add-chain"
+        ));
+        assert!(!is_faucet_host("https://fomo.family/"));
+        assert!(!is_faucet_host("http://vapurr.localhost/wallet.html"));
+        assert!(!is_faucet_host(
+            "https://evil.test/?next=https://faucet.testnet.chain.robinhood.com/"
+        ));
+        let js = js_faucet_attach("0x1111111111111111111111111111111111111111");
+        assert!(js.contains("isVapurr"));
+        assert!(js.contains("0x1111111111111111111111111111111111111111"));
+        assert!(js.contains(vapurr_rhc::TESTNET_CHAIN_ID_HEX));
+        assert!(js.contains("0xb626"));
+        assert!(!js.contains("0xb616"));
+        assert!(js.contains("4001"));
+        assert!(js.contains("eip6963:announceProvider"));
+        assert!(BOOT_JS.contains("faucet.testnet.chain.robinhood.com"));
+        assert!(BOOT_JS.contains("0xb626"));
+        assert!(BOOT_JS.contains("eip6963:announceProvider"));
+        assert_eq!(vapurr_rhc::TESTNET_CHAIN_ID_HEX, "0xb626");
+    }
+
+    #[test]
     fn boost_does_not_prefetch_google() {
         assert!(!is_warm_url("https://www.google.com/"));
-        assert!(!is_warm_url("https://www.google.com/search?q=robinhood+chain"));
+        assert!(!is_warm_url(
+            "https://www.google.com/search?q=robinhood+chain"
+        ));
         assert!(!is_warm_url("https://accounts.google.com/signin"));
         assert!(!is_warm_url("https://www.youtube.com/watch?v=x"));
         assert!(!is_warm_url("https://www.gstatic.com/recaptcha/x.js"));
@@ -433,4 +685,3 @@ mod tests {
         );
     }
 }
-

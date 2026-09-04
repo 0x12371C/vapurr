@@ -178,17 +178,30 @@
       padding: 22px 16px;
     }
     .empty .lede { margin: 0 0 14px; }
-    #book, #side { display: none; }
+    #book, #side, #euler, #house { display: none; }
     #boot { display: block; }
-    body.is-live #book, body.is-live #side { display: block; }
+    body.is-live #book, body.is-live #side, body.is-live #euler, body.is-live #house { display: block; }
     body.is-live #boot { display: none; }
+    #euler, #house { margin-top: 14px; }
+    .e-stats {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+      margin: 12px 0;
+    }
+    .two { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .two .btn { margin-top: 12px; }
+    #loop-steps-wrap { display: none; margin-top: 8px; }
+    #loop-steps-wrap.on { display: grid; grid-template-columns: auto 1fr; gap: 8px; align-items: center; }
+    #loop-steps-wrap span { color: var(--color-muted); font-size: 12px; }
+    #euler .seg button { font-size: 12px; }
     body.is-wait #boot { display: block; }
     html[data-theme="light"] .chip,
     html[data-theme="light"] .card {
       background: color-mix(in srgb, var(--color-steel) 84%, transparent);
     }
     @media (max-width: 760px) {
-      .desk, .stats { grid-template-columns: 1fr 1fr; }
+      .desk, .stats, .e-stats { grid-template-columns: 1fr 1fr; }
       .hero h1 { font-size: 44px; }
     }
     @media (max-width: 520px) {
@@ -205,7 +218,7 @@
     </div>
     <div class="hero">
       <h1><em>$</em><span id="bal-p">0.00</span></h1>
-      <p class="lede">The dollar this window spends. Burn $VAPURR to mint it. Lithe drips 9% on every balance. No claim.</p>
+      <p class="lede">The dollar this window spends. Burn $VAPURR to mint it. Lithe drips 9% on every balance. No claim. No dump into USDG or ETH from this desk.</p>
     </div>
     <div class="stats">
       <div class="chip"><span>$VAPURR</span><b id="bal-v">0.00</b></div>
@@ -222,7 +235,7 @@
       <div>
         <div class="card" id="boot">
           <h2 id="boot-title">Not on chain</h2>
-          <p class="lede" id="st">This device deploys the market. 1,000,000 $VAPURR mints to you. Then you burn V to mint $PUSD.</p>
+          <p class="lede" id="st">Fresh book. This device deploys the market. 1,000,000 $VAPURR mints to you. Retired testnet CAs do not count. Then you burn V to mint $PUSD.</p>
           <button class="btn" id="deploy" type="button">Deploy</button>
           <button class="btn-ghost" id="faucet" type="button" style="margin-top:8px;height:40px;width:100%;display:none">Faucet</button>
           <div class="err" id="dep-err"></div>
@@ -255,12 +268,78 @@
           <h2>Spend</h2>
           <p class="note">This is the unit of account in the window.</p>
           <div class="spend">
-            <button type="button" id="go-404">404</button>
+            <button type="button" id="go-404">KetPay</button>
             <button type="button" id="go-mail">zzzmail · 0.25¢</button>
             <button type="button" id="go-bid">vapurrbid</button>
           </div>
         </div>
       </div>
+    </div>
+    <div class="card" id="euler">
+      <h2>Supply and borrow</h2>
+      <p class="note">Euler-shaped vault. Isolated $PUSD credit. $VAPURR is collateral. Loop under 85% LTV. Lithe still drips on vault cash. No USDG vault. No ETH vault. New $PUSD depth, not a rented book.</p>
+      <div id="euler-boot">
+        <p class="lede" id="euler-st">Deploy the vault after the market is live. Not on chain yet.</p>
+        <button class="btn" id="euler-deploy" type="button">Deploy vault</button>
+        <div class="err" id="euler-boot-err"></div>
+      </div>
+      <div id="euler-book" style="display:none">
+        <div class="e-stats">
+          <div class="chip"><span>Util</span><b id="e-util">0%</b></div>
+          <div class="chip"><span>Borrow APY</span><b id="e-bapy">0.00%</b></div>
+          <div class="chip"><span>Supply APY</span><b id="e-sapy">0.00%</b></div>
+          <div class="chip"><span>Health</span><b id="e-hf">∞</b></div>
+        </div>
+        <div class="have" id="e-have">Supplied 0 · Debt 0 · V 0 · Cash 0</div>
+        <div class="seg" id="e-seg">
+          <button type="button" class="on" data-emode="supply">Supply</button>
+          <button type="button" data-emode="borrow">Borrow</button>
+          <button type="button" data-emode="loop">Loop</button>
+          <button type="button" data-emode="v">V collat</button>
+        </div>
+        <div class="amt">
+          <input class="field" id="e-amt" placeholder="0.00" inputmode="decimal" autocomplete="off"/>
+          <button class="btn-ghost" id="e-max" type="button" style="height:44px">Max</button>
+        </div>
+        <div id="loop-steps-wrap">
+          <span>Steps</span>
+          <input class="field" id="e-steps" value="8" inputmode="numeric" autocomplete="off"/>
+        </div>
+        <div class="have" id="e-pos">This device: 0.00 $PUSD</div>
+        <div class="quote" id="e-quote">Supply $PUSD. Earn borrow interest + Lithe on vault cash.</div>
+        <div class="two">
+          <button class="btn" id="e-go" type="button">Supply $PUSD</button>
+          <button class="btn-ghost" id="e-alt" type="button" style="height:46px;margin-top:12px">Withdraw</button>
+        </div>
+        <div class="err" id="euler-err"></div>
+      </div>
+    </div>
+    <div class="card" id="house">
+      <h2>House book</h2>
+      <p class="note">Uniswap v4 concentrated $VAPURR / $PUSD. 0.30% fee, ±20% around the oracle. House swapper is the tape — no Universal Router on 46630. No USDG in this pool. Stocks on this device are ops, not house LP.</p>
+      <div class="e-stats">
+        <div class="chip"><span>This V</span><b id="h-v">0.00</b></div>
+        <div class="chip"><span>This P</span><b id="h-p">0.00</b></div>
+        <div class="chip"><span>Treasury keep</span><b id="h-treas">0.00</b></div>
+        <div class="chip"><span>LP $VAPURR</span><b id="h-lpv">0.00</b></div>
+      </div>
+      <div class="have" id="h-have">Not seeded. Position NFT goes to this device.</div>
+      <div class="have" id="h-stocks"></div>
+      <div class="two" id="house-boot-row">
+        <button class="btn" id="house-deploy" type="button">Deploy book</button>
+        <button class="btn-ghost" id="house-boot" type="button" style="height:46px;margin-top:12px">Seed 50/50</button>
+      </div>
+      <div id="house-swap" style="display:none">
+        <div class="seg" id="h-seg">
+          <button type="button" class="on" data-hmode="v">Sell $VAPURR</button>
+          <button type="button" data-hmode="p">Sell $PUSD</button>
+        </div>
+        <div class="amt">
+          <input class="field" id="h-amt" placeholder="0.00" inputmode="decimal" autocomplete="off"/>
+        </div>
+        <button class="btn" id="h-go" type="button">Swap house book</button>
+      </div>
+      <div class="err" id="house-err"></div>
     </div>
   </div>
   <script src="/ipc.js"></script>
@@ -271,6 +350,8 @@
     var snap = null;
     var waitHash = "";
     var mode = "mint";
+    var emode = "supply";
+    var hmode = "v";
     function n(v) {
       var x = parseFloat(String(v || "0").replace(/,/g, ""));
       return isFinite(x) ? x : 0;
@@ -324,6 +405,114 @@
       document.getElementById("book-err").textContent = "";
       quote();
     }
+    function loopSnap() {
+      return (snap && snap.loop) || {};
+    }
+    function loopQuote(pusdIn, vIn, steps) {
+      var L = loopSnap();
+      var px = n(L.px);
+      if (!(px > 0)) px = n(snap && snap.price);
+      var ltv = n(L.ltv) / 100;
+      if (!(ltv > 0) || ltv >= 1) ltv = 0.85;
+      var S = n(L.supplied) + pusdIn;
+      var V = n(L.collat_v) + vIn;
+      var D = n(L.debt);
+      var i;
+      for (i = 0; i < steps; i++) {
+        var collat = V * px + S;
+        var maxD = collat * ltv;
+        var room = maxD - D;
+        if (room <= 0.000001) break;
+        room *= 0.999;
+        D += room;
+        S += room;
+      }
+      return { supplied: S, debt: D, steps: i };
+    }
+    function quoteEuler() {
+      var L = loopSnap();
+      var amt = n(document.getElementById("e-amt").value);
+      var stepsEl = document.getElementById("loop-steps-wrap");
+      var pos = document.getElementById("e-pos");
+      var q = document.getElementById("e-quote");
+      var go = document.getElementById("e-go");
+      var alt = document.getElementById("e-alt");
+      var inp = document.getElementById("e-amt");
+      if (stepsEl) stepsEl.classList.toggle("on", emode === "loop");
+      if (emode === "supply") {
+        pos.textContent = "This device: " + (L.pusd || (snap && snap.pusd) || "0.00") + " $PUSD";
+        inp.placeholder = "$PUSD in";
+        go.textContent = "Supply $PUSD";
+        alt.textContent = "Withdraw";
+        q.textContent = amt > 0
+          ? "Supply " + trimNum(amt) + " $PUSD. Earn borrow APY + Lithe on vault cash."
+          : "Supply $PUSD. Earn borrow interest + Lithe on vault cash.";
+      } else if (emode === "borrow") {
+        pos.textContent = "Room " + (L.room || "0.00") + " · cash " + (L.cash || "0.00");
+        inp.placeholder = "$PUSD out";
+        go.textContent = "Borrow $PUSD";
+        alt.textContent = "Repay";
+        q.textContent = amt > 0
+          ? "Borrow " + trimNum(amt) + " $PUSD against V and supplied P. LTV 85%."
+          : "Borrow $PUSD against $VAPURR and supplied $PUSD. LTV 85%. Liq 90%.";
+      } else if (emode === "loop") {
+        pos.textContent = "This device: " + (L.pusd || (snap && snap.pusd) || "0.00") + " $PUSD";
+        inp.placeholder = "$PUSD to loop";
+        go.textContent = "Loop";
+        alt.textContent = "Unwind";
+        var steps = parseInt(document.getElementById("e-steps").value, 10) || 8;
+        if (steps > 16) steps = 16;
+        if (steps < 1) steps = 1;
+        var g = loopQuote(amt, 0, steps);
+        q.textContent = steps + " steps at 85% LTV → supply ~" + g.supplied.toFixed(2) + " · debt ~" + g.debt.toFixed(2) + ". Depth stays in the vault.";
+      } else {
+        pos.textContent = "This device: " + (L.vapurr || (snap && snap.vapurr) || "0.00") + " $VAPURR";
+        inp.placeholder = "$VAPURR in";
+        go.textContent = "Deposit $VAPURR";
+        alt.textContent = "Withdraw V";
+        q.textContent = amt > 0
+          ? "Lock " + trimNum(amt) + " V as collateral. Then borrow or loop $PUSD."
+          : "Lock $VAPURR. That collateral is how looping creates new $PUSD depth.";
+      }
+    }
+    function setEmode(next) {
+      emode = next;
+      Array.prototype.forEach.call(document.querySelectorAll("#e-seg button"), function (b) {
+        b.classList.toggle("on", b.getAttribute("data-emode") === emode);
+      });
+      var err = document.getElementById("euler-err");
+      if (err) err.textContent = "";
+      quoteEuler();
+    }
+    function paintEuler(s) {
+      var L = (s && s.loop) || {};
+      var live = !!L.live;
+      var boot = document.getElementById("euler-boot");
+      var book = document.getElementById("euler-book");
+      if (boot) boot.style.display = live ? "none" : "block";
+      if (book) book.style.display = live ? "block" : "none";
+      var st = document.getElementById("euler-st");
+      if (st) {
+        st.textContent = L.need_market
+          ? "Mint $PUSD first. Then this device deploys the vault."
+          : (L.need_eth
+            ? "Need testnet ETH on this device, then deploy the vault."
+            : (L.status && L.status !== "ready" && L.status !== "live" ? L.status : "Deploy the vault after the market is live. Empty CA until then."));
+      }
+      var dep = document.getElementById("euler-deploy");
+      if (dep) dep.style.display = L.need_market ? "none" : "block";
+      document.getElementById("e-util").textContent = (L.util || "0.00") + "%";
+      document.getElementById("e-bapy").textContent = (L.borrow_apy || "0.00") + "%";
+      document.getElementById("e-sapy").textContent = (L.supply_apy || "0.00") + "%";
+      var hf = n(L.health);
+      document.getElementById("e-hf").textContent = (!L.live || n(L.debt) <= 0 || hf >= 50) ? "∞" : hf.toFixed(2);
+      document.getElementById("e-have").textContent =
+        "Supplied " + (L.supplied || "0.00") +
+        " · Debt " + (L.debt || "0.00") +
+        " · V " + (L.collat_v || "0.00") +
+        " · Cash " + (L.cash || "0.00");
+      quoteEuler();
+    }
     function paint(s) {
       if (!s) return;
       snap = s;
@@ -353,24 +542,68 @@
       var fauc = document.getElementById("faucet");
       if (fauc) fauc.style.display = s.faucet && s.need_eth ? "block" : "none";
       quote();
+      paintEuler(s);
+      paintHouse(s);
     }
     window.__setEcon = function (s) {
       paint(s);
       if (!vapurr.pendingTx) return;
       if (s.tx && s.tx !== waitHash) {
-        vapurr.finishTx(true, { tx: s.tx, txUrl: s.tx_url });
+        vapurr.finishTx(true, { tx: s.tx, txUrl: s.tx_url || (s.loop && s.loop.tx_url) });
         return;
       }
       if (vapurr.pendingTx.kind === "deploy" && s.live) {
         vapurr.finishTx(true, { already: true, title: "Already live" });
+        return;
+      }
+      if (vapurr.pendingTx.kind === "loop-deploy" && s.loop && s.loop.live) {
+        vapurr.finishTx(true, { already: true, title: "Vault live" });
+        return;
+      }
+      if (vapurr.pendingTx.kind === "house-deploy" && s.house && s.house.house && !s.house.need_deploy) {
+        vapurr.finishTx(true, { already: true, title: "Book live" });
       }
     };
     window.__econErr = function (which, msg) {
       if (vapurr.pendingTx) vapurr.finishTx(false, { error: msg || "failed" });
-      var id = which === "deploy" ? "dep-err" : "book-err";
+      var id = which === "deploy" ? "dep-err" : which === "loop" ? "euler-err" : which === "house" ? "house-err" : "book-err";
+      if (which === "loop" && document.getElementById("euler-book").style.display === "none") {
+        id = "euler-boot-err";
+      }
       var el = document.getElementById(id);
       if (el) el.textContent = msg || "";
     };
+    function paintHouse(s) {
+      var H = (s && s.house) || {};
+      document.getElementById("h-v").textContent = trimNum(H.vapurr || "0.00");
+      document.getElementById("h-p").textContent = trimNum(H.pusd || "0.00");
+      document.getElementById("h-treas").textContent = trimNum(H.treasury_v || "0.00");
+      document.getElementById("h-lpv").textContent = trimNum(H.lp_v || "0.00");
+      var have = document.getElementById("h-have");
+      if (H.live && H.pool_id) {
+        have.textContent = "NFT #" + (H.token_id || "?") + " · " + (H.band || "±20%") + " · fee " + (H.fee || "0.30") + "% · pool " + String(H.pool_id).slice(0, 10) + "…";
+      } else if (H.need_deploy === false) {
+        have.textContent = H.status || "Deployed. Seed 50/50 to mint the position.";
+      } else {
+        have.textContent = H.status || "Not on chain. Deploy the book, then seed.";
+      }
+      var stocks = H.stocks || [];
+      var el = document.getElementById("h-stocks");
+      if (!stocks.length) {
+        el.textContent = "No testnet stocks on this device.";
+      } else {
+        el.textContent = "Ops stocks (not house LP): " + stocks.map(function (t) {
+          return (t.bal || "0") + " " + t.symbol;
+        }).join(" · ");
+      }
+      var bootRow = document.getElementById("house-boot-row");
+      var swapBox = document.getElementById("house-swap");
+      if (bootRow) bootRow.style.display = H.live ? "none" : "";
+      if (swapBox) swapBox.style.display = H.live ? "block" : "none";
+      if (H.live && H.swap) {
+        have.textContent = (have.textContent || "") + " · swap " + String(H.swap).slice(0, 10) + "…";
+      }
+    }
     document.getElementById("amt").addEventListener("input", quote);
     document.getElementById("seg").addEventListener("click", function (e) {
       var b = e.target.closest("button");
@@ -438,14 +671,250 @@
       });
     };
     document.getElementById("faucet").onclick = function () {
+      var a = snap && snap.address;
+      if (a && navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(a);
+      }
       if (snap && snap.faucet) vapurr.go(snap.faucet);
     };
     document.getElementById("go-404").onclick = function () { vapurr.send({ cmd: "pane", id: "pay" }); };
     document.getElementById("go-mail").onclick = function () { vapurr.send({ cmd: "pane", id: "zzzmail" }); };
     document.getElementById("go-bid").onclick = function () { vapurr.send({ cmd: "pane", id: "vapurrbid" }); };
+    function eulerOp(op, amt, steps, title, lede, rows) {
+      if (vapurr.pendingTx) return;
+      document.getElementById("euler-err").textContent = "";
+      vapurr.beginTx({
+        title: title,
+        kicker: "This device signs",
+        lede: lede,
+        rows: rows,
+        confirmLabel: "Sign",
+        doneTitle: title,
+        failTitle: "Not sent",
+        explorer: (snap && snap.loop && snap.loop.explorer) || (snap && snap.explorer)
+      }).then(function (ok) {
+        if (!ok) return;
+        waitHash = (snap && snap.loop && snap.loop.tx) || (snap && snap.tx) || "";
+        vapurr.send({ cmd: "econ-loop", op: op, amt: amt || "", steps: steps || "" });
+      });
+    }
+    document.getElementById("e-amt").addEventListener("input", quoteEuler);
+    document.getElementById("e-steps").addEventListener("input", quoteEuler);
+    document.getElementById("e-seg").addEventListener("click", function (e) {
+      var b = e.target.closest("button");
+      if (!b) return;
+      setEmode(b.getAttribute("data-emode"));
+    });
+    document.getElementById("e-max").onclick = function () {
+      var L = loopSnap();
+      var v = "0";
+      if (emode === "supply" || emode === "loop") v = L.pusd || (snap && snap.pusd) || "0";
+      else if (emode === "borrow") {
+        var room = n(L.room);
+        var cash = n(L.cash);
+        v = String(Math.max(0, Math.min(room, cash)));
+      } else v = L.vapurr || (snap && snap.vapurr) || "0";
+      document.getElementById("e-amt").value = trimNum(v);
+      quoteEuler();
+    };
+    document.getElementById("e-go").onclick = function () {
+      var amt = document.getElementById("e-amt").value.trim();
+      var steps = document.getElementById("e-steps").value.trim() || "8";
+      var L = loopSnap();
+      if (emode === "loop") {
+        eulerOp("loop", amt, steps, "Loop $PUSD", "Recursive supply/borrow under 85% LTV. Depth stays in the vault. Hash or it failed.", [
+          { k: "Network", v: netLabel() },
+          { k: "$PUSD in", v: amt || "0" },
+          { k: "Steps", v: steps },
+          { k: "LTV", v: (L.ltv || "85.00") + "%" }
+        ]);
+        return;
+      }
+      if (!amt || n(amt) <= 0) {
+        document.getElementById("euler-err").textContent = "enter an amount";
+        return;
+      }
+      if (emode === "supply") {
+        eulerOp("supply", amt, "", "Supply $PUSD", "PUSD into the vault. Earn borrow interest. Lithe still drips on vault cash.", [
+          { k: "Network", v: netLabel() },
+          { k: "Supply", v: amt + " $PUSD" }
+        ]);
+      } else if (emode === "borrow") {
+        eulerOp("borrow", amt, "", "Borrow $PUSD", "Borrow against $VAPURR and supplied $PUSD. LTV 85%. Hash or it failed.", [
+          { k: "Network", v: netLabel() },
+          { k: "Borrow", v: amt + " $PUSD" },
+          { k: "LTV", v: (L.ltv || "85.00") + "%" }
+        ]);
+      } else {
+        eulerOp("depositV", amt, "", "Deposit $VAPURR", "Lock V as collateral. No USDG. Hash or it failed.", [
+          { k: "Network", v: netLabel() },
+          { k: "Collateral", v: amt + " $VAPURR" }
+        ]);
+      }
+    };
+    document.getElementById("e-alt").onclick = function () {
+      var amt = document.getElementById("e-amt").value.trim();
+      var steps = document.getElementById("e-steps").value.trim() || "8";
+      var L = loopSnap();
+      if (emode === "loop") {
+        eulerOp("unwind", "", steps, "Unwind", "Burn supplied $PUSD against debt. Cash stays. Hash or it failed.", [
+          { k: "Network", v: netLabel() },
+          { k: "Steps", v: steps }
+        ]);
+        return;
+      }
+      if (!amt || n(amt) <= 0) {
+        document.getElementById("euler-err").textContent = "enter an amount";
+        return;
+      }
+      if (emode === "supply") {
+        eulerOp("withdraw", amt, "", "Withdraw $PUSD", "Pull supplied $PUSD. Needs vault cash. Must stay under 85% LTV.", [
+          { k: "Network", v: netLabel() },
+          { k: "Withdraw", v: amt + " $PUSD" }
+        ]);
+      } else if (emode === "borrow") {
+        eulerOp("repay", amt, "", "Repay $PUSD", "Pay down vault debt. Hash or it failed.", [
+          { k: "Network", v: netLabel() },
+          { k: "Repay", v: amt + " $PUSD" }
+        ]);
+      } else {
+        eulerOp("withdrawV", amt, "", "Withdraw $VAPURR", "Unlock V collateral. Must stay under 85% LTV.", [
+          { k: "Network", v: netLabel() },
+          { k: "Unlock", v: amt + " $VAPURR" }
+        ]);
+      }
+    };
+    document.getElementById("h-seg").addEventListener("click", function (e) {
+      var b = e.target.closest("button");
+      if (!b) return;
+      hmode = b.getAttribute("data-hmode") || "v";
+      Array.prototype.forEach.call(document.querySelectorAll("#h-seg button"), function (x) {
+        x.classList.toggle("on", x.getAttribute("data-hmode") === hmode);
+      });
+      document.getElementById("house-err").textContent = "";
+    });
+    document.getElementById("h-go").onclick = function () {
+      if (vapurr.pendingTx) return;
+      var amt = document.getElementById("h-amt").value.trim();
+      document.getElementById("house-err").textContent = "";
+      if (!amt || n(amt) <= 0) {
+        document.getElementById("house-err").textContent = "enter an amount";
+        return;
+      }
+      var sellV = hmode !== "p";
+      var H = (snap && snap.house) || {};
+      vapurr.beginTx({
+        title: sellV ? "Sell $VAPURR" : "Sell $PUSD",
+        kicker: "House Uni v4",
+        kind: "house-swap",
+        lede: "Exact-in on the house $VAPURR / $PUSD book. Hash or it failed.",
+        rows: [
+          { k: "Network", v: netLabel() },
+          { k: "Sell", v: amt + (sellV ? " $VAPURR" : " $PUSD") },
+          { k: "Buy", v: sellV ? "$PUSD" : "$VAPURR" },
+          { k: "Swapper", v: H.swap || "house swap" }
+        ],
+        confirmLabel: "Sign and swap",
+        doneTitle: "Swapped",
+        failTitle: "Not swapped",
+        explorer: (H.explorer) || (snap && snap.explorer)
+      }).then(function (ok) {
+        if (!ok) return;
+        waitHash = (snap && snap.tx) || "";
+        vapurr.send({ cmd: "econ-swap", sell_v: sellV, amt: amt });
+      });
+    };
+    document.getElementById("house-deploy").onclick = function () {
+      if (vapurr.pendingTx) return;
+      document.getElementById("house-err").textContent = "";
+      vapurr.beginTx({
+        title: "Deploy house book",
+        kicker: "This device signs",
+        kind: "house-deploy",
+        lede: "Uniswap v4 concentrated $VAPURR / $PUSD helper. No USDG. Empty until this hash lands.",
+        rows: [
+          { k: "Network", v: netLabel() },
+          { k: "From", v: (snap && snap.address) || "this device" },
+          { k: "Pool", v: "$VAPURR / $PUSD 0.30%" },
+          { k: "Range", v: "±20% around oracle" }
+        ],
+        confirmLabel: "Sign and deploy",
+        doneTitle: "Book contract live",
+        failTitle: "Not deployed",
+        explorer: snap && snap.explorer
+      }).then(function (ok) {
+        if (!ok) return;
+        waitHash = (snap && snap.tx) || "";
+        vapurr.send({ cmd: "econ-house-deploy" });
+      });
+    };
+    document.getElementById("house-boot").onclick = function () {
+      if (vapurr.pendingTx) return;
+      document.getElementById("house-err").textContent = "";
+      var H = (snap && snap.house) || {};
+      vapurr.beginTx({
+        title: "Seed house book 50/50",
+        kicker: "This device signs",
+        lede: "Keep 50% $VAPURR as treasury. Burn a quarter to mint $PUSD. Seed the rest plus $PUSD as a Uni v4 CL NFT. Multiple txs. Hash or it failed.",
+        rows: [
+          { k: "Network", v: netLabel() },
+          { k: "From", v: (snap && snap.address) || "this device" },
+          { k: "Treasury keep", v: (H.treasury_v || "0") + " V" },
+          { k: "LP $VAPURR", v: (H.lp_v || "0") + " V + minted P" },
+          { k: "Range", v: "±20% · 0.30%" }
+        ],
+        confirmLabel: "Sign and seed",
+        doneTitle: "Seeded",
+        failTitle: "Not seeded",
+        explorer: (H.explorer) || (snap && snap.explorer)
+      }).then(function (ok) {
+        if (!ok) return;
+        waitHash = (snap && snap.tx) || "";
+        vapurr.send({ cmd: "econ-house-bootstrap" });
+      });
+    };
+    document.getElementById("euler-deploy").onclick = function () {
+      if (vapurr.pendingTx) return;
+      var L = loopSnap();
+      if (L.need_market) return;
+      document.getElementById("euler-boot-err").textContent = "";
+      vapurr.beginTx({
+        title: "Deploy $PUSD vault",
+        kicker: "This device signs",
+        kind: "loop-deploy",
+        lede: "Isolated $PUSD credit. $VAPURR collateral. Not a Euler fork. Empty until this hash lands.",
+        rows: [
+          { k: "Network", v: netLabel() },
+          { k: "From", v: (snap && snap.address) || "this device" },
+          { k: "Credit", v: "$PUSD only" },
+          { k: "Collateral", v: "$VAPURR + supplied $PUSD" },
+          { k: "LTV / liq", v: "85% / 90%" }
+        ],
+        confirmLabel: "Sign and deploy",
+        doneTitle: "Vault live",
+        failTitle: "Not deployed",
+        explorer: snap && snap.explorer
+      }).then(function (ok) {
+        if (!ok) return;
+        waitHash = (snap && snap.tx) || "";
+        vapurr.send({ cmd: "econ-loop-deploy" });
+      });
+    };
     if (/lithe/i.test(location.hash + location.search)) {
       setTimeout(function () {
         var el = document.getElementById("lithe");
+        if (el) el.scrollIntoView({ block: "start" });
+      }, 80);
+    }
+    if (/euler|tab=euler|loop/i.test(location.hash + location.search)) {
+      setTimeout(function () {
+        var el = document.getElementById("euler");
+        if (el) el.scrollIntoView({ block: "start" });
+      }, 80);
+    }
+    if (/house|tab=house|lp/i.test(location.hash + location.search)) {
+      setTimeout(function () {
+        var el = document.getElementById("house");
         if (el) el.scrollIntoView({ block: "start" });
       }, 80);
     }

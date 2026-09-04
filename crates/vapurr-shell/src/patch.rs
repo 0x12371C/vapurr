@@ -98,10 +98,7 @@ fn dest_exe() -> PathBuf {
             .unwrap_or("")
             .to_ascii_lowercase();
         if name == "vapurr.next.exe" {
-            return p
-                .parent()
-                .unwrap_or(Path::new("."))
-                .join("vapurr.exe");
+            return p.parent().unwrap_or(Path::new(".")).join("vapurr.exe");
         }
         if name == "vapurr.exe" {
             return p.clone();
@@ -308,8 +305,7 @@ fn candidates() -> Vec<Candidate> {
 
 fn running_sha() -> Result<String, String> {
     static HASH: std::sync::OnceLock<Result<String, String>> = std::sync::OnceLock::new();
-    HASH.get_or_init(|| sha256_path(&running_exe()?))
-        .clone()
+    HASH.get_or_init(|| sha256_path(&running_exe()?)).clone()
 }
 
 fn pick_update(running: &str) -> Option<Candidate> {
@@ -371,7 +367,11 @@ fn spawn_swap(next: &Path, pid: u32, dest: &Path) -> Result<(), String> {
     #[cfg(not(windows))]
     {
         Command::new(next)
-            .args(["--patch-swap", &pid.to_string(), &dest.display().to_string()])
+            .args([
+                "--patch-swap",
+                &pid.to_string(),
+                &dest.display().to_string(),
+            ])
             .spawn()
             .map_err(|e| format!("spawn swap: {e}"))?;
         Ok(())
@@ -587,10 +587,7 @@ mod tests {
 
     #[test]
     fn publish_roundtrip_and_same_hash_is_not_an_update() {
-        let root = std::env::temp_dir().join(format!(
-            "vapurr-patch-{}",
-            std::process::id()
-        ));
+        let root = std::env::temp_dir().join(format!("vapurr-patch-{}", std::process::id()));
         let src_dir = root.join("src");
         let chan = root.join("chan");
         let _ = fs::create_dir_all(&src_dir);

@@ -1,18 +1,14 @@
 use crate::desk::Desk;
 
-
 pub(crate) fn vapurr_url(page: &str) -> String {
     format!("http://vapurr.localhost/{page}")
 }
 
-
 pub(crate) const FOMO_FAMILY: &str = "https://fomo.family";
-
 
 pub(crate) fn needs_login(id: &str) -> bool {
     matches!(id, "wallet" | "portfolio")
 }
-
 
 pub(crate) fn pane_url(id: &str) -> String {
     if matches!(id, "fomo" | "family") {
@@ -24,7 +20,7 @@ pub(crate) fn pane_url(id: &str) -> String {
     let page = match id {
         "login" | "signin" | "signup" => "login.html",
         "wallet" | "portfolio" => "wallet.html?v=in",
-        "pay" | "404" => "pay.html",
+        "pay" | "ketpay" => "pay.html",
         "card" => "card.html",
         "zzzmail" | "zmail" | "mail" => "zzzmail.html",
         "id" => "id.html",
@@ -33,6 +29,8 @@ pub(crate) fn pane_url(id: &str) -> String {
         "defi" | "finance" => "defi.html",
         "stake" => "pusd.html",
         "pusd" | "vapurr" | "mint" | "lithe" => "pusd.html",
+        "euler" | "loop" => "pusd.html?tab=euler",
+        "house" | "lp" => "pusd.html?tab=house",
         "bridge" => "bridge.html",
         "dapps" => "dapps.html",
         "scan" | "explorer" | "xray" | "blocks" => "explorer.html",
@@ -57,7 +55,6 @@ pub(crate) fn pane_url(id: &str) -> String {
         vapurr_url(page)
     }
 }
-
 
 pub(crate) fn resolve_nav(raw: &str) -> String {
     let u = raw.trim();
@@ -95,11 +92,49 @@ pub(crate) fn resolve_nav(raw: &str) -> String {
     if vapurr_rhc::scan::is_scan_query(u) {
         return vapurr_url(&format!("explorer.html?q={u}"));
     }
-    u.to_string()
+    canonicalize_url(u)
 }
 
+/// www.thesecretlab.app Let's Encrypt died 2026-05-20. Apex is live. HSTS on www
+/// means Edge cannot click through, so never load that host.
+pub(crate) fn canonicalize_url(url: &str) -> String {
+    let Ok(mut u) = url::Url::parse(url) else {
+        return url.to_string();
+    };
+    let host = u.host_str().unwrap_or("").to_ascii_lowercase();
+    if host == "www.thesecretlab.app" {
+        if u.set_host(Some("thesecretlab.app")).is_ok() {
+            return u.to_string();
+        }
+    }
+    url.to_string()
+}
 
 pub(crate) fn home_url(desk: &Desk) -> String {
     resolve_nav(&desk.prefs.homepage)
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn secretlab_www_never_loads() {
+        assert_eq!(
+            canonicalize_url("https://www.thesecretlab.app/kyc"),
+            "https://thesecretlab.app/kyc"
+        );
+        assert_eq!(
+            resolve_nav("https://www.thesecretlab.app/kyc"),
+            "https://thesecretlab.app/kyc"
+        );
+        assert_eq!(
+            canonicalize_url("https://thesecretlab.app/kyc"),
+            "https://thesecretlab.app/kyc"
+        );
+        assert_eq!(
+            canonicalize_url("https://fomo.family/"),
+            "https://fomo.family/"
+        );
+    }
+}

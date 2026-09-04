@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Global Dollar (USDG) token. Green-on-green G from globaldollar.com/brand (Paxos / GDN). -->
+  <circle cx="32" cy="32" r="32" fill="#2a3d10"/>
+  <circle cx="32" cy="32" r="23.2" fill="#d3ea5c"/>
+  <g fill="#2a3d10">
+    <ellipse transform="rotate(-33 28.4 33.2)" cx="28.4" cy="33.2" rx="12" ry="16.6"/>
+    <rect x="38" y="29.8" width="16.8" height="5.4"/>
+  </g>
+</svg>
+

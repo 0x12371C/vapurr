@@ -29,10 +29,7 @@ pub fn snapshot(rows: &[Value], page_url: &str) -> Value {
 }
 
 pub fn js_set(v: &Value) -> String {
-    format!(
-        "window.__setCookies && window.__setCookies({})",
-        v
-    )
+    format!("window.__setCookies && window.__setCookies({})", v)
 }
 
 pub fn push(page: &WebView, page_url: &str) {
@@ -111,7 +108,9 @@ pub fn delete_host(page: &WebView, host: &str) -> bool {
             .unwrap_or("")
             .trim_start_matches('.')
             .to_ascii_lowercase();
-        if domain == host || domain.ends_with(&format!(".{host}")) || host.ends_with(&format!(".{domain}"))
+        if domain == host
+            || domain.ends_with(&format!(".{host}"))
+            || host.ends_with(&format!(".{domain}"))
         {
             let name = c.get("name").and_then(|v| v.as_str()).unwrap_or("");
             let path = c.get("path").and_then(|v| v.as_str()).unwrap_or("/");
@@ -143,9 +142,10 @@ pub fn delete_all(_page: &WebView) -> bool {
 }
 
 #[cfg(windows)]
-fn manager(page: &WebView) -> windows::core::Result<
-    webview2_com::Microsoft::Web::WebView2::Win32::ICoreWebView2CookieManager,
-> {
+fn manager(
+    page: &WebView,
+) -> windows::core::Result<webview2_com::Microsoft::Web::WebView2::Win32::ICoreWebView2CookieManager>
+{
     use webview2_com::Microsoft::Web::WebView2::Win32::*;
     use windows::core::Interface;
     unsafe {

@@ -1,11 +1,9 @@
-use super::*;
 use super::zzzmail_api::{json_body, mail_err, office};
-
+use super::*;
 
 pub fn adopt_wallet_address(addr: &str) {
     let _ = office().set_address(addr);
 }
-
 
 pub fn pns_snap_json() -> serde_json::Value {
     let (addr, me, local_primary, hood) = {
@@ -21,7 +19,11 @@ pub fn pns_snap_json() -> serde_json::Value {
         (me.address.clone(), me, p, hood)
     };
     let mut v = vapurr_zmail::chain::status_snapshot(&addr);
-    if v.get("primary").and_then(|x| x.as_str()).unwrap_or("").is_empty() && !local_primary.is_empty()
+    if v.get("primary")
+        .and_then(|x| x.as_str())
+        .unwrap_or("")
+        .is_empty()
+        && !local_primary.is_empty()
     {
         v["primary"] = serde_json::json!(local_primary);
         v["label"] = serde_json::json!(local_primary.trim_end_matches(".hood"));
@@ -34,27 +36,29 @@ pub fn pns_snap_json() -> serde_json::Value {
     v
 }
 
-
 pub fn zzzmail_hood_register_json(name: &str) -> serde_json::Value {
     match office().register_hood(name) {
         Ok(mut r) => {
             sign_voucher(&mut r.voucher);
-            serde_json::to_value(&r).unwrap_or_else(|_| serde_json::json!({ "ok": true, "kind": "hood", "name": r.name }))
+            serde_json::to_value(&r).unwrap_or_else(
+                |_| serde_json::json!({ "ok": true, "kind": "hood", "name": r.name }),
+            )
         }
         Err(e) => mail_err(e),
     }
 }
 
-
 pub(crate) fn pns_q(query: &str) -> String {
     for part in query.split('&') {
         if let Some(v) = part.strip_prefix("q=") {
-            return v.replace("%40", "@").replace("%2E", ".").replace("%2e", ".");
+            return v
+                .replace("%40", "@")
+                .replace("%2E", ".")
+                .replace("%2e", ".");
         }
     }
     String::new()
 }
-
 
 pub(crate) fn pns_scan_hit(query: &str) -> Option<serde_json::Value> {
     let raw = pns_q(query);
@@ -95,7 +99,6 @@ pub(crate) fn pns_scan_hit(query: &str) -> Option<serde_json::Value> {
     }
 }
 
-
 pub(crate) fn inject_pns(body: String) -> String {
     let Ok(mut v) = serde_json::from_str::<serde_json::Value>(&body) else {
         return body;
@@ -104,7 +107,6 @@ pub(crate) fn inject_pns(body: String) -> String {
     stamp_pns(&mut v, &mut cache);
     v.to_string()
 }
-
 
 pub(crate) fn stamp_pns(
     v: &mut serde_json::Value,
@@ -133,7 +135,6 @@ pub(crate) fn stamp_pns(
         }
     }
 }
-
 
 pub(crate) fn stamp_pns_obj(
     obj: &mut serde_json::Map<String, serde_json::Value>,
@@ -165,7 +166,6 @@ pub(crate) fn stamp_pns_obj(
     }
 }
 
-
 pub(crate) fn pns_tx_url(tx: &str) -> String {
     if tx.is_empty() {
         String::new()
@@ -173,7 +173,6 @@ pub(crate) fn pns_tx_url(tx: &str) -> String {
         format!("{}/tx/{}", vapurr_rhc::TESTNET_EXPLORER, tx)
     }
 }
-
 
 pub(crate) fn stamp_pns_tx(snap: &mut serde_json::Value, rec: &serde_json::Value) {
     if let Some(tx) = rec.get("tx").and_then(|x| x.as_str()) {
@@ -195,7 +194,6 @@ pub(crate) fn stamp_pns_tx(snap: &mut serde_json::Value, rec: &serde_json::Value
     }
 }
 
-
 pub(crate) fn pct_decode(s: &str) -> String {
     s.replace("%40", "@")
         .replace("%2E", ".")
@@ -204,14 +202,9 @@ pub(crate) fn pct_decode(s: &str) -> String {
         .replace("%2d", "-")
 }
 
-
 pub(crate) fn name_from_register(kind: &str, prefix: &str, body: &[u8]) -> String {
     let v: serde_json::Value = serde_json::from_slice(body).unwrap_or(serde_json::Value::Null);
-    let from_body = v
-        .get("name")
-        .and_then(|x| x.as_str())
-        .unwrap_or("")
-        .trim();
+    let from_body = v.get("name").and_then(|x| x.as_str()).unwrap_or("").trim();
     if !from_body.is_empty() {
         return from_body.to_string();
     }
@@ -224,8 +217,11 @@ pub(crate) fn name_from_register(kind: &str, prefix: &str, body: &[u8]) -> Strin
     String::new()
 }
 
-
-pub(crate) fn pns_api(kind: &str, method: &Method, body: &[u8]) -> Option<Response<Cow<'static, [u8]>>> {
+pub(crate) fn pns_api(
+    kind: &str,
+    method: &Method,
+    body: &[u8],
+) -> Option<Response<Cow<'static, [u8]>>> {
     if *method == Method::OPTIONS {
         return Some(json_body(serde_json::json!({ "ok": true })));
     }
@@ -276,7 +272,11 @@ pub(crate) fn pns_api(kind: &str, method: &Method, body: &[u8]) -> Option<Respon
             }
             if rec.get("ok") == Some(&serde_json::json!(true))
                 && rec.get("onchain") != Some(&serde_json::json!(true))
-                && rec.get("tx").and_then(|x| x.as_str()).unwrap_or("").is_empty()
+                && rec
+                    .get("tx")
+                    .and_then(|x| x.as_str())
+                    .unwrap_or("")
+                    .is_empty()
             {
                 return Some(json_body(serde_json::json!({
                     "ok": false,
@@ -346,7 +346,8 @@ pub(crate) fn pns_api(kind: &str, method: &Method, body: &[u8]) -> Option<Respon
                 }
             }
         }
-        _ => Some(json_body(serde_json::json!({ "ok": false, "error": "unknown" }))),
+        _ => Some(json_body(
+            serde_json::json!({ "ok": false, "error": "unknown" }),
+        )),
     }
 }
-

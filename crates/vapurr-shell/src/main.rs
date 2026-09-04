@@ -5,18 +5,18 @@ mod cookies;
 mod crash;
 mod desk;
 mod host;
+mod inject;
+mod ipc;
+mod layout;
+mod nav;
+mod patch;
+mod setup;
 mod shield_hook;
 mod tabs;
-mod nav;
-mod layout;
-mod ipc;
-mod inject;
-mod setup;
-mod patch;
-use nav::*;
-use layout::*;
-use ipc::*;
 use inject::*;
+use ipc::*;
+use layout::*;
+use nav::*;
 
 #[global_allocator]
 static ALLOC: mimalloc::MiMalloc = mimalloc::MiMalloc;
@@ -102,6 +102,9 @@ fn desk_json(desk: &Desk, shield: &vapurr_shield::Shield) -> serde_json::Value {
     let mut v = desk.snapshot();
     if let Some(map) = v.as_object_mut() {
         map.insert("shield".into(), shield.snapshot());
+        if let Some(id) = setup::read_install_id() {
+            map.insert("install_id".into(), serde_json::Value::String(id));
+        }
     }
     v
 }
@@ -161,7 +164,8 @@ fn set_dpi() {
         use windows::Win32::UI::HiDpi::{
             SetProcessDpiAwarenessContext, DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2,
         };
-        let _ = unsafe { SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2) };
+        let _ =
+            unsafe { SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2) };
     }
 }
 
@@ -284,23 +288,24 @@ fn main() {
             if host::is_wallet_scheme(&url) {
                 return false;
             }
+            let fixed = canonicalize_url(&url);
+            if fixed != url {
+                let _ = proxy.send_event(Msg::Go(fixed));
+                return false;
+            }
             let _ = proxy.send_event(Msg::Url(url));
             true
         }
     };
-    let page_new = {
-        move |url: String| host::allow_new_window(&url)
-    };
+    let page_new = { move |url: String| host::allow_new_window(&url) };
     let page_load = {
         let proxy = proxy.clone();
-        move |ev: PageLoadEvent, url: String| {
-            match ev {
-                PageLoadEvent::Started => {
-                    let _ = proxy.send_event(Msg::PageStart(url));
-                }
-                PageLoadEvent::Finished => {
-                    let _ = proxy.send_event(Msg::Url(url));
-                }
+        move |ev: PageLoadEvent, url: String| match ev {
+            PageLoadEvent::Started => {
+                let _ = proxy.send_event(Msg::PageStart(url));
+            }
+            PageLoadEvent::Finished => {
+                let _ = proxy.send_event(Msg::Url(url));
             }
         }
     };
@@ -375,8 +380,7 @@ fn main() {
     let vault = Rc::new(RefCell::new(
         vapurr_blob::Vault::open_default().unwrap_or_else(|e| {
             crash::log(&format!("blob vault: {e}"));
-            vapurr_blob::Vault::open(std::env::temp_dir().join("vapurr-blobs"))
-                .expect("blob vault")
+            vapurr_blob::Vault::open(std::env::temp_dir().join("vapurr-blobs")).expect("blob vault")
         }),
     ));
     snap_desk(&desk.borrow(), &vault);
@@ -388,6 +392,7 @@ fn main() {
     }
     let last_econ = Rc::new(RefCell::new(serde_json::json!({})));
     let last_outbid = Rc::new(RefCell::new(serde_json::json!({})));
+    let last_ketlist = Rc::new(RefCell::new(serde_json::json!({})));
     let last_wallet = Rc::new(RefCell::new(serde_json::json!({})));
     let (econ_tx, econ_rx) = mpsc::channel::<vapurr_econ::EconCmd>();
     {
@@ -405,9 +410,18 @@ fn main() {
                             | vapurr_econ::EconCmd::OutbidBid { .. }
                             | vapurr_econ::EconCmd::OutbidDeploy
                     );
+                    let listed = matches!(
+                        &cmd,
+                        vapurr_econ::EconCmd::KetList
+                            | vapurr_econ::EconCmd::KetListPay { .. }
+                            | vapurr_econ::EconCmd::KetListDeploy
+                    );
                     match client.run(cmd) {
                         Ok(snap) if board => {
                             let _ = proxy.send_event(Msg::OutbidSnap(snap));
+                        }
+                        Ok(snap) if listed => {
+                            let _ = proxy.send_event(Msg::KetListSnap(snap));
                         }
                         Ok(snap) => {
                             let _ = proxy.send_event(Msg::EconSnap(snap));
@@ -539,6 +553,7 @@ fn main() {
         let shield = shield.clone();
         let last_econ = last_econ.clone();
         let last_outbid = last_outbid.clone();
+        let last_ketlist = last_ketlist.clone();
         let last_wallet = last_wallet.clone();
         let paint_zoom = paint_zoom.clone();
         move || {
@@ -572,6 +587,10 @@ fn main() {
                 let oj = last_outbid.borrow().clone();
                 if oj.is_object() && !oj.as_object().map(|o| o.is_empty()).unwrap_or(true) {
                     let _ = page.borrow().evaluate_script(&js_set_outbid(&oj));
+                }
+                let kj = last_ketlist.borrow().clone();
+                if kj.is_object() && !kj.as_object().map(|o| o.is_empty()).unwrap_or(true) {
+                    let _ = page.borrow().evaluate_script(&js_set_ketlist(&kj));
                 }
                 let wj = last_wallet.borrow().clone();
                 if wj.is_object() && !wj.as_object().map(|o| o.is_empty()).unwrap_or(true) {
@@ -637,11 +656,7 @@ fn main() {
                         !stem.is_empty() && cur.contains(stem)
                     }
                 };
-                let url = if same {
-                    home_url(&desk.borrow())
-                } else {
-                    want
-                };
+                let url = if same { home_url(&desk.borrow()) } else { want };
                 tabs.borrow_mut().navigate(url.clone());
                 tabs.borrow_mut().suppress = true;
                 set_page_url(&page_url, &url);
@@ -731,7 +746,9 @@ fn main() {
                 cookies::push(&page.borrow(), &url);
             }
             Event::UserEvent(Msg::ShowFind) => {
-                let _ = toolbar.borrow().evaluate_script("window.__showFind && window.__showFind()");
+                let _ = toolbar
+                    .borrow()
+                    .evaluate_script("window.__showFind && window.__showFind()");
             }
             Event::UserEvent(Msg::Find(q)) => {
                 if !q.is_empty() {
@@ -743,7 +760,9 @@ fn main() {
                 }
             }
             Event::UserEvent(Msg::FocusUrl) => {
-                let _ = toolbar.borrow().evaluate_script("window.__focusUrl && window.__focusUrl()");
+                let _ = toolbar
+                    .borrow()
+                    .evaluate_script("window.__focusUrl && window.__focusUrl()");
             }
             Event::UserEvent(Msg::ZoomIn) => {
                 let z = zoom_in(*zoom.borrow());
@@ -861,7 +880,11 @@ fn main() {
                 paint_chrome();
             }
             Event::UserEvent(Msg::EarnSubmit) => {
-                let _ = desk.borrow_mut().submit();
+                let proven = vapurr_id::load_verified(&Desk::profile_dir())
+                    .as_ref()
+                    .map(vapurr_id::payout_ready)
+                    .unwrap_or(false);
+                let _ = desk.borrow_mut().submit(proven);
                 snap_desk(&desk.borrow(), &vault);
                 paint_chrome();
             }
@@ -925,8 +948,35 @@ fn main() {
             Event::UserEvent(Msg::WalletSend { asset, to, amt }) => {
                 let _ = wallet_tx.send(vapurr_wallet::WalletCmd::Send { asset, to, amt });
             }
+            Event::UserEvent(Msg::WalletExec {
+                to,
+                data,
+                value,
+                chain_id,
+                gas,
+            }) => {
+                let _ = wallet_tx.send(vapurr_wallet::WalletCmd::Exec {
+                    to,
+                    data,
+                    value,
+                    chain_id,
+                    gas,
+                });
+            }
             Event::UserEvent(Msg::WalletImport { secret }) => {
                 let _ = wallet_tx.send(vapurr_wallet::WalletCmd::Import { secret });
+            }
+            Event::UserEvent(Msg::WalletSetNet(net)) => {
+                let _ = wallet_tx.send(vapurr_wallet::WalletCmd::SetNet(net));
+            }
+            Event::UserEvent(Msg::WalletRevealSeed) => {
+                let _ = wallet_tx.send(vapurr_wallet::WalletCmd::RevealSeed);
+            }
+            Event::UserEvent(Msg::WalletExportKey) => {
+                let _ = wallet_tx.send(vapurr_wallet::WalletCmd::ExportKey);
+            }
+            Event::UserEvent(Msg::WalletResolve { to }) => {
+                let _ = wallet_tx.send(vapurr_wallet::WalletCmd::Resolve { to });
             }
             Event::UserEvent(Msg::LoginStatus) => {
                 let _ = wallet_tx.send(vapurr_wallet::WalletCmd::LoginStatus);
@@ -940,22 +990,20 @@ fn main() {
             Event::UserEvent(Msg::LoginRestore { secret }) => {
                 let _ = wallet_tx.send(vapurr_wallet::WalletCmd::LoginRestore { secret });
             }
-            Event::UserEvent(Msg::PatchApply) => {
-                match patch::apply_and_relaunch() {
-                    Ok(()) => {
-                        crash::log("patch apply staged; exiting for swap");
-                        *control_flow = ControlFlow::Exit;
-                    }
-                    Err(e) => {
-                        crash::log(&format!("patch apply: {e}"));
-                        let js = format!(
-                            "window.__onPatch && window.__onPatch({})",
-                            serde_json::json!({ "ok": false, "error": e })
-                        );
-                        let _ = page.borrow().evaluate_script(&js);
-                    }
+            Event::UserEvent(Msg::PatchApply) => match patch::apply_and_relaunch() {
+                Ok(()) => {
+                    crash::log("patch apply staged; exiting for swap");
+                    *control_flow = ControlFlow::Exit;
                 }
-            }
+                Err(e) => {
+                    crash::log(&format!("patch apply: {e}"));
+                    let js = format!(
+                        "window.__onPatch && window.__onPatch({})",
+                        serde_json::json!({ "ok": false, "error": e })
+                    );
+                    let _ = page.borrow().evaluate_script(&js);
+                }
+            },
             Event::UserEvent(Msg::Logout) => {
                 let _ = wallet_tx.send(vapurr_wallet::WalletCmd::Logout);
             }
@@ -1016,9 +1064,54 @@ fn main() {
             Event::UserEvent(Msg::OutbidDeploy) => {
                 let _ = econ_tx.send(vapurr_econ::EconCmd::OutbidDeploy);
             }
+            Event::UserEvent(Msg::KetList) => {
+                let _ = econ_tx.send(vapurr_econ::EconCmd::KetList);
+            }
+            Event::UserEvent(Msg::KetListPay {
+                token,
+                pool,
+                symbol,
+                name,
+                amt,
+                meta,
+            }) => {
+                let _ = econ_tx.send(vapurr_econ::EconCmd::KetListPay {
+                    token,
+                    pool,
+                    symbol,
+                    name,
+                    amt,
+                    meta,
+                });
+            }
+            Event::UserEvent(Msg::KetListDeploy) => {
+                let _ = econ_tx.send(vapurr_econ::EconCmd::KetListDeploy);
+            }
+            Event::UserEvent(Msg::LoopDeploy) => {
+                let _ = econ_tx.send(vapurr_econ::EconCmd::LoopDeploy);
+            }
+            Event::UserEvent(Msg::LoopOp { op, amt, steps }) => {
+                let _ = econ_tx.send(vapurr_econ::EconCmd::LoopOp { op, amt, steps });
+            }
+            Event::UserEvent(Msg::HouseDeploy) => {
+                let _ = econ_tx.send(vapurr_econ::EconCmd::HouseDeploy);
+            }
+            Event::UserEvent(Msg::HouseSeed { vapurr, pusd }) => {
+                let _ = econ_tx.send(vapurr_econ::EconCmd::HouseSeed { vapurr, pusd });
+            }
+            Event::UserEvent(Msg::HouseBootstrap) => {
+                let _ = econ_tx.send(vapurr_econ::EconCmd::HouseBootstrap);
+            }
+            Event::UserEvent(Msg::HouseSwap { sell_v, amt }) => {
+                let _ = econ_tx.send(vapurr_econ::EconCmd::HouseSwap { sell_v, amt });
+            }
             Event::UserEvent(Msg::OutbidSnap(snap)) => {
                 *last_outbid.borrow_mut() = snap.clone();
                 let _ = page.borrow().evaluate_script(&js_set_outbid(&snap));
+            }
+            Event::UserEvent(Msg::KetListSnap(snap)) => {
+                *last_ketlist.borrow_mut() = snap.clone();
+                let _ = page.borrow().evaluate_script(&js_set_ketlist(&snap));
             }
             Event::UserEvent(Msg::Desk) => {
                 let djson = desk_json(&desk.borrow(), &shield);
@@ -1030,13 +1123,21 @@ fn main() {
             }
             Event::UserEvent(Msg::PageStart(url)) => {
                 set_page_url(&page_url, &url);
+                inject_faucet(&page.borrow(), &url);
                 inject_shield(&page.borrow(), &shield, &url);
-                if url.contains("wallet.html") {
+                if wants_wallet_snap(&url) {
                     let wj = last_wallet.borrow().clone();
                     if wj.is_object() && !wj.as_object().map(|o| o.is_empty()).unwrap_or(true) {
                         let _ = page.borrow().evaluate_script(&js_set_wallet(&wj));
                     }
                     let _ = wallet_tx.send(vapurr_wallet::WalletCmd::Snap);
+                }
+                if url.contains("ketcharts.html") {
+                    let kj = last_ketlist.borrow().clone();
+                    if kj.is_object() && !kj.as_object().map(|o| o.is_empty()).unwrap_or(true) {
+                        let _ = page.borrow().evaluate_script(&js_set_ketlist(&kj));
+                    }
+                    let _ = econ_tx.send(vapurr_econ::EconCmd::KetList);
                 }
                 if url.contains("login.html") {
                     let _ = wallet_tx.send(vapurr_wallet::WalletCmd::LoginStatus);
@@ -1065,6 +1166,7 @@ fn main() {
                 let _ = toolbar.borrow().evaluate_script(&js_set_url(&url));
                 let title = tabs.borrow().current().title.clone();
                 desk.borrow_mut().record_nav(&url, &title);
+                inject_faucet(&page.borrow(), &url);
                 inject_shield(&page.borrow(), &shield, &url);
                 if url.contains("vapurr.localhost") {
                     let snap = last_chain.borrow().clone();
@@ -1082,7 +1184,7 @@ fn main() {
                         let snap = host::zzzmail_inbox_json();
                         let _ = page.borrow().evaluate_script(&js_set_mail(&snap));
                     }
-                    if url.contains("wallet.html") {
+                    if wants_wallet_snap(&url) {
                         let wj = last_wallet.borrow().clone();
                         if wj.is_object() && !wj.as_object().map(|o| o.is_empty()).unwrap_or(true) {
                             let _ = page.borrow().evaluate_script(&js_set_wallet(&wj));
@@ -1141,8 +1243,7 @@ fn main() {
                     ui.collapsed = collapsed;
                     ui.corner = parse_radio_corner(&corner);
                 }
-                let log: LogicalSize<f64> =
-                    window.inner_size().to_logical(window.scale_factor());
+                let log: LogicalSize<f64> = window.inner_size().to_logical(window.scale_factor());
                 let (s, t, c, r) = layout(log.width, log.height, &radio_ui.borrow());
                 let _ = sidebar.borrow().set_bounds(s);
                 let _ = toolbar.borrow().set_bounds(t);
@@ -1203,5 +1304,10 @@ mod tests {
         assert_eq!(pane_url("honkit"), vapurr_url("ketbook.html"));
         assert_eq!(pane_url("lithe"), vapurr_url("pusd.html"));
         assert_eq!(pane_url("pusd"), vapurr_url("pusd.html"));
+        assert_eq!(pane_url("euler"), vapurr_url("pusd.html?tab=euler"));
+        assert_eq!(pane_url("loop"), vapurr_url("pusd.html?tab=euler"));
+        assert_eq!(pane_url("ketpay"), vapurr_url("pay.html"));
+        assert_eq!(pane_url("pay"), vapurr_url("pay.html"));
+        assert_ne!(pane_url("404"), vapurr_url("pay.html"));
     }
 }

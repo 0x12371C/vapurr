@@ -6,13 +6,12 @@
   <link rel="stylesheet" href="/chrome.css"/>
   <style>
     body { overflow: auto; }
-    .wrap { max-width: 560px; margin: 0 auto; padding: 40px 24px 56px; }
-    .amt { font-size: 36px; font-weight: 600; margin: 8px 0 4px; }
+    .wrap { max-width: 560px; margin: 0 auto; padding: 40px 24px 72px; }
     .row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
     .switch {
       width: 44px; height: 24px; border-radius: 999px;
       background: var(--color-steel); border: 1px solid var(--color-forest);
-      position: relative; cursor: pointer;
+      position: relative; cursor: pointer; flex-shrink: 0;
     }
     .switch.on { background: var(--color-forest); border-color: var(--color-lime); }
     .knob {
@@ -20,50 +19,151 @@
       background: var(--color-muted); position: absolute; top: 2px; left: 3px;
     }
     .switch.on .knob { left: 21px; background: var(--color-lime); }
-    .list { margin-top: 18px; display: flex; flex-direction: column; gap: 8px; }
-    .item span { color: var(--color-muted); font-size: 12px; }
-    .hosts { color: var(--color-muted); font-size: 13px; line-height: 1.45; margin-top: 8px; }
+    .lede { color: var(--color-muted); font-size: 14px; line-height: 1.5; margin: 0 0 20px; }
+    .lede b { color: var(--color-snow); font-weight: 600; }
+    .amt { font-size: 32px; font-weight: 600; margin: 4px 0 2px; }
+    .ticket {
+      background: var(--color-steel);
+      border: 1px solid color-mix(in srgb, var(--color-snow) 8%, transparent);
+      border-radius: 14px;
+      padding: 16px 18px;
+      margin-top: 12px;
+    }
+    .ticket.open { border-color: var(--color-lime); }
+    .ticket .head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+    .ticket .head b { font-size: 15px; }
+    .pill {
+      font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600;
+      color: var(--color-lime);
+    }
+    .pill.held { color: var(--color-muted); }
+    .when { color: var(--color-muted); font-size: 12px; margin: 6px 0 8px; }
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+    .chip {
+      font-size: 12px; color: var(--color-snow);
+      border: 1px solid var(--color-forest); border-radius: 999px;
+      padding: 3px 8px;
+    }
+    .hash {
+      font-family: ui-monospace, Consolas, monospace;
+      font-size: 11px; color: var(--color-muted);
+      word-break: break-all; margin-top: 8px;
+    }
+    .hash button { margin-left: 8px; }
+    .empty { color: var(--color-muted); font-size: 13px; margin-top: 16px; }
+    .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
   </style>
 </head>
 <body>
   <div class="wrap">
     <div class="mono" style="color:var(--color-lime);margin-bottom:8px">EARN</div>
-    <h1>You get paid to browse.</h1>
-    <p>Chrome sold your graph to advertisers. vapurr pays you. Opt in, we keep host + HTTPS + time. No path, no query, no cookies, no keystrokes.</p>
-    <div class="steel" style="margin-top:24px">
+    <h1>Browsing receipts</h1>
+    <p class="lede">Opt in and we keep <b>host</b>, <b>HTTPS</b>, and <b>time</b>. No path, query, cookies, or keystrokes. A receipt is a sealed window — not a visit counter.</p>
+    <div class="ticket">
       <div class="row">
         <div>
-          <b>Share browsing hosts</b>
+          <b>Share hosts</b>
           <div class="mono" id="opt-state">off</div>
         </div>
         <button class="switch" id="opt" type="button" aria-label="opt in"><span class="knob"></span></button>
       </div>
     </div>
-    <div class="amt" id="pending">$0.000</div>
-    <div class="mono" id="meta">0 visits queued · $0.001 / visit · USDG</div>
-    <button class="btn" id="submit" type="button" style="margin-top:16px">Submit window</button>
-    <p class="hosts" id="hosts"></p>
-    <div class="list" id="receipts"></div>
+    <div id="open"></div>
+    <div class="actions">
+      <button class="btn" id="submit" type="button">Seal window</button>
+      <button class="btn-ghost" id="go-kyc" type="button">Complete KYC</button>
+    </div>
+    <p class="mono" id="kyc-state" style="margin-top:12px">KYC: required for payout</p>
+    <div id="book"></div>
   </div>
   <script src="/ipc.js"></script>
   <script>
+    function money(minor) {
+      return "$" + (Number(minor || 0) / 1000000).toFixed(3);
+    }
+    function when(ts) {
+      ts = Number(ts || 0);
+      if (!ts) return "";
+      try {
+        return new Date(ts * 1000).toLocaleString([], {
+          month: "short", day: "numeric", hour: "2-digit", minute: "2-digit"
+        });
+      } catch (e) { return ""; }
+    }
+    function span(from, to) {
+      var a = when(from), b = when(to);
+      if (!a) return "";
+      if (!b || a === b) return a;
+      return a + " – " + b;
+    }
+    function chips(hosts) {
+      hosts = hosts || [];
+      var extra = hosts.length > 12 ? hosts.length - 12 : 0;
+      var html = hosts.slice(0, 12).map(function (h) {
+        return "<span class='chip'>" + String(h).replace(/</g, "") + "</span>";
+      }).join("");
+      if (extra) html += "<span class='chip'>+" + extra + "</span>";
+      return html ? "<div class='chips'>" + html + "</div>" : "";
+    }
+    function copy(text, btn) {
+      text = String(text || "");
+      if (!text) return;
+      function done() {
+        if (!btn) return;
+        var prev = btn.textContent;
+        btn.textContent = "copied";
+        setTimeout(function () { btn.textContent = prev; }, 1100);
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done).catch(function () {});
+      }
+    }
+    function ticket(r, open) {
+      var status = open ? "open" : (r.status || "held");
+      var visits = r.visits || 0;
+      var hosts = r.hosts || (r.host_list || []).length;
+      var https = r.https != null ? r.https : visits;
+      var minor = r.pusd_minor != null ? r.pusd_minor : r.usdg_minor;
+      var title = open ? "Open window" : ("Receipt " + r.id);
+      var hash = r.hash || "";
+      var el = document.createElement("div");
+      el.className = "ticket" + (open ? " open" : "");
+      el.innerHTML =
+        "<div class='head'><b>" + title + "</b><span class='pill " + status + "'>" + status + "</span></div>" +
+        "<div class='when'>" + span(r.from, r.to) + "</div>" +
+        "<div class='amt'>" + money(minor) + "</div>" +
+        "<div class='mono'>" + visits + " sessions · " + hosts + " hosts · " + https + " https</div>" +
+        chips(r.host_list) +
+        (hash ? "<div class='hash'>" + hash.slice(0, 16) + "…" + hash.slice(-8) + " <button class='btn-ghost' type='button' data-copy='" + hash + "'>copy</button></div>" : "");
+      var b = el.querySelector("[data-copy]");
+      if (b) b.onclick = function () { copy(hash, b); };
+      return el;
+    }
     function paint(s) {
       if (!s) return;
       var on = !!s.opt_in;
       document.getElementById("opt").classList.toggle("on", on);
       document.getElementById("opt-state").textContent = on ? "on" : "off";
-      document.getElementById("pending").textContent = "$" + (s.pending_usdg || "0.000");
-      document.getElementById("meta").textContent = (s.pending_visits || 0) + " visits queued · " + (s.rate || "") + " · USDG on Robinhood Chain";
-      var hosts = s.hosts_unsubmitted || [];
-      document.getElementById("hosts").textContent = hosts.length ? ("This window: " + hosts.slice(0, 24).join(" · ")) : "No unsubmitted hosts. Browse with sharing on.";
-      var box = document.getElementById("receipts");
-      box.innerHTML = "";
-      (s.receipts || []).forEach(function (r) {
-        var el = document.createElement("div");
-        el.className = "steel item";
-        el.innerHTML = "<div class='row'><b>Receipt " + r.id + "</b><span>" + r.status + "</span></div><span>" + r.visits + " visits · " + r.hosts + " hosts · $" + (r.usdg_minor / 1000000).toFixed(3) + "</span>";
-        box.appendChild(el);
-      });
+      var kyc = s.kyc_proven ? "proven" : "required for payout";
+      document.getElementById("kyc-state").textContent = s.earn_error
+        ? s.earn_error
+        : ("KYC: " + kyc + (s.install_id ? (" · install " + String(s.install_id).slice(0, 8)) : ""));
+      var open = document.getElementById("open");
+      open.innerHTML = "";
+      if (s.window) {
+        open.appendChild(ticket(s.window, true));
+      } else {
+        var e = document.createElement("p");
+        e.className = "empty";
+        e.textContent = on ? "No open window. Browse, then seal." : "Sharing is off. Nothing is recorded.";
+        open.appendChild(e);
+      }
+      var book = document.getElementById("book");
+      book.innerHTML = "";
+      (s.receipts || []).forEach(function (r) { book.appendChild(ticket(r, false)); });
+      document.getElementById("go-kyc").onclick = function () {
+        vapurr.send({ cmd: "open", url: s.kyc_url || "https://thesecretlab.app/kyc" });
+      };
     }
     window.__setDesk = paint;
     document.getElementById("opt").onclick = function () { vapurr.send({ cmd: "earn-toggle" }); };

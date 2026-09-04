@@ -72,6 +72,8 @@
       hood: "pns",
       names: "pns",
       earn: "earn",
+      pay: "pay",
+      ketpay: "pay",
       wallet: "wallet",
       portfolio: "wallet",
       "robinhood wallet": "wallet",

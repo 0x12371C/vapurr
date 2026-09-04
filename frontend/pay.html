@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8"/>
-  <title>404</title>
+  <title>KetPay</title>
   <link rel="stylesheet" href="/tokens.css"/>
   <link rel="stylesheet" href="/chrome.css"/>
   <style>
@@ -12,14 +12,6 @@
       margin: 0 auto;
       padding: 28px 24px 72px;
       text-align: center;
-    }
-    .hero {
-      width: min(100%, 480px);
-      height: auto;
-      display: block;
-      margin: 0 auto 18px;
-      pointer-events: none;
-      user-select: none;
     }
     .kicker {
       color: var(--color-lime);
@@ -31,13 +23,13 @@
     h1 {
       font-size: 44px;
       font-weight: 600;
-      letter-spacing: 0.12em;
+      letter-spacing: 0.08em;
       margin: 0 0 6px;
     }
     .lead {
       color: var(--color-muted);
       margin: 0 auto 28px;
-      max-width: 380px;
+      max-width: 400px;
       line-height: 1.5;
     }
     .pay-box {
@@ -57,33 +49,151 @@
       outline: none;
     }
     .amt:focus { border-bottom-color: var(--color-lime); }
+    .to {
+      width: 100%;
+      margin-bottom: 16px;
+    }
     .meta {
       display: flex;
       justify-content: space-between;
       color: var(--color-muted);
       font-size: 13px;
-      margin-bottom: 20px;
+      margin-bottom: 12px;
+      gap: 12px;
     }
+    .status {
+      color: var(--color-muted);
+      font-size: 13px;
+      line-height: 1.45;
+      margin-bottom: 16px;
+      min-height: 1.4em;
+    }
+    .status.bad { color: #e07070; }
     .btn { width: 100%; height: 48px; font-size: 15px; }
+    .btn:disabled { filter: grayscale(0.4); opacity: 0.55; }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <img class="hero" src="/404.png" alt="404"/>
     <div class="mono kicker">PAYMENTS</div>
-    <h1>404</h1>
-    <p class="lead">Pay any site in $PUSD. HTTP 402 / x402 v2. The page was never missing — it was waiting to get paid. Does not settle yet.</p>
+    <h1>KetPay</h1>
+    <p class="lead">Pay any site in $PUSD. HTTP 402 / x402 v2. Settlement is Robinhood testnet 46630 only.</p>
     <div class="steel pay-box">
-      <input class="amt" id="amount" value="$24.00" inputmode="decimal" aria-label="amount"/>
-      <div class="meta"><span>$PUSD</span><span>x402 v2</span></div>
-      <button class="btn" id="pay" type="button">Review in Wallet</button>
+      <input class="amt" id="amount" value="1.00" inputmode="decimal" aria-label="amount"/>
+      <input class="field to" id="to" placeholder="merchant 0x" spellcheck="false" autocomplete="off" aria-label="pay to"/>
+      <div class="meta"><span>$PUSD</span><span id="net">TESTNET 46630</span></div>
+      <div class="status" id="status">This device on testnet 46630.</div>
+      <button class="btn" id="pay" type="button" disabled>Pay $PUSD</button>
     </div>
   </div>
   <script src="/ipc.js"></script>
+  <script src="/sign.js"></script>
   <script>
-    document.getElementById("pay").onclick = function () {
-      vapurr.send({ cmd: "pane", id: "wallet" });
+    var snap = null;
+    var paying = false;
+    var waitHash = "";
+    var q = new URLSearchParams(location.search);
+    if (q.get("to")) document.getElementById("to").value = q.get("to").trim();
+    if (q.get("amt")) document.getElementById("amount").value = q.get("amt").trim();
+
+    function parseAmt(s) {
+      return String(s || "").replace(/[$,\s]/g, "");
+    }
+    function isAddr(s) {
+      return /^0x[0-9a-fA-F]{40}$/.test(String(s || "").trim());
+    }
+    function onTestnet(s) {
+      return !!(s && (s.net === "testnet" || s.chain_id === 46630));
+    }
+    function hasPusd(s) {
+      if (!s) return false;
+      if (s.pusd_token) return true;
+      if (s.assets && s.assets.some(function (a) { return a && a.id === "pusd"; })) return true;
+      return false;
+    }
+    function paint() {
+      var st = document.getElementById("status");
+      var btn = document.getElementById("pay");
+      var net = document.getElementById("net");
+      st.className = "status";
+      if (!snap) {
+        st.textContent = "Waiting on this device…";
+        btn.disabled = true;
+        return;
+      }
+      net.textContent = onTestnet(snap) ? "TESTNET 46630" : ("CHAIN " + String(snap.chain_id || ""));
+      if (!onTestnet(snap)) {
+        st.className = "status bad";
+        st.textContent = "$PUSD spend is testnet 46630 only.";
+        btn.disabled = true;
+        return;
+      }
+      if (!hasPusd(snap)) {
+        st.className = "status bad";
+        st.textContent = "No $PUSD on this net — open the desk.";
+        btn.disabled = true;
+        return;
+      }
+      var bag = snap.pusd || "0";
+      var gas = snap.need_eth ? " Needs testnet ETH for gas." : "";
+      st.textContent = "This device: " + bag + " $PUSD." + gas;
+      btn.disabled = paying || !!vapurr.pendingTx;
+    }
+    window.__setWallet = function (s) {
+      if (!s || (s.hex_key && !s.assets) || (s.seed && !s.assets)) return;
+      snap = s;
+      paint();
+      if (paying && s.tx && s.tx !== waitHash) {
+        paying = false;
+        vapurr.finishTx(true, { tx: s.tx, txUrl: s.tx_url });
+        paint();
+      }
     };
+    window.__walletErr = function (msg) {
+      paying = false;
+      var text = msg || "not sent";
+      document.getElementById("status").className = "status bad";
+      document.getElementById("status").textContent = text;
+      if (vapurr.pendingTx) vapurr.finishTx(false, { error: text });
+      paint();
+    };
+    document.getElementById("pay").onclick = function () {
+      if (paying || vapurr.pendingTx) return;
+      var amt = parseAmt(document.getElementById("amount").value);
+      var to = document.getElementById("to").value.trim();
+      var st = document.getElementById("status");
+      st.className = "status bad";
+      if (!snap) { st.textContent = "Waiting on this device…"; return; }
+      if (!onTestnet(snap)) { st.textContent = "$PUSD spend is testnet 46630 only."; return; }
+      if (!isAddr(to)) { st.textContent = "paste a merchant 0x"; return; }
+      var me = (snap.address || "").toLowerCase();
+      if (me && to.toLowerCase() === me) { st.textContent = "that is this device"; return; }
+      if (!amt || Number(amt) <= 0) { st.textContent = "enter an amount"; return; }
+      st.className = "status";
+      vapurr.beginTx({
+        title: "Pay $PUSD",
+        kicker: "KetPay · 46630",
+        lede: "Nothing leaves until you sign. Then you get a hash, or it failed.",
+        rows: [
+          { k: "Network", v: "Robinhood Chain Testnet 46630" },
+          { k: "From", v: snap.address || "" },
+          { k: "To", v: to },
+          { k: "Amount", v: amt + " $PUSD" }
+        ],
+        confirmLabel: "Sign and pay",
+        doneTitle: "Paid",
+        failTitle: "Not paid",
+        explorer: snap.explorer
+      }).then(function (ok) {
+        if (!ok) return;
+        paying = true;
+        waitHash = snap.tx || "";
+        paint();
+        vapurr.send({ cmd: "wallet-send", asset: "pusd", to: to, amt: amt });
+      });
+    };
+    paint();
+    vapurr.send({ cmd: "wallet" });
   </script>
 </body>
 </html>

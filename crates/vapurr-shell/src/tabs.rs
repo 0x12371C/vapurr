@@ -237,7 +237,7 @@ pub fn chrome_label(url: &str) -> Option<&'static str> {
     Some(match file {
         "" | "home.html" => "Home",
         "wallet.html" => "Wallet",
-        "pay.html" => "404",
+        "pay.html" => "KetPay",
         "card.html" => "Card",
         "zzzmail.html" | "zmail.html" => "zzzmail",
         "id.html" => "Identity",
@@ -289,6 +289,10 @@ mod tests {
             Some("Live Trenches")
         );
         assert_eq!(chrome_label("https://google.com"), None);
+        assert_eq!(
+            chrome_label("http://vapurr.localhost/pay.html"),
+            Some("KetPay")
+        );
     }
 
     #[test]

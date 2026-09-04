@@ -83,8 +83,8 @@ pub fn attach(page: &wry::WebView, shield: Arc<Shield>, page_url: Arc<std::sync:
 pub fn attach_wallet_schemes(page: &wry::WebView) {
     use webview2_com::Microsoft::Web::WebView2::Win32::*;
     use webview2_com::{take_pwstr, LaunchingExternalUriSchemeEventHandler};
-    use windows::Win32::Foundation::BOOL;
     use windows::core::{Interface, PWSTR};
+    use windows::Win32::Foundation::BOOL;
     use wry::WebViewExtWindows;
 
     let controller = page.controller();
@@ -116,7 +116,12 @@ pub fn attach_wallet_schemes(page: &wry::WebView) {
 }
 
 #[cfg(not(windows))]
-pub fn attach(_page: &wry::WebView, _shield: Arc<Shield>, _page_url: Arc<std::sync::Mutex<String>>) {}
+pub fn attach(
+    _page: &wry::WebView,
+    _shield: Arc<Shield>,
+    _page_url: Arc<std::sync::Mutex<String>>,
+) {
+}
 
 #[cfg(not(windows))]
 pub fn attach_wallet_schemes(_page: &wry::WebView) {}

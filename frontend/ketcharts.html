@@ -39,16 +39,20 @@
       gap: 10px;
     }
     .top { padding: 8px 12px 4px; }
-    .chartbar {
-      padding: 0 12px 8px;
+    .chartbar, .fxbar {
+      padding: 0 12px 6px;
       gap: 8px;
-      flex-wrap: wrap;
-      min-height: 36px;
+      flex-wrap: nowrap;
+      min-height: 32px;
+      overflow-x: auto;
     }
+    .fxbar { padding-bottom: 8px; }
     .brand { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
     .cat { width: 28px; height: 28px; object-fit: contain; display: block; }
     .logo { height: 20px; width: auto; display: block; }
     .tabs { display: flex; gap: 2px; flex-shrink: 0; }
+    #favn:not(:empty)::before { content: "· "; }
+    #favn { font-variant-numeric: tabular-nums; }
     .search {
       width: min(180px, 22vw);
       height: 30px;
@@ -56,7 +60,7 @@
       padding: 0 10px;
       font-size: 12px;
     }
-    .pills { display: flex; gap: 3px; flex-wrap: wrap; align-items: center; }
+    .pills { display: flex; gap: 3px; flex-wrap: nowrap; align-items: center; }
     .sep {
       width: 1px;
       height: 16px;
@@ -104,10 +108,11 @@
       flex: 1;
       min-height: 0;
       display: grid;
-      grid-template-columns: 348px 1fr 268px;
+      grid-template-columns: minmax(200px, 260px) minmax(0, 1fr) minmax(210px, 240px);
       gap: 8px;
       padding: 0 10px 10px;
     }
+    .desk > .col { min-width: 0; }
     .col {
       min-height: 0;
       display: flex;
@@ -117,6 +122,7 @@
       background: color-mix(in srgb, var(--color-void) 55%, transparent);
       overflow: hidden;
     }
+    .rail { overflow: auto; }
     .head {
       padding: 10px 12px 6px;
       color: var(--color-muted);
@@ -127,7 +133,7 @@
     }
     .cols {
       display: grid;
-      grid-template-columns: 22px 62px 1fr 50px 50px 50px;
+      grid-template-columns: 22px 22px 62px 1fr 50px 50px 50px;
       gap: 4px;
       padding: 0 10px 6px;
       flex-shrink: 0;
@@ -150,7 +156,7 @@
     #rows { flex: 1; overflow: auto; }
     .pair {
       display: grid;
-      grid-template-columns: 22px 62px 1fr 50px 50px 50px;
+      grid-template-columns: 22px 22px 62px 1fr 50px 50px 50px;
       gap: 4px;
       width: 100%;
       text-align: left;
@@ -162,8 +168,15 @@
       height: auto;
       align-items: center;
     }
+    .pair .ico, .qico {
+      width: 22px; height: 22px; border-radius: 50%; object-fit: cover;
+      background: #121412; display: block;
+    }
+    .qico { width: 28px; height: 28px; }
     .pair:hover { background: color-mix(in srgb, var(--color-forest) 40%, transparent); }
     .pair.on { background: color-mix(in srgb, var(--color-forest) 70%, transparent); }
+    .pair.fresh { box-shadow: inset 2px 0 0 var(--color-lime); }
+    .pair .age { font-size: 11px; color: var(--color-lime); font-variant-numeric: tabular-nums; }
     .star {
       width: 22px;
       height: 22px;
@@ -175,7 +188,21 @@
       line-height: 1;
     }
     .star.on { color: var(--color-lime); }
-    .pair .sym { font-weight: 600; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .pair .sym { font-weight: 600; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: flex; align-items: center; gap: 4px; min-width: 0; }
+    .pair .sym .lab { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+    .pair .tag {
+      flex-shrink: 0;
+      font-size: 8px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--color-void);
+      background: var(--color-lime);
+      border-radius: 4px;
+      padding: 1px 4px;
+      font-weight: 700;
+      line-height: 1.4;
+    }
+    .pair .paid { font-size: 11px; font-variant-numeric: tabular-nums; color: var(--color-lime); }
     .pair .px, .pair .chg, .pair .vol, .pair .liq {
       font-size: 11px;
       font-variant-numeric: tabular-nums;
@@ -236,7 +263,35 @@
     }
     .ohlcbar .ohlc b { color: var(--color-snow); font-weight: 600; }
     .ohlcbar .utc { margin-left: auto; font-size: 10px; color: var(--color-muted); letter-spacing: 0.08em; }
-    #plot { flex: 1; min-height: 0; width: 100%; position: relative; z-index: 1; }
+    .plot-wrap {
+      position: relative;
+      flex: 1 1 0;
+      min-height: 180px;
+      width: 100%;
+    }
+    #plot {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+    .load {
+      position: absolute;
+      inset: 0;
+      z-index: 3;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      color: var(--color-muted);
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      background: color-mix(in srgb, var(--color-void) 35%, transparent);
+    }
+    .load[hidden] { display: none !important; }
     #trench, #paper, #alerts { padding: 0 12px 12px; }
     .stats {
       display: grid;
@@ -272,6 +327,32 @@
       border: 1px solid color-mix(in srgb, var(--color-snow) 12%, transparent);
     }
     .flash { color: var(--color-lime); font-size: 11px; font-weight: 600; min-height: 16px; margin-top: 8px; }
+    .life {
+      margin: 0 0 10px;
+      padding: 10px 0 8px;
+      border-bottom: 1px solid color-mix(in srgb, var(--color-snow) 8%, transparent);
+    }
+    .life .kicker { color: var(--color-muted); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 600; }
+    .life .real { font-size: 28px; font-weight: 600; letter-spacing: -0.04em; line-height: 1.1; margin: 4px 0 8px; }
+    .life .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px 10px;
+      font-size: 12px;
+    }
+    .life .grid span { color: var(--color-muted); }
+    .life .grid b { font-variant-numeric: tabular-nums; }
+    .book { margin-top: 10px; max-height: 160px; overflow: auto; }
+    .book .row {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 8px;
+      font-size: 11px;
+      padding: 4px 0;
+      border-top: 1px solid color-mix(in srgb, var(--color-snow) 6%, transparent);
+      font-variant-numeric: tabular-nums;
+    }
+    .book .row .sym { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .alert-row {
       display: flex;
       justify-content: space-between;
@@ -286,6 +367,18 @@
       font-size: 11px;
     }
     .keys { color: var(--color-muted); font-size: 10px; line-height: 1.45; margin-top: 8px; }
+    .txn {
+      display: grid; grid-template-columns: 42px 1fr auto; gap: 8px;
+      align-items: center; width: 100%; text-align: left; height: auto;
+      padding: 6px 0; border: 0; border-radius: 0; background: transparent; color: inherit;
+      font-size: 12px; font-variant-numeric: tabular-nums;
+      border-top: 1px solid color-mix(in srgb, var(--color-snow) 6%, transparent);
+    }
+    .txn .side { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; }
+    .txn .amt { text-align: right; }
+    .pair-acts { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 8px 0; }
+    .pair-acts .btn { height: 32px; font-size: 11px; margin: 0; }
+    #go-list { grid-column: 1 / -1; }
     #slip {
       position: fixed; inset: 0; z-index: 20;
       display: flex; align-items: center; justify-content: center;
@@ -311,7 +404,32 @@
     .card .big { font-size: 56px; font-weight: 600; letter-spacing: -0.05em; line-height: 1; margin: 8px 0 14px; }
     .kv { display: flex; justify-content: space-between; font-size: 13px; padding: 6px 0; border-top: 1px solid color-mix(in srgb, var(--color-snow) 8%, transparent); }
     .card .btn { width: 100%; margin-top: 8px; height: 40px; }
+    #list-sheet {
+      position: fixed; inset: 0; z-index: 21;
+      display: flex; align-items: center; justify-content: center;
+    }
+    #list-sheet[hidden] { display: none !important; }
+    #list-sheet .card { width: min(440px, 94vw); max-height: 92vh; overflow: auto; }
+    #list-sheet .field { width: 100%; margin-top: 8px; height: 36px; border-radius: 10px; padding: 0 12px; font-size: 13px; }
+    #list-sheet textarea.field {
+      height: 72px; padding: 10px 12px; resize: vertical; line-height: 1.4;
+    }
+    .listed-bio { color: var(--color-snow); font-size: 12px; line-height: 1.45; margin: 8px 0 4px; }
+    #list-sheet .hint { margin-top: 8px; min-height: 16px; }
+    #list-sheet .hint.go { color: var(--color-lime); cursor: var(--cursor-arrow); }
+    #list-sheet .err { color: #ff8a80; font-size: 13px; min-height: 16px; margin-top: 6px; }
+    #list-sheet .meta { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0 4px; }
+    #list-sheet .chip {
+      display: flex; flex-direction: column; gap: 2px;
+      padding: 8px 10px; min-width: 72px; border-radius: 12px;
+      background: color-mix(in srgb, var(--color-steel) 46%, transparent);
+      border: 1px solid color-mix(in srgb, var(--color-snow) 8%, transparent);
+    }
+    #list-sheet .chip span { color: var(--color-muted); font-size: 10px; letter-spacing: 0.06em; font-weight: 600; text-transform: uppercase; }
+    #list-sheet .chip b { font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
     html[data-theme="light"] body { background: var(--color-void); }
+    html[data-theme="light"] .quote .meta b,
+    html[data-theme="light"] .ohlcbar .ohlc b { color: var(--color-snow); }
   </style>
 </head>
 <body>
@@ -321,12 +439,16 @@
       <img class="logo" src="/ketcharts-logo.svg" alt="Ketcharts"/>
     </div>
     <div class="tabs">
-      <button class="pill on" type="button" data-tab="stock">Stocks</button>
-      <button class="pill" type="button" data-tab="meme">Memes</button>
-      <button class="pill" type="button" data-tab="fav">Watch</button>
-      <button class="pill" type="button" data-tab="majors">Majors</button>
+      <button class="pill on" type="button" data-tab="new">New</button>
+      <button class="pill" type="button" data-tab="hot">Hot</button>
+      <button class="pill" type="button" data-tab="gain">Gainers</button>
+      <button class="pill" type="button" data-tab="listed">Listed</button>
+      <button class="pill" type="button" data-tab="stock">Stocks</button>
+      <button class="pill" type="button" data-tab="fav">Watch <span id="favn"></span></button>
+      <button class="pill" type="button" data-tab="majors">CEX</button>
     </div>
     <input class="field search" id="q" placeholder="Search a pair"/>
+    <button class="pill" type="button" id="list-token">List</button>
     <div class="grow"></div>
     <div class="live" id="live"><i class="pip"></i><span class="lab">rhc</span></div>
     <a class="vela" id="vela" href="https://luxalgo.com/vela">Vela™</a>
@@ -339,18 +461,22 @@
     <div class="pills" id="scale"></div>
     <i class="sep"></i>
     <div class="pills" id="range"></div>
+    <button class="pill" type="button" id="share-pair">Share</button>
     <button class="pill" type="button" id="shot">Shot</button>
-    <div class="pills" id="inds"></div>
     <div class="tape-note" id="tape-note"></div>
+  </div>
+  <div class="fxbar">
+    <div class="pills" id="inds"></div>
   </div>
   <div class="desk">
     <div class="col">
-      <div class="head">Pairs</div>
+      <div class="head" id="feed-head">New pairs</div>
       <div class="cols" id="cols"></div>
       <div id="rows"></div>
     </div>
     <div class="col stage">
       <div class="quote" id="quote" hidden>
+        <img class="qico" id="qico" alt=""/>
         <div class="sym">—</div>
         <div class="last">—</div>
         <div class="chg">—</div>
@@ -369,13 +495,20 @@
           <span>H <b class="h">—</b></span>
           <span>L <b class="l">—</b></span>
           <span>C <b class="c">—</b></span>
+          <span>Δ <b class="d">—</b></span>
+          <span>V <b class="v">—</b></span>
         </div>
-        <div class="utc">UTC</div>
+        <div class="utc" id="utc">UTC</div>
       </div>
-      <div id="plot"></div>
+      <div class="plot-wrap">
+        <div id="plot"></div>
+        <div class="load" id="load" hidden>Loading tape</div>
+      </div>
     </div>
-    <div class="col">
-      <div class="head">Stats</div>
+    <div class="col rail">
+      <div class="head">Txns</div>
+      <div id="txns"><div class="empty">Pick a pair.</div></div>
+      <div class="head">Pair</div>
       <div id="trench"></div>
       <div class="head">Alert</div>
       <div id="alerts">
@@ -389,22 +522,69 @@
       </div>
       <div class="head">Paper</div>
       <div id="paper">
+        <div class="life">
+          <div class="kicker">Lifetime realized</div>
+          <div class="real" id="life-real">$0.00</div>
+          <div class="grid">
+            <span>Gross loss</span><b class="dn" id="life-gl">$0</b>
+            <span>Gross win</span><b class="up" id="life-gp">$0</b>
+            <span>W–L</span><b id="life-wl">0–0</b>
+            <span>Win %</span><b id="life-wr">—</b>
+            <span>Worst</span><b class="dn" id="life-maxl">—</b>
+            <span>Refills</span><b id="life-refill">0</b>
+          </div>
+        </div>
         <div class="paper-row"><span>Cash</span><b id="cash">$10,000</b></div>
         <div class="paper-row"><span>Pos</span><b id="pos">Flat</b></div>
         <div class="paper-row"><span>Mark</span><b id="mark">—</b></div>
-        <div class="paper-row"><span>P&amp;L</span><b id="pnl">—</b></div>
+        <div class="paper-row"><span>Open</span><b id="pnl">—</b></div>
         <div class="pills" id="risk" style="margin-top:8px"></div>
         <input class="field notional" id="notional" type="number" min="1" step="50" value="500" placeholder="Size USD"/>
         <div class="acts">
           <button class="btn" id="buy" type="button">Long</button>
           <button class="btn ghost" id="short" type="button">Short</button>
         </div>
+        <div class="acts">
+          <input class="field alert-px" id="tp" type="number" step="any" placeholder="Take profit"/>
+          <input class="field alert-px" id="sl" type="number" step="any" placeholder="Stop"/>
+        </div>
         <button class="btn ghost" id="flat" type="button" style="width:100%;margin-top:6px;height:36px;font-size:12px">Close</button>
         <button class="btn ghost" id="copyca" type="button" style="width:100%;margin-top:6px;height:32px;font-size:11px">Copy pool</button>
+        <button class="btn ghost" id="reset" type="button" style="width:100%;margin-top:6px;height:32px;font-size:11px">Refill $10k</button>
+        <div class="book" id="book"></div>
         <div class="flash" id="flash"></div>
-        <p class="hint">Local paper at the last print. Not a fill on chain.</p>
-        <p class="keys">1–8 time · C B N type · G log · L long S short X close / search</p>
+        <p class="hint">Refill resets cash only. Realized P&amp;L and losses stay. Local paper, not a fill.</p>
+        <p class="keys">1–8 time · C B N type · G log · J K pairs · L long S short X close / search</p>
       </div>
+    </div>
+  </div>
+  <div id="list-sheet" hidden>
+    <div class="dimmer" id="list-dim"></div>
+    <div class="card">
+      <div class="kicker">Ketcharts listing</div>
+      <h2>List a token</h2>
+      <p class="hint" id="list-lede">Fill the profile. Pay $PUSD. The listing goes live from the hash — no one pastes it in later. 50 lists it. Taking #1 is +25 over the top. Never refunded.</p>
+      <div class="meta">
+        <div class="chip"><span>#1</span><b id="list-top">0</b></div>
+        <div class="chip"><span>Pot</span><b id="list-pot">0</b></div>
+        <div class="chip"><span>You</span><b id="list-bal">0</b></div>
+      </div>
+      <input class="field" id="list-ca" placeholder="Token CA" autocomplete="off" spellcheck="false"/>
+      <input class="field" id="list-pool" placeholder="Pool CA" autocomplete="off" spellcheck="false"/>
+      <input class="field" id="list-sym" placeholder="Ticker" maxlength="16" autocomplete="off"/>
+      <input class="field" id="list-name" placeholder="Name" maxlength="64" autocomplete="off"/>
+      <input class="field" id="list-web" placeholder="Website https://" autocomplete="off" spellcheck="false"/>
+      <input class="field" id="list-x" placeholder="X / Twitter @handle" maxlength="32" autocomplete="off" spellcheck="false"/>
+      <input class="field" id="list-tg" placeholder="Telegram" maxlength="64" autocomplete="off" spellcheck="false"/>
+      <input class="field" id="list-dc" placeholder="Discord" maxlength="64" autocomplete="off" spellcheck="false"/>
+      <input class="field" id="list-logo" placeholder="Logo URL" autocomplete="off" spellcheck="false"/>
+      <textarea class="field" id="list-bio" placeholder="What is this token" maxlength="160"></textarea>
+      <input class="field" id="list-amt" placeholder="50" inputmode="numeric"/>
+      <div class="hint" id="list-quote">50 $PUSD lists a token.</div>
+      <button class="btn" id="list-go" type="button">List</button>
+      <button class="btn ghost" id="list-deploy" type="button" style="display:none">Open the list</button>
+      <div class="err" id="list-err"></div>
+      <button class="btn ghost" id="list-x" type="button">Cancel</button>
     </div>
   </div>
   <div id="slip" hidden>
@@ -416,12 +596,15 @@
       <div class="kv"><span>P&amp;L</span><b id="slip-pnl">—</b></div>
       <div class="kv"><span>In</span><b id="slip-entry">—</b></div>
       <div class="kv"><span>Out</span><b id="slip-exit">—</b></div>
+      <div class="kv"><span>Lifetime book</span><b id="slip-book">—</b></div>
       <button class="btn" id="slip-png" type="button">Save card</button>
       <button class="btn ghost" id="slip-copy" type="button">Copy line</button>
       <button class="btn ghost" id="slip-x" type="button">Done</button>
     </div>
   </div>
   <script src="/ipc.js"></script>
+  <script src="/sign.js"></script>
+  <script src="/tokens.js"></script>
   <script src="/vendor/vela.global.min.js"></script>
   <script src="/ketcharts.js"></script>
   <script>bootKetcharts();</script>

@@ -8,109 +8,155 @@
   <style>
     html, body { height: 100%; }
     body { overflow: hidden; background: var(--color-void); }
-    .aura {
-      position: absolute; inset: 0; z-index: 0;
-      pointer-events: none; overflow: hidden;
+    .glow {
+      position: absolute; inset: -20% 0 auto; height: 52%;
+      pointer-events: none; z-index: 0;
+      background: radial-gradient(ellipse 70% 80% at 50% 0%,
+        color-mix(in srgb, var(--color-lime) 14%, transparent) 0%,
+        transparent 70%);
     }
-    .aura canvas { width: 100%; height: 100%; display: block; }
     .app {
       position: relative; z-index: 1;
       height: 100%; display: flex; flex-direction: column; min-height: 0;
     }
-    .top {
-      flex-shrink: 0;
-      padding: 18px 22px 12px;
-      background: color-mix(in srgb, var(--color-void) 28%, transparent);
-      backdrop-filter: blur(20px) saturate(1.35);
-      -webkit-backdrop-filter: blur(20px) saturate(1.35);
-    }
+    .top { flex-shrink: 0; padding: 14px 22px 8px; }
     .nav {
-      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      display: flex; align-items: center; justify-content: flex-end; min-height: 36px;
     }
-    h1 { font-size: 34px; font-weight: 600; letter-spacing: -0.038em; line-height: 1; }
-    .chip {
-      border: 0;
-      background: color-mix(in srgb, var(--color-steel) 45%, transparent);
-      backdrop-filter: blur(20px) saturate(1.4);
-      -webkit-backdrop-filter: blur(20px) saturate(1.4);
-      color: var(--color-muted);
-      font-size: 12px; font-weight: 600;
-      padding: 7px 12px; border-radius: 999px;
+    .icon-btn {
+      width: 36px; height: 36px; padding: 0; border: 0; border-radius: 50%;
+      display: grid; place-items: center;
+      background: color-mix(in srgb, var(--color-steel) 55%, transparent);
       border: 1px solid color-mix(in srgb, var(--color-snow) 8%, transparent);
     }
-    .chip:hover { color: var(--color-snow); }
-    .hero { padding: 10px 0 4px; }
+    .icon-btn svg {
+      width: 18px; height: 18px; stroke: var(--color-muted); fill: none;
+      stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
+    }
+    .icon-btn:hover svg { stroke: var(--color-lime); }
+    .hero { text-align: center; padding: 8px 8px 6px; }
     .usd {
-      font-size: 56px; font-weight: 600; letter-spacing: -0.045em;
-      line-height: 1; font-variant-numeric: tabular-nums;
+      font-size: 64px; font-weight: 600; letter-spacing: -0.055em;
+      line-height: 1; font-variant-numeric: tabular-nums; border: 0;
+      background: transparent; color: inherit; height: auto; padding: 0; width: 100%;
     }
     .usd em {
       font-style: normal; font-size: 28px; color: var(--color-muted);
-      letter-spacing: -0.04em; margin-right: 1px;
+      letter-spacing: -0.05em; margin-right: 2px; font-weight: 600;
     }
-    .sub { margin-top: 8px; color: var(--color-muted); font-size: 13px; line-height: 1.4; }
+    .who {
+      margin: 14px auto 0; display: inline-flex; align-items: center; gap: 10px;
+      padding: 6px 12px 6px 6px; border-radius: 999px;
+      background: color-mix(in srgb, var(--color-steel) 48%, transparent);
+      border: 1px solid color-mix(in srgb, var(--color-snow) 8%, transparent);
+      color: var(--color-snow); height: auto;
+    }
+    .who:hover { border-color: color-mix(in srgb, var(--color-lime) 35%, transparent); }
+    .who canvas {
+      width: 28px; height: 28px; border-radius: 50%; display: block;
+      background: var(--color-void);
+    }
+    .who b { display: block; font-size: 13px; font-weight: 600; letter-spacing: -0.02em; }
+    .who span { display: block; color: var(--color-muted); font-size: 11px; margin-top: 1px; }
+    .net-pill {
+      margin-left: 4px; font-size: 10px; font-weight: 700; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--color-lime);
+      padding: 3px 7px; border-radius: 999px;
+      border: 1px solid color-mix(in srgb, var(--color-lime) 35%, transparent);
+    }
+    .sub {
+      margin-top: 10px; color: var(--color-muted); font-size: 12px; line-height: 1.35;
+    }
     .pip {
-      display: inline-block; width: 7px; height: 7px; border-radius: 50%;
+      display: inline-block; width: 6px; height: 6px; border-radius: 50%;
       background: var(--color-muted); margin-right: 6px; vertical-align: 1px;
     }
     .pip.on {
       background: var(--color-lime);
       box-shadow: 0 0 8px color-mix(in srgb, var(--color-lime) 55%, transparent);
     }
-    .scroll {
-      flex: 1; min-height: 0; overflow: auto;
-      padding: 8px 22px 96px;
+    .banner {
+      display: none; max-width: 430px; margin: 12px auto 0; text-align: left;
+      padding: 12px 14px; border-radius: 16px; gap: 12px; align-items: center;
+      background: color-mix(in srgb, var(--color-steel) 55%, transparent);
+      border: 1px solid color-mix(in srgb, var(--color-lime) 22%, transparent);
     }
-    .col { max-width: 460px; margin: 0 auto; }
+    .banner.on { display: flex; }
+    .banner b { display: block; font-size: 13px; }
+    .banner span { display: block; color: var(--color-muted); font-size: 12px; margin-top: 2px; }
+    .scroll { flex: 1; min-height: 0; overflow: auto; padding: 4px 22px 88px; }
+    .col { max-width: 430px; margin: 0 auto; }
     .actions {
-      display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin: 16px 0 22px;
+      display: flex; justify-content: center; gap: 22px;
+      margin: 22px 0 28px;
     }
     .act {
       appearance: none; -webkit-appearance: none; font: inherit;
-      height: 78px; border-radius: 20px;
-      border: 1px solid color-mix(in srgb, var(--color-snow) 8%, transparent);
-      background: color-mix(in srgb, var(--color-steel) 46%, transparent);
-      backdrop-filter: blur(16px) saturate(1.3);
-      -webkit-backdrop-filter: blur(16px) saturate(1.3);
-      color: var(--color-snow);
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      gap: 8px; font-size: 11px; font-weight: 600; letter-spacing: 0.02em;
+      width: 68px; border: 0; background: transparent; color: var(--color-snow);
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+      height: auto; padding: 0; font-size: 12px; font-weight: 600;
     }
-    .act:hover { background: color-mix(in srgb, var(--color-forest) 50%, transparent); }
-    .act:active { transform: scale(0.96); }
+    .act i {
+      width: 56px; height: 56px; border-radius: 50%;
+      display: grid; place-items: center;
+      background: var(--color-lime); color: var(--color-on-lime);
+    }
+    .act.ghost i {
+      background: color-mix(in srgb, var(--color-steel) 70%, transparent);
+      border: 1px solid color-mix(in srgb, var(--color-snow) 10%, transparent);
+    }
+    .act.ghost svg { stroke: var(--color-lime); }
     .act svg {
-      width: 22px; height: 22px; stroke: var(--color-lime); fill: none;
-      stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round;
+      width: 22px; height: 22px; stroke: var(--color-on-lime); fill: none;
+      stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round;
     }
+    .act:active { transform: scale(0.94); }
     .sec {
       display: flex; align-items: baseline; justify-content: space-between;
-      margin: 8px 2px 10px; font-size: 13px; font-weight: 600;
+      margin: 0 4px 8px; font-size: 13px; font-weight: 600;
     }
     .sec span { color: var(--color-muted); font-weight: 400; font-size: 12px; }
     .glass {
-      border-radius: 20px; overflow: hidden;
-      background: color-mix(in srgb, var(--color-steel) 50%, transparent);
-      backdrop-filter: blur(16px) saturate(1.3);
-      -webkit-backdrop-filter: blur(16px) saturate(1.3);
+      border-radius: 16px; overflow: hidden;
+      background: color-mix(in srgb, var(--color-steel) 58%, transparent);
       border: 1px solid color-mix(in srgb, var(--color-snow) 8%, transparent);
     }
     .asset {
-      display: grid; grid-template-columns: 40px 1fr auto; gap: 12px; align-items: center;
-      width: 100%; text-align: left; padding: 13px 16px; border: 0;
+      display: grid; grid-template-columns: 44px 1fr auto 12px; gap: 12px; align-items: center;
+      width: 100%; text-align: left; padding: 12px 14px 12px 12px; border: 0;
       background: transparent; color: inherit; height: auto; border-radius: 0;
     }
     .asset + .asset { box-shadow: inset 0 1px 0 color-mix(in srgb, var(--color-snow) 7%, transparent); }
-    .asset:hover { background: color-mix(in srgb, var(--color-forest) 38%, transparent); }
+    .asset:hover { background: color-mix(in srgb, var(--color-forest) 42%, transparent); }
     .dot {
-      width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center;
-      background: color-mix(in srgb, var(--color-void) 50%, transparent);
-      border: 1px solid color-mix(in srgb, var(--color-lime) 24%, transparent);
-      color: var(--color-lime); font-size: 11px; font-weight: 600;
+      width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center;
+      background: color-mix(in srgb, var(--color-void) 55%, transparent);
+      border: 1px solid color-mix(in srgb, var(--color-lime) 28%, transparent);
+      color: var(--color-lime); font-size: 11px; font-weight: 600; letter-spacing: -0.02em;
+      overflow: hidden; flex-shrink: 0;
     }
-    .asset b { display: block; font-size: 15px; font-weight: 600; }
+    .dot.ico { border: 0; background: #121412; padding: 0; }
+    .dot.ico img {
+      width: 100%; height: 100%; object-fit: cover; display: block;
+    }
+    .dot.ico.vapurr img { object-position: 50% 16%; transform: scale(1.18); }
+    .dot.ico.usdg img { transform: scale(1.14); }
+    .dot.pusd { background: var(--color-lime); color: var(--color-on-lime); border-color: var(--color-lime); }
+    .dot.eth { color: var(--color-snow); border-color: color-mix(in srgb, var(--color-snow) 18%, transparent); }
+    .dot.in { color: var(--color-lime); border-color: color-mix(in srgb, var(--color-lime) 30%, transparent); }
+    .dot.out { color: var(--color-snow); border-color: color-mix(in srgb, var(--color-snow) 12%, transparent); }
+    .seg button img {
+      width: 16px; height: 16px; border-radius: 50%; vertical-align: -3px; margin-right: 4px;
+    }
+    .asset b { display: block; font-size: 16px; font-weight: 600; letter-spacing: -0.02em; }
     .asset .hint { color: var(--color-muted); font-size: 12px; margin-top: 2px; }
-    .asset .amt { font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; text-align: right; }
-    .asset .usd-s { display: block; color: var(--color-muted); font-size: 11px; font-weight: 400; margin-top: 2px; }
+    .asset .amt { font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums; text-align: right; }
+    .asset .usd-s { display: block; color: var(--color-muted); font-size: 12px; font-weight: 400; margin-top: 2px; text-align: right; }
+    .chev {
+      width: 8px; height: 8px; border-right: 1.6px solid var(--color-muted);
+      border-top: 1.6px solid var(--color-muted);
+      transform: rotate(45deg); opacity: 0.55;
+    }
     .empty {
       padding: 28px 18px; text-align: center; color: var(--color-muted);
       font-size: 13px; line-height: 1.45;
@@ -122,35 +168,43 @@
     .sheet.on { display: flex; }
     .dim {
       position: absolute; inset: 0;
-      background: rgba(0,0,0,0.42);
-      backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+      background: color-mix(in srgb, var(--color-void) 55%, transparent);
+      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
     }
     .panel {
-      position: relative; width: min(420px, 100%);
-      border-radius: 24px 24px 0 0; padding: 10px 22px 28px;
-      background: color-mix(in srgb, var(--color-steel) 72%, var(--color-void));
-      backdrop-filter: blur(22px) saturate(1.35);
-      -webkit-backdrop-filter: blur(22px) saturate(1.35);
+      position: relative; width: min(430px, 100%);
+      border-radius: 28px 28px 0 0; padding: 8px 22px 34px;
+      background: color-mix(in srgb, var(--color-steel) 82%, var(--color-void));
       border: 1px solid color-mix(in srgb, var(--color-snow) 10%, transparent);
       border-bottom: 0;
+      animation: sheet-up 0.32s cubic-bezier(0.32, 0.72, 0, 1);
+    }
+    @keyframes sheet-up {
+      from { transform: translateY(24px); }
+      to { transform: translateY(0); }
     }
     .grab {
-      width: 36px; height: 4px; border-radius: 999px;
+      width: 36px; height: 5px; border-radius: 999px;
       background: color-mix(in srgb, var(--color-snow) 22%, transparent);
-      margin: 6px auto 16px;
+      margin: 8px auto 18px;
     }
-    .panel h2 { font-size: 22px; font-weight: 600; letter-spacing: -0.03em; margin-bottom: 6px; }
-    .panel p { color: var(--color-muted); font-size: 13px; line-height: 1.45; margin-bottom: 18px; }
-    .ident {
-      display: block; width: 96px; height: 96px; margin: 8px auto 16px; border-radius: 22px;
+    .panel h2 { font-size: 28px; font-weight: 600; letter-spacing: -0.04em; margin-bottom: 6px; }
+    .panel p { color: var(--color-muted); font-size: 14px; line-height: 1.45; margin-bottom: 18px; }
+    .ident, .qr {
+      display: block; width: 168px; height: 168px; margin: 4px auto 14px; border-radius: 22px;
       background: var(--color-void);
       border: 1px solid color-mix(in srgb, var(--color-lime) 28%, transparent);
     }
     .full-addr {
-      font-size: 13px; line-height: 1.45; word-break: break-all; user-select: text;
-      text-align: center; margin-bottom: 16px; color: var(--color-snow);
+      font-size: 14px; line-height: 1.5; word-break: break-all; user-select: text;
+      text-align: center; margin-bottom: 6px; color: var(--color-snow);
+      letter-spacing: -0.02em;
     }
-    .panel .btn { width: 100%; height: 48px; border-radius: 14px; font-size: 15px; }
+    .recv-hood {
+      text-align: center; color: var(--color-lime); font-size: 13px; font-weight: 600;
+      min-height: 1.2em; margin-bottom: 14px;
+    }
+    .panel .btn { width: 100%; height: 50px; border-radius: 14px; font-size: 16px; }
     .panel .btn + .btn { margin-top: 8px; }
     .ghost {
       background: transparent;
@@ -158,67 +212,145 @@
       color: var(--color-snow);
     }
     .seg {
-      display: flex; flex-wrap: wrap; gap: 4px; position: relative;
-      min-height: 32px; padding: 2px; border-radius: 16px;
-      background: color-mix(in srgb, var(--color-steel) 55%, transparent);
+      display: flex; flex-wrap: wrap; gap: 4px;
+      min-height: 36px; padding: 3px; border-radius: 14px;
+      background: color-mix(in srgb, var(--color-void) 35%, transparent);
       border: 1px solid color-mix(in srgb, var(--color-snow) 8%, transparent);
     }
     .seg button {
-      flex: 1 1 22%; min-width: 64px; height: 28px;
-      position: relative; z-index: 1; border: 0; background: transparent;
-      color: var(--color-muted); font-size: 12px; font-weight: 600; border-radius: 999px;
+      flex: 1 1 20%; min-width: 56px; height: 30px;
+      border: 0; background: transparent;
+      color: var(--color-muted); font-size: 13px; font-weight: 600; border-radius: 11px;
     }
     .seg button.on {
-      color: var(--color-snow);
-      background: color-mix(in srgb, var(--color-snow) 14%, transparent);
+      color: var(--color-on-lime);
+      background: var(--color-lime);
+    }
+    .cash { text-align: center; margin: 8px 0 8px; }
+    .cash-amt {
+      width: 100%; height: auto; border: 0; background: transparent;
+      text-align: center; font-size: 56px; font-weight: 600;
+      letter-spacing: -0.05em; color: var(--color-snow);
+      font-variant-numeric: tabular-nums; padding: 0; border-radius: 0;
+    }
+    .cash-amt:focus { outline: none; }
+    .cash-sym { color: var(--color-muted); font-size: 15px; font-weight: 600; margin-top: 2px; }
+    .max-row { display: flex; justify-content: center; gap: 8px; margin: 0 0 16px; }
+    .max-row .chip {
+      height: 28px; padding: 0 12px; border-radius: 999px; font-size: 12px; font-weight: 600;
+      border: 1px solid color-mix(in srgb, var(--color-snow) 10%, transparent);
+      background: color-mix(in srgb, var(--color-steel) 50%, transparent);
+      color: var(--color-muted);
     }
     .in { color: var(--color-lime); }
+    .kv-mini {
+      display: grid; grid-template-columns: 92px 1fr; gap: 10px 12px;
+      font-size: 14px; margin: 0 0 18px;
+    }
+    .kv-mini span { color: var(--color-muted); }
+    .kv-mini b { font-weight: 500; word-break: break-all; color: var(--color-snow); }
+    .words {
+      margin: 0 0 12px; padding: 14px 16px; border-radius: 14px;
+      background: color-mix(in srgb, var(--color-void) 45%, transparent);
+      color: var(--color-lime); font-size: 15px; line-height: 1.55;
+      user-select: text; -webkit-user-select: text; word-break: break-word;
+    }
+    .toggle {
+      width: 44px; height: 26px; border-radius: 999px; border: 0; padding: 0;
+      background: var(--color-forest); position: relative; flex-shrink: 0;
+    }
+    .toggle.on { background: var(--color-lime); }
+    .toggle i {
+      position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%;
+      background: var(--color-snow); display: block; transition: left 0.16s ease;
+    }
+    .toggle.on i { left: 21px; background: var(--color-on-lime); }
+    .set-row {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      width: 100%; text-align: left; height: auto; padding: 12px 0;
+      border: 0; background: transparent; color: var(--color-snow);
+      border-bottom: 1px solid color-mix(in srgb, var(--color-snow) 8%, transparent);
+      border-radius: 0; font-size: 15px;
+    }
+    .set-row:last-of-type { border-bottom: 0; }
+    .set-row .hint { display: block; color: var(--color-muted); font-size: 12px; margin-top: 3px; font-weight: 400; }
+    .set-block { margin: 0 0 8px; }
+    .set-block .mono { margin: 16px 0 4px; }
+    .tok-hero { text-align: center; padding: 8px 0 18px; }
+    .tok-hero .dot { width: 72px; height: 72px; margin: 0 auto 12px; font-size: 14px; }
+    .tok-hero .amt { font-size: 40px; font-weight: 600; letter-spacing: -0.045em; }
+    .tok-hero .usd-s { color: var(--color-muted); margin-top: 4px; }
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 0 0 8px; }
+    .row2 .btn { margin: 0; }
+    .recent { margin: 0 0 14px; }
+    .recent button {
+      display: block; width: 100%; text-align: left; height: auto; padding: 8px 0;
+      border: 0; background: transparent; color: var(--color-snow); border-radius: 0;
+      font-size: 13px;
+    }
+    .recent button span { color: var(--color-muted); font-size: 12px; }
     html[data-theme="light"] .glass,
-    html[data-theme="light"] .act,
-    html[data-theme="light"] .chip,
+    html[data-theme="light"] .who,
+    html[data-theme="light"] .icon-btn,
+    html[data-theme="light"] .banner,
     html[data-theme="light"] .panel {
-      background: color-mix(in srgb, var(--color-steel) 86%, transparent);
+      background: color-mix(in srgb, var(--color-steel) 90%, transparent);
     }
   </style>
 </head>
 <body>
-  <div class="aura" aria-hidden="true"><canvas id="shader"></canvas></div>
+  <div class="glow" aria-hidden="true"></div>
   <div class="app" id="app">
     <header class="top">
       <div class="nav">
-        <h1>Wallet</h1>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">
-          <button class="chip" id="net-chip" type="button">TESTNET 46630</button>
-          <button class="chip" id="addr-chip" type="button" title="Copy address">talking to chain…</button>
-          <button class="chip" id="sign-out" type="button">Sign out</button>
-        </div>
+        <button class="icon-btn" id="go-settings" type="button" title="Wallet settings" aria-label="Wallet settings">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v2M12 19v2M4.9 6.3l1.5 1.5M17.6 16.2l1.5 1.5M3 12h2M19 12h2M4.9 17.7l1.5-1.5M17.6 7.8l1.5-1.5"/></svg>
+        </button>
       </div>
       <div class="hero">
-        <div class="usd" id="usd"><em>$</em>…</div>
-        <div class="sub"><span class="pip" id="pip"></span><span id="sub">Robinhood testnet · waiting</span></div>
+        <button class="usd" id="usd" type="button" title="Refresh"><em>$</em>0.00</button>
+        <button class="who" id="who" type="button" title="Receive">
+          <canvas id="face" width="56" height="56"></canvas>
+          <span>
+            <b id="who-name">This device</b>
+            <span id="who-addr">—</span>
+          </span>
+          <em class="net-pill" id="net-pill">Testnet</em>
+        </button>
+        <div class="sub"><span class="pip" id="pip"></span><span id="sub">Robinhood Chain</span></div>
+        <div class="banner" id="gas-ban">
+          <div><b>Needs gas</b><span>Fund ETH, then this device can sign.</span></div>
+        </div>
+        <div class="banner" id="backup-ban">
+          <div><b id="backup-title">Back this device up</b><span id="backup-copy">Write the seed down.</span></div>
+        </div>
       </div>
     </header>
     <div class="scroll" id="scroll">
       <div class="col">
         <div class="actions">
           <button class="act" id="go-receive" type="button">
-            <svg viewBox="0 0 24 24"><path d="M12 4v12M7 11l5 5 5-5"/><path d="M5 19h14"/></svg>
+            <i><svg viewBox="0 0 24 24"><path d="M12 4v12M7 11l5 5 5-5"/><path d="M5 19h14"/></svg></i>
             Receive
           </button>
           <button class="act" id="go-send" type="button">
-            <svg viewBox="0 0 24 24"><path d="M12 20V8M7 13l5-5 5 5"/><path d="M5 5h14"/></svg>
+            <i><svg viewBox="0 0 24 24"><path d="M12 20V8M7 13l5-5 5 5"/><path d="M5 5h14"/></svg></i>
             Send
           </button>
-          <button class="act" id="go-scan" type="button">
-            <svg viewBox="0 0 24 24"><path d="M4 8l8-4 8 4v8l-8 4-8-4z"/><path d="M4 8l8 4 8-4M12 12v8"/></svg>
-            Scan
+          <button class="act" id="go-swap" type="button">
+            <i><svg viewBox="0 0 24 24"><path d="M7 7h11M15 4l3 3-3 3M17 17H6M9 14l-3 3 3 3"/></svg></i>
+            Swap
+          </button>
+          <button class="act ghost" id="go-mint" type="button">
+            <i><svg viewBox="0 0 24 24"><path d="M12 4v16M8 8h6.5a2.5 2.5 0 010 5H8h7a2.5 2.5 0 010 5H8"/></svg></i>
+            Mint
           </button>
         </div>
-        <div class="sec">On this device <span id="rpc-lab">testnet 46630</span></div>
+        <div class="sec">Tokens <span id="rpc-lab">testnet 46630</span></div>
         <div class="glass" id="list"></div>
-        <div class="sec" style="margin-top:22px">Activity</div>
+        <div class="sec" style="margin-top:26px">Activity</div>
         <div class="glass" id="activity">
-          <div class="empty" id="act-empty">No transfers in the last window yet.</div>
+          <div class="empty" id="act-empty">Nothing yet.</div>
         </div>
       </div>
     </div>
@@ -229,9 +361,10 @@
     <div class="panel">
       <div class="grab"></div>
       <h2>Receive</h2>
-      <p id="recv-copy">Fund this device. Copy the address, then send testnet ETH.</p>
-      <canvas class="ident" id="ident" width="96" height="96"></canvas>
+      <p id="recv-copy">Anyone can send to this device.</p>
+      <canvas class="qr" id="recv-qr" width="168" height="168"></canvas>
       <div class="full-addr" id="full-addr">—</div>
+      <div class="recv-hood" id="recv-hood"></div>
       <button class="btn" id="copy-addr" type="button">Copy Address</button>
       <button class="btn ghost" id="go-faucet" type="button" style="display:none">Faucet</button>
       <button class="btn ghost" data-close="1" type="button">Done</button>
@@ -243,12 +376,20 @@
       <div class="grab"></div>
       <h2>Send</h2>
       <p id="send-copy">Signed on this device.</p>
-      <div class="seg" id="asset-seg" style="width:100%;margin:0 0 14px"></div>
+      <div class="seg" id="asset-seg" style="width:100%;margin:0 0 8px"></div>
+      <div class="cash">
+        <input class="cash-amt" id="send-amt" placeholder="0" inputmode="decimal" autocomplete="off"/>
+        <div class="cash-sym" id="send-sym">PUSD</div>
+      </div>
+      <div class="max-row">
+        <button class="chip" id="send-half" type="button">50%</button>
+        <button class="chip" id="send-max" type="button">Max</button>
+      </div>
       <label class="mono" style="display:block;margin-bottom:6px">To</label>
-      <input class="field" id="send-to" placeholder="0x…" spellcheck="false" autocomplete="off" style="width:100%;margin-bottom:12px"/>
-      <label class="mono" style="display:block;margin-bottom:6px">Amount</label>
-      <input class="field" id="send-amt" placeholder="0.00" inputmode="decimal" style="width:100%;margin-bottom:8px"/>
-      <div class="sub" id="send-bal" style="margin:0 0 14px">—</div>
+      <input class="field" id="send-to" placeholder="0x or name.hood" spellcheck="false" autocomplete="off" style="width:100%;margin-bottom:8px"/>
+      <div class="sub" id="send-to-hint" style="margin:0 0 8px">PNS names resolve on this device.</div>
+      <div class="recent" id="send-recent"></div>
+      <div class="sub" id="send-bal" style="margin:0 0 16px">—</div>
       <div class="empty" id="send-err" hidden style="padding:0 0 12px;text-align:left;color:#ff8a80"></div>
       <button class="btn" id="send-go" type="button">Review</button>
       <button class="btn ghost" data-close="1" type="button">Cancel</button>
@@ -259,52 +400,193 @@
     <div class="panel">
       <div class="grab"></div>
       <h2 id="book-title">Mint $PUSD</h2>
-      <p id="book-copy">Burn $VAPURR, mint $PUSD at the oracle. Spread ≥ 2%. Lithe is 9%.</p>
-      <div class="seg" id="book-seg" style="width:100%;margin:0 0 14px">
+      <p id="book-copy">Burn $VAPURR, mint $PUSD at the oracle.</p>
+      <div class="seg" id="book-seg" style="width:100%;margin:0 0 8px">
         <button type="button" id="book-mint" class="on" data-book="mint">Mint</button>
         <button type="button" id="book-red" data-book="redeem">Redeem</button>
       </div>
-      <label class="mono" style="display:block;margin-bottom:6px" id="book-lab">VAPURR in</label>
-      <input class="field" id="book-amt" placeholder="0.00" inputmode="decimal" style="width:100%;margin-bottom:8px"/>
-      <div class="sub" id="book-hint" style="margin:0 0 14px">Burn V to mint P.</div>
+      <div class="cash">
+        <input class="cash-amt" id="book-amt" placeholder="0" inputmode="decimal" autocomplete="off"/>
+        <div class="cash-sym" id="book-lab">VAPURR</div>
+      </div>
+      <div class="sub" id="book-hint" style="margin:0 0 16px">Burn V to mint P.</div>
       <div class="empty" id="book-err" hidden style="padding:0 0 12px;text-align:left;color:#ff8a80"></div>
       <button class="btn" id="book-go" type="button">Review</button>
       <button class="btn ghost" id="book-send" type="button">Send token instead</button>
       <button class="btn ghost" data-close="1" type="button">Cancel</button>
     </div>
   </div>
+  <div class="sheet" id="sheet-token" hidden>
+    <div class="dim" data-close="1"></div>
+    <div class="panel">
+      <div class="grab"></div>
+      <div class="tok-hero">
+        <div class="dot" id="tok-dot">P</div>
+        <div class="amt" id="tok-amt">0</div>
+        <div class="usd-s" id="tok-usd"></div>
+        <div class="sub" id="tok-hint" style="margin-top:8px"></div>
+      </div>
+      <div class="row2">
+        <button class="btn" id="tok-send" type="button">Send</button>
+        <button class="btn ghost" id="tok-recv" type="button">Receive</button>
+      </div>
+      <button class="btn ghost" id="tok-mint" type="button" style="display:none">Mint / Redeem</button>
+      <button class="btn ghost" id="tok-ca" type="button">Copy contract</button>
+      <button class="btn ghost" id="tok-scan" type="button">View on Scan</button>
+      <button class="btn ghost" data-close="1" type="button">Done</button>
+    </div>
+  </div>
+  <div class="sheet" id="sheet-settings" hidden>
+    <div class="dim" data-close="1"></div>
+    <div class="panel" style="max-height:88vh;overflow:auto">
+      <div class="grab"></div>
+      <h2>Wallet</h2>
+      <p>This device is the signer. Phantom-grade bag, on Robinhood Chain.</p>
+      <div class="kv-mini">
+        <span>Address</span><b id="set-addr">—</b>
+        <span>Name</span><b id="set-hood">—</b>
+        <span>Signer</span><b>this device</b>
+        <span>RPC</span><b id="set-rpc">—</b>
+        <span>Nonce</span><b id="set-nonce">—</b>
+      </div>
+      <div class="set-block">
+        <label class="mono">Display name</label>
+        <input class="field" id="set-nick" placeholder="optional" spellcheck="false" style="width:100%;margin:8px 0 0"/>
+      </div>
+      <div class="set-block">
+        <label class="mono">Network</label>
+        <div class="seg" id="net-seg" style="width:100%;margin:8px 0 0">
+          <button type="button" id="net-test" data-net="testnet">Testnet 46630</button>
+          <button type="button" id="net-main" data-net="mainnet">Mainnet 4663</button>
+        </div>
+      </div>
+      <button class="set-row" id="hide-zero-row" type="button">
+        <span>Hide empty tokens<span class="hint">Zeros stay off the list.</span></span>
+        <span class="toggle" id="hide-zero" aria-hidden="true"><i></i></span>
+      </button>
+      <div class="set-block">
+        <label class="mono">Security</label>
+        <div class="words" id="set-secret" hidden></div>
+        <button class="btn ghost" id="set-seed" type="button">Show seed</button>
+        <button class="btn ghost" id="set-hex" type="button">Export key</button>
+      </div>
+      <div class="set-block">
+        <label class="mono">Account</label>
+        <button class="btn" id="set-copy" type="button" style="margin-top:8px">Copy address</button>
+        <button class="btn ghost" id="set-scan" type="button">View on Scan</button>
+        <button class="btn ghost" id="set-hood-go" type="button">Claim .hood</button>
+        <button class="btn ghost" id="set-lithe" type="button">Lithe 9%</button>
+        <button class="btn ghost" id="set-faucet" type="button" style="display:none">Faucet</button>
+      </div>
+      <div class="set-block">
+        <label class="mono">This PC</label>
+        <button class="btn ghost" id="set-restore" type="button">Use a different wallet</button>
+        <button class="btn ghost" id="set-out" type="button">Sign out</button>
+      </div>
+      <button class="btn ghost" data-close="1" type="button">Done</button>
+    </div>
+  </div>
   <script src="/ipc.js"></script>
   <script src="/sign.js"></script>
-  <script src="/shader.js"></script>
+  <script src="/qr.js"></script>
+  <script src="/tokens.js"></script>
   <script>
     var addr = "";
     var snap = null;
-    var asset = "vapurr";
+    var asset = "pusd";
     var sending = false;
     var waitHash = "";
     var bookMode = "mint";
+    var hideZero = false;
+    try { hideZero = localStorage.getItem("vapurr.wallet.hideZero") === "1"; } catch (e) {}
+    var secretArmed = "";
+    var hood = "";
+    var nick = "";
+    try { nick = localStorage.getItem("vapurr.wallet.nick") || ""; } catch (e) {}
+    var backedUp = false;
+    try { backedUp = localStorage.getItem("vapurr.wallet.backedUp") === "1"; } catch (e) {}
+    var resolvedTo = "";
+    var resolveTimer = 0;
+    var tokenId = "";
 
     function shortAddr(a) {
       if (!a || a.length < 12) return a || "—";
       return a.slice(0, 6) + "…" + a.slice(-4);
     }
-    function paintIdent(a) {
-      var c = document.getElementById("ident");
-      var ctx = c.getContext("2d");
-      ctx.fillStyle = "#0e0e0e";
-      ctx.fillRect(0, 0, 96, 96);
+    function prettySym(s) {
+      if (s === "PUSD" || s === "pusd") return "$PUSD";
+      if (s === "VAPURR" || s === "vapurr") return "$VAPURR";
+      return s || "";
+    }
+    function fmtAmt(s) {
+      if (s == null || s === "") return "0";
+      var n = Number(s);
+      if (!isFinite(n)) return String(s);
+      if (Math.abs(n) >= 1000) return n.toLocaleString(undefined, { maximumFractionDigits: 2 });
+      if (Math.abs(n) >= 1) return n.toLocaleString(undefined, { maximumFractionDigits: 4 });
+      return String(s);
+    }
+    function fmtUsd(s) {
+      var n = Number(s);
+      if (!isFinite(n)) return String(s || "0");
+      return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+    function ago(ts) {
+      if (ts == null || ts === "") return "";
+      var t = typeof ts === "number" ? ts * (ts < 1e12 ? 1000 : 1) : Date.parse(ts);
+      if (!t) return "";
+      var s = Math.max(0, (Date.now() - t) / 1000);
+      if (s < 45) return "just now";
+      if (s < 3600) return Math.floor(s / 60) + "m";
+      if (s < 86400) return Math.floor(s / 3600) + "h";
+      return Math.floor(s / 86400) + "d";
+    }
+    function isHoodTo(s) {
+      var t = String(s || "").trim().replace(/^@/, "").toLowerCase();
+      return t.length > 5 && t.slice(-5) === ".hood";
+    }
+    function isHexTo(s) {
+      var t = String(s || "").trim();
+      return t.length === 42 && t.slice(0, 2).toLowerCase() === "0x";
+    }
+    function drawIdent(canvas, a, size) {
+      if (!canvas) return;
+      var ctx = canvas.getContext("2d");
+      var n = size || canvas.width;
+      var light = document.documentElement.getAttribute("data-theme") === "light";
+      ctx.fillStyle = light ? "#f3f5f0" : "#0e0e0e";
+      ctx.fillRect(0, 0, n, n);
       if (!a) return;
-      var cells = 5, pad = 10, cell = (96 - pad * 2) / cells;
+      var cells = 5, pad = Math.round(n * 0.12), cell = (n - pad * 2) / cells;
+      ctx.fillStyle = light ? "#4d8a00" : "#c0f800";
       for (var y = 0; y < cells; y++) {
         for (var x = 0; x < 3; x++) {
           var i = (y * 3 + x + 2) * 2;
           var h = parseInt((a.charAt(i) || "0") + (a.charAt(i + 1) || "0"), 16);
           if (isNaN(h) || h % 2 === 0) continue;
-          ctx.fillStyle = "#c0f800";
-          ctx.fillRect(pad + x * cell, pad + y * cell, cell - 2, cell - 2);
-          ctx.fillRect(pad + (4 - x) * cell, pad + y * cell, cell - 2, cell - 2);
+          ctx.fillRect(pad + x * cell, pad + y * cell, cell - 1.5, cell - 1.5);
+          ctx.fillRect(pad + (4 - x) * cell, pad + y * cell, cell - 1.5, cell - 1.5);
         }
       }
+    }
+    function paintQr() {
+      var c = document.getElementById("recv-qr");
+      if (!addr || !window.drawQr || !drawQr(c, addr)) drawIdent(c, addr, 168);
+    }
+    function recents() {
+      try { return JSON.parse(localStorage.getItem("vapurr.wallet.recents") || "[]"); }
+      catch (e) { return []; }
+    }
+    function saveRecent(to) {
+      var list = recents().filter(function (x) { return x && x.to !== to; });
+      list.unshift({ to: to, at: Date.now() });
+      try { localStorage.setItem("vapurr.wallet.recents", JSON.stringify(list.slice(0, 6))); } catch (e) {}
+    }
+    function assetRow(id) {
+      if (!snap) return null;
+      var rows = snap.assets || [];
+      for (var i = 0; i < rows.length; i++) if (rows[i].id === id) return rows[i];
+      return null;
     }
     function openSheet(id) {
       var el = document.getElementById(id);
@@ -316,8 +598,14 @@
         sending = false;
         if (snap) paintAssetSeg(snap);
         paintSendBal();
+        paintRecents();
+        setTimeout(function () { document.getElementById("send-amt").focus(); }, 40);
       }
-      if (id === "sheet-book") paintBook();
+      if (id === "sheet-book") {
+        paintBook();
+        setTimeout(function () { document.getElementById("book-amt").focus(); }, 40);
+      }
+      if (id === "sheet-recv") paintQr();
     }
     function closeSheets() {
       document.querySelectorAll(".sheet").forEach(function (el) {
@@ -325,31 +613,30 @@
         el.hidden = true;
       });
     }
-    function copied() {
-      document.getElementById("copy-addr").textContent = "Copied";
-      document.getElementById("addr-chip").textContent = "copied";
-      setTimeout(function () {
-        document.getElementById("copy-addr").textContent = "Copy Address";
-        document.getElementById("addr-chip").textContent = shortAddr(addr);
-      }, 1200);
+    function copied(btn) {
+      var el = btn || document.getElementById("copy-addr");
+      var prev = el.textContent;
+      el.textContent = "Copied";
+      setTimeout(function () { el.textContent = prev; }, 1200);
     }
-    function copyAddr() {
-      if (!addr) return;
+    function copyText(text, btn) {
+      if (!text) return;
       function fallback() {
         var ta = document.createElement("textarea");
-        ta.value = addr;
+        ta.value = text;
         ta.setAttribute("readonly", "");
         ta.style.position = "fixed";
         ta.style.left = "-9999px";
         document.body.appendChild(ta);
         ta.select();
-        try { document.execCommand("copy"); copied(); } catch (e) {}
+        try { document.execCommand("copy"); copied(btn); } catch (e) {}
         document.body.removeChild(ta);
       }
       if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(addr).then(copied).catch(fallback);
+        navigator.clipboard.writeText(text).then(function () { copied(btn); }).catch(fallback);
       } else fallback();
     }
+    function copyAddr() { copyText(addr, document.getElementById("copy-addr")); }
     function assetSym(id) {
       if (id === "eth") return "ETH";
       if (id === "pusd") return "PUSD";
@@ -365,6 +652,8 @@
           b.classList.toggle("on", b.getAttribute("data-id") === asset);
         });
       }
+      var sym = document.getElementById("send-sym");
+      if (sym) sym.textContent = assetSym(asset);
       paintSendBal();
     }
     function paintAssetSeg(s) {
@@ -381,58 +670,107 @@
         var b = document.createElement("button");
         b.type = "button";
         b.setAttribute("data-id", id);
-        b.textContent = assetSym(id);
+        var url = window.tokenIconUrl ? tokenIconUrl(id) : "";
+        if (url) {
+          var img = document.createElement("img");
+          img.src = url;
+          img.alt = "";
+          b.appendChild(img);
+        }
+        b.appendChild(document.createTextNode(assetSym(id)));
         if (id === asset) b.className = "on";
         b.onclick = function () { setAsset(id); };
         box.appendChild(b);
       });
+      var sym = document.getElementById("send-sym");
+      if (sym) sym.textContent = assetSym(asset);
     }
     function paintSendBal() {
       if (!snap) return;
-      var lab = asset === "eth"
-        ? (snap.eth || "0") + " ETH"
-        : asset === "pusd"
-          ? (snap.pusd || "0") + " PUSD"
-          : asset === "vapurr"
-            ? (snap.vapurr || "0") + " VAPURR"
-            : asset === "weth"
-              ? (snap.weth || "0") + " WETH"
-              : (snap.usdg || "0") + " USDG";
-      document.getElementById("send-bal").textContent = lab + " on this address";
+      var row = assetRow(asset);
+      var lab = row ? (fmtAmt(row.amount || "0") + " " + (row.symbol || assetSym(asset))) : "0";
+      document.getElementById("send-bal").textContent = lab + " available";
+    }
+    function fillAmt(frac) {
+      var row = assetRow(asset);
+      if (!row) return;
+      var n = Number(row.amount || "0");
+      if (!isFinite(n)) return;
+      var v = n * frac;
+      if (asset === "eth") v = Math.max(0, v - 0.0001);
+      var s = String(v);
+      if (s.indexOf(".") >= 0) s = s.replace(/0+$/, "").replace(/\.$/, "");
+      document.getElementById("send-amt").value = s;
+    }
+    function paintRecents() {
+      var box = document.getElementById("send-recent");
+      var list = recents();
+      box.innerHTML = "";
+      list.forEach(function (x) {
+        if (!x || !x.to) return;
+        var b = document.createElement("button");
+        b.type = "button";
+        b.innerHTML = shortAddr(x.to) + (isHoodTo(x.to) ? "" : "") + " <span>recent</span>";
+        b.onclick = function () {
+          document.getElementById("send-to").value = x.to;
+          queueResolve();
+        };
+        box.appendChild(b);
+      });
     }
     function paintList(s) {
       var list = document.getElementById("list");
       list.innerHTML = "";
-      (s.assets || []).forEach(function (a) {
+      var rows = (s.assets || []).filter(function (a) {
+        return !hideZero || !a.zero;
+      });
+      if (!rows.length) {
+        var empty = document.createElement("div");
+        empty.className = "empty";
+        empty.textContent = hideZero ? "Empty tokens hidden." : "No tokens on this device yet.";
+        list.appendChild(empty);
+        return;
+      }
+      rows.forEach(function (a) {
         var b = document.createElement("button");
         b.className = "asset";
         b.type = "button";
         b.innerHTML =
-          "<span class=\"dot\"></span><span><b></b><span class=\"hint\"></span></span>" +
-          "<span><span class=\"amt\"></span><span class=\"usd-s\"></span></span>";
-        b.querySelector(".dot").textContent = (a.symbol || "?").slice(0, 2);
-        b.querySelector("b").textContent = a.symbol || "";
+          "<span class=\"slot\"></span><span><b></b><span class=\"hint\"></span></span>" +
+          "<span><span class=\"amt\"></span><span class=\"usd-s\"></span></span><span class=\"chev\"></span>";
+        b.replaceChild(tokenIconEl(a.id, a.symbol), b.querySelector(".slot"));
+        b.querySelector("b").textContent = prettySym(a.symbol);
         b.querySelector(".hint").textContent = a.hint || "";
-        b.querySelector(".amt").textContent = a.amount || "0";
-        b.querySelector(".usd-s").textContent = a.dollar ? ("$" + (a.amount || "0")) : "";
-        b.onclick = function () {
-          if (a.id === "vapurr" || a.id === "pusd" || a.id === "usdg") openBook(a.id);
-          else { setAsset(a.id); openSheet("sheet-send"); }
-        };
+        b.querySelector(".amt").textContent = fmtAmt(a.amount || "0");
+        b.querySelector(".usd-s").textContent = a.dollar ? ("$" + fmtUsd(a.amount || "0")) : "";
+        b.onclick = function () { openToken(a.id); };
         list.appendChild(b);
       });
     }
+    function actTitle(row, inbound) {
+      var kind = row.kind || "";
+      var sym = row.symbol ? prettySym(row.symbol) : "";
+      if (kind === "mint") return "Minted" + (sym ? " " + sym : "");
+      if (kind === "burn") return "Burned" + (sym ? " " + sym : "");
+      if (kind === "stake") return "Staked" + (sym ? " " + sym : "");
+      if (kind === "unstake") return "Unstaked" + (sym ? " " + sym : "");
+      return inbound ? ("Received" + (sym ? " " + sym : "")) : ("Sent" + (sym ? " " + sym : ""));
+    }
     function paintActivity(s) {
       var box = document.getElementById("activity");
-      var rows = s.activity || [];
+      var rows = (s.activity || []).slice();
       box.innerHTML = "";
+      if (s.tx && sending) {
+        rows.unshift({
+          tx: s.tx, url: s.tx_url, kind: "out", dir: "out",
+          amount: "pending", symbol: "", peer: "", ts: Date.now()
+        });
+      }
       if (!rows.length) {
         var empty = document.createElement("div");
         empty.className = "empty";
         empty.id = "act-empty";
-        empty.textContent = s.ok
-          ? "No transfers in the last window. Fund this address, then they show here."
-          : (s.error || "Could not reach RPC.");
+        empty.textContent = s.ok ? "Nothing yet. Receive or mint, then it shows here." : (s.error || "Could not reach RPC.");
         box.appendChild(empty);
         return;
       }
@@ -440,64 +778,184 @@
         var b = document.createElement("button");
         b.className = "asset";
         b.type = "button";
-        var inbound = row.dir === "in";
+        var inbound = row.dir === "in" || row.kind === "mint" || row.kind === "unstake";
+        var peer = row.peer || (inbound ? row.from : row.to) || "";
+        var actId = (row.symbol || "").toLowerCase();
         b.innerHTML =
-          "<span class=\"dot\"></span><span><b></b><span class=\"hint\"></span></span>" +
-          "<span class=\"amt\"></span>";
-        b.querySelector(".dot").textContent = inbound ? "In" : "Out";
-        b.querySelector("b").textContent = inbound ? "Received" : "Sent";
-        b.querySelector(".hint").textContent = (row.tx || "").slice(0, 10) + (row.tx ? "…" : "");
+          "<span class=\"slot\"></span><span><b></b><span class=\"hint\"></span></span>" +
+          "<span class=\"amt\"></span><span class=\"chev\"></span>";
+        var ico = tokenIconUrl(actId, row.symbol)
+          ? tokenIconEl(actId, row.symbol)
+          : tokenIconEl("", inbound ? "↓" : "↑");
+        if (!tokenIconUrl(actId, row.symbol)) {
+          ico.className = "dot " + (inbound ? "in" : "out");
+          ico.textContent = inbound ? "↓" : "↑";
+        }
+        b.replaceChild(ico, b.querySelector(".slot"));
+        b.querySelector("b").textContent = actTitle(row, inbound);
+        var when = ago(row.ts);
+        b.querySelector(".hint").textContent = [peer ? shortAddr(String(peer)) : "", when].filter(Boolean).join(" · ");
         var amt = b.querySelector(".amt");
-        amt.textContent = (typeof row.amount === "string" ? row.amount : "") || "—";
+        var qty = (typeof row.amount === "string" ? row.amount : "") || "—";
+        amt.textContent = qty === "pending" ? "…" : ((inbound ? "+" : "−") + qty);
         if (inbound) amt.classList.add("in");
         b.onclick = function () { if (row.url) vapurr.go(row.url); };
         box.appendChild(b);
       });
     }
+    function paintBanners(s) {
+      var gas = document.getElementById("gas-ban");
+      var bak = document.getElementById("backup-ban");
+      var needGas = !!(s && s.need_eth && s.has_key);
+      gas.classList.toggle("on", needGas);
+      var showBak = !!(s && s.has_key) && !backedUp && !needGas;
+      bak.classList.toggle("on", showBak);
+      document.getElementById("backup-title").textContent = (s && s.has_seed) ? "Back this device up" : "No seed on disk";
+      document.getElementById("backup-copy").textContent = (s && s.has_seed)
+        ? "Settings → Show seed. Screenshot is not a backup."
+        : "Restored from a key. Export it.";
+    }
+    function paintWho() {
+      document.getElementById("who-name").textContent = nick || hood || "This device";
+      document.getElementById("who-addr").textContent = hood && nick ? hood : shortAddr(addr);
+      document.getElementById("recv-hood").textContent = hood || "";
+    }
+    function paintSettings() {
+      document.getElementById("set-addr").textContent = addr || "—";
+      document.getElementById("set-hood").textContent = hood || "none yet";
+      document.getElementById("set-rpc").textContent = (snap && snap.rpc) || "—";
+      document.getElementById("set-nonce").textContent = snap && snap.nonce != null ? String(snap.nonce) : "—";
+      var test = !snap || snap.net === "testnet" || snap.chain_id === 46630;
+      document.getElementById("net-test").classList.toggle("on", test);
+      document.getElementById("net-main").classList.toggle("on", !test);
+      document.getElementById("hide-zero").classList.toggle("on", hideZero);
+      document.getElementById("net-pill").textContent = test ? "Testnet" : "Mainnet";
+      document.getElementById("set-nick").value = nick;
+      var fauc = document.getElementById("set-faucet");
+      if (snap && snap.faucet) {
+        fauc.style.display = "block";
+        fauc.onclick = function () { vapurr.go(snap.faucet); };
+      } else fauc.style.display = "none";
+      document.getElementById("set-seed").textContent = (snap && snap.has_seed) ? "Show seed" : "Show seed (none saved)";
+    }
+    function showSecret(text, kind) {
+      var box = document.getElementById("set-secret");
+      box.hidden = false;
+      box.textContent = text;
+      openSheet("sheet-settings");
+      paintSettings();
+      document.getElementById(kind === "hex" ? "set-hex" : "set-seed").textContent = "Copy secret";
+      backedUp = true;
+      try { localStorage.setItem("vapurr.wallet.backedUp", "1"); } catch (e) {}
+      paintBanners(snap);
+    }
+    function loadHood(a) {
+      if (!a) return;
+      fetch("/zzzmail/api/hood/reverse/" + encodeURIComponent(a)).then(function (r) { return r.json(); }).then(function (v) {
+        var name = (v && (v.name || v.hood || (v.record && v.record.name))) || "";
+        if (name) {
+          hood = name.indexOf(".") >= 0 ? name : (name + ".hood");
+          paintWho();
+          paintSettings();
+        }
+      }).catch(function () {});
+    }
+    function openToken(id) {
+      tokenId = id;
+      var a = assetRow(id);
+      if (!a) { setAsset(id); openSheet("sheet-send"); return; }
+      var hero = document.getElementById("tok-dot");
+      hero.innerHTML = "";
+      hero.className = "dot ico " + id;
+      var url = tokenIconUrl(id, a.symbol);
+      if (url) {
+        var img = document.createElement("img");
+        img.src = url;
+        img.alt = "";
+        hero.appendChild(img);
+      } else {
+        hero.textContent = (a.symbol || "?").slice(0, 2);
+      }
+      document.getElementById("tok-amt").textContent = fmtAmt(a.amount || "0") + " " + prettySym(a.symbol);
+      document.getElementById("tok-usd").textContent = a.dollar ? ("$" + fmtUsd(a.amount || "0")) : (a.hint || "");
+      document.getElementById("tok-hint").textContent = a.token ? shortAddr(a.token) : "Native ETH";
+      var mint = document.getElementById("tok-mint");
+      mint.style.display = (id === "vapurr" || id === "pusd" || id === "usdg") ? "block" : "none";
+      openSheet("sheet-token");
+    }
+    function paintResolve(s) {
+      resolvedTo = s.resolved || "";
+      var hint = document.getElementById("send-to-hint");
+      if (!hint) return;
+      if (s.ok && resolvedTo) {
+        hint.textContent = (s.name ? s.name + " → " : "") + shortAddr(resolvedTo);
+      } else {
+        hint.textContent = "Could not resolve.";
+      }
+    }
+    function queueResolve() {
+      resolvedTo = "";
+      var to = document.getElementById("send-to").value.trim();
+      var hint = document.getElementById("send-to-hint");
+      if (!to) {
+        hint.textContent = "PNS names resolve on this device.";
+        return;
+      }
+      if (!isHoodTo(to) && !isHexTo(to)) {
+        hint.textContent = "0x address or name.hood";
+        return;
+      }
+      hint.textContent = isHoodTo(to) ? "Resolving…" : shortAddr(to);
+      clearTimeout(resolveTimer);
+      resolveTimer = setTimeout(function () {
+        vapurr.send({ cmd: "wallet-resolve", to: to });
+      }, 280);
+    }
 
     window.__setWallet = function (s) {
       if (!s) return;
+      if (s.hex_key && !s.assets) { showSecret(s.hex_key, "hex"); return; }
+      if (s.seed && !s.assets) { showSecret(s.seed, "seed"); return; }
+      if (s.resolved != null && !s.assets) { paintResolve(s); return; }
       snap = s;
       addr = s.address || "";
-      document.getElementById("addr-chip").textContent = shortAddr(addr);
       document.getElementById("full-addr").textContent = addr || "—";
-      paintIdent(addr);
+      drawIdent(document.getElementById("face"), addr, 56);
+      if (document.getElementById("sheet-recv").classList.contains("on")) paintQr();
+      paintWho();
       document.getElementById("pip").classList.toggle("on", !!s.ok);
-      document.getElementById("usd").innerHTML = "<em>$</em>" + (s.total_usd || "0");
-      var netlab = (s.net === "testnet" || s.chain_id === 46630) ? "TESTNET 46630" : ("CHAIN " + String(s.chain_id || ""));
-      var nc = document.getElementById("net-chip");
-      if (nc) nc.textContent = netlab;
+      document.getElementById("usd").innerHTML = "<em>$</em>" + fmtUsd(s.total_usd || "0");
+      var test = s.net === "testnet" || s.chain_id === 46630;
+      document.getElementById("net-pill").textContent = test ? "Testnet" : "Mainnet";
       document.getElementById("rpc-lab").textContent = (s.net || "") + " " + String(s.chain_id || "");
       var bits = [];
-      bits.push(netlab);
-      bits.push(s.ok ? "live" : "rpc wait");
-      bits.push((s.eth || "0") + " ETH");
-      if (s.need_eth) bits.push("needs gas");
+      bits.push(test ? "Robinhood testnet" : ("Robinhood Chain " + String(s.chain_id || "")));
+      bits.push(s.ok ? "Live" : "Waiting on RPC");
+      if (s.need_eth) bits.push("Needs gas");
       if (s.error) bits.push(s.error);
-      var v0 = !s.vapurr || s.vapurr === "0" || s.vapurr === "0.00";
-      var p0 = !s.pusd || s.pusd === "0" || s.pusd === "0.00";
-      if (s.vapurr != null && v0 && p0) bits.push("book live · this bag is empty");
       document.getElementById("sub").textContent = bits.join(" · ");
-      document.getElementById("send-copy").textContent = s.testnet || s.net === "testnet"
-        ? "Signed here. Robinhood testnet 46630."
-        : "Signed here.";
-      document.getElementById("recv-copy").textContent = s.net === "testnet"
-        ? "Fund this device on testnet 46630. Copy, then faucet or send ETH."
-        : "Fund this device on Robinhood Chain.";
+      document.getElementById("send-copy").textContent = test
+        ? "Signed here. Testnet 46630. .hood names resolve on PNS."
+        : "Signed here. .hood names resolve on the testnet registry.";
+      document.getElementById("recv-copy").textContent = test
+        ? "Fund this device on testnet 46630."
+        : "Anyone can send to this device on Robinhood Chain.";
       var fauc = document.getElementById("go-faucet");
       if (s.faucet) {
         fauc.style.display = "block";
         fauc.onclick = function () { vapurr.go(s.faucet); };
-      } else {
-        fauc.style.display = "none";
-      }
+      } else fauc.style.display = "none";
       paintAssetSeg(s);
       paintList(s);
       paintActivity(s);
       paintSendBal();
+      paintSettings();
+      paintBanners(s);
+      if (addr && !hood) loadHood(addr);
       document.getElementById("send-go").textContent = "Review";
       if (sending && s.tx && s.tx !== waitHash) {
         sending = false;
+        saveRecent(document.getElementById("send-to").value.trim());
         closeSheets();
         vapurr.finishTx(true, { tx: s.tx, txUrl: s.tx_url });
       }
@@ -505,6 +963,25 @@
     window.__walletErr = function (msg) {
       sending = false;
       document.getElementById("send-go").textContent = "Review";
+      var set = document.getElementById("sheet-settings");
+      if (set && set.classList.contains("on")) {
+        var box = document.getElementById("set-secret");
+        box.hidden = false;
+        box.textContent = msg || "failed";
+        secretArmed = "";
+        document.getElementById("set-seed").textContent = (snap && snap.has_seed) ? "Show seed" : "Show seed (none saved)";
+        document.getElementById("set-hex").textContent = "Export key";
+        return;
+      }
+      var send = document.getElementById("sheet-send");
+      if (send && send.classList.contains("on")) {
+        var err = document.getElementById("send-err");
+        err.hidden = false;
+        err.textContent = msg || "send failed";
+        var hint = document.getElementById("send-to-hint");
+        if (hint && String(msg || "").toLowerCase().indexOf("pns") >= 0) hint.textContent = msg;
+        return;
+      }
       vapurr.finishTx(false, { error: msg || "send failed" });
     };
     window.__setEcon = function (s) {
@@ -528,13 +1005,12 @@
       document.getElementById("book-copy").textContent = mint
         ? "Burn $VAPURR, mint $PUSD at the oracle. Spread ≥ 2%. Lithe is 9%."
         : "Burn $PUSD, mint $VAPURR at the oracle. Spread ≥ 2%.";
-      document.getElementById("book-lab").textContent = mint ? "VAPURR in" : "PUSD in";
-      document.getElementById("book-amt").placeholder = mint ? "VAPURR" : "PUSD";
+      document.getElementById("book-lab").textContent = mint ? "VAPURR" : "PUSD";
       var v = (snap && snap.vapurr) || "0";
       var p = (snap && snap.pusd) || "0";
       document.getElementById("book-hint").textContent = mint
-        ? ("This device: " + v + " VAPURR. Burn V to mint P.")
-        : ("This device: " + p + " PUSD. Burn P to mint V.");
+        ? (fmtAmt(v) + " VAPURR on this device")
+        : (fmtAmt(p) + " PUSD on this device");
       document.getElementById("book-err").hidden = true;
     }
     function openBook(id) {
@@ -543,19 +1019,116 @@
       if (id === "vapurr" || id === "pusd" || id === "usdg") setAsset(id);
       openSheet("sheet-book");
     }
+    function openSettings() {
+      secretArmed = "";
+      document.getElementById("set-secret").hidden = true;
+      document.getElementById("set-seed").textContent = (snap && snap.has_seed) ? "Show seed" : "Show seed (none saved)";
+      document.getElementById("set-hex").textContent = "Export key";
+      document.getElementById("net-test").textContent = "Testnet 46630";
+      document.getElementById("net-main").textContent = "Mainnet 4663";
+      paintSettings();
+      openSheet("sheet-settings");
+    }
+    function pickNet(net) {
+      var id = net === "mainnet" ? "net-main" : "net-test";
+      var btn = document.getElementById(id);
+      if (secretArmed !== "net-" + net) {
+        secretArmed = "net-" + net;
+        btn.textContent = "Tap again to switch";
+        return;
+      }
+      secretArmed = "";
+      btn.textContent = net === "mainnet" ? "Mainnet 4663" : "Testnet 46630";
+      vapurr.send({ cmd: "wallet-set-net", net: net });
+    }
+    function netName() {
+      return (snap && (snap.net === "testnet" || snap.chain_id === 46630))
+        ? "Robinhood Chain Testnet 46630"
+        : ("Robinhood Chain " + ((snap && snap.chain_id) || 4663));
+    }
 
-    document.getElementById("addr-chip").onclick = copyAddr;
+    document.getElementById("usd").onclick = function () { vapurr.send({ cmd: "wallet" }); };
+    document.getElementById("who").onclick = function () { openSheet("sheet-recv"); };
     document.getElementById("go-receive").onclick = function () { openSheet("sheet-recv"); };
     document.getElementById("go-send").onclick = function () { openSheet("sheet-send"); };
-    document.getElementById("sign-out").onclick = function () {
-      vapurr.send({ cmd: "logout" });
-      vapurr.send({ cmd: "pane", id: "login" });
-    };
-    document.getElementById("go-scan").onclick = function () {
+    document.getElementById("go-swap").onclick = function () { vapurr.send({ cmd: "pane", id: "swap" }); };
+    document.getElementById("go-mint").onclick = function () { openBook("vapurr"); };
+    document.getElementById("gas-ban").onclick = function () { openSheet("sheet-recv"); };
+    document.getElementById("backup-ban").onclick = openSettings;
+    document.getElementById("go-settings").onclick = openSettings;
+    document.getElementById("net-test").onclick = function () { pickNet("testnet"); };
+    document.getElementById("net-main").onclick = function () { pickNet("mainnet"); };
+    function toggleHideZero() {
+      hideZero = !hideZero;
+      try { localStorage.setItem("vapurr.wallet.hideZero", hideZero ? "1" : "0"); } catch (e) {}
+      if (snap) paintList(snap);
+      paintSettings();
+    }
+    document.getElementById("hide-zero").onclick = function (e) { e.stopPropagation(); toggleHideZero(); };
+    document.getElementById("hide-zero-row").onclick = toggleHideZero;
+    document.getElementById("set-nick").addEventListener("change", function () {
+      nick = this.value.trim();
+      try { localStorage.setItem("vapurr.wallet.nick", nick); } catch (e) {}
+      paintWho();
+    });
+    document.getElementById("set-copy").onclick = function () { copyText(addr, this); };
+    document.getElementById("set-scan").onclick = function () {
       if (snap && snap.addr_url) vapurr.go(snap.addr_url);
       else vapurr.send({ cmd: "pane", id: "scan" });
     };
+    document.getElementById("set-hood-go").onclick = function () { vapurr.send({ cmd: "pane", id: "pns" }); };
+    document.getElementById("set-lithe").onclick = function () { vapurr.send({ cmd: "pane", id: "lithe" }); };
+    document.getElementById("set-seed").onclick = function () {
+      var box = document.getElementById("set-secret");
+      if (!box.hidden && box.textContent && secretArmed === "seed") {
+        copyText(box.textContent, this);
+        return;
+      }
+      if (secretArmed !== "seed") { secretArmed = "seed"; this.textContent = "Tap again to reveal"; return; }
+      vapurr.send({ cmd: "wallet-reveal-seed" });
+    };
+    document.getElementById("set-hex").onclick = function () {
+      var box = document.getElementById("set-secret");
+      if (!box.hidden && box.textContent && secretArmed === "hex") {
+        copyText(box.textContent, this);
+        return;
+      }
+      if (secretArmed !== "hex") { secretArmed = "hex"; this.textContent = "Tap again — this is the key"; return; }
+      vapurr.send({ cmd: "wallet-export-key" });
+    };
+    document.getElementById("set-restore").onclick = function () { vapurr.send({ cmd: "pane", id: "login" }); };
+    document.getElementById("set-out").onclick = function () {
+      vapurr.send({ cmd: "logout" });
+      vapurr.send({ cmd: "pane", id: "login" });
+    };
     document.getElementById("copy-addr").onclick = copyAddr;
+    document.getElementById("send-half").onclick = function () { fillAmt(0.5); };
+    document.getElementById("send-max").onclick = function () { fillAmt(1); };
+    document.getElementById("send-to").addEventListener("input", queueResolve);
+    document.getElementById("tok-send").onclick = function () {
+      setAsset(tokenId);
+      closeSheets();
+      openSheet("sheet-send");
+    };
+    document.getElementById("tok-recv").onclick = function () {
+      closeSheets();
+      openSheet("sheet-recv");
+    };
+    document.getElementById("tok-mint").onclick = function () {
+      closeSheets();
+      openBook(tokenId);
+    };
+    document.getElementById("tok-ca").onclick = function () {
+      var a = assetRow(tokenId);
+      copyText((a && a.token) || addr, this);
+    };
+    document.getElementById("tok-scan").onclick = function () {
+      var a = assetRow(tokenId);
+      var ca = a && a.token;
+      var ex = snap && snap.explorer;
+      if (ca && ex) vapurr.go(ex.replace(/\/$/, "") + "/token/" + ca);
+      else if (snap && snap.addr_url) vapurr.go(snap.addr_url);
+    };
     document.getElementById("book-mint").onclick = function () { bookMode = "mint"; paintBook(); };
     document.getElementById("book-red").onclick = function () { bookMode = "redeem"; paintBook(); };
     document.getElementById("book-send").onclick = function () {
@@ -569,9 +1142,6 @@
       if (!amt) { err.hidden = false; err.textContent = "enter an amount"; return; }
       err.hidden = true;
       var mint = bookMode !== "redeem";
-      var net = (snap && (snap.net === "testnet" || snap.chain_id === 46630))
-        ? "Robinhood Chain Testnet 46630"
-        : ("Robinhood Chain " + ((snap && snap.chain_id) || 4663));
       vapurr.beginTx({
         title: mint ? "Mint $PUSD" : "Redeem $PUSD",
         kicker: "This device signs",
@@ -579,7 +1149,7 @@
           ? "Burn $VAPURR, mint $PUSD at the oracle. Spread ≥ 2%. Lithe 9%. Hash or it failed."
           : "Burn $PUSD, mint $VAPURR at the oracle. Spread ≥ 2%. Hash or it failed.",
         rows: [
-          { k: "Network", v: net },
+          { k: "Network", v: netName() },
           { k: "From", v: addr },
           { k: mint ? "Burn V" : "Burn P", v: amt },
           { k: "Path", v: mint ? "burn VAPURR → mint PUSD" : "burn PUSD → mint VAPURR" },
@@ -602,22 +1172,27 @@
       var to = document.getElementById("send-to").value.trim();
       var amt = document.getElementById("send-amt").value.trim();
       var err = document.getElementById("send-err");
-      if (!to || to.length !== 42) { err.hidden = false; err.textContent = "paste a 0x address"; return; }
+      var hoodTo = isHoodTo(to);
+      if (!to || (!hoodTo && !isHexTo(to))) {
+        err.hidden = false;
+        err.textContent = "paste a 0x address or a name.hood";
+        return;
+      }
       if (!amt) { err.hidden = false; err.textContent = "enter an amount"; return; }
       err.hidden = true;
       var sym = assetSym(asset);
-      var net = (snap && (snap.net === "testnet" || snap.chain_id === 46630))
-        ? "Robinhood Chain Testnet 46630"
-        : ("Robinhood Chain " + ((snap && snap.chain_id) || 4663));
       vapurr.beginTx({
-        title: "Send " + sym,
+        title: "Send " + prettySym(sym),
         kicker: "This device signs",
-        lede: "Nothing leaves until you sign. Then you get a hash, or it failed.",
+        lede: hoodTo
+          ? "PNS resolves the name on testnet 46630, then this device signs. Hash or it failed."
+          : "Nothing leaves until you sign. Then you get a hash, or it failed.",
         rows: [
-          { k: "Network", v: net },
+          { k: "Network", v: netName() },
           { k: "From", v: addr },
           { k: "To", v: to },
-          { k: "Amount", v: amt + " " + sym }
+          { k: "Resolves", v: resolvedTo || (hoodTo ? "on sign" : to) },
+          { k: "Amount", v: amt + " " + prettySym(sym) }
         ],
         confirmLabel: "Sign and send",
         doneTitle: "Sent",
@@ -627,13 +1202,12 @@
         if (!ok) return;
         sending = true;
         waitHash = (snap && snap.tx) || "";
+        saveRecent(to);
         closeSheets();
         vapurr.send({ cmd: "wallet-send", asset: asset, to: to, amt: amt });
       });
     };
-    document.querySelectorAll("[data-close]").forEach(function (el) {
-      el.onclick = closeSheets;
-    });
+    document.querySelectorAll("[data-close]").forEach(function (el) { el.onclick = closeSheets; });
     document.addEventListener("keydown", function (e) {
       if (e.key === "Escape") {
         var overlay = document.querySelector(".vapurr-sign");
@@ -641,10 +1215,13 @@
         closeSheets();
       }
     });
+    new MutationObserver(function () {
+      drawIdent(document.getElementById("face"), addr, 56);
+      if (document.getElementById("sheet-recv").classList.contains("on")) paintQr();
+    }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
     vapurr.send({ cmd: "wallet" });
     setTimeout(function () { if (!snap) vapurr.send({ cmd: "wallet" }); }, 400);
     setTimeout(function () { if (!snap) vapurr.send({ cmd: "wallet" }); }, 1600);
-    if (window.startShader) startShader(document.getElementById("shader"));
   </script>
 </body>
 </html>

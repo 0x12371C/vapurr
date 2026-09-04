@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- House mark for $PUSD. Lime is vapurr. Not a third-party dollar. -->
+  <circle cx="32" cy="32" r="32" fill="#c0f800"/>
+  <path fill="#0e0e0e" d="M22 15h14.2c8.2 0 14.2 5 14.2 12.2 0 7.2-6 12.2-14.2 12.2H28v9.6h-6V15zm6 6.2v12h7.8c4.4 0 7.8-2.6 7.8-6s-3.4-6-7.8-6H28z"/>
+</svg>

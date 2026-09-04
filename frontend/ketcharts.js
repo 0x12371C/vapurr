@@ -8,7 +8,7 @@
     CRM: 1, ADBE: 1, ORCL: 1, IBM: 1, UBER: 1, ABNB: 1, SNOW: 1, MSTR: 1
   };
   var TFS = [
-    { id: "30s", lab: "30s", gecko: "second", agg: 30, paprika: "", ms: 3e4, fromTrades: true },
+    { id: "30s", lab: "30s", gecko: "", agg: 1, paprika: "", ms: 3e4, fromTrades: true },
     { id: "1", lab: "1m", gecko: "minute", agg: 1, paprika: "1m", ms: 6e4 },
     { id: "5", lab: "5m", gecko: "minute", agg: 5, paprika: "5m", ms: 3e5 },
     { id: "15", lab: "15m", gecko: "minute", agg: 15, paprika: "15m", ms: 9e5 },
@@ -44,13 +44,39 @@
     { id: "binance:SOLUSDT", lab: "SOL", kind: "cash" }
   ];
   var STOCK_BOOT = ["NVDA", "AAPL", "HOOD", "TSLA"];
+  var DX = "https://api.dexscreener.com";
+  var GECKO = "https://api.geckoterminal.com/api/v2";
+  var PAP = "https://api.dexpaprika.com";
+  var CASH_ADDR = {
+    "0x5fc5360d0400a0fd4f2af552add042d716f1d168": "USDG",
+    "0x0bd7d308f8e1639fab988df18a8011f41eacad73": "WETH",
+    "0x0000000000000000000000000000000000000000": "ETH"
+  };
+  var srcGate = {
+    gecko: { cool: 0, fail: 0 },
+    paprika: { cool: 0, fail: 0 },
+    dex: { cool: 0, fail: 0 }
+  };
+  var boardStep = 0;
+  var FEEDS = [
+    "geckoTrend",
+    "paprikaVol",
+    "dex",
+    "geckoNew",
+    "paprikaNew",
+    "geckoTop",
+    "paprikaLiq",
+    "paprikaStock"
+  ];
   var PAPER_KEY = "vapurr.ketcharts.paper";
   var IND_KEY = "vapurr.ketcharts.inds";
   var SORT_KEY = "vapurr.ketcharts.sort";
   var FAV_KEY = "vapurr.ketcharts.fav";
   var ALERT_KEY = "vapurr.ketcharts.alerts";
   var PREF_KEY = "vapurr.ketcharts.pref";
-  var tab = "stock";
+  var BARS_KEY = "vapurr.ketcharts.bars.v1";
+  var TAPE_KEY = "vapurr.ketcharts.tape.v1";
+  var tab = "new";
   var q = "";
   var pairs = [];
   var selected = null;
@@ -60,11 +86,15 @@
   var lastClose = 0;
   var lastBars = [];
   var lastTape = "";
+  var hoverBar = null;
+  var chartBound = false;
   var bootGen = 0;
   var barCache = {};
+  var barFetch = {};
+  var tapeSaveTimer = 0;
   var searchTimer = 0;
   var flashTimer = 0;
-  var sortKey = "vol";
+  var sortKey = "created";
   var sortDir = -1;
   var activeInds = loadInds();
   var indHandles = {};
@@ -76,6 +106,10 @@
   var pctScale = false;
   var rangePreset = "";
   var lastPool = "";
+  var ketSnap = null;
+  var listBusy = false;
+  var listWaitHash = "";
+  var listAmtDirty = false;
   (function loadPref() {
     try {
       var raw = JSON.parse(localStorage.getItem(PREF_KEY) || "null");
@@ -84,7 +118,8 @@
       if (raw.log) logScale = true;
       if (raw.pct) pctScale = true;
       if (raw.tf) timeframe = raw.tf;
-      if (raw.tab) tab = raw.tab;
+      if (raw.tab === "meme") tab = "hot";
+      else if (raw.tab) tab = raw.tab;
       if (raw.pool) lastPool = raw.pool;
     } catch (e) {}
   })();
@@ -124,9 +159,14 @@
   function loadPaper() {
     try {
       var raw = JSON.parse(localStorage.getItem(PAPER_KEY) || "null");
-      if (raw && typeof raw.cash === "number") return raw;
+      if (raw && typeof raw.cash === "number") {
+        if (!Array.isArray(raw.book)) raw.book = Array.isArray(raw.slips) ? raw.slips.slice() : [];
+        if (!Array.isArray(raw.resets)) raw.resets = [];
+        if (!Array.isArray(raw.slips)) raw.slips = [];
+        return raw;
+      }
     } catch (e) {}
-    return { cash: 10000, pos: null, slips: [] };
+    return { cash: 10000, pos: null, slips: [], book: [], resets: [] };
   }
   function savePaper() {
     try { localStorage.setItem(PAPER_KEY, JSON.stringify(paper)); } catch (e) {}
@@ -153,6 +193,125 @@
   })();
   function saveSort() {
     try { localStorage.setItem(SORT_KEY, JSON.stringify({ key: sortKey, dir: sortDir })); } catch (e) {}
+  }
+
+  function packBars(bars) {
+    return (bars || []).slice(-240).map(function (b) {
+      return [b.time, b.open, b.high, b.low, b.close, b.volume];
+    });
+  }
+  function unpackBars(rows) {
+    return (rows || []).map(function (r) {
+      return { time: n(r[0]), open: n(r[1]), high: n(r[2]), low: n(r[3]), close: n(r[4]), volume: n(r[5]) };
+    }).filter(function (b) { return b.time > 0 && b.close > 0; });
+  }
+  function realBars(hit) {
+    return !!(hit && hit.bars && hit.bars.length > 1 && hit.source && hit.source !== "empty" && hit.source !== "print");
+  }
+  function persistBars() {
+    try {
+      var keys = Object.keys(barCache);
+      keys.sort(function (a, b) { return n(barCache[b] && barCache[b].at) - n(barCache[a] && barCache[a].at); });
+      var out = {};
+      var i;
+      for (i = 0; i < keys.length && Object.keys(out).length < 16; i++) {
+        var h = barCache[keys[i]];
+        if (!realBars(h)) continue;
+        out[keys[i]] = { bars: packBars(h.bars), source: h.source, at: h.at };
+      }
+      localStorage.setItem(BARS_KEY, JSON.stringify(out));
+    } catch (e) {
+      try { localStorage.removeItem(BARS_KEY); } catch (e2) {}
+    }
+  }
+  function restoreBars() {
+    try {
+      var raw = JSON.parse(localStorage.getItem(BARS_KEY) || "null");
+      if (!raw || typeof raw !== "object") return;
+      Object.keys(raw).forEach(function (k) {
+        var h = raw[k];
+        if (!h || !h.bars || Date.now() - n(h.at) > 864e5) return;
+        var bars = unpackBars(h.bars);
+        if (bars.length < 2) return;
+        barCache[k] = { bars: bars, source: h.source || "cache", at: n(h.at) };
+      });
+    } catch (e) {}
+  }
+  function slimPair(p) {
+    if (!p) return null;
+    return {
+      pool: p.pool, token: p.token, quote: p.quote, quote_sym: p.quote_sym,
+      sym: p.sym, name: p.name, dex: p.dex, fee: p.fee,
+      px: p.px, chg: p.chg, vol: p.vol, vol1: p.vol1, vol6: p.vol6,
+      liq: p.liq, mcap: p.mcap, buys: p.buys, sells: p.sells, txns: p.txns,
+      created: p.created, kind: p.kind, source: p.source || "rhc",
+      icon: p.icon || "", dx: p.dx || "", blurb: p.blurb ? String(p.blurb).slice(0, 180) : ""
+    };
+  }
+  function persistTape() {
+    try {
+      var slim = [];
+      var i;
+      for (i = 0; i < pairs.length && slim.length < 80; i++) {
+        if (pairs[i].source === "binance") continue;
+        slim.push(slimPair(pairs[i]));
+      }
+      localStorage.setItem(TAPE_KEY, JSON.stringify({
+        at: Date.now(),
+        pool: selected && selected.pool,
+        pairs: slim
+      }));
+    } catch (e) {
+      try { localStorage.removeItem(TAPE_KEY); } catch (e2) {}
+    }
+  }
+  function persistTapeSoon() {
+    if (tapeSaveTimer) return;
+    tapeSaveTimer = setTimeout(function () {
+      tapeSaveTimer = 0;
+      persistTape();
+    }, 500);
+  }
+  function restoreTape() {
+    try {
+      var raw = JSON.parse(localStorage.getItem(TAPE_KEY) || "null");
+      if (!raw || !Array.isArray(raw.pairs) || !raw.pairs.length) return false;
+      raw.pairs.forEach(function (p) {
+        if (p && p.pool) {
+          p.seen = n(raw.at) || 1;
+          putPair(p);
+        }
+      });
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+  function cachedBars(pool, tf) {
+    var spec = specOf(tf || timeframe);
+    return barCache[String(pool || "").toLowerCase() + "|" + spec.id] || null;
+  }
+  function hydrateFromCache() {
+    restoreBars();
+    restoreTape();
+    if (!selected && lastPool) {
+      var i;
+      for (i = 0; i < pairs.length; i++) {
+        if (pairs[i].pool === lastPool) { selected = pairs[i]; break; }
+      }
+    }
+    if (!selected) selected = visible()[0] || pairs[0] || null;
+    if (selected && selected.source !== "binance") {
+      var hit = cachedBars(selected.pool, timeframe);
+      if (realBars(hit)) {
+        lastBars = hit.bars;
+        lastTape = hit.source;
+        lastClose = hit.bars[hit.bars.length - 1].close;
+      }
+    }
+    paintList();
+    paintTrench();
+    paintHud();
   }
 
   function ketTheme() {
@@ -198,7 +357,14 @@
     if (v >= 1e3) return "$" + (v / 1e3).toFixed(1) + "k";
     if (v >= 1) return "$" + v.toFixed(2);
     if (v > 0) return "$" + v.toPrecision(3);
+    if (v === 0) return "$0.00";
     return "—";
+  }
+  function signedUsd(x) {
+    var v = n(x);
+    if (v > 0) return "+" + usd(v);
+    if (v < 0) return "−" + usd(-v);
+    return "$0.00";
   }
   function pct(x) {
     var v = n(x);
@@ -265,6 +431,60 @@
     return "AVOID";
   }
 
+  function icoUrl(sym, addr) {
+    if (window.tokenIconUrl) {
+      var u = tokenIconUrl("", sym);
+      if (u) return u;
+      var a = String(addr || "").toLowerCase();
+      if (a === "0x5fc5360d0400a0fd4f2af552add042d716f1d168") return tokenIconUrl("usdg");
+      if (a === "0x0bd7d308f8e1639fab988df18a8011f41eacad73") return tokenIconUrl("weth");
+    }
+    return "";
+  }
+  function pairIcon(p) {
+    if (p && (p.listedLogo || p.icon)) return p.listedLogo || p.icon;
+    return icoUrl(p && p.sym, p && p.token);
+  }
+  function escTxt(s) {
+    return String(s || "").replace(/[&<>"]/g, function (c) {
+      return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c];
+    });
+  }
+
+  function mapLiqPair(p) {
+    if (!p) return null;
+    var base = p.base && typeof p.base === "object" ? p.base : {};
+    var quoteObj = p.quote && typeof p.quote === "object" ? p.quote : {};
+    var pool = String(p.pool || p.address || "").toLowerCase();
+    if (!pool) return null;
+    var sym = p.sym || base.symbol || "???";
+    var qsym = p.quote_sym || quoteObj.symbol || "";
+    var qaddr = String((typeof p.quote === "string" ? p.quote : quoteObj.address) || "").toLowerCase();
+    return {
+      pool: pool,
+      token: String(p.token || base.address || "").toLowerCase(),
+      quote: qaddr,
+      quote_sym: qsym,
+      sym: sym,
+      name: p.name || (sym + (qsym ? " / " + qsym : "")),
+      dex: p.dex || "",
+      fee: p.fee || "",
+      px: n(p.px != null ? p.px : base.price_usd),
+      chg: n(p.chg),
+      vol: n(p.vol != null ? p.vol : p.vol24_usd),
+      vol1: n(p.vol1),
+      vol6: n(p.vol6),
+      liq: n(p.liq != null ? p.liq : p.reserve_usd),
+      mcap: n(p.mcap),
+      buys: n(p.buys),
+      sells: n(p.sells),
+      txns: n(p.txns),
+      created: n(p.created),
+      kind: p.kind === "stable" || p.kind === "eth" ? "cash" : kindOf(sym, p.name),
+      source: "rhc"
+    };
+  }
+
   function parseGecko(data) {
     var out = [];
     (data || []).forEach(function (row) {
@@ -299,6 +519,302 @@
     return out;
   }
 
+  function srcReady(name) {
+    return Date.now() >= (srcGate[name] && srcGate[name].cool || 0);
+  }
+  function srcMark(name, r, gapOk) {
+    var g = srcGate[name];
+    if (!g) return !!(r && r.ok);
+    var st = r && r.status;
+    if (st === 429 || st === 402) {
+      g.fail = (g.fail || 0) + 1;
+      g.cool = Date.now() + Math.min(180000, 12000 * Math.pow(2, g.fail));
+      return false;
+    }
+    g.fail = 0;
+    g.cool = Date.now() + (gapOk || 8000);
+    return !!(r && r.ok);
+  }
+  function fetchSrc(name, url, gapOk) {
+    if (!srcReady(name)) {
+      return Promise.resolve({ ok: false, status: 0, json: null, skipped: true });
+    }
+    return fetchJson(url).then(function (r) {
+      srcMark(name, r, gapOk);
+      return r;
+    });
+  }
+
+  function dxPairsOf(json) {
+    if (Array.isArray(json)) return json;
+    if (json && Array.isArray(json.pairs)) return json.pairs;
+    return [];
+  }
+
+  function parseDxPair(row, profile) {
+    if (!row || String(row.chainId || "").toLowerCase() !== "robinhood") return null;
+    var base = row.baseToken || {};
+    var quote = row.quoteToken || {};
+    var pool = String(row.pairAddress || "").toLowerCase();
+    if (!pool) return null;
+    var tx = (row.txns && row.txns.h24) || {};
+    var vol = row.volume || {};
+    var chg = row.priceChange || {};
+    var liq = row.liquidity || {};
+    var info = row.info || {};
+    var sym = base.symbol || "???";
+    var name = base.name || sym;
+    var links = (profile && profile.links) || [];
+    if (!links.length && info.websites) {
+      links = (info.websites || []).map(function (w) {
+        return { label: w.label || "Website", url: w.url };
+      }).concat((info.socials || []).map(function (s) {
+        return { type: s.type, url: s.url };
+      }));
+    }
+    return {
+      pool: pool,
+      token: String(base.address || "").toLowerCase(),
+      quote: String(quote.address || "").toLowerCase(),
+      quote_sym: quote.symbol || "",
+      sym: sym,
+      name: name,
+      dex: row.dexId || "uniswap",
+      fee: (row.labels && row.labels.length) ? row.labels.join(" ") : "",
+      px: n(row.priceUsd),
+      chg: n(chg.h24),
+      vol: n(vol.h24),
+      vol1: n(vol.h1),
+      vol6: n(vol.h6),
+      liq: n(liq.usd),
+      mcap: n(row.marketCap || row.fdv),
+      buys: n(tx.buys),
+      sells: n(tx.sells),
+      txns: n(tx.buys) + n(tx.sells),
+      created: n(row.pairCreatedAt),
+      kind: kindOf(sym, name),
+      source: "rhc",
+      icon: (profile && profile.icon) || info.imageUrl || "",
+      header: (profile && profile.header) || info.header || "",
+      blurb: (profile && profile.description) || "",
+      dx: row.url || (profile && profile.url) || "",
+      links: links
+    };
+  }
+
+  function putDexPair(p) {
+    if (!p || !p.pool) return;
+    var i;
+    if (p.token) {
+      for (i = 0; i < pairs.length; i++) {
+        var old = pairs[i];
+        if (!old || old.source === "binance") continue;
+        if (old.token && old.token === p.token) {
+          var pool = old.pool;
+          var holders = old.holders;
+          var seen = old.seen;
+          pairs[i] = Object.assign({}, old, p);
+          if (pool) pairs[i].pool = pool;
+          if (seen) pairs[i].seen = seen;
+          if (holders && !p.holders) pairs[i].holders = holders;
+          if (old.icon && !p.icon) pairs[i].icon = old.icon;
+          return;
+        }
+      }
+    }
+    putPair(p);
+  }
+
+  function loadDex() {
+    if (!srcReady("dex")) return Promise.resolve();
+    return fetchJson(DX + "/token-profiles/latest/v1").then(function (r) {
+      if (!srcMark("dex", r, 25000) || !r.ok) return;
+      var list = Array.isArray(r.json) ? r.json : [];
+      var rh = [];
+      var byTok = {};
+      list.forEach(function (p) {
+        if (!p || String(p.chainId || "").toLowerCase() !== "robinhood") return;
+        var a = String(p.tokenAddress || "").toLowerCase();
+        if (!a || byTok[a]) return;
+        byTok[a] = p;
+        rh.push(p);
+      });
+      if (!rh.length) return;
+      var addrs = rh.map(function (p) { return p.tokenAddress; }).slice(0, 30);
+      return fetchJson(DX + "/tokens/v1/robinhood/" + addrs.join(",")).then(function (t) {
+        srcMark("dex", t, 25000);
+        if (!t.ok) return;
+        var rows = dxPairsOf(t.json);
+        var best = {};
+        rows.forEach(function (row) {
+          if (String(row.chainId || "").toLowerCase() !== "robinhood") return;
+          var tok = String((row.baseToken && row.baseToken.address) || "").toLowerCase();
+          if (!tok) return;
+          var liq = n(row.liquidity && row.liquidity.usd);
+          if (!best[tok] || liq > n(best[tok].liquidity && best[tok].liquidity.usd)) best[tok] = row;
+        });
+        Object.keys(best).forEach(function (tok) {
+          var mapped = parseDxPair(best[tok], byTok[tok]);
+          if (mapped) putDexPair(mapped);
+        });
+      });
+    });
+  }
+
+  function dxSearch(query) {
+    var qq = encodeURIComponent(query);
+    return fetchSrc("dex", DX + "/latest/dex/search?q=" + qq, 15000).then(function (r) {
+      if (!r || r.skipped || !r.ok) return [];
+      var out = [];
+      dxPairsOf(r.json).forEach(function (row) {
+        var p = parseDxPair(row, null);
+        if (p) out.push(p);
+      });
+      return out;
+    });
+  }
+
+  function paprikaTok(t) {
+    if (!t) return { addr: "", sym: "", name: "", fdv: 0, h24: {} };
+    var addr = String(t.id || t.address || "").toLowerCase();
+    return {
+      addr: addr,
+      sym: t.symbol || CASH_ADDR[addr] || "",
+      name: t.name || t.symbol || "",
+      fdv: n(t.fdv),
+      h24: t["24h"] || {},
+      h1: t["1h"] || {},
+      h6: t["6h"] || {}
+    };
+  }
+
+  function parsePaprika(row) {
+    if (!row) return null;
+    if (row.chain && String(row.chain).toLowerCase() !== "robinhood") return null;
+    var pool = String(row.id || row.address || "").toLowerCase();
+    if (!pool) return null;
+    var toks = row.tokens || [];
+    var a = paprikaTok(toks[0]);
+    var b = paprikaTok(toks[1]);
+    if (CASH_ADDR[a.addr] && !CASH_ADDR[b.addr]) {
+      var sw = a;
+      a = b;
+      b = sw;
+    }
+    var sym = a.sym || "???";
+    return {
+      pool: pool,
+      token: a.addr,
+      quote: b.addr,
+      quote_sym: b.sym,
+      sym: sym,
+      name: a.name || sym,
+      dex: row.dex_name || row.dex_id || "",
+      fee: row.fee != null ? String(row.fee) : "",
+      px: n(row.price_usd),
+      chg: n(row.price_change_percentage_24h),
+      vol: n(row.volume_usd_24h),
+      vol1: n(a.h1 && a.h1.volume_usd),
+      vol6: n(a.h6 && a.h6.volume_usd),
+      liq: n(row.liquidity_usd),
+      mcap: n(a.fdv),
+      buys: n(a.h24.buys),
+      sells: n(a.h24.sells),
+      txns: n(row.transactions_24h || a.h24.txns),
+      created: row.created_at ? Date.parse(row.created_at) : 0,
+      kind: kindOf(sym, a.name),
+      source: "rhc"
+    };
+  }
+
+  function loadPaprika(order) {
+    var url = PAP + "/networks/robinhood/pools/search?order_by=" + encodeURIComponent(order) +
+      "&sort=desc&limit=30&detailed=true";
+    return fetchSrc("paprika", url, 10000).then(function (r) {
+      if (!r || r.skipped || !r.ok) return;
+      var rows = (r.json && (r.json.results || r.json.pools)) || [];
+      rows.forEach(function (row) {
+        var p = parsePaprika(row);
+        if (p) putDexPair(p);
+      });
+    });
+  }
+
+  function loadGecko(kind) {
+    var path = kind === "pools"
+      ? GECKO + "/networks/robinhood/pools?page=1"
+      : GECKO + "/networks/robinhood/" + kind + "?page=1";
+    return fetchSrc("gecko", path, 12000).then(function (r) {
+      if (!r || r.skipped || !r.ok) return;
+      parseGecko((r.json && r.json.data) || []).forEach(putDexPair);
+    });
+  }
+
+  function paprikaSearch(query) {
+    var url = PAP + "/pools/search?chains=robinhood&query=" + encodeURIComponent(query) +
+      "&limit=20&detailed=true";
+    return fetchSrc("paprika", url, 8000).then(function (r) {
+      if (!r || r.skipped || !r.ok) return [];
+      var rows = (r.json && (r.json.results || r.json.pools)) || [];
+      var out = [];
+      rows.forEach(function (row) {
+        var p = parsePaprika(row);
+        if (p) out.push(p);
+      });
+      return out;
+    });
+  }
+
+  function runFeed(feed) {
+    if (feed.indexOf("gecko") === 0 && !srcReady("gecko")) return null;
+    if (feed.indexOf("paprika") === 0 && !srcReady("paprika")) return null;
+    if (feed === "dex" && !srcReady("dex")) return null;
+    if (feed === "geckoTrend") return loadGecko("trending_pools");
+    if (feed === "geckoNew") return loadGecko("new_pools");
+    if (feed === "geckoTop") return loadGecko("pools");
+    if (feed === "paprikaVol") return loadPaprika("volume_usd_24h");
+    if (feed === "paprikaNew") return loadPaprika("created_at");
+    if (feed === "paprikaLiq") return loadPaprika("liquidity_usd");
+    if (feed === "paprikaStock") {
+      var s = STOCK_BOOT[boardStep % STOCK_BOOT.length];
+      return paprikaSearch(s).then(function (found) {
+        (found || []).forEach(putDexPair);
+      });
+    }
+    if (feed === "dex") return loadDex();
+    return null;
+  }
+
+  function loadNextScreener() {
+    var i;
+    for (i = 0; i < FEEDS.length; i++) {
+      var feed = FEEDS[boardStep % FEEDS.length];
+      boardStep += 1;
+      var job = runFeed(feed);
+      if (job) return job;
+    }
+    return Promise.resolve();
+  }
+
+  function searchScreeners(qq) {
+    var order = [];
+    if (srcReady("paprika")) order.push("paprika");
+    if (srcReady("gecko")) order.push("gecko");
+    if (srcReady("dex")) order.push("dex");
+    function one(name) {
+      if (name === "paprika") return paprikaSearch(qq);
+      if (name === "gecko") return geckoSearch(qq);
+      if (name === "dex") return dxSearch(qq);
+      return Promise.resolve([]);
+    }
+    if (!order.length) return Promise.resolve([]);
+    return one(order[0]).then(function (found) {
+      if (found && found.length) return found;
+      if (order[1]) return one(order[1]);
+      return found || [];
+    });
+  }
+
   function fetchJson(url) {
     return fetch(url).then(function (r) {
       return r.json().then(function (j) {
@@ -316,8 +832,16 @@
     var old = null;
     var i;
     for (i = 0; i < pairs.length; i++) if (pairs[i].pool === p.pool) { old = pairs[i]; break; }
-    if (!old) pairs.push(p);
-    else if (p.vol > old.vol) pairs[i] = p;
+    if (!old) {
+      p.seen = Date.now();
+      pairs.push(p);
+    } else {
+      var seen = old.seen;
+      var holders = old.holders;
+      pairs[i] = Object.assign({}, old, p);
+      pairs[i].seen = seen;
+      if (holders && !p.holders) pairs[i].holders = holders;
+    }
   }
 
   function cmpPairs(a, b) {
@@ -327,60 +851,85 @@
     return (n(a[sortKey]) - n(b[sortKey])) * sortDir;
   }
 
+  function loadTape() {
+    return fetchJson("/liq/api/tape").then(function (r) {
+      var list = (r.json && r.json.pairs) || [];
+      list.forEach(function (row) {
+        var p = mapLiqPair(row);
+        if (p) putPair(p);
+      });
+      if (r.json && r.json.ok) setLive(true, "rhc", false);
+      persistTapeSoon();
+      return r;
+    });
+  }
+
   function loadBoard() {
-    return Promise.all([
-      fetchJson("https://api.geckoterminal.com/api/v2/networks/robinhood/trending_pools?page=1"),
-      fetchJson("https://api.geckoterminal.com/api/v2/networks/robinhood/new_pools?page=1")
-    ]).then(function (res) {
-      parseGecko((res[0].json && res[0].json.data) || []).forEach(putPair);
-      parseGecko((res[1].json && res[1].json.data) || []).forEach(putPair);
+    return loadTape().then(function () {
       document.querySelectorAll("[data-tab]").forEach(function (x) {
         x.classList.toggle("on", x.getAttribute("data-tab") === tab);
       });
-      if (!selected && lastPool) {
+      if (!selected && lastPool && !(tab === "majors" && lastPool.indexOf("binance:") !== 0)) {
         var i;
         for (i = 0; i < pairs.length; i++) if (pairs[i].pool === lastPool) { selected = pairs[i]; break; }
       }
       if (!selected) selected = visible()[0] || null;
       paintList();
       paintTrench();
-      loadStocks();
+      paintTxns();
+      return loadPaprika("volume_usd_24h").then(function () {
+        paintList();
+        return loadGecko("trending_pools");
+      }).then(function () {
+        paintList();
+        return loadDex();
+      }).then(function () {
+        if (!selected) selected = visible()[0] || null;
+        paintList();
+        paintTrench();
+        paintHud();
+        persistTapeSoon();
+      }).catch(function () {});
     });
   }
 
   function geckoSearch(query) {
     var qq = encodeURIComponent(query);
-    return fetchJson("https://api.geckoterminal.com/api/v2/search/pools?query=" + qq + "&network=robinhood")
+    return fetchSrc("gecko", GECKO + "/search/pools?query=" + qq + "&network=robinhood", 10000)
       .then(function (r) {
+        if (!r || r.skipped || !r.ok) return [];
         return parseGecko((r.json && r.json.data) || []);
       });
-  }
-
-  function loadStocks() {
-    var jobs = STOCK_BOOT.map(function (s) { return geckoSearch(s).catch(function () { return []; }); });
-    return Promise.all(jobs).then(function (sets) {
-      var had = !!selected;
-      sets.forEach(function (arr) { arr.forEach(putPair); });
-      if (!selected && lastPool) {
-        var j;
-        for (j = 0; j < pairs.length; j++) if (pairs[j].pool === lastPool) { selected = pairs[j]; break; }
-      }
-      if (!selected) selected = visible()[0] || pairs[0] || null;
-      paintList();
-      paintTrench();
-      if (!had && selected) bootChart();
-    });
   }
 
   function visible() {
     var qq = q.trim().toLowerCase();
     return pairs.filter(function (p) {
+      if (p.source === "binance") return false;
       if (tab === "stock" && p.kind !== "stock") return false;
-      if (tab === "meme" && p.kind !== "meme") return false;
+      if (tab === "hot" && p.kind === "cash") return false;
+      if (tab === "gain" && p.kind === "cash") return false;
       if (tab === "fav" && !favs[p.pool]) return false;
-      if (qq && (p.sym + " " + p.name + " " + p.token + " " + p.pool).toLowerCase().indexOf(qq) < 0) return false;
+      if (tab === "listed" && !p.listed) return false;
+      if (qq && (p.sym + " " + (p.quote_sym || "") + " " + p.name + " " + p.token + " " + p.pool).toLowerCase().indexOf(qq) < 0) return false;
       return true;
-    }).sort(cmpPairs);
+    }).sort(function (a, b) {
+      if (tab === "listed" && (sortKey === "created" || sortKey === "listedPaid")) return n(b.listedPaid) - n(a.listedPaid);
+      if (tab === "gain" && sortKey === "created") return (n(b.chg) - n(a.chg));
+      if (tab === "hot" && sortKey === "created") return (n(b.vol) - n(a.vol));
+      return cmpPairs(a, b);
+    });
+  }
+
+  function feedTitle() {
+    if (tab === "new") return "New pairs";
+    if (tab === "hot") return "Hot";
+    if (tab === "gain") return "Gainers";
+    if (tab === "stock") return "Stocks";
+    if (tab === "fav") return "Watch";
+    if (tab === "listed") return "Listed";
+    if (tab === "majors") return "CEX";
+    return "Pairs";
   }
 
   function paintCols() {
@@ -388,13 +937,31 @@
     if (!box) return;
     box.innerHTML = "";
     box.appendChild(document.createElement("span"));
-    [
-      { k: "sym", lab: "Pair" },
-      { k: "px", lab: "Price" },
-      { k: "chg", lab: "24h", num: 1 },
-      { k: "vol", lab: "Vol", num: 1 },
-      { k: "liq", lab: "Liq", num: 1 }
-    ].forEach(function (c) {
+    box.appendChild(document.createElement("span"));
+    var cols = tab === "new"
+      ? [
+          { k: "sym", lab: "Pair" },
+          { k: "created", lab: "Age" },
+          { k: "px", lab: "Price" },
+          { k: "liq", lab: "Liq", num: 1 },
+          { k: "vol", lab: "Vol", num: 1 }
+        ]
+      : tab === "listed"
+      ? [
+          { k: "sym", lab: "Pair" },
+          { k: "listedPaid", lab: "Paid", num: 1 },
+          { k: "px", lab: "Price" },
+          { k: "vol", lab: "Vol", num: 1 },
+          { k: "liq", lab: "Liq", num: 1 }
+        ]
+      : [
+          { k: "sym", lab: "Pair" },
+          { k: "px", lab: "Price" },
+          { k: "chg", lab: "24h", num: 1 },
+          { k: "vol", lab: "Vol", num: 1 },
+          { k: "liq", lab: "Liq", num: 1 }
+        ];
+    cols.forEach(function (c) {
       var b = document.createElement("button");
       b.type = "button";
       b.className = (c.k === sortKey ? "on" : "") + (c.num ? " num" : "");
@@ -410,16 +977,24 @@
   }
 
   function paintList() {
+    stampListed();
+    var head = document.getElementById("feed-head");
+    if (head) head.textContent = feedTitle();
     paintCols();
+    var favn = document.getElementById("favn");
+    if (favn) {
+      var nFav = Object.keys(favs).length;
+      favn.textContent = nFav ? nFav : "";
+    }
     var box = document.getElementById("rows");
     if (!box) return;
     box.innerHTML = "";
-    var rows = tab === "majors" ? MAJORS.map(function (m) {
-      return { pool: m.id, token: m.id, sym: m.lab, name: m.lab, px: 0, chg: 0, vol: 0, liq: 0, kind: "cash", source: "binance" };
-    }) : visible();
+    var rows = tab === "majors" ? MAJORS.map(majorRow) : visible();
     if (!rows.length) {
       box.innerHTML = "<div class='empty'>" +
-        (tab === "fav" ? "Star pairs to build a watchlist." : tab === "stock" ? "No RHC stock pools in this cut yet." : "No pairs in this cut.") +
+        (tab === "listed"
+          ? "Pay $PUSD to list a token. Organic pairs stay on New / Hot."
+          : tab === "fav" ? "Star pairs to build a watchlist." : tab === "stock" ? "No RHC stock pools in this cut yet." : "No pairs in this cut.") +
         "</div>";
       return;
     }
@@ -428,21 +1003,66 @@
       b.type = "button";
       b.className = "pair" + (selected && selected.pool === p.pool ? " on" : "");
       var up = n(p.chg) >= 0;
-      b.innerHTML =
-        "<span class='star'></span>" +
-        "<span class='sym'></span>" +
-        "<span class='px'></span>" +
-        "<span class='chg'></span>" +
-        "<span class='vol'></span>" +
-        "<span class='liq'></span>";
+      var fresh = p.seen && (Date.now() - p.seen) < 20000;
+      if (fresh) b.className += " fresh";
+      if (p.created) b.setAttribute("data-created", String(p.created));
+      if (tab === "new") {
+        b.innerHTML =
+          "<span class='star'></span>" +
+          "<img class='ico' alt=''/>" +
+          "<span class='sym'></span>" +
+          "<span class='age'></span>" +
+          "<span class='px'></span>" +
+          "<span class='liq'></span>" +
+          "<span class='vol'></span>";
+      } else if (tab === "listed") {
+        b.innerHTML =
+          "<span class='star'></span>" +
+          "<img class='ico' alt=''/>" +
+          "<span class='sym'></span>" +
+          "<span class='paid'></span>" +
+          "<span class='px'></span>" +
+          "<span class='vol'></span>" +
+          "<span class='liq'></span>";
+      } else {
+        b.innerHTML =
+          "<span class='star'></span>" +
+          "<img class='ico' alt=''/>" +
+          "<span class='sym'></span>" +
+          "<span class='px'></span>" +
+          "<span class='chg'></span>" +
+          "<span class='vol'></span>" +
+          "<span class='liq'></span>";
+      }
       var st = b.querySelector(".star");
       st.textContent = favs[p.pool] ? "★" : "☆";
       st.className = "star" + (favs[p.pool] ? " on" : "");
-      b.querySelector(".sym").textContent = p.sym;
+      var ico = b.querySelector(".ico");
+      var src = pairIcon(p);
+      if (src) ico.src = src;
+      else ico.style.visibility = "hidden";
+      var symEl = b.querySelector(".sym");
+      var lab = document.createElement("span");
+      lab.className = "lab";
+      lab.textContent = p.quote_sym ? (p.sym + "/" + p.quote_sym) : p.sym;
+      symEl.textContent = "";
+      symEl.appendChild(lab);
+      if (p.listed) {
+        var tag = document.createElement("span");
+        tag.className = "tag";
+        tag.textContent = "LIST";
+        symEl.appendChild(tag);
+      }
+      var paidEl = b.querySelector(".paid");
+      if (paidEl) paidEl.textContent = p.listedPaid ? (Math.floor(n(p.listedPaid)) + " P") : "—";
       b.querySelector(".px").textContent = p.px ? usd(p.px) : "—";
+      var ageEl = b.querySelector(".age");
+      if (ageEl) ageEl.textContent = ageTxt(p.created);
       var ch = b.querySelector(".chg");
-      ch.textContent = p.source === "binance" ? "—" : pct(p.chg);
-      ch.className = "chg " + (up ? "up" : "dn");
+      if (ch) {
+        ch.textContent = p.source === "binance" ? "—" : pct(p.chg);
+        ch.className = "chg " + (up ? "up" : "dn");
+      }
       b.querySelector(".vol").textContent = p.source === "binance" ? "—" : usd(p.vol);
       b.querySelector(".liq").textContent = p.source === "binance" ? "—" : usd(p.liq);
       b.onclick = function (ev) {
@@ -456,22 +1076,27 @@
         selected = p;
         lastTape = "";
         lastBars = [];
+        hoverBar = null;
         savePref();
         paintList();
         paintTrench();
+        paintTxns();
         paintHud();
         bootChart();
       };
       box.appendChild(b);
     });
+    var on = box.querySelector(".pair.on");
+    if (on && on.scrollIntoView) on.scrollIntoView({ block: "nearest" });
   }
 
   function ageTxt(ms) {
     if (!(ms > 0)) return "—";
-    var h = (Date.now() - ms) / 36e5;
-    if (h < 1) return Math.max(1, Math.round(h * 60)) + "m";
-    if (h < 48) return h.toFixed(1) + "h";
-    return (h / 24).toFixed(1) + "d";
+    var s = Math.max(0, (Date.now() - ms) / 1000);
+    if (s < 60) return Math.round(s) + "s";
+    if (s < 3600) return Math.round(s / 60) + "m";
+    if (s < 86400) return (s / 3600).toFixed(1) + "h";
+    return (s / 86400).toFixed(1) + "d";
   }
 
   function atr14(bars) {
@@ -507,29 +1132,155 @@
     var el = document.getElementById("trench");
     if (!el) return;
     if (!p || p.source === "binance") {
-      el.innerHTML = "<p class='hint'>Pick a Robinhood Chain pair.</p>";
+      el.innerHTML = "<p class='hint'>Pick a Robinhood Chain pair. CEX majors have no pool.</p>";
       return;
     }
-    var sc = scorePair(p);
-    var dims = sc.dims.map(function (d) {
-      return "<div class='dim'><span>" + d.k + "</span><b>" + d.v + "</b></div>";
-    }).join("");
-    var tx = n(p.buys) + n(p.sells);
+    var tx = n(p.txns) || (n(p.buys) + n(p.sells));
     el.innerHTML =
       "<div class='stats'>" +
-        "<div><span>Mcap</span><b>" + usd(p.mcap) + "</b></div>" +
+        "<div><span>Price</span><b>" + (p.px ? usd(p.px) : "—") + "</b></div>" +
+        "<div><span>24h</span><b class='" + (n(p.chg) >= 0 ? "up" : "dn") + "'>" + pct(p.chg) + "</b></div>" +
         "<div><span>Liq</span><b>" + usd(p.liq) + "</b></div>" +
         "<div><span>Vol 24h</span><b>" + usd(p.vol) + "</b></div>" +
-        "<div><span>Age</span><b>" + ageTxt(p.created) + "</b></div>" +
-        "<div><span>Buys</span><b>" + (p.buys || "—") + "</b></div>" +
-        "<div><span>Sells</span><b>" + (p.sells || "—") + "</b></div>" +
+        "<div><span>Vol 1h</span><b>" + usd(p.vol1) + "</b></div>" +
+        "<div><span>Vol 6h</span><b>" + usd(p.vol6) + "</b></div>" +
+        "<div><span>Buys</span><b class='up'>" + (p.buys || "—") + "</b></div>" +
+        "<div><span>Sells</span><b class='dn'>" + (p.sells || "—") + "</b></div>" +
         "<div><span>Tx 24h</span><b>" + (tx || "—") + "</b></div>" +
-        "<div><span>Pool</span><b>" + (p.pool ? p.pool.slice(0, 6) + "…" : "—") + "</b></div>" +
+        "<div><span>Dex</span><b>" + (p.dex || "—") + "</b></div>" +
+        "<div><span>Fee</span><b>" + (p.fee || "—") + "</b></div>" +
+        "<div><span>Token</span><b>" + (p.token ? p.token.slice(0, 6) + "…" : "—") + "</b></div>" +
+        (p.listed ? "<div><span>Listed</span><b>#" + (p.listedRank || "—") + " · " + Math.floor(n(p.listedPaid)) + " PUSD</b></div>" : "<div><span>Listed</span><b>No</b></div>") +
       "</div>" +
-      "<div class='mono'>Trench</div>" +
-      "<div class='conv'><b>" + sc.conv + "</b><span>" + grade(sc.conv) + "</span></div>" +
-      "<div class='dims'>" + dims + "</div>" +
-      "<p class='hint'>On-chain book only — not GMGN.</p>";
+      (p.blurb ? "<p class='listed-bio'>" + escTxt(p.blurb).slice(0, 280) + "</p>" : "") +
+      "<div class='pair-acts'>" +
+        "<button class='btn ghost' type='button' id='go-scan'>Scan</button>" +
+        "<button class='btn ghost' type='button' id='go-swap'>Swap</button>" +
+        "<button class='btn ghost' type='button' id='copy-token'>Copy CA</button>" +
+        "<button class='btn ghost' type='button' id='copy-pool'>Copy pool</button>" +
+        "<button class='btn' type='button' id='go-list'>" + (p.listed ? "Raise listing" : "List · $PUSD") + "</button>" +
+        (p.dx ? "<button class='btn ghost' type='button' id='go-dx'>DexScreener</button>" : "") +
+        (p.links || []).slice(0, 3).map(function (l, i) {
+          var lab = l.label || l.type || "link";
+          return "<button class='btn ghost' type='button' data-href='" + escTxt(l.url) + "'>" + escTxt(lab) + "</button>";
+        }).join("") +
+      "</div>" +
+      "<p class='hint'>Robinhood Chain. Tape is ours. Screeners rotate Gecko · Paprika · DexScreener so none of them 429.</p>";
+    document.getElementById("go-scan").onclick = function () {
+      if (p.token) g.vapurr.go("vapurr://scan?q=" + encodeURIComponent(p.token));
+    };
+    document.getElementById("go-swap").onclick = function () {
+      g.vapurr.send({ cmd: "pane", id: "swap" });
+    };
+    document.getElementById("copy-token").onclick = function () {
+      if (p.token && navigator.clipboard) navigator.clipboard.writeText(p.token);
+      flashPaper("Copied token");
+    };
+    document.getElementById("copy-pool").onclick = function () {
+      if (p.pool && navigator.clipboard) navigator.clipboard.writeText(p.pool);
+      flashPaper("Copied pool");
+    };
+    document.getElementById("go-list").onclick = function () { openListSheet(p); };
+    var dxb = document.getElementById("go-dx");
+    if (dxb && p.dx) {
+      dxb.onclick = function () { g.vapurr.go(p.dx); };
+    }
+    el.querySelectorAll("[data-href]").forEach(function (b) {
+      b.onclick = function () { g.vapurr.go(b.getAttribute("data-href")); };
+    });
+    pullHolders(p);
+  }
+
+  var lastTrades = [];
+  function paintTxns() {
+    var box = document.getElementById("txns");
+    if (!box) return;
+    var p = selected;
+    if (!p || p.source === "binance") {
+      box.innerHTML = "<div class='empty'>Pick an RHC pair.</div>";
+      lastTrades = [];
+      return;
+    }
+    box.innerHTML = "<div class='empty'>Loading swaps…</div>";
+    var pool = p.pool;
+    Promise.all([
+      fetchJson("/liq/api/trades/" + encodeURIComponent(pool)),
+      geckoTradesFull(pool).catch(function () { return []; })
+    ]).then(function (res) {
+      if (!selected || selected.pool !== pool) return;
+      var ours = ((res[0].json && res[0].json.trades) || []).map(function (t) {
+        return {
+          time: n(t.time), px: n(t.px), vol: n(t.vol), buy: !!t.buy,
+          tx: t.tx || "", src: "rhc"
+        };
+      });
+      var gecko = res[1] || [];
+      var rows = ours.length ? ours : gecko;
+      rows.sort(function (a, b) { return n(b.time) - n(a.time); });
+      lastTrades = rows.slice(0, 40);
+      if (!lastTrades.length) {
+        box.innerHTML = "<div class='empty'>" + ((res[0].json && res[0].json.loading) ? "Waiting on logs…" : "No swaps in this window.") + "</div>";
+        return;
+      }
+      box.innerHTML = "";
+      lastTrades.forEach(function (t) {
+        var b = document.createElement("button");
+        b.type = "button";
+        b.className = "txn";
+        b.innerHTML = "<span class='side'></span><span class='when'></span><span class='amt'></span>";
+        b.querySelector(".side").textContent = t.buy ? "BUY" : "SELL";
+        b.querySelector(".side").className = "side " + (t.buy ? "up" : "dn");
+        b.querySelector(".when").textContent = t.time ? ageTxt(t.time) : "—";
+        b.querySelector(".amt").textContent = usd(t.vol);
+        b.querySelector(".amt").className = "amt " + (t.buy ? "up" : "dn");
+        b.onclick = function () {
+          if (t.tx) g.vapurr.go("vapurr://scan?q=" + encodeURIComponent(t.tx));
+        };
+        box.appendChild(b);
+      });
+    });
+  }
+
+  function pullHolders(p) {
+    if (!p || !p.token || p.source === "binance" || p.holders != null) return;
+    if (!srcReady("gecko")) return;
+    fetchSrc("gecko", GECKO + "/networks/robinhood/tokens/" + encodeURIComponent(p.token), 15000)
+      .then(function (r) {
+        var a = (((r.json || {}).data || {}).attributes) || {};
+        var h = a.holders_count || a.holders || a.normalized_holders;
+        if (h == null) return;
+        p.holders = typeof h === "object" ? n(h.count || h.value) : n(h);
+        if (selected && selected.pool === p.pool) {
+          selected.holders = p.holders;
+          paintTrench();
+        }
+      });
+  }
+
+  function tickBoard() {
+    return loadTape().then(function () { return loadNextScreener(); }).then(function () {
+      if (selected && selected.source !== "binance") {
+        var i;
+        for (i = 0; i < pairs.length; i++) {
+          if (pairs[i].pool === selected.pool || (selected.token && pairs[i].token === selected.token)) {
+            selected = pairs[i];
+            break;
+          }
+        }
+      }
+      paintList();
+      paintTrench();
+      paintHud();
+      paintTxns();
+      persistTapeSoon();
+    });
+  }
+
+  function paintAges() {
+    document.querySelectorAll("#rows .pair[data-created]").forEach(function (el) {
+      var a = el.querySelector(".age");
+      if (a) a.textContent = ageTxt(n(el.getAttribute("data-created")));
+    });
   }
 
   function markPrice() {
@@ -541,28 +1292,119 @@
     return px;
   }
 
+  function bookStats() {
+    var trades = paper.book || [];
+    var realized = 0;
+    var gp = 0;
+    var gl = 0;
+    var w = 0;
+    var l = 0;
+    var maxW = 0;
+    var maxL = 0;
+    var i;
+    for (i = 0; i < trades.length; i++) {
+      var pnl = n(trades[i].pnl);
+      realized += pnl;
+      if (pnl >= 0) {
+        w += 1;
+        gp += pnl;
+        if (pnl > maxW) maxW = pnl;
+      } else {
+        l += 1;
+        gl += -pnl;
+        if (pnl < maxL) maxL = pnl;
+      }
+    }
+    var injected = 0;
+    var resets = paper.resets || [];
+    for (i = 0; i < resets.length; i++) injected += n(resets[i].injected);
+    return {
+      n: trades.length,
+      realized: realized,
+      gp: gp,
+      gl: gl,
+      w: w,
+      l: l,
+      maxW: maxW,
+      maxL: maxL,
+      injected: injected,
+      resets: resets.length
+    };
+  }
+
   function paintPaper() {
     var px = markPrice();
+    var st = bookStats();
     var cash = document.getElementById("cash");
     if (cash) cash.textContent = usd(paper.cash);
     var mark = document.getElementById("mark");
     if (mark) mark.textContent = px ? usd(px) : "—";
+    var real = document.getElementById("life-real");
+    if (real) {
+      real.textContent = signedUsd(st.realized);
+      real.className = "real " + (st.realized > 0 ? "up" : st.realized < 0 ? "dn" : "");
+    }
+    var gl = document.getElementById("life-gl");
+    if (gl) gl.textContent = st.gl ? ("−" + usd(st.gl)) : "$0.00";
+    var gp = document.getElementById("life-gp");
+    if (gp) gp.textContent = signedUsd(st.gp);
+    var wl = document.getElementById("life-wl");
+    if (wl) wl.textContent = st.w + "–" + st.l;
+    var wr = document.getElementById("life-wr");
+    if (wr) wr.textContent = st.n ? ((st.w / st.n) * 100).toFixed(0) + "%" : "—";
+    var maxl = document.getElementById("life-maxl");
+    if (maxl) maxl.textContent = st.maxL < 0 ? signedUsd(st.maxL) : "—";
+    var refill = document.getElementById("life-refill");
+    if (refill) refill.textContent = st.resets ? (st.resets + " · " + usd(st.injected)) : "0";
     var pos = document.getElementById("pos");
     var pnlEl = document.getElementById("pnl");
-    if (!pos) return;
-    if (!paper.pos) {
-      pos.textContent = "Flat";
-      if (pnlEl) { pnlEl.textContent = "—"; pnlEl.className = ""; }
-      return;
+    var buy = document.getElementById("buy");
+    var sh = document.getElementById("short");
+    if (pos) {
+      if (!paper.pos) {
+        pos.textContent = "Flat";
+        if (pnlEl) { pnlEl.textContent = "—"; pnlEl.className = ""; }
+        if (buy) buy.textContent = "Long";
+        if (sh) sh.textContent = "Short";
+      } else {
+        var last = px || paper.pos.entry;
+        var pnl = (last - paper.pos.entry) * paper.pos.qty * (paper.pos.side === "short" ? -1 : 1);
+        var p = paper.pos.cost ? (pnl / paper.pos.cost) * 100 : 0;
+        var adds = (paper.pos.adds && paper.pos.adds.length) || 1;
+        pos.textContent = paper.pos.side.toUpperCase() + " " + paper.pos.sym + "  " + adds + " fill" + (adds > 1 ? "s" : "") + "  avg " + pxTxt(paper.pos.entry);
+        if (pnlEl) {
+          pnlEl.textContent = signedUsd(pnl) + "  " + pct(p);
+          pnlEl.className = p >= 0 ? "up" : "dn";
+        }
+        if (buy) buy.textContent = paper.pos.side === "long" ? "Add long" : "Long";
+        if (sh) sh.textContent = paper.pos.side === "short" ? "Add short" : "Short";
+      }
     }
-    var last = px || paper.pos.entry;
-    var pnl = (last - paper.pos.entry) * paper.pos.qty * (paper.pos.side === "short" ? -1 : 1);
-    var p = paper.pos.cost ? (pnl / paper.pos.cost) * 100 : 0;
-    pos.textContent = paper.pos.side.toUpperCase() + " " + paper.pos.sym + " @ " + pxTxt(paper.pos.entry);
-    if (pnlEl) {
-      pnlEl.textContent = (pnl >= 0 ? "+" : "") + usd(Math.abs(pnl)).replace("$", (pnl >= 0 ? "$" : "-$")) +
-        "  " + (p >= 0 ? "+" : "") + p.toFixed(2) + "%";
-      pnlEl.className = p >= 0 ? "up" : "dn";
+    var box = document.getElementById("book");
+    if (box) {
+      box.innerHTML = "";
+      var rows = (paper.book || []).slice().reverse().slice(0, 24);
+      if (!rows.length) {
+        box.innerHTML = "<div class='hint' style='margin:0'>No closed tickets yet.</div>";
+      } else {
+        rows.forEach(function (s) {
+          var row = document.createElement("div");
+          row.className = "row";
+          var a = document.createElement("span");
+          a.className = "sym";
+          a.textContent = (s.side === "short" ? "S " : "L ") + s.sym;
+          var b = document.createElement("span");
+          b.className = n(s.pnl) >= 0 ? "up" : "dn";
+          b.textContent = pct(n(s.ret) * 100);
+          var c = document.createElement("span");
+          c.className = n(s.pnl) >= 0 ? "up" : "dn";
+          c.textContent = signedUsd(s.pnl);
+          row.appendChild(a);
+          row.appendChild(b);
+          row.appendChild(c);
+          box.appendChild(row);
+        });
+      }
     }
   }
 
@@ -583,6 +1425,97 @@
     if (lab) lab.textContent = label || "rhc";
   }
 
+  function setLoad(on) {
+    var el = document.getElementById("load");
+    if (el) el.hidden = !on;
+  }
+
+  function bindChartEvents() {
+    if (!chart || !chart.on || chartBound) return;
+    chartBound = true;
+    try { chart.on("load:start", function () { setLoad(true); }); } catch (e) {}
+    try { chart.on("load:end", function () { setLoad(false); paintHud(); }); } catch (e) {}
+  }
+
+  function bindHover() {
+    var plot = document.getElementById("plot");
+    if (!plot || plot.getAttribute("data-hover") === "1") return;
+    plot.setAttribute("data-hover", "1");
+    plot.addEventListener("mousemove", function (e) {
+      if (!lastBars.length) return;
+      var r = plot.getBoundingClientRect();
+      if (!(r.width > 40)) return;
+      var x = e.clientX - r.left;
+      var padL = 48;
+      var padR = 52;
+      var w = Math.max(1, r.width - padL - padR);
+      var t = Math.max(0, Math.min(1, (x - padL) / w));
+      var i = Math.round(t * (lastBars.length - 1));
+      hoverBar = lastBars[i] || null;
+      paintHud();
+    });
+    plot.addEventListener("mouseleave", function () {
+      hoverBar = null;
+      paintHud();
+    });
+  }
+
+  function majorRow(m) {
+    return {
+      pool: m.id, token: m.id, sym: m.lab, name: m.lab,
+      px: n(m.px), chg: n(m.chg), vol: n(m.vol), liq: 0,
+      kind: "cash", source: "binance"
+    };
+  }
+
+  function hydrateMajors() {
+    MAJORS.forEach(function (m) {
+      var sym = String(m.id).split(":")[1];
+      if (!sym) return;
+      fetchJson("https://api.binance.com/api/v3/ticker/24hr?symbol=" + encodeURIComponent(sym)).then(function (r) {
+        var j = r.json;
+        if (!j || !j.lastPrice) return;
+        m.px = n(j.lastPrice);
+        m.chg = n(j.priceChangePercent);
+        m.vol = n(j.quoteVolume);
+        if (selected && selected.pool === m.id) {
+          selected.px = m.px;
+          selected.chg = m.chg;
+          selected.vol = m.vol;
+          lastClose = m.px;
+          hoverBar = null;
+          lastBars = [];
+          paintHud();
+        }
+        if (tab === "majors") paintList();
+      });
+    });
+  }
+
+  function listedRows() {
+    return tab === "majors" ? MAJORS.map(majorRow) : visible();
+  }
+
+  function stepPair(dir) {
+    var rows = listedRows();
+    if (!rows.length) return;
+    var i = 0;
+    if (selected) {
+      for (i = 0; i < rows.length; i++) if (rows[i].pool === selected.pool) break;
+      if (i >= rows.length) i = 0;
+    }
+    i = (i + dir + rows.length) % rows.length;
+    selected = rows[i];
+    lastTape = "";
+    lastBars = [];
+    hoverBar = null;
+    savePref();
+    paintList();
+    paintTrench();
+    paintHud();
+    bootChart();
+  }
+
   function paintHud() {
     var hud = document.getElementById("hud");
     var quote = document.getElementById("quote");
@@ -598,7 +1531,7 @@
     hud.hidden = false;
     if (quote) quote.hidden = false;
     var bars = lastBars;
-    var last = bars.length ? bars[bars.length - 1] : null;
+    var last = hoverBar || (bars.length ? bars[bars.length - 1] : null);
     var o = last ? last.open : p.px;
     var h = last ? last.high : p.px;
     var l = last ? last.low : p.px;
@@ -606,8 +1539,15 @@
     var px = markPrice();
     var up = n(p.chg) >= 0;
     var barUp = n(c) >= n(o);
+    var dlt = n(o) > 0 ? ((n(c) - n(o)) / n(o)) * 100 : 0;
     if (quote) {
-      quote.querySelector(".sym").textContent = p.sym;
+      var qico = document.getElementById("qico");
+      if (qico) {
+        var src = pairIcon(p);
+        qico.hidden = !src;
+        if (src) qico.src = src;
+      }
+      quote.querySelector(".sym").textContent = p.quote_sym ? (p.sym + " / " + p.quote_sym) : p.sym;
       quote.querySelector(".last").textContent = px ? usd(px) : "—";
       var qch = quote.querySelector(".chg");
       qch.textContent = p.source === "binance" ? "" : pct(p.chg);
@@ -627,6 +1567,19 @@
     var ce = hud.querySelector(".c");
     ce.textContent = pxTxt(c);
     ce.className = "c " + (barUp ? "up" : "dn");
+    var de = hud.querySelector(".d");
+    if (de) {
+      de.textContent = last ? pct(dlt) : "—";
+      de.className = "d " + (dlt >= 0 ? "up" : "dn");
+    }
+    var ve = hud.querySelector(".v");
+    if (ve) ve.textContent = last && last.volume ? usd(last.volume) : "—";
+    var utc = document.getElementById("utc");
+    if (utc) {
+      utc.textContent = last && last.time
+        ? new Date(last.time).toISOString().slice(11, 19) + " UTC"
+        : "UTC";
+    }
     var msg = "";
     if (p.source === "binance") msg = "";
     else if (lastTape === "print") msg = "No tape yet — last print only.";
@@ -636,6 +1589,26 @@
     if (note) note.textContent = msg;
     paintPaper();
     checkAlerts();
+    checkStops();
+  }
+
+  function checkStops() {
+    var pos = paper.pos;
+    if (!pos) return;
+    var px = markPrice();
+    if (!(px > 0)) return;
+    var hit = "";
+    if (pos.tp > 0) {
+      if (pos.side === "long" && px >= pos.tp) hit = "TP";
+      if (pos.side === "short" && px <= pos.tp) hit = "TP";
+    }
+    if (!hit && pos.sl > 0) {
+      if (pos.side === "long" && px <= pos.sl) hit = "SL";
+      if (pos.side === "short" && px >= pos.sl) hit = "SL";
+    }
+    if (!hit) return;
+    flashPaper(hit + " hit @ " + pxTxt(px));
+    closeFill();
   }
 
   function normalizeBars(list) {
@@ -693,6 +1666,24 @@
     });
   }
 
+  function ensureBars(bars, spec) {
+    var list = bars || [];
+    if (list.length >= 2) return list;
+    if (list.length === 1) {
+      var b = list[0];
+      var step = (spec && spec.ms) || 36e5;
+      return [{
+        time: b.time - step,
+        open: b.open,
+        high: b.high,
+        low: b.low,
+        close: b.open,
+        volume: 0
+      }, b];
+    }
+    return stubBars(markPrice() || (selected && selected.px), spec);
+  }
+
   function stubBars(px, spec) {
     var price = n(px);
     if (!(price > 0)) return [];
@@ -717,13 +1708,14 @@
 
   function geckoBars(pool, spec, limit) {
     if (!spec.gecko || spec.gecko === "second") return Promise.resolve([]);
+    if (!srcReady("gecko")) return Promise.resolve([]);
     var lim = spec.ms <= 6e4 ? 1000 : (spec.bucketMs ? 400 : 400);
     if (spec.id === "W" || spec.id === "M") lim = 400;
     if (n(limit) > 0) lim = Math.min(lim, n(limit));
-    var url = "https://api.geckoterminal.com/api/v2/networks/robinhood/pools/" +
+    var url = GECKO + "/networks/robinhood/pools/" +
       encodeURIComponent(pool) + "/ohlcv/" + spec.gecko +
       "?aggregate=" + spec.agg + "&limit=" + lim + "&currency=usd";
-    return fetchJson(url).then(function (r) {
+    return fetchSrc("gecko", url, 6000).then(function (r) {
       if (!r.ok || !r.json) return [];
       var list = (((r.json || {}).data || {}).attributes || {}).ohlcv_list || [];
       var bars = normalizeBars(list.map(function (row) {
@@ -752,10 +1744,11 @@
       lim = Math.min(366, Math.ceil((spec.bucketMs / step) * Math.min(lim, 80)));
     }
     var start = new Date(Date.now() - lim * step).toISOString();
-    var url = "https://api.dexpaprika.com/networks/robinhood/pools/" +
+    if (!srcReady("paprika")) return Promise.resolve([]);
+    var url = PAP + "/networks/robinhood/pools/" +
       encodeURIComponent(pool) + "/ohlcv?interval=" + encodeURIComponent(spec.paprika) +
       "&limit=" + lim + "&start=" + encodeURIComponent(start);
-    return fetchJson(url).then(function (r) {
+    return fetchSrc("paprika", url, 6000).then(function (r) {
       if (!r.ok || !r.json || !Array.isArray(r.json)) return [];
       var bars = normalizeBars(r.json.map(function (row) {
         var t = Date.parse(row.time_open || row.time_close || "");
@@ -788,21 +1781,29 @@
     return from || to;
   }
 
-  function geckoTrades(pool) {
-    var url = "https://api.geckoterminal.com/api/v2/networks/robinhood/pools/" +
+  function geckoTradesFull(pool) {
+    if (!srcReady("gecko")) return Promise.resolve([]);
+    var url = GECKO + "/networks/robinhood/pools/" +
       encodeURIComponent(pool) + "/trades";
-    return fetchJson(url).then(function (r) {
+    return fetchSrc("gecko", url, 8000).then(function (r) {
       if (!r.ok || !r.json) return [];
-      return (r.json.data || []).slice(0, 200).map(function (row) {
+      return (r.json.data || []).slice(0, 80).map(function (row) {
         var a = row.attributes || {};
         return {
           time: Date.parse(a.block_timestamp || ""),
           px: tradePx(a),
-          vol: n(a.volume_in_usd)
+          vol: n(a.volume_in_usd),
+          buy: a.kind === "buy",
+          tx: a.tx_hash || a.transaction_hash || "",
+          src: "gecko"
         };
       }).filter(function (t) { return t.time > 0 && t.px > 0; })
         .sort(function (a, b) { return a.time - b.time; });
     });
+  }
+
+  function geckoTrades(pool) {
+    return geckoTradesFull(pool);
   }
 
   function tradesToBars(trades, bucketMs) {
@@ -822,37 +1823,145 @@
     return Object.keys(map).map(Number).sort(function (a, b) { return a - b; }).map(function (t) { return map[t]; });
   }
 
+  function nativeId(spec) {
+    if (!spec || spec.fromTrades) return "trades";
+    if (spec.ms <= 18e5) return "1";
+    if (spec.ms <= 144e5) return "60";
+    return "D";
+  }
+
+  function fromNative(hit, spec) {
+    if (!realBars(hit)) return null;
+    var src = specOf(nativeId(spec) === "trades" ? "1" : nativeId(spec));
+    var bars = hit.bars;
+    if (spec.ms > src.ms) bars = aggregateBars(bars, spec.ms);
+    if (!bars || bars.length < 2) return null;
+    return { bars: bars, source: hit.source, at: hit.at };
+  }
+
   function loadRhcBars(pool, tf, limit) {
     var spec = specOf(tf);
     var key = String(pool || "").toLowerCase() + "|" + spec.id;
     var hit = barCache[key];
-    var ttl = spec.fromTrades ? 8000 : (hit && hit.source === "print" ? 15000 : 45000);
-    if (hit && Date.now() - hit.at < ttl) return Promise.resolve(hit);
+    var freshMs = spec.fromTrades ? 8000 : (hit && hit.source === "print" ? 15000 : 90000);
+    if (realBars(hit) && Date.now() - hit.at < freshMs) return Promise.resolve(hit);
+    var nid = nativeId(spec);
+    if (nid !== "trades" && nid !== spec.id) {
+      var nhit = barCache[String(pool || "").toLowerCase() + "|" + nid];
+      var derived = fromNative(nhit, spec);
+      if (derived) {
+        barCache[key] = derived;
+        if (Date.now() - nhit.at >= freshMs) fetchBars(pool, specOf(nid), nid === "1" ? 1000 : 400, String(pool).toLowerCase() + "|" + nid);
+        return Promise.resolve(derived);
+      }
+    }
+    if (realBars(hit)) {
+      fetchBars(pool, spec, limit, key);
+      return Promise.resolve(hit);
+    }
+    return fetchBars(pool, spec, limit, key);
+  }
+
+  function prefetchTfs(pool) {
+    if (!pool) return;
+    ["1", "60", "D"].forEach(function (id, i) {
+      setTimeout(function () {
+        loadRhcBars(pool, id, id === "1" ? 1000 : 400);
+      }, 280 * (i + 1));
+    });
+  }
+
+  function fetchBars(pool, spec, limit, key) {
+    if (barFetch[key]) return barFetch[key];
     var px = (selected && selected.pool === String(pool || "").toLowerCase() && selected.px) || lastClose || 0;
+    var nid = nativeId(spec);
+    var nspec = nid === "trades" ? spec : specOf(nid);
+    var nkey = String(pool || "").toLowerCase() + "|" + (nid === "trades" ? spec.id : nid);
 
     function finish(res) {
+      if (!res.bars || res.bars.length < 2) {
+        if (!res.bars) res.bars = [];
+        if (!res.bars.length) {
+          var stub = stubBars(px, spec);
+          res.bars = stub;
+          res.source = stub.length ? "print" : "empty";
+        }
+      } else if (nid !== "trades" && spec.id !== nid && spec.ms > nspec.ms) {
+        barCache[nkey] = { bars: res.bars, source: res.source, at: Date.now() };
+        res = { bars: aggregateBars(res.bars, spec.ms), source: res.source };
+      }
+      if (!res.bars.length) res.source = "empty";
       barCache[key] = { bars: res.bars, source: res.source, at: Date.now() };
+      delete barFetch[key];
+      if (realBars(res)) persistBars();
+      if (selected && selected.pool === pool && specOf(timeframe).id === spec.id && realBars(res)) {
+        var had = lastBars && lastBars.length > 1 && lastTape !== "print" && lastTape !== "empty";
+        lastBars = res.bars;
+        lastTape = res.source;
+        lastClose = res.bars[res.bars.length - 1].close;
+        paintHud();
+        if (!had) {
+          try {
+            if (chart && chart.setMarket && selected.source !== "binance") {
+              chart.setMarket({
+                symbol: marketSymbol(selected),
+                timeframe: velaTf(spec),
+                bars: spec.fromTrades ? 120 : 400,
+                live: false,
+                data: res.bars
+              });
+            }
+          } catch (e) {}
+        }
+      }
       return res;
     }
 
+    var job;
     if (spec.fromTrades) {
-      return geckoTrades(pool).then(function (trades) {
+      var localTrades = String(pool).length === 42
+        ? fetchJson("/liq/api/trades/" + encodeURIComponent(pool)).then(function (r) {
+            return ((r.json && r.json.trades) || []).map(function (t) {
+              return { time: n(t.time), px: n(t.px), vol: n(t.vol) };
+            }).filter(function (t) { return t.time > 0 && t.px > 0; });
+          }).catch(function () { return []; })
+        : Promise.resolve([]);
+      job = Promise.all([
+        localTrades,
+        geckoTrades(pool).catch(function () { return []; })
+      ]).then(function (sets) {
+        var trades = (sets[0] || []).concat(sets[1] || []);
         var bars = tradesToBars(trades, spec.ms);
         if (bars.length > 180) bars = bars.slice(-180);
         if (bars.length >= 2) return finish({ bars: bars, source: "prints" });
-        var stub = stubBars(px, spec);
-        return finish({ bars: stub, source: stub.length ? "print" : "empty" });
+        return loadRhcBars(pool, "1", 1000).then(function (one) {
+          if (realBars(one)) return finish({ bars: one.bars, source: one.source });
+          return finish({ bars: stubBars(px, spec), source: "print" });
+        });
+      });
+    } else {
+      function barsFrom(name) {
+        if (name === "gecko") {
+          return geckoBars(pool, nspec, nid === "1" ? 1000 : (n(limit) || 400)).then(function (b) {
+            return b.length ? { bars: b, source: "gecko" } : null;
+          });
+        }
+        return paprikaBars(pool, nspec, nid === "1" ? 1000 : (n(limit) || 400)).then(function (b) {
+          return b.length ? { bars: scaleUsd(b, px), source: "paprika" } : null;
+        });
+      }
+      var order = srcReady("gecko") ? ["gecko", "paprika"] : ["paprika", "gecko"];
+      job = barsFrom(order[0]).then(function (got) {
+        if (got) return finish(got);
+        return barsFrom(order[1]).then(function (got2) {
+          if (got2) return finish(got2);
+          return finish({ bars: stubBars(px, spec), source: "print" });
+        });
       });
     }
-
-    return geckoBars(pool, spec, limit).then(function (gb) {
-      if (gb.length) return finish({ bars: gb, source: "gecko" });
-      return paprikaBars(pool, spec, limit).then(function (pb) {
-        if (pb.length) return finish({ bars: scaleUsd(pb, px), source: "paprika" });
-        var stub = stubBars(px, spec);
-        return finish({ bars: stub, source: stub.length ? "print" : "empty" });
-      });
-    });
+    barFetch[key] = job;
+    job.catch(function () { delete barFetch[key]; });
+    return job;
   }
 
   function clipBars(bars, opts) {
@@ -997,6 +2106,9 @@
 
   function finishBoot(gen) {
     if (gen !== bootGen) return;
+    setLoad(false);
+    bindChartEvents();
+    bindHover();
     syncIndicators();
     applyChartPrefs();
     try { if (chart.drawings && chart.drawings.showToolbar) chart.drawings.showToolbar(true); } catch (e) {}
@@ -1006,6 +2118,14 @@
     paintHud();
     paintAlerts();
     try { if (chart.resize) chart.resize(); } catch (e) {}
+    try { if (chart.renderer && chart.renderer.set) chart.renderer.set("autoScale", true); } catch (e) {}
+    try { if (chart.renderer && chart.renderer.fitContent) chart.renderer.fitContent(); } catch (e) {}
+    try { if (chart.setVisibleRangePreset) chart.setVisibleRangePreset("ALL"); } catch (e) {}
+    requestAnimationFrame(function () {
+      try { if (chart && chart.resize) chart.resize(); } catch (e) {}
+      try { if (chart && chart.renderer && chart.renderer.set) chart.renderer.set("autoScale", true); } catch (e) {}
+      try { if (chart && chart.renderer && chart.renderer.fitContent) chart.renderer.fitContent(); } catch (e) {}
+    });
   }
 
   function mountChart(api, plot, p, spec, gen, data) {
@@ -1032,6 +2152,7 @@
       } catch (e) {
         try { if (chart.destroy) chart.destroy(); } catch (e2) {}
         chart = null;
+        chartBound = false;
         clearIndHandles();
       }
     }
@@ -1046,6 +2167,8 @@
         live: market.live,
         data: market.data,
         theme: th,
+        priceStyle: priceStyle || "candles",
+        logScale: !!logScale,
         upColor: th.upColor,
         downColor: th.downColor,
         currentPriceLine: true,
@@ -1058,9 +2181,11 @@
         finishBoot(gen);
       }).catch(function () {
         if (gen !== bootGen) return;
+        setLoad(false);
         setLive(false, "rhc", true);
       });
     } catch (e) {
+      setLoad(false);
       setLive(false, "rhc", true);
     }
   }
@@ -1069,13 +2194,17 @@
     var api = g.Vela;
     var plot = document.getElementById("plot");
     if (!api || !api.Vela || !plot) return;
+    setLoad(true);
     paintPills();
     paintInds();
     paintStyles();
     paintScale();
     paintRange();
     var p = selected;
-    if (!p) return;
+    if (!p) {
+      setLoad(false);
+      return;
+    }
     if (p.source === "binance" && specOf(timeframe).fromTrades) {
       timeframe = "1";
       paintPills();
@@ -1083,27 +2212,50 @@
     }
     var spec = specOf(timeframe);
     var gen = ++bootGen;
+    setTimeout(function () { if (gen === bootGen) setLoad(false); }, 8000);
     var isBinance = p.source === "binance";
     lastTape = isBinance ? "binance" : lastTape;
     if (isBinance) setLive(true, "binance", false);
 
+    var hit = !isBinance ? cachedBars(p.pool, spec.id) : null;
+    if (!realBars(hit) && !isBinance) {
+      var nid = nativeId(spec);
+      if (nid !== "trades" && nid !== spec.id) {
+        hit = fromNative(cachedBars(p.pool, nid), spec);
+      }
+    }
+    var cached = realBars(hit) ? hit.bars : null;
+    if (cached) {
+      lastBars = cached;
+      lastTape = hit.source;
+      lastClose = cached[cached.length - 1].close;
+      paintHud();
+      setLive(true, "rhc", false);
+    }
+
     if (spec.fromTrades && !isBinance) {
+      if (cached) mountChart(api, plot, p, spec, gen, ensureBars(cached, spec));
       loadRhcBars(p.pool, spec.id, 200).then(function (res) {
         if (gen !== bootGen) return;
         lastBars = res.bars;
         lastTape = res.source;
         if (lastBars.length) lastClose = lastBars[lastBars.length - 1].close;
         paintHud();
-        setLive(res.source !== "empty", "print", true);
-        mountChart(api, plot, p, spec, gen, lastBars.length ? lastBars : stubBars(markPrice(), spec));
+        setLive(res.source !== "empty", res.source === "prints" ? "print" : "rhc", res.source === "print" || res.source === "prints");
+        if (!cached) mountChart(api, plot, p, spec, gen, ensureBars(lastBars, spec));
       }).catch(function () {
-        if (gen !== bootGen) return;
-        mountChart(api, plot, p, spec, gen, stubBars(markPrice(), spec));
+        if (gen !== bootGen || cached) return;
+        mountChart(api, plot, p, spec, gen, ensureBars([], spec));
       });
+      prefetchTfs(p.pool);
       return;
     }
 
-    mountChart(api, plot, p, spec, gen);
+    if (!isBinance) {
+      loadRhcBars(p.pool, spec.id, 200);
+      prefetchTfs(p.pool);
+    }
+    mountChart(api, plot, p, spec, gen, cached ? ensureBars(cached, spec) : undefined);
   }
 
   function paintPills() {
@@ -1199,7 +2351,9 @@
 
   function applyChartPrefs() {
     if (!chart || !chart.renderer || !chart.renderer.set) return;
-    try { chart.renderer.set("priceStyle", priceStyle); } catch (e) {}
+    var style = priceStyle || "candles";
+    try { chart.renderer.set("priceStyle", style); } catch (e) {}
+    try { chart.renderer.set("candleVisible", true); } catch (e) {}
     try { chart.renderer.set("logScale", logScale); } catch (e) {}
     try { chart.renderer.set("scaleMode", pctScale ? "percent" : "price"); } catch (e) {}
     try { chart.renderer.set("keyboard", true); } catch (e) {}
@@ -1316,16 +2470,38 @@
     var px = markPrice();
     if (!selected) { flashPaper("Pick a pair first."); return; }
     if (!(px > 0)) { flashPaper("No print yet — wait for a mark."); return; }
-    if (paper.pos) {
-      if (paper.pos.side === side) {
-        flashPaper("Already " + side + " " + paper.pos.sym + ".");
-        return;
-      }
-      closeFill();
-    }
     var usdAmt = notional();
     if (usdAmt > paper.cash) usdAmt = paper.cash;
     if (usdAmt < 1) { flashPaper("Not enough cash."); return; }
+    if (paper.pos) {
+      if (paper.pos.side !== side) {
+        closeFill();
+        if (paper.pos) return;
+        if (usdAmt > paper.cash) usdAmt = paper.cash;
+        if (usdAmt < 1) return;
+      } else if (paper.pos.pool !== selected.pool) {
+        flashPaper("Already " + paper.pos.side + " " + paper.pos.sym + ". Close it before opening " + selected.sym + ".");
+        return;
+      } else {
+        paper.cash -= usdAmt;
+        var addQty = usdAmt / px;
+        var newQty = paper.pos.qty + addQty;
+        var newCost = paper.pos.cost + usdAmt;
+        paper.pos.qty = newQty;
+        paper.pos.cost = newCost;
+        paper.pos.entry = newQty > 0 ? newCost / newQty : px;
+        var tpEl = document.getElementById("tp");
+        var slEl = document.getElementById("sl");
+        if (tpEl && n(tpEl.value) > 0) paper.pos.tp = n(tpEl.value);
+        if (slEl && n(slEl.value) > 0) paper.pos.sl = n(slEl.value);
+        if (!Array.isArray(paper.pos.adds)) paper.pos.adds = [];
+        paper.pos.adds.push({ at: Date.now(), px: px, cost: usdAmt, qty: addQty });
+        savePaper();
+        paintPaper();
+        flashPaper("Added " + usd(usdAmt) + " " + selected.sym + " @ " + pxTxt(px) + " · avg " + pxTxt(paper.pos.entry));
+        return;
+      }
+    }
     paper.cash -= usdAmt;
     paper.pos = {
       side: side,
@@ -1334,7 +2510,10 @@
       cost: usdAmt,
       sym: selected.sym,
       pool: selected.pool,
-      opened: Date.now()
+      opened: Date.now(),
+      adds: [{ at: Date.now(), px: px, cost: usdAmt, qty: usdAmt / px }],
+      tp: n(document.getElementById("tp") && document.getElementById("tp").value),
+      sl: n(document.getElementById("sl") && document.getElementById("sl").value)
     };
     savePaper();
     paintPaper();
@@ -1351,6 +2530,7 @@
     paper.cash += pos.cost + pnl;
     paper.pos = null;
     var slip = {
+      id: Date.now() + "-" + Math.random().toString(16).slice(2),
       sym: pos.sym,
       side: pos.side,
       entry: pos.entry,
@@ -1360,11 +2540,12 @@
       held: Date.now() - pos.opened,
       at: Date.now()
     };
-    paper.slips.unshift(slip);
-    paper.slips = paper.slips.slice(0, 12);
+    if (!Array.isArray(paper.book)) paper.book = [];
+    paper.book.push(slip);
+    paper.slips = paper.book.slice(-24);
     savePaper();
     paintPaper();
-    flashPaper("Closed " + pos.sym + "  " + (ret >= 0 ? "+" : "") + (ret * 100).toFixed(2) + "%");
+    flashPaper("Closed " + pos.sym + "  " + signedUsd(pnl) + " · book " + signedUsd(bookStats().realized));
     showSlip(slip);
   }
 
@@ -1381,6 +2562,11 @@
     document.getElementById("slip-pnl").textContent = (up ? "+" : "") + usd(Math.abs(s.pnl)).replace("$", (up ? "$" : "-$"));
     document.getElementById("slip-entry").textContent = usd(s.entry);
     document.getElementById("slip-exit").textContent = usd(s.exit);
+    var bookEl = document.getElementById("slip-book");
+    if (bookEl) {
+      bookEl.textContent = signedUsd(bookStats().realized);
+      bookEl.className = bookStats().realized >= 0 ? "up" : "dn";
+    }
     document.getElementById("slip-copy").onclick = function () {
       var line = s.sym + " " + s.side.toUpperCase() + " " + (up ? "+" : "") + (s.ret * 100).toFixed(2) + "% · paper on Ketcharts";
       if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(line);
@@ -1421,7 +2607,7 @@
     x.fillText("in " + usd(s.entry) + "   out " + usd(s.exit), 72, 460);
     x.fillStyle = "#8aa090";
     x.font = "400 18px Sora, sans-serif";
-    x.fillText("Not a fill. Local paper only.", 72, 620);
+    x.fillText("Not a fill. Local paper only.  Book " + signedUsd(bookStats().realized), 72, 620);
     x.fillStyle = LIME;
     x.font = "600 18px Sora, sans-serif";
     x.fillText("vapurr", 1040, 620);
@@ -1437,15 +2623,362 @@
     }, "image/png");
   }
 
+  function tokenKey(t) {
+    return String(t || "").toLowerCase();
+  }
+
+  function listingOf(token) {
+    var m = ketSnap && ketSnap.by_token;
+    if (!m || !token) return null;
+    return m[tokenKey(token)] || null;
+  }
+
+  function stampListed() {
+    var map = (ketSnap && ketSnap.by_token) || {};
+    pairs.forEach(function (p) {
+      var row = map[tokenKey(p.token)];
+      if (row) {
+        p.listed = true;
+        p.listedPaid = n(row.paid);
+        p.listedRank = row.rank;
+        applyListingProfile(p, row);
+      } else {
+        p.listed = false;
+        p.listedPaid = 0;
+        p.listedRank = 0;
+      }
+    });
+    var list = (ketSnap && ketSnap.listings) || [];
+    list.forEach(function (r) {
+      var tok = tokenKey(r.token);
+      if (!tok) return;
+      var found = false;
+      var i;
+      for (i = 0; i < pairs.length; i++) {
+        if (tokenKey(pairs[i].token) === tok) { found = true; break; }
+      }
+      if (found) return;
+      var stub = {
+        pool: tokenKey(r.pool || r.token),
+        token: tok,
+        sym: r.symbol || "???",
+        name: r.name || r.symbol || "",
+        listed: true,
+        listedPaid: n(r.paid),
+        listedRank: r.rank,
+        kind: "meme",
+        source: "rhc",
+        px: 0, chg: 0, vol: 0, liq: 0
+      };
+      applyListingProfile(stub, r);
+      putPair(stub);
+    });
+  }
+
+  function applyListingProfile(p, row) {
+    if (!p || !row) return;
+    p.listedWeb = row.website || "";
+    p.listedX = row.twitter || "";
+    p.listedTg = row.telegram || "";
+    p.listedDc = row.discord || "";
+    p.listedLogo = row.logo || "";
+    if (row.bio) p.blurb = row.bio;
+    if (row.logo) p.icon = row.logo;
+    if (row.name) p.name = row.name;
+    if (row.symbol) p.sym = p.sym || row.symbol;
+    var links = Array.isArray(p.links) ? p.links.slice() : [];
+    function addLink(lab, url) {
+      if (!url) return;
+      var href = url;
+      if (lab === "X" && url.charAt(0) !== "h") href = "https://x.com/" + url.replace(/^@/, "");
+      if (lab === "Telegram" && url.charAt(0) !== "h") href = "https://t.me/" + url.replace(/^@/, "");
+      var i;
+      for (i = 0; i < links.length; i++) if (links[i].url === href) return;
+      links.push({ label: lab, url: href });
+    }
+    addLink("Web", row.website);
+    addLink("X", row.twitter);
+    addLink("Telegram", row.telegram);
+    addLink("Discord", row.discord);
+    if (links.length) p.links = links;
+  }
+
+  function packListMeta() {
+    var o = {};
+    var w = (document.getElementById("list-web").value || "").trim();
+    var x = (document.getElementById("list-x").value || "").trim().replace(/^@/, "");
+    var t = (document.getElementById("list-tg").value || "").trim();
+    var d = (document.getElementById("list-dc").value || "").trim();
+    var b = (document.getElementById("list-bio").value || "").trim().slice(0, 160);
+    var l = (document.getElementById("list-logo").value || "").trim();
+    if (w) o.w = w;
+    if (x) o.x = x;
+    if (t) o.t = t;
+    if (d) o.d = d;
+    if (b) o.b = b;
+    if (l) o.l = l;
+    return Object.keys(o).length ? JSON.stringify(o) : "";
+  }
+
+  function fillListProfile(row) {
+    if (!row) return;
+    if (row.website) document.getElementById("list-web").value = row.website;
+    if (row.twitter) document.getElementById("list-x").value = row.twitter;
+    if (row.telegram) document.getElementById("list-tg").value = row.telegram;
+    if (row.discord) document.getElementById("list-dc").value = row.discord;
+    if (row.logo) document.getElementById("list-logo").value = row.logo;
+    if (row.bio) document.getElementById("list-bio").value = row.bio;
+  }
+
+  function wholePusd(x) {
+    return Math.max(0, Math.floor(n(x)));
+  }
+
+  function netLabel() {
+    if (ketSnap && (ketSnap.net === "mainnet" || ketSnap.chain_id === 4663)) {
+      return "Robinhood Chain " + (ketSnap.chain_id || 4663);
+    }
+    return "Robinhood Chain Testnet 46630";
+  }
+
+  function openListSheet(p) {
+    var sheet = document.getElementById("list-sheet");
+    if (!sheet) return;
+    sheet.hidden = false;
+    document.getElementById("list-err").textContent = "";
+    if (p && p.token) {
+      document.getElementById("list-ca").value = p.token;
+      document.getElementById("list-pool").value = p.pool && p.source !== "binance" ? p.pool : "";
+      document.getElementById("list-sym").value = p.sym || "";
+      document.getElementById("list-name").value = p.name || p.sym || "";
+      fillListProfile(listingOf(p.token) || {
+        website: p.listedWeb, twitter: p.listedX, telegram: p.listedTg,
+        discord: p.listedDc, logo: p.listedLogo || p.icon, bio: p.blurb
+      });
+    }
+    paintListSheet();
+    quoteList();
+    if (g.vapurr && g.vapurr.send) g.vapurr.send({ cmd: "ketlist" });
+  }
+
+  function closeListSheet() {
+    if (g.vapurr && g.vapurr.pendingTx) return;
+    var sheet = document.getElementById("list-sheet");
+    if (sheet) sheet.hidden = true;
+  }
+
+  function paintListSheet() {
+    var s = ketSnap || {};
+    document.getElementById("list-top").textContent = String(wholePusd(s.top));
+    document.getElementById("list-pot").textContent = String(wholePusd(s.pot));
+    document.getElementById("list-bal").textContent = String(wholePusd(s.pusd));
+    var dep = document.getElementById("list-deploy");
+    var go = document.getElementById("list-go");
+    if (s.live) {
+      dep.style.display = "none";
+      go.style.display = "";
+    } else {
+      dep.style.display = "";
+      dep.textContent = s.need_market ? "Mint $PUSD" : "Open the list";
+      go.style.display = s.need_deploy ? "none" : "";
+    }
+    if (!listAmtDirty) {
+      document.getElementById("list-amt").value = String(wholePusd(s.quote_first || 50) || 50);
+    }
+    quoteList();
+  }
+
+  function quoteList() {
+    var amt = wholePusd(document.getElementById("list-amt").value);
+    var token = (document.getElementById("list-ca").value || "").trim();
+    var pool = (document.getElementById("list-pool").value || "").trim();
+    var q = document.getElementById("list-quote");
+    var btn = document.getElementById("list-go");
+    q.className = "hint";
+    q.onclick = null;
+    btn.disabled = true;
+    if (!ketSnap || !ketSnap.live) {
+      q.textContent = ketSnap && ketSnap.need_market
+        ? "Mint $PUSD first."
+        : "Open the list, then pay $PUSD.";
+      btn.textContent = "List";
+      return;
+    }
+    if (!token || !pool) {
+      q.textContent = wholePusd(ketSnap.quote_first || 50) + " $PUSD lists a token.";
+      btn.textContent = "List";
+      return;
+    }
+    var row = listingOf(token);
+    var top = wholePusd(ketSnap.top);
+    var minePaid = row && row.mine ? wholePusd(row.paid) : 0;
+    if (row && !row.mine) {
+      q.textContent = "That's listed.";
+      btn.textContent = "List";
+      return;
+    }
+    if (amt < 1) {
+      q.textContent = "Whole $PUSD only.";
+      btn.textContent = minePaid ? "Raise" : "List";
+      return;
+    }
+    if (!minePaid && amt < 50) {
+      q.textContent = "First listing is 50 $PUSD.";
+      btn.textContent = "List";
+      return;
+    }
+    if (minePaid && amt <= minePaid) {
+      q.textContent = "You sit at " + minePaid + ". Raise at least 10.";
+      btn.textContent = "Raise";
+      return;
+    }
+    if (minePaid && amt < minePaid + 10) {
+      q.textContent = "Raise at least 10 $PUSD.";
+      btn.textContent = "Raise";
+      return;
+    }
+    if (amt > top && amt < top + 25) {
+      q.textContent = "#1 is " + top + ". Taking it costs " + (top + 25) + ".";
+      btn.textContent = minePaid ? "Raise" : "List";
+      return;
+    }
+    var charge = minePaid ? amt - minePaid : amt;
+    var bal = wholePusd(ketSnap.pusd);
+    if (charge > bal) {
+      q.textContent = "Mint " + charge + " $PUSD.";
+      q.className = "hint go";
+      q.onclick = function () { g.vapurr.go("vapurr://pusd"); };
+      btn.textContent = minePaid ? "Raise" : "List";
+      return;
+    }
+    q.textContent = (minePaid ? "Raise " : "Pay ") + charge + " $PUSD" + (row && row.rank ? " · #" + row.rank : "") + ".";
+    btn.textContent = listBusy ? "…" : (minePaid ? "Raise" : "List");
+    btn.disabled = listBusy;
+  }
+
+  function submitList() {
+    if (listBusy || (g.vapurr && g.vapurr.pendingTx)) return;
+    var btn = document.getElementById("list-go");
+    if (btn.disabled) return;
+    document.getElementById("list-err").textContent = "";
+    var token = document.getElementById("list-ca").value;
+    var pool = document.getElementById("list-pool").value;
+    var symbol = document.getElementById("list-sym").value;
+    var name = document.getElementById("list-name").value;
+    var amt = String(wholePusd(document.getElementById("list-amt").value));
+    var meta = packListMeta();
+    var web = (document.getElementById("list-web").value || "").trim();
+    g.vapurr.beginTx({
+      title: "List on Ketcharts",
+      kicker: "This device signs",
+      lede: "Pay $PUSD on this device. Profile rides with the tx. Hash or it failed.",
+      rows: [
+        { k: "Network", v: netLabel() },
+        { k: "From", v: (ketSnap && ketSnap.address) || "this device" },
+        { k: "Token", v: token },
+        { k: "Pool", v: pool },
+        { k: "Ticker", v: symbol },
+        { k: "Website", v: web || "—" },
+        { k: "Amount", v: amt + " PUSD" }
+      ],
+      confirmLabel: "Sign and list",
+      doneTitle: "Listed",
+      failTitle: "Not listed",
+      explorer: ketSnap && ketSnap.explorer
+    }).then(function (ok) {
+      if (!ok) return;
+      listBusy = true;
+      listWaitHash = (ketSnap && ketSnap.tx) || "";
+      quoteList();
+      g.vapurr.send({
+        cmd: "ketlist-pay",
+        token: token,
+        pool: pool,
+        symbol: symbol,
+        name: name,
+        amt: amt,
+        meta: meta
+      });
+    });
+  }
+
+  function deployList() {
+    if (g.vapurr && g.vapurr.pendingTx) return;
+    document.getElementById("list-err").textContent = "";
+    if (ketSnap && ketSnap.need_market) {
+      g.vapurr.go("vapurr://pusd");
+      return;
+    }
+    g.vapurr.beginTx({
+      title: "Open the list",
+      kicker: "This device signs",
+      kind: "deploy",
+      lede: "Deploy the Ketcharts list on this device. Hash or it failed.",
+      rows: [
+        { k: "Network", v: netLabel() },
+        { k: "From", v: (ketSnap && ketSnap.address) || "this device" }
+      ],
+      confirmLabel: "Sign and open",
+      doneTitle: "Open",
+      failTitle: "Not opened",
+      explorer: ketSnap && ketSnap.explorer
+    }).then(function (ok) {
+      if (!ok) return;
+      listBusy = true;
+      listWaitHash = (ketSnap && ketSnap.tx) || "";
+      g.vapurr.send({ cmd: "ketlist-deploy" });
+    });
+  }
+
+  g.__setKetList = function (s) {
+    var was = listBusy;
+    ketSnap = s;
+    listBusy = false;
+    stampListed();
+    paintList();
+    paintTrench();
+    if (document.getElementById("list-sheet") && !document.getElementById("list-sheet").hidden) {
+      paintListSheet();
+    }
+    if (!g.vapurr || !g.vapurr.pendingTx) return;
+    if (s.tx && s.tx !== listWaitHash) {
+      g.vapurr.finishTx(true, { tx: s.tx, txUrl: s.tx_url });
+      return;
+    }
+    if (was && g.vapurr.pendingTx.kind === "deploy" && s.live) {
+      g.vapurr.finishTx(true, { already: true, title: "Already live" });
+    }
+  };
+  g.__econErr = function (which, msg) {
+    if (which !== "ketlist" && which !== "deploy") return;
+    listBusy = false;
+    if (g.vapurr && g.vapurr.pendingTx) g.vapurr.finishTx(false, { error: msg || "failed" });
+    var el = document.getElementById("list-err");
+    if (el) el.textContent = msg || "";
+    quoteList();
+  };
+
   function bind() {
     document.querySelectorAll("[data-tab]").forEach(function (el) {
       el.classList.toggle("on", el.getAttribute("data-tab") === tab);
       el.onclick = function () {
         tab = el.getAttribute("data-tab");
         document.querySelectorAll("[data-tab]").forEach(function (x) { x.classList.toggle("on", x === el); });
+        if (tab === "new") { sortKey = "created"; sortDir = -1; }
+        if (tab === "hot") { sortKey = "vol"; sortDir = -1; }
+        if (tab === "listed") { sortKey = "listedPaid"; sortDir = -1; }
+        if (tab === "stock") { sortKey = "vol"; sortDir = -1; }
         if (tab === "majors") {
-          selected = { pool: MAJORS[0].id, sym: "ETH", source: "binance", kind: "cash", px: 0 };
-        } else if (!selected || (tab === "stock" && selected.kind !== "stock") || (tab === "meme" && selected.kind !== "meme") || (tab === "fav" && selected && !favs[selected.pool])) {
+          lastBars = [];
+          lastClose = 0;
+          hoverBar = null;
+          selected = {
+            pool: MAJORS[0].id, token: MAJORS[0].id, sym: MAJORS[0].lab, name: MAJORS[0].lab,
+            px: n(MAJORS[0].px), chg: n(MAJORS[0].chg), vol: n(MAJORS[0].vol), liq: 0,
+            kind: "cash", source: "binance"
+          };
+          hydrateMajors();
+        } else if (!selected || (tab === "stock" && selected.kind !== "stock") || (tab === "listed" && selected && !selected.listed) || (tab === "fav" && selected && !favs[selected.pool])) {
           selected = visible()[0] || selected;
         }
         savePref();
@@ -1456,6 +2989,19 @@
         bootChart();
       };
     });
+    document.getElementById("list-token").onclick = function () { openListSheet(selected); };
+    document.getElementById("list-go").onclick = submitList;
+    document.getElementById("list-deploy").onclick = deployList;
+    document.getElementById("list-x").onclick = closeListSheet;
+    document.getElementById("list-dim").onclick = closeListSheet;
+    ["list-ca", "list-pool", "list-sym", "list-name", "list-web", "list-x", "list-tg", "list-dc", "list-logo", "list-bio"].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) el.addEventListener("input", quoteList);
+    });
+    document.getElementById("list-amt").addEventListener("input", function () {
+      listAmtDirty = true;
+      quoteList();
+    });
     document.getElementById("q").addEventListener("input", function () {
       q = document.getElementById("q").value;
       paintList();
@@ -1463,8 +3009,8 @@
       var qq = q.trim();
       if (qq.length < 2 || tab === "majors") return;
       searchTimer = setTimeout(function () {
-        geckoSearch(qq).then(function (found) {
-          found.forEach(putPair);
+        searchScreeners(qq).then(function (found) {
+          (found || []).forEach(putDexPair);
           paintList();
         });
       }, 280);
@@ -1478,8 +3024,22 @@
       g.vapurr.go("https://luxalgo.com/vela");
     };
     document.getElementById("shot").onclick = shotChart;
+    document.getElementById("share-pair").onclick = function () { drawPairCard(); };
     document.getElementById("alert-up").onclick = function () { addAlert("above"); };
     document.getElementById("alert-dn").onclick = function () { addAlert("below"); };
+    document.getElementById("reset").onclick = function () {
+      if (paper.pos) closeFill();
+      var equity = n(paper.cash);
+      var injected = Math.max(0, 10000 - equity);
+      if (!Array.isArray(paper.resets)) paper.resets = [];
+      paper.resets.push({ at: Date.now(), cashBefore: equity, injected: injected });
+      paper.cash = 10000;
+      paper.pos = null;
+      savePaper();
+      paintPaper();
+      var st = bookStats();
+      flashPaper("Cash refilled. Lifetime still " + signedUsd(st.realized) + (st.gl ? (" · gross loss " + usd(st.gl)) : ""));
+    };
     document.getElementById("copyca").onclick = function () {
       if (!selected || !selected.pool || selected.source === "binance") {
         flashPaper("No pool on this cut.");
@@ -1498,13 +3058,19 @@
       }
       var k = e.key;
       if (k === "/" ) { e.preventDefault(); document.getElementById("q").focus(); return; }
-      if (k === "Escape") { document.getElementById("slip").hidden = true; return; }
+      if (k === "Escape") {
+        document.getElementById("slip").hidden = true;
+        closeListSheet();
+        return;
+      }
       var tfMap = { "1": "1", "2": "5", "3": "15", "4": "60", "5": "240", "6": "D", "7": "W", "8": "M" };
       if (tfMap[k]) { timeframe = tfMap[k]; savePref(); bootChart(); return; }
       if (k === "c" || k === "C") { priceStyle = "candles"; savePref(); paintStyles(); applyChartPrefs(); return; }
       if (k === "b" || k === "B") { priceStyle = "bars"; savePref(); paintStyles(); applyChartPrefs(); return; }
       if (k === "n" || k === "N") { priceStyle = "line"; savePref(); paintStyles(); applyChartPrefs(); return; }
       if (k === "g" || k === "G") { logScale = !logScale; savePref(); paintScale(); applyChartPrefs(); return; }
+      if (k === "j" || k === "J") { stepPair(1); return; }
+      if (k === "k" || k === "K") { stepPair(-1); return; }
       if (k === "l" || k === "L") { fill("long"); return; }
       if (k === "s" || k === "S") { fill("short"); return; }
       if (k === "x" || k === "X") { closeFill(); return; }
@@ -1512,6 +3078,12 @@
     window.addEventListener("resize", function () {
       try { if (chart && chart.resize) chart.resize(); } catch (e) {}
     });
+    var wrap = document.querySelector(".plot-wrap");
+    if (wrap && typeof ResizeObserver !== "undefined") {
+      new ResizeObserver(function () {
+        try { if (chart && chart.resize) chart.resize(); } catch (e) {}
+      }).observe(wrap);
+    }
     new MutationObserver(function () {
       if (chart && chart.setTheme) try { chart.setTheme(ketTheme()); } catch (e) {}
       colorVolume();
@@ -1529,7 +3101,72 @@
     paintRisk();
     paintAlerts();
     paintHud();
-    loadBoard().then(bootChart);
+    hydrateMajors();
+    hydrateFromCache();
+    var hadChart = !!selected;
+    if (hadChart) bootChart();
+    loadBoard().then(function () {
+      if (!hadChart && selected) bootChart();
+    });
+    if (g.vapurr && g.vapurr.send) g.vapurr.send({ cmd: "ketlist" });
+    setInterval(tickBoard, 12000);
+    setInterval(function () {
+      if (selected && selected.source !== "binance") paintTxns();
+    }, 14000);
+    setInterval(paintAges, 1000);
+  }
+
+  function drawPairCard() {
+    var p = selected;
+    if (!p || p.source === "binance") { flashPaper("Pick an RHC pair."); return; }
+    var c = document.createElement("canvas");
+    c.width = 1200;
+    c.height = 675;
+    var x = c.getContext("2d");
+    var lg = x.createLinearGradient(0, 0, 1200, 675);
+    lg.addColorStop(0, "#0e0e0e");
+    lg.addColorStop(0.5, "#12140c");
+    lg.addColorStop(1, "#0a0a0a");
+    x.fillStyle = lg;
+    x.fillRect(0, 0, 1200, 675);
+    var rg = x.createRadialGradient(80, -40, 20, 80, -40, 520);
+    rg.addColorStop(0, "rgba(192,248,0,0.18)");
+    rg.addColorStop(1, "rgba(192,248,0,0)");
+    x.fillStyle = rg;
+    x.fillRect(0, 0, 1200, 675);
+    x.fillStyle = RED;
+    x.font = "900 56px Arial Black, Impact, sans-serif";
+    x.fillText("KETCHARTS", 72, 100);
+    x.fillStyle = "#8aa090";
+    x.font = "600 20px Sora, sans-serif";
+    x.fillText("ROBINHOOD CHAIN  ·  " + ageTxt(p.created), 72, 140);
+    x.fillStyle = "#f2f3f4";
+    x.font = "600 64px Sora, sans-serif";
+    x.fillText(p.sym, 72, 240);
+    var up = n(p.chg) >= 0;
+    x.fillStyle = up ? LIME : RED;
+    x.font = "600 96px Sora, sans-serif";
+    x.fillText(p.source === "binance" ? usd(markPrice()) : pct(p.chg), 72, 360);
+    x.fillStyle = "#8aa090";
+    x.font = "400 22px Sora, sans-serif";
+    x.fillText("px " + usd(p.px) + "    liq " + usd(p.liq) + "    vol " + usd(p.vol), 72, 430);
+    x.fillText("mcap " + usd(p.mcap) + (p.holders != null ? ("    holders " + p.holders) : ""), 72, 470);
+    x.fillStyle = "#8aa090";
+    x.font = "400 18px Sora, sans-serif";
+    x.fillText(p.pool, 72, 620);
+    x.fillStyle = LIME;
+    x.font = "600 18px Sora, sans-serif";
+    x.fillText("vapurr", 1040, 620);
+    c.toBlob(function (blob) {
+      if (!blob) return;
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = p.sym.toLowerCase() + "-rhc.png";
+      a.click();
+      if (navigator.clipboard && navigator.clipboard.write) {
+        try { navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]); } catch (e) {}
+      }
+    }, "image/png");
   }
 
   g.bootKetcharts = bind;
