@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>DeFi</title>
+  <link rel="stylesheet" href="/tokens.css"/>
+  <link rel="stylesheet" href="/chrome.css"/>
+  <style>
+    html, body { height: 100%; }
+    body {
+      overflow: auto;
+      position: relative;
+      background: var(--color-void);
+    }
+    .aura {
+      position: fixed; inset: 0; z-index: 0;
+      pointer-events: none; overflow: hidden;
+    }
+    .aura canvas { width: 100%; height: 100%; display: block; }
+    .wrap {
+      max-width: 520px;
+      margin: 0 auto;
+      padding: 36px 22px 88px;
+      position: relative;
+      z-index: 1;
+    }
+    .hero { margin-bottom: 28px; }
+    .hero .mono { color: var(--color-lime); margin-bottom: 10px; }
+    .hero h1 {
+      font-size: 72px;
+      font-weight: 600;
+      letter-spacing: -0.05em;
+      line-height: 0.92;
+    }
+    .lede {
+      margin-top: 12px;
+      color: var(--color-muted);
+      font-size: 15px;
+      line-height: 1.45;
+      max-width: 28em;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .door {
+      text-align: left;
+      height: auto;
+      padding: 16px 16px 14px;
+      border-radius: 18px;
+      background: color-mix(in srgb, var(--color-steel) 50%, transparent);
+      backdrop-filter: blur(24px) saturate(1.5);
+      -webkit-backdrop-filter: blur(24px) saturate(1.5);
+      border: 1px solid color-mix(in srgb, var(--color-snow) 8%, transparent);
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0;
+    }
+    .door:hover {
+      background: color-mix(in srgb, var(--color-forest) 50%, transparent);
+    }
+    .door .mono { color: var(--color-lime); }
+    .door b {
+      display: block;
+      margin-top: 8px;
+      font-size: 22px;
+      font-weight: 600;
+      letter-spacing: -0.03em;
+    }
+    .door .hint {
+      margin-top: 6px;
+      color: var(--color-muted);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+    html[data-theme="light"] .door {
+      background: color-mix(in srgb, var(--color-steel) 84%, transparent);
+    }
+  </style>
+</head>
+<body>
+  <div class="aura" aria-hidden="true"><canvas id="shader"></canvas></div>
+  <div class="wrap">
+    <div class="hero">
+      <div class="mono">defi</div>
+      <h1>On chain.</h1>
+      <p class="lede">Swap, bridge, $PUSD, bid, names, liquidity.</p>
+    </div>
+    <div class="grid">
+      <button class="door" type="button" data-go="vapurr://swap">
+        <span class="mono">Swap</span>
+        <b>Swap</b>
+        <span class="hint">Live quote. 0.25% fee. Does not swap.</span>
+      </button>
+      <button class="door" type="button" data-go="vapurr://bridge">
+        <span class="mono">Bridge</span>
+        <b>Bridge</b>
+        <span class="hint">Into Robinhood Chain. Quote only.</span>
+      </button>
+      <button class="door" type="button" data-go="vapurr://pusd">
+        <span class="mono">PUSD</span>
+        <b>$PUSD</b>
+        <span class="hint">Burn V, mint P. Lithe 9%.</span>
+      </button>
+      <button class="door" type="button" data-go="vapurr://vapurrbid">
+        <span class="mono">Bid</span>
+        <b>vapurrbid</b>
+        <span class="hint">Pay $PUSD. Take the rank.</span>
+      </button>
+      <button class="door" type="button" data-go="vapurr://pns">
+        <span class="mono">PNS</span>
+        <b>.hood</b>
+        <span class="hint">One name. Yours.</span>
+      </button>
+      <button class="door" type="button" data-go="vapurr://scan?tab=liq">
+        <span class="mono">Scan</span>
+        <b>Liquidity</b>
+        <span class="hint">Tokens and pools on this chain.</span>
+      </button>
+      <button class="door" type="button" data-go="vapurr://ketcharts">
+        <span class="mono">Charts</span>
+        <b>Ketcharts</b>
+        <span class="hint">ETH BTC SOL. Live candles.</span>
+      </button>
+    </div>
+  </div>
+  <script src="/ipc.js"></script>
+  <script src="/shader.js"></script>
+  <script>
+    if (window.startShader) startShader(document.getElementById("shader"));
+    document.querySelectorAll("[data-go]").forEach(function (el) {
+      el.onclick = function () { vapurr.go(el.getAttribute("data-go")); };
+    });
+  </script>
+</body>
+</html>

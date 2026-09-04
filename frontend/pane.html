@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <link rel="stylesheet" href="/tokens.css"/>
+  <link rel="stylesheet" href="/chrome.css"/>
+</head>
+<body>
+  <div class="sheet">
+    <h1 id="title">VAPURR</h1>
+    <p id="copy"></p>
+  </div>
+  <script>
+    var q = new URLSearchParams(location.search).get("id") || "wallet";
+    var pages = {
+      wallet: ["WALLET", "This device on Robinhood Chain. Live Trenches is a separate tab."],
+      pay: ["404 PAYMENTS", "Any site. Any time. Pay in crypto. HTTP 402 / x402."],
+      card: ["VAPURR CARD", "Your crypto. Any store. Collateral stays on C-Chain."],
+      zzzmail: ["ZZZMAIL", "Send to @handle or @0x. Bodies stay off-chain. Letters live on this device until identity is live."],
+      zmail: ["ZZZMAIL", "Send to @handle or @0x. Bodies stay off-chain. Letters live on this device until identity is live."],
+      id: ["zer0ID", "Prove a person. We keep a handle, not a passport. Issuer is not live in this build."],
+      ketbook: ["KETBOOK", "What vapurr is and how it works."]
+    };
+    var pair = pages[q] || pages.wallet;
+    document.getElementById("title").textContent = pair[0];
+    document.getElementById("copy").textContent = pair[1];
+  </script>
+</body>
+</html>

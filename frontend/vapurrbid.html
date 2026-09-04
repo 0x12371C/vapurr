@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>vapurrbid</title>
+  <link rel="stylesheet" href="/tokens.css"/>
+  <link rel="stylesheet" href="/chrome.css"/>
+  <style>
+    html, body { height: 100%; }
+    body {
+      overflow: auto;
+      position: relative;
+      background: var(--color-void);
+    }
+    .globe-layer {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .globe-layer canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    .wrap {
+      max-width: 420px;
+      margin: 0 auto;
+      padding: 36px 22px 88px;
+      position: relative;
+      z-index: 1;
+    }
+    .hero { margin-bottom: 28px; }
+    .hero .mono { color: var(--color-lime); margin-bottom: 10px; }
+    .hero h1 {
+      font-size: 72px;
+      font-weight: 600;
+      letter-spacing: -0.05em;
+      line-height: 0.92;
+      font-variant-numeric: tabular-nums;
+    }
+    .lede {
+      margin-top: 12px;
+      color: var(--color-muted);
+      font-size: 15px;
+      line-height: 1.45;
+      max-width: 28em;
+    }
+    .lede.go {
+      color: var(--color-snow);
+      cursor: var(--cursor-arrow);
+    }
+    .meta {
+      margin-top: 16px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .chip {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      padding: 10px 12px;
+      min-width: 92px;
+      border-radius: 14px;
+      background: color-mix(in srgb, var(--color-steel) 46%, transparent);
+      backdrop-filter: blur(22px) saturate(1.45);
+      -webkit-backdrop-filter: blur(22px) saturate(1.45);
+      border: 1px solid color-mix(in srgb, var(--color-snow) 8%, transparent);
+    }
+    .chip span { color: var(--color-muted); font-size: 11px; letter-spacing: 0.06em; font-weight: 600; text-transform: uppercase; }
+    .chip b { font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
+    .door {
+      margin-bottom: 10px;
+      padding: 16px 16px 14px;
+      border-radius: 18px;
+      background: color-mix(in srgb, var(--color-steel) 50%, transparent);
+      backdrop-filter: blur(24px) saturate(1.5);
+      -webkit-backdrop-filter: blur(24px) saturate(1.5);
+      border: 1px solid color-mix(in srgb, var(--color-snow) 8%, transparent);
+    }
+    .door label { display: block; }
+    .door .field {
+      width: 100%;
+      margin-top: 10px;
+      background: color-mix(in srgb, var(--color-void) 35%, transparent);
+    }
+    .door .btn { width: 100%; margin-top: 10px; height: 44px; border-radius: 12px; }
+    .btn:disabled { opacity: 0.45; }
+    .hint {
+      margin-top: 8px;
+      color: var(--color-muted);
+      font-size: 12px;
+      min-height: 16px;
+    }
+    .hint.go { color: var(--color-lime); cursor: var(--cursor-arrow); }
+    .err { color: #ff8a80; font-size: 13px; min-height: 16px; margin-top: 8px; }
+    .quiet { margin-top: 22px; }
+    .quiet .btn { width: 100%; }
+    .rows { display: flex; flex-direction: column; gap: 8px; }
+    .row-bid {
+      display: grid;
+      grid-template-columns: 40px 1fr auto;
+      gap: 10px;
+      align-items: center;
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 14px;
+      text-align: left;
+      color: inherit;
+      background: color-mix(in srgb, var(--color-steel) 46%, transparent);
+      backdrop-filter: blur(18px) saturate(1.4);
+      -webkit-backdrop-filter: blur(18px) saturate(1.4);
+      border: 1px solid color-mix(in srgb, var(--color-snow) 8%, transparent);
+    }
+    .row-bid:hover { border-color: var(--color-lime); }
+    .row-bid.mine { border-color: var(--color-lime); }
+    .row-bid .n { color: var(--color-lime); font-weight: 600; font-size: 14px; }
+    .row-bid b { display: block; font-size: 14px; font-weight: 600; }
+    .row-bid .u {
+      color: var(--color-muted);
+      font-size: 12px;
+      margin-top: 2px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .row-bid .p { font-weight: 600; font-size: 14px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+    html[data-theme="light"] .door,
+    html[data-theme="light"] .chip,
+    html[data-theme="light"] .row-bid {
+      background: color-mix(in srgb, var(--color-steel) 84%, transparent);
+    }
+    .house-door { margin-bottom: 10px; }
+    .house-door .floor-grid {
+      flex: none;
+      flex-wrap: wrap;
+      min-height: 0;
+      overflow: visible;
+    }
+    .house-door .floor-card {
+      min-height: 154px;
+      min-width: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="globe-layer" aria-hidden="true"><canvas id="globe"></canvas></div>
+  <div class="wrap">
+    <div class="hero">
+      <div class="mono">vapurrbid</div>
+      <h1 id="need">10</h1>
+      <p class="lede" id="lede">Take #1.</p>
+      <div class="meta">
+        <div class="chip"><span>#1</span><b id="top">0</b></div>
+        <div class="chip"><span>Pot</span><b id="pot">0</b></div>
+        <div class="chip"><span>You</span><b id="bal">0</b></div>
+      </div>
+    </div>
+
+    <div class="door house-door">
+      <label class="mono">House</label>
+      <div class="floor-grid" id="house-grid" style="margin-top:10px"></div>
+    </div>
+
+    <div class="door">
+      <label class="mono">Take it</label>
+      <input class="field" id="url" placeholder="https:// or @handle" autocomplete="off"/>
+      <input class="field" id="title" placeholder="title" maxlength="64" autocomplete="off"/>
+      <input class="field" id="amt" placeholder="10" inputmode="numeric"/>
+      <div class="hint" id="quote">10 $PUSD takes #1.</div>
+      <button class="btn" id="bid" type="button">Bid</button>
+      <div class="err" id="bid-err"></div>
+    </div>
+
+    <div class="door" id="board" style="display:none">
+      <div class="rows" id="rows"></div>
+    </div>
+
+    <div class="quiet" id="deploy-box" style="display:none">
+      <button class="btn" id="deploy" type="button">Open</button>
+      <div class="hint" id="st"></div>
+      <div class="err" id="dep-err"></div>
+    </div>
+  </div>
+  <script src="/ipc.js"></script>
+  <script src="/sign.js"></script>
+  <script src="/floor.js"></script>
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "/vendor/three.webgpu.min.js",
+      "three/webgpu": "/vendor/three.webgpu.min.js",
+      "three/tsl": "/vendor/three.tsl.min.js"
+    }
+  }
+  </script>
+  <script type="module">
+    import { startVapurrbid } from "/globe.js?v=apex2";
+    startVapurrbid(document.getElementById("globe"));
+  </script>
+  <script>
+    var snap = null;
+    var busy = false;
+    var amtDirty = false;
+    var lastQuote = 10;
+    var waitHash = "";
+
+    function n(x) { var v = parseFloat(x); return isFinite(v) ? v : 0; }
+    function whole(x) { return Math.max(0, Math.floor(n(x))); }
+    function dollars(x) { return String(whole(x)); }
+
+    function normUrl(s) {
+      s = String(s || "").trim();
+      if (!s) return "";
+      if (s.charAt(0) === "@") return s.toLowerCase();
+      if (s.indexOf("://") < 0) s = "https://" + s;
+      s = s.toLowerCase().replace(/\/$/, "");
+      s = s.replace("https://www.", "https://");
+      s = s.replace("http://www.", "http://");
+      return s;
+    }
+
+    function listingForUrl() {
+      var u = normUrl(document.getElementById("url").value);
+      var list = (snap && snap.listings) || [];
+      if (!u) return null;
+      for (var i = 0; i < list.length; i++) {
+        if (normUrl(list[i].url) === u) return list[i];
+      }
+      return null;
+    }
+
+    function paint(s) {
+      if (!s) return;
+      var wasBusy = busy;
+      snap = s;
+      busy = false;
+      document.getElementById("top").textContent = dollars(s.top);
+      document.getElementById("pot").textContent = dollars(s.pot);
+      document.getElementById("bal").textContent = dollars(s.pusd);
+      var take = whole(s.quote_first || 10);
+      document.getElementById("need").textContent = String(take);
+      var list = s.listings || [];
+      var lede = document.getElementById("lede");
+      if (list.length) {
+        var first = list[0];
+        lede.textContent = first.title || first.url || "Take #1.";
+        lede.className = "lede go";
+        lede.onclick = function () { vapurr.go(first.href || first.url); };
+      } else {
+        lede.textContent = "Take #1.";
+        lede.className = "lede";
+        lede.onclick = null;
+      }
+      var depBox = document.getElementById("deploy-box");
+      var dep = document.getElementById("deploy");
+      document.getElementById("st").textContent = s.status || "";
+      if (s.live) {
+        depBox.style.display = "none";
+      } else {
+        depBox.style.display = "block";
+        dep.textContent = s.need_market ? "Mint $PUSD" : "Open";
+      }
+      var board = document.getElementById("board");
+      var rows = document.getElementById("rows");
+      if (!list.length) {
+        board.style.display = "none";
+        rows.innerHTML = "";
+      } else {
+        board.style.display = "block";
+        rows.innerHTML = list.map(function (r) {
+          return "<button type='button' class='row-bid" + (r.mine ? " mine" : "") + "'>" +
+            "<span class='n'>#" + r.rank + "</span>" +
+            "<span><b></b><div class='u'></div></span>" +
+            "<span class='p'></span></button>";
+        }).join("");
+        list.forEach(function (r, i) {
+          var el = rows.children[i];
+          el.querySelector("b").textContent = r.title || r.url;
+          el.querySelector(".u").textContent = r.url;
+          el.querySelector(".p").textContent = dollars(r.paid);
+          el.onclick = function () { vapurr.go(r.href || r.url); };
+        });
+      }
+      if (s.mine && s.mine.url && !document.getElementById("url").value) {
+        document.getElementById("url").value = s.mine.url;
+        document.getElementById("title").value = s.mine.title || "";
+      }
+      if (!amtDirty || wasBusy) {
+        document.getElementById("amt").value = String(take);
+        lastQuote = take;
+        amtDirty = false;
+      }
+      quote();
+    }
+
+    function quote() {
+      var amt = whole(document.getElementById("amt").value);
+      var url = (document.getElementById("url").value || "").trim();
+      var q = document.getElementById("quote");
+      var btn = document.getElementById("bid");
+      var ok = false;
+      var raise = false;
+      q.className = "hint";
+      q.onclick = null;
+      if (!snap || !snap.live) {
+        q.textContent = "Open, then pay $PUSD.";
+        btn.textContent = "Bid";
+        btn.disabled = true;
+        return;
+      }
+      if (!url) {
+        q.textContent = whole(snap.quote_first || 10) + " $PUSD takes #1.";
+        btn.textContent = "Bid";
+        btn.disabled = true;
+        return;
+      }
+      var row = listingForUrl();
+      var top = whole(snap.top);
+      var minePaid = row && row.mine ? whole(row.paid) : 0;
+      if (row && !row.mine) {
+        q.textContent = "That's listed.";
+        btn.textContent = "Bid";
+        btn.disabled = true;
+        return;
+      }
+      if (amt < 1) {
+        q.textContent = "Whole $PUSD only.";
+        btn.textContent = minePaid ? "Raise" : "Bid";
+        btn.disabled = true;
+        return;
+      }
+      if (!minePaid && amt < 10) {
+        q.textContent = "First listing is 10 $PUSD.";
+        btn.textContent = "Bid";
+        btn.disabled = true;
+        return;
+      }
+      if (minePaid && amt <= minePaid) {
+        q.textContent = "You sit at " + minePaid + ". Raise at least 1.";
+        btn.textContent = "Raise";
+        btn.disabled = true;
+        return;
+      }
+      if (amt > top && amt < top + 5) {
+        q.textContent = "#1 is " + top + ". Taking it costs " + (top + 5) + ".";
+        btn.textContent = minePaid ? "Raise" : "Bid";
+        btn.disabled = true;
+        return;
+      }
+      var list = snap.listings || [];
+      var paid = list.map(function (r) { return whole(r.paid); });
+      var rank = 1;
+      for (var i = 0; i < paid.length; i++) {
+        if (row && list[i].mine && list[i].url === row.url) continue;
+        if (amt < paid[i]) rank++;
+        else if (amt === paid[i]) rank++;
+      }
+      var charge = minePaid ? amt - minePaid : amt;
+      var bal = whole(snap.pusd);
+      if (charge > bal) {
+        q.textContent = "Mint " + charge + " $PUSD.";
+        q.className = "hint go";
+        q.onclick = function () { vapurr.go("vapurr://pusd"); };
+        btn.textContent = minePaid ? "Raise" : "Bid";
+        btn.disabled = true;
+        return;
+      }
+      q.textContent = (minePaid ? "Raise " : "Pay ") + charge + " $PUSD · #" + rank + ".";
+      raise = !!minePaid;
+      ok = true;
+      btn.textContent = busy ? "…" : (raise ? "Raise" : "Bid");
+      btn.disabled = busy || !ok;
+    }
+
+    window.__setOutbid = function (s) {
+      var was = busy;
+      paint(s);
+      if (!vapurr.pendingTx) return;
+      if (s.tx && s.tx !== waitHash) {
+        vapurr.finishTx(true, { tx: s.tx, txUrl: s.tx_url });
+        return;
+      }
+      if (was && vapurr.pendingTx.kind === "deploy" && s.live) {
+        vapurr.finishTx(true, { already: true, title: "Already live" });
+      }
+    };
+    window.__econErr = function (which, msg) {
+      busy = false;
+      if (vapurr.pendingTx) vapurr.finishTx(false, { error: msg || "failed" });
+      var el = document.getElementById(which === "deploy" ? "dep-err" : "bid-err");
+      if (el) el.textContent = msg || "";
+      quote();
+    };
+    document.getElementById("amt").addEventListener("input", function () {
+      amtDirty = true;
+      quote();
+    });
+    document.getElementById("url").addEventListener("input", quote);
+    document.getElementById("bid").onclick = function () {
+      if (busy || document.getElementById("bid").disabled || vapurr.pendingTx) return;
+      document.getElementById("bid-err").textContent = "";
+      var url = document.getElementById("url").value;
+      var title = document.getElementById("title").value;
+      var amt = String(whole(document.getElementById("amt").value));
+      vapurr.beginTx({
+        title: "Bid",
+        kicker: "This device signs",
+        lede: "Pay $PUSD on this device. Hash or it failed.",
+        rows: [
+          { k: "Network", v: (snap && (snap.net === "testnet" || snap.chain_id === 46630)) ? "Robinhood Chain Testnet 46630" : ("Robinhood Chain " + ((snap && snap.chain_id) || 4663)) },
+          { k: "From", v: (snap && snap.address) || "this device" },
+          { k: "URL", v: url },
+          { k: "Amount", v: amt + " PUSD" }
+        ],
+        confirmLabel: "Sign and bid",
+        doneTitle: "Bid sent",
+        failTitle: "Not bid",
+        explorer: snap && snap.explorer
+      }).then(function (ok) {
+        if (!ok) return;
+        busy = true;
+        waitHash = (snap && snap.tx) || "";
+        quote();
+        vapurr.send({ cmd: "vapurrbid-bid", url: url, title: title, amt: amt });
+      });
+    };
+    document.getElementById("deploy").onclick = function () {
+      if (vapurr.pendingTx) return;
+      document.getElementById("dep-err").textContent = "";
+      if (snap && snap.need_market) {
+        vapurr.go("vapurr://pusd");
+        return;
+      }
+      vapurr.beginTx({
+        title: "Open board",
+        kicker: "This device signs",
+        kind: "deploy",
+        lede: "Deploy the board on this device. Hash or it failed.",
+        rows: [
+          { k: "Network", v: (snap && (snap.net === "testnet" || snap.chain_id === 46630)) ? "Robinhood Chain Testnet 46630" : ("Robinhood Chain " + ((snap && snap.chain_id) || 4663)) },
+          { k: "From", v: (snap && snap.address) || "this device" }
+        ],
+        confirmLabel: "Sign and open",
+        doneTitle: "Open",
+        failTitle: "Not opened",
+        explorer: snap && snap.explorer
+      }).then(function (ok) {
+        if (!ok) return;
+        waitHash = (snap && snap.tx) || "";
+        document.getElementById("st").textContent = "…";
+        vapurr.send({ cmd: "vapurrbid-deploy" });
+      });
+    };
+    paintHouse(document.getElementById("house-grid"));
+    vapurr.send({ cmd: "vapurrbid" });
+  </script>
+</body>
+</html>

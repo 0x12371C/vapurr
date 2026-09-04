@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <link rel="stylesheet" href="/tokens.css"/>
+  <link rel="stylesheet" href="/chrome.css"/>
+  <style>
+    body { overflow: auto; }
+    .wrap { padding: 48px 56px; }
+    .grid { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 24px; }
+    h1 { font-size: 28px; font-weight: 600; letter-spacing: -0.03em; }
+    p { color: var(--color-muted); margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>dApps</h1>
+    <p>Opens in this window.</p>
+    <div class="grid">
+      <button class="tile" data-go="https://www.google.com">
+        <svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M4 12h16M12 4a12 12 0 010 16M12 4a12 12 0 000 16"/></svg>
+        Google
+      </button>
+      <button class="tile" data-go="vapurr://defi">
+        <svg class="ico" viewBox="0 0 24 24"><path d="M5 8h14M15 5l4 3-4 3M19 16H5M9 13l-4 3 4 3"/></svg>
+        DeFi
+      </button>
+      <button class="tile" data-go="vapurr://swap">
+        <svg class="ico" viewBox="0 0 24 24"><path d="M5 8h14M15 5l4 3-4 3M19 16H5M9 13l-4 3 4 3"/></svg>
+        Swap
+      </button>
+      <button class="tile" data-go="vapurr://bridge">
+        <svg class="ico" viewBox="0 0 24 24"><path d="M5 16a7 7 0 0114 0"/><path d="M8 16v3M16 16v3"/><path d="M5 16h2M17 16h2"/></svg>
+        Bridge
+      </button>
+      <button class="tile" data-go="vapurr://scan">
+        <svg class="ico" viewBox="0 0 24 24"><path d="M4 8l8-4 8 4v8l-8 4-8-4z"/><path d="M4 8l8 4 8-4M12 12v8"/></svg>
+        Scan
+      </button>
+      <button class="tile" data-go="vapurr://pusd">
+        <svg class="ico" viewBox="0 0 24 24"><path d="M12 4v16M8 8h6.5a2.5 2.5 0 010 5H8h7a2.5 2.5 0 010 5H8"/></svg>
+        PUSD
+      </button>
+      <button class="tile" data-go="vapurr://vapurrbid">
+        <svg class="ico" viewBox="0 0 24 24"><path d="M4 18h4v-6H4zM10 18h4V6h-4zM16 18h4v-4h-4z"/></svg>
+        vapurrbid
+      </button>
+      <button class="tile" data-go="vapurr://pns">
+        <svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.5"/><path d="M15.2 10.2v2.6a2 2 0 101.4 1.9"/></svg>
+        PNS
+      </button>
+      <button class="tile" data-go="https://fomo.family" title="Live Trenches">
+        <svg class="ico" viewBox="0 0 24 24"><path d="M4 16l4-6 4 3 4-8 4 11"/></svg>
+        Live Trenches
+      </button>
+      <button class="tile" data-go="vapurr://ketflix">
+        <svg class="ico" viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="12" rx="2"/><path d="M10 10l5 2-5 2z"/></svg>
+        Ketflix
+      </button>
+      <button class="tile" data-go="vapurr://ketcharts">
+        <svg class="ico" viewBox="0 0 24 24"><path d="M4 18V8M8 18v-6M12 18V6M16 18v-4M20 18V9"/></svg>
+        Charts
+      </button>
+      <button class="tile" data-go="vapurr://ketbook">
+        <svg class="ico" viewBox="0 0 24 24"><path d="M5 5h10a2 2 0 012 2v12H7a2 2 0 01-2-2V5z"/><path d="M7 19h12M9 8h6"/></svg>
+        Ketbook
+      </button>
+      <button class="tile" data-go="https://hood.dev">
+        <svg class="ico" viewBox="0 0 24 24"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4"/><path d="M14 4h6v6M20 4l-9 9"/></svg>
+        Hood
+      </button>
+      <button class="tile" data-go="vapurr://floor">
+        <svg class="ico" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14" rx="2"/><path d="M8 9h8M8 13h5"/></svg>
+        Floor
+      </button>
+    </div>
+  </div>
+  <script src="/ipc.js"></script>
+  <script>
+    document.querySelectorAll("[data-go]").forEach(function (el) {
+      el.onclick = function () { vapurr.go(el.getAttribute("data-go")); };
+    });
+  </script>
+</body>
+</html>

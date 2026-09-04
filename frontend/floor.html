@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>Floor</title>
+  <link rel="stylesheet" href="/tokens.css"/>
+  <link rel="stylesheet" href="/chrome.css"/>
+  <style>
+    body { overflow: auto; }
+    .wrap { max-width: 720px; margin: 0 auto; padding: 36px 24px 72px; }
+    h1 { font-size: 28px; font-weight: 600; letter-spacing: 0.02em; margin-bottom: 8px; }
+    .lede { color: var(--color-muted); margin-bottom: 28px; max-width: 540px; line-height: 1.5; }
+    .floor-grid { flex-wrap: wrap; min-height: 0; flex: none; }
+    .floor-card { max-width: 220px; }
+    .btn { margin-top: 16px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="mono" style="color:var(--color-lime);margin-bottom:8px">FLOOR</div>
+    <h1>Your project on every home.</h1>
+    <p class="lede">Six plates above search. Ketflix keeps the first. House plates for veil.markets, thesecretlab.app, fomo.family, and pons. Empty slots are vapurrbid — rank is $PUSD.</p>
+    <div class="floor-grid" id="floor-grid"></div>
+    <button class="btn" id="pay" type="button">Bid with $PUSD</button>
+  </div>
+  <script src="/ipc.js"></script>
+  <script src="/floor.js"></script>
+  <script>
+    window.__setOutbid = function (s) {
+      paintFloor(document.getElementById("floor-grid"), s && s.listings);
+    };
+    paintFloor(document.getElementById("floor-grid"));
+    document.getElementById("pay").onclick = function () {
+      vapurr.go("vapurr://vapurrbid");
+    };
+    vapurr.send({ cmd: "vapurrbid" });
+  </script>
+</body>
+</html>

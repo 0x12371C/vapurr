@@ -1,0 +1,71 @@
+# Build
+/target
+/target-*/
+/dist/
+*.pdb
+*.ilk
+
+# Runtime / profile (never commit)
+/crashes/
+/data/
+/profile/
+*.log
+*.dmp
+vapurr.log
+
+# Secrets and local chain state
+.env
+.env.*
+!.env.example
+**/*.key
+**/*.pem
+**/*.sk
+**/device.sk
+**/session.json
+**/market.json
+**/treasury.json
+**/liq-cache.json
+**/liq-pools.json
+**/pns.json
+**/desk.json
+
+# Tooling that is not the product
+.agents/
+.grok/
+.cursor/
+.claude/
+.codex/
+AGENTS.md
+.graphifyignore
+graphify-out/
+graphify-backup/
+docs/GRAPHIFY.md
+docs/HOUSEKEEPING.md
+docs/TRIM.md
+docs/imported/
+scripts/__pycache__/
+scripts/_split_gods.py
+scripts/brand_graph.py
+scripts/sync-honkit.js
+
+# Editors / OS
+.idea/
+.vscode/
+*.swp
+*~
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Node (HonKit for Ketbook only; not the browser)
+/node_modules/
+/_book/
+/docs/_book/
+/frontend/ketbook/
+/contracts/node_modules/
+/contracts/package-lock.json
+/contracts/out/
+
+# Local dumps
+tmp-rh-wallet/
+tmp-*.txt

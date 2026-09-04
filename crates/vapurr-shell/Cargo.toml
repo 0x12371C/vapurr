@@ -1,0 +1,48 @@
+[package]
+name = "vapurr-shell"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "vapurr browser shell"
+default-run = "vapurr"
+
+[[bin]]
+name = "vapurr"
+path = "src/main.rs"
+
+[dependencies]
+dpi = "0.1"
+mimalloc = { version = "0.1", default-features = false }
+rust-embed = { version = "8", features = ["interpolate-folder-path", "include-exclude"] }
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+tao = "0.30"
+tracing.workspace = true
+tracing-subscriber.workspace = true
+url.workspace = true
+vapurr-blob.workspace = true
+vapurr-core.workspace = true
+vapurr-rhc.workspace = true
+vapurr-shield.workspace = true
+vapurr-fomo.workspace = true
+vapurr-econ.workspace = true
+vapurr-wallet.workspace = true
+vapurr-zmail.workspace = true
+wry = "0.47"
+
+[target.'cfg(windows)'.dependencies]
+webview2-com = "0.33"
+windows = { version = "0.58", features = [
+    "Win32_Foundation",
+    "Win32_Graphics_Dwm",
+    "Win32_Security",
+    "Win32_System_Com",
+    "Win32_System_Com_StructuredStorage",
+    "Win32_System_Registry",
+    "Win32_System_SystemInformation",
+    "Win32_System_Threading",
+    "Win32_UI_HiDpi",
+    "Win32_UI_Shell",
+    "Win32_UI_WindowsAndMessaging",
+] }

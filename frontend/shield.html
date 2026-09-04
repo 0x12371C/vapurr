@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>Shield</title>
+  <link rel="stylesheet" href="/tokens.css"/>
+  <link rel="stylesheet" href="/chrome.css"/>
+  <style>
+    body { overflow: auto; }
+    .wrap { max-width: 640px; margin: 0 auto; padding: 36px 24px 72px; }
+    h1 { font-size: 28px; font-weight: 600; letter-spacing: 0.02em; margin-bottom: 6px; }
+    .lede { color: var(--color-muted); margin-bottom: 28px; max-width: 520px; line-height: 1.5; }
+    .row { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+    .row + .row { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--color-forest); }
+    .hint { color: var(--color-muted); font-size: 13px; line-height: 1.4; margin-top: 4px; }
+    .switch {
+      width: 44px; height: 24px; border-radius: 999px; flex-shrink: 0;
+      background: var(--color-steel); border: 1px solid var(--color-forest);
+      position: relative;
+    }
+    .switch.on { background: var(--color-lime); border-color: var(--color-lime); }
+    .knob {
+      width: 18px; height: 18px; border-radius: 50%;
+      background: var(--color-muted); position: absolute; top: 2px; left: 3px;
+    }
+    .switch.on .knob { left: 21px; background: var(--color-on-lime); }
+    .stat {
+      display: flex; align-items: baseline; gap: 10px;
+      margin-bottom: 18px;
+    }
+    .stat b { font-size: 36px; font-weight: 600; letter-spacing: 0.02em; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="mono" style="color:var(--color-lime);margin-bottom:8px">SHIELD</div>
+    <h1>Ad block.</h1>
+    <p class="lede">Ad block on before the page paints. EasyList, EasyPrivacy, uBlock Origin.</p>
+    <div class="stat">
+      <b id="blocked">0</b>
+      <span class="hint" id="shield-stat">blocked this session</span>
+    </div>
+    <div class="steel">
+      <div class="row">
+        <div>
+          <b>Block ads and trackers</b>
+          <div class="hint">Master switch. Off lets everything through.</div>
+        </div>
+        <button class="switch" id="adblock" type="button" aria-label="adblock"><span class="knob"></span></button>
+      </div>
+      <div class="row">
+        <div>
+          <b>Block trackers</b>
+          <div class="hint">EasyPrivacy + uBlock privacy lists. Analytics, pixels, fingerprinting.</div>
+        </div>
+        <button class="switch" id="adblock-privacy" type="button" aria-label="block trackers"><span class="knob"></span></button>
+      </div>
+      <div class="row">
+        <div>
+          <b>Block annoyances</b>
+          <div class="hint">Cookie banners, newsletter modals, extra overlays.</div>
+        </div>
+        <button class="switch" id="adblock-annoy" type="button" aria-label="block annoyances"><span class="knob"></span></button>
+      </div>
+      <div class="row">
+        <div>
+          <b>Hide leftover ad slots</b>
+          <div class="hint">Cosmetic CSS. Collapses empty banners after the request is killed.</div>
+        </div>
+        <button class="switch" id="adblock-cosmetic" type="button" aria-label="cosmetic filters"><span class="knob"></span></button>
+      </div>
+    </div>
+  </div>
+  <script src="/ipc.js"></script>
+  <script>
+    function on(el, yes) { el.classList.toggle("on", !!yes); }
+    window.__setDesk = function (s) {
+      if (!s) return;
+      var sh = s.shield || {};
+      on(document.getElementById("adblock"), sh.enabled !== false);
+      on(document.getElementById("adblock-privacy"), sh.privacy !== false);
+      on(document.getElementById("adblock-annoy"), sh.annoyances !== false);
+      on(document.getElementById("adblock-cosmetic"), sh.cosmetic !== false);
+      var n = sh.blocked || 0;
+      document.getElementById("blocked").textContent = String(n);
+      var lists = sh.ready ? "EasyList + EasyPrivacy + uBlock loaded." : "Core list on. Full EasyList loading…";
+      var last = sh.last ? " Last: " + sh.last + "." : "";
+      document.getElementById("shield-stat").textContent = "blocked this session. " + lists + last;
+    };
+    document.getElementById("adblock").onclick = function () {
+      vapurr.send({ cmd: "pref", key: "adblock", value: !this.classList.contains("on") });
+    };
+    document.getElementById("adblock-privacy").onclick = function () {
+      vapurr.send({ cmd: "pref", key: "adblock_privacy", value: !this.classList.contains("on") });
+    };
+    document.getElementById("adblock-annoy").onclick = function () {
+      vapurr.send({ cmd: "pref", key: "adblock_annoyances", value: !this.classList.contains("on") });
+    };
+    document.getElementById("adblock-cosmetic").onclick = function () {
+      vapurr.send({ cmd: "pref", key: "adblock_cosmetic", value: !this.classList.contains("on") });
+    };
+    vapurr.send({ cmd: "desk" });
+  </script>
+</body>
+</html>

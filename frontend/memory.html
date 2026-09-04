@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <link rel="stylesheet" href="/tokens.css"/>
+  <link rel="stylesheet" href="/chrome.css"/>
+  <style>
+    body { overflow: auto; }
+    .wrap { max-width: 640px; margin: 0 auto; padding: 40px 24px 56px; }
+    .bar { height: 8px; background: var(--color-steel); border-radius: 8px; overflow: hidden; margin: 16px 0 8px; }
+    .bar > i { display: block; height: 100%; background: var(--color-lime); width: 0; }
+    .cid { font-family: ui-monospace, monospace; font-size: 11px; color: var(--color-muted); word-break: break-all; }
+    .item { margin-bottom: 8px; }
+    .item b { display: block; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="mono" style="color:var(--color-lime);margin-bottom:8px">BOOST</div>
+    <h1>Hot cache. Fast next click.</h1>
+    <p>Boost prefetches and prerenders recent sites (Speculation Rules). The stack also keeps bfcache on Back, GPU raster, and paint-holding. Off drops heat when idle.</p>
+    <div class="steel" style="margin-top:24px">
+      <div class="mono" id="meta">loading…</div>
+      <div class="bar"><i id="fill"></i></div>
+      <div class="mono" id="used">0 / 64 MB</div>
+    </div>
+    <button class="btn" id="snap" type="button" style="margin-top:16px">Turn Boost on</button>
+    <div id="list" style="margin-top:24px"></div>
+  </div>
+  <script src="/ipc.js"></script>
+  <script>
+    function fmt(n) {
+      if (n < 1024) return n + " B";
+      if (n < 1024 * 1024) return (n / 1024).toFixed(1) + " KB";
+      return (n / (1024 * 1024)).toFixed(2) + " MB";
+    }
+    function paint(s) {
+      if (!s) return;
+      var used = s.used || 0;
+      var quota = s.quota || 1;
+      document.getElementById("meta").textContent =
+        (s.preloaded || 0) + " preloaded · chain " + (s.chain || "off");
+      document.getElementById("used").textContent = fmt(used) + " / " + fmt(quota);
+      document.getElementById("fill").style.width = Math.min(100, (used / quota) * 100) + "%";
+      var list = document.getElementById("list");
+      list.innerHTML = "";
+      (s.blobs || []).forEach(function (b) {
+        var el = document.createElement("div");
+        el.className = "steel item";
+        el.innerHTML = "<b></b><div class='cid'></div>";
+        el.querySelector("b").textContent = b.name + " · " + b.kind + " · " + fmt(b.bytes);
+        el.querySelector(".cid").textContent = b.cid;
+        list.appendChild(el);
+      });
+      if (!(s.blobs || []).length) {
+        list.textContent = "Empty. Snapshot the desk.";
+        list.style.color = "var(--color-muted)";
+      }
+    }
+    window.__setBlobs = paint;
+    window.__setBoost = function (on) {
+      var btn = document.getElementById("snap");
+      if (!btn) return;
+      btn.textContent = on ? "Turn Boost off" : "Turn Boost on";
+    };
+    window.__onBoost = function (s) {
+      paint(s);
+      window.__setBoost(!!(s && s.on));
+    };
+    document.getElementById("snap").onclick = function () { vapurr.send({ cmd: "boost" }); };
+    vapurr.send({ cmd: "blobs" });
+  </script>
+</body>
+</html>

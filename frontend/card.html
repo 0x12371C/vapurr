@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <link rel="stylesheet" href="/tokens.css"/>
+  <link rel="stylesheet" href="/chrome.css"/>
+  <style>
+    body { overflow: auto; }
+    .wrap {
+      min-height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 28px;
+      padding: 48px 24px;
+    }
+    .plate {
+      width: min(380px, 92vw);
+      aspect-ratio: 1.58;
+      background: var(--color-void);
+      border: 1px solid var(--color-forest);
+      border-radius: 14px;
+      position: relative;
+      overflow: hidden;
+      padding: 22px 24px;
+    }
+    .sheen {
+      position: absolute; inset: 0; pointer-events: none;
+      background: repeating-linear-gradient(
+        118deg,
+        transparent 0 28px,
+        rgba(31,35,39,0.35) 28px 36px
+      );
+    }
+    .chip {
+      width: 36px; height: 28px;
+      border: 1px solid var(--color-lime);
+      border-radius: 4px;
+    }
+    .cat {
+      position: absolute; left: 50%; top: 46%;
+      width: 42%; transform: translate(-50%, -50%);
+    }
+    .lock { position: absolute; left: 24px; bottom: 22px; }
+    .lock b { display: block; letter-spacing: 0.12em; font-size: 16px; }
+    .lock span { color: var(--color-lime); font-size: 10px; letter-spacing: 0.14em; font-weight: 600; }
+    .visa {
+      position: absolute; right: 24px; bottom: 22px;
+      font-weight: 600; letter-spacing: 0.16em; font-size: 16px;
+    }
+    h1 { font-size: 28px; font-weight: 600; letter-spacing: 0.04em; }
+    p { color: var(--color-muted); max-width: 380px; text-align: center; line-height: 1.5; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="plate" aria-label="VAPURR card">
+      <div class="sheen"></div>
+      <div class="chip"></div>
+      <img class="cat" src="/cat.svg" alt=""/>
+      <div class="lock"><b>VAPURR</b><span>BY AVALANCHE</span></div>
+      <div class="visa">VISA</div>
+    </div>
+    <h1>VAPURR CARD</h1>
+    <p>Your crypto. Any store. Any country. One tap. Collateral stays on Avalanche. vapurr never holds the card number.</p>
+  </div>
+</body>
+</html>

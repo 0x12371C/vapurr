@@ -1,0 +1,17 @@
+[package]
+name = "vapurr-engine"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Servo-first engine trait. FetcherEngine for v1."
+
+[features]
+default = []
+servo = []
+
+[dependencies]
+scraper.workspace = true
+thiserror.workspace = true
+vapurr-core.workspace = true
+vapurr-net.workspace = true
+vapurr-pay.workspace = true

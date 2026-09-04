@@ -1,0 +1,12 @@
+[package]
+name = "vapurr-net"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "HTTP stack with 402 interception"
+
+[dependencies]
+reqwest.workspace = true
+thiserror.workspace = true
+url.workspace = true
+vapurr-pay.workspace = true

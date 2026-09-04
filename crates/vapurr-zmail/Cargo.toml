@@ -1,0 +1,24 @@
+[package]
+name = "vapurr-zmail"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "encrypted mail protocol inside vapurr"
+
+[dependencies]
+base64.workspace = true
+chacha20poly1305.workspace = true
+chrono.workspace = true
+hex.workspace = true
+hkdf.workspace = true
+rand.workspace = true
+reqwest.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+sha3.workspace = true
+thiserror.workspace = true
+vapurr-rhc.workspace = true
+vapurr-wallet.workspace = true
+x25519-dalek.workspace = true
+zeroize.workspace = true

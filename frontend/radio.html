@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>Maestro Play</title>
+  <link rel="stylesheet" href="/tokens.css"/>
+  <link rel="stylesheet" href="/radio.css"/>
+  <style>
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      background: #030303;
+    }
+    .mp.chrome {
+      position: relative;
+      left: auto;
+      right: auto;
+      top: auto;
+      bottom: auto;
+      width: 100%;
+      height: 100%;
+      border-radius: 0;
+    }
+    .mp.chrome[data-mode="float"] {
+      width: 100%;
+      border-radius: 12px;
+    }
+    .mp.chrome[data-mode="dock"] .mp-body {
+      max-width: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="mp chrome" id="radio" data-mode="dock" data-corner="br">
+    <div class="mp-accent"></div>
+    <div class="mp-body">
+      <button type="button" class="mp-brand" title="Maestro Play">
+        <span class="mp-logo" aria-hidden="true"></span>
+        <span class="mp-word">
+          <span class="mp-name">MAESTRO PLAY</span>
+          <span class="mp-by">by thesecretlab</span>
+        </span>
+        <span class="mp-eq" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+      </button>
+      <img class="mp-art radio-art" alt=""/>
+      <div class="mp-meta">
+        <div class="mp-title radio-title">Shuffle</div>
+        <div class="mp-artist radio-artist">44 tracks</div>
+      </div>
+      <div class="mp-transport">
+        <button type="button" class="mp-prev radio-prev" aria-label="Previous" title="Previous">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M11 6l-6 6 6 6M17 6l-6 6 6 6"/></svg>
+        </button>
+        <button type="button" class="mp-play radio-play" aria-label="Play" title="Play">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+        </button>
+        <button type="button" class="mp-next radio-next" aria-label="Next" title="Next">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M7 6l6 6-6 6M13 6l6 6-6 6"/></svg>
+        </button>
+      </div>
+      <div class="mp-tools">
+        <button type="button" class="mp-collapse" aria-label="Collapse" title="Collapse">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 14l6-6 6 6"/></svg>
+        </button>
+        <button type="button" class="mp-pin" aria-label="Undock" title="Undock">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="9" height="9" rx="1.5"/><path d="M9 11V7.5A3.5 3.5 0 0112.5 4H20v7.5A3.5 3.5 0 0116.5 15H13"/></svg>
+        </button>
+        <button type="button" class="mp-grip" aria-label="Move" title="Move">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><circle cx="3" cy="3" r="1.1"/><circle cx="9" cy="3" r="1.1"/><circle cx="3" cy="9" r="1.1"/><circle cx="9" cy="9" r="1.1"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="mp-progress">
+      <div class="mp-track"><i class="mp-bar radio-bar"></i></div>
+    </div>
+  </div>
+  <script src="/ipc.js"></script>
+  <script src="/radio.js"></script>
+  <script>
+    startRadio(document.getElementById("radio"), { chrome: true });
+  </script>
+</body>
+</html>

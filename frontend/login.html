@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>Sign in</title>
+  <link rel="stylesheet" href="/tokens.css"/>
+  <link rel="stylesheet" href="/chrome.css"/>
+  <style>
+    html, body { height: 100%; }
+    body {
+      overflow: auto;
+      position: relative;
+      background: var(--color-void);
+    }
+    .globe-layer {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .globe-layer canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    .wrap {
+      max-width: 420px;
+      margin: 0 auto;
+      padding: 48px 22px 88px;
+      position: relative;
+      z-index: 1;
+    }
+    .hero { margin-bottom: 28px; }
+    .hero .mono { color: var(--color-lime); margin-bottom: 10px; }
+    .hero h1 {
+      font-size: 64px;
+      font-weight: 600;
+      letter-spacing: -0.05em;
+      line-height: 0.92;
+    }
+    .lede {
+      margin-top: 12px;
+      color: var(--color-muted);
+      font-size: 15px;
+      line-height: 1.45;
+      max-width: 28em;
+    }
+    .door {
+      margin-bottom: 10px;
+      padding: 16px 16px 14px;
+      border-radius: 18px;
+      background: color-mix(in srgb, var(--color-steel) 50%, transparent);
+      backdrop-filter: blur(24px) saturate(1.5);
+      -webkit-backdrop-filter: blur(24px) saturate(1.5);
+      border: 1px solid color-mix(in srgb, var(--color-snow) 8%, transparent);
+    }
+    .door label { display: block; }
+    .door .field {
+      width: 100%;
+      margin-top: 10px;
+      background: color-mix(in srgb, var(--color-void) 35%, transparent);
+    }
+    .door .btn { width: 100%; margin-top: 10px; height: 44px; border-radius: 12px; }
+    .hint { margin-top: 8px; color: var(--color-muted); font-size: 12px; min-height: 16px; word-break: break-all; }
+    .err { color: #ff8a80; font-size: 13px; min-height: 16px; margin-top: 8px; }
+    .addr {
+      margin-top: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+    .quiet { margin-top: 18px; }
+    .quiet .btn-ghost { width: 100%; }
+    .words {
+      margin-top: 10px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: color-mix(in srgb, var(--color-void) 40%, transparent);
+      color: var(--color-lime);
+      font-size: 15px;
+      line-height: 1.5;
+      font-weight: 600;
+      user-select: text;
+      -webkit-user-select: text;
+    }
+    html[data-theme="light"] .door {
+      background: color-mix(in srgb, var(--color-steel) 84%, transparent);
+    }
+  </style>
+</head>
+<body>
+  <div class="globe-layer" aria-hidden="true"><canvas id="globe"></canvas></div>
+  <div class="wrap">
+    <div class="hero">
+      <div class="mono">vapurr</div>
+      <h1>Sign in.</h1>
+      <p class="lede" id="lede">This device, on Robinhood Chain.</p>
+    </div>
+
+    <div class="door" id="cont-box" hidden>
+      <label class="mono">This device</label>
+      <div class="addr" id="cont-addr">—</div>
+      <div class="hint">Continue as this wallet.</div>
+      <button class="btn" id="cont" type="button">Continue</button>
+    </div>
+
+    <div class="door" id="create-box" hidden>
+      <label class="mono">New</label>
+      <div class="hint" id="create-hint">A new wallet on this PC.</div>
+      <button class="btn" id="create" type="button">Create wallet</button>
+    </div>
+
+    <div class="door" id="backup-box" hidden>
+      <label class="mono">Seed</label>
+      <div class="words" id="words"></div>
+      <div class="hint">Once. This is the wallet.</div>
+      <button class="btn" id="got-seed" type="button">Continue</button>
+    </div>
+
+    <div class="door" id="restore-box" hidden>
+      <label class="mono">Seed</label>
+      <input class="field" id="seed" placeholder="twelve words, or a key" spellcheck="false" autocomplete="off"/>
+      <div class="hint">12 or 24 words. Or a 32-byte key. Never leaves this PC.</div>
+      <button class="btn" id="restore" type="button">Sign in</button>
+      <div class="err" id="err"></div>
+    </div>
+
+    <div class="quiet" id="other-box" hidden>
+      <button class="btn-ghost" id="other" type="button">I have a wallet</button>
+    </div>
+  </div>
+  <script src="/ipc.js"></script>
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "/vendor/three.webgpu.min.js",
+      "three/webgpu": "/vendor/three.webgpu.min.js",
+      "three/tsl": "/vendor/three.tsl.min.js"
+    }
+  }
+  </script>
+  <script type="module">
+    import { startLogin } from "/globe.js?v=door";
+    startLogin(document.getElementById("globe"));
+  </script>
+  <script>
+    var busy = false;
+    var restoring = false;
+    var hasKey = false;
+    var backup = "";
+
+    function next() {
+      var q = (location.search || "").replace(/^\?/, "");
+      var n = "wallet";
+      q.split("&").forEach(function (p) {
+        var kv = p.split("=");
+        if (kv[0] === "next" && kv[1]) n = decodeURIComponent(kv[1]);
+      });
+      if (n === "login" || n === "signin" || n === "signup") n = "wallet";
+      return n;
+    }
+    function goIn() {
+      vapurr.send({ cmd: "pane", id: next() });
+    }
+    function shortAddr(a) {
+      if (!a || a.length < 12) return a || "—";
+      return a.slice(0, 6) + "…" + a.slice(-4);
+    }
+    function layout() {
+      var holding = !!backup;
+      document.getElementById("backup-box").hidden = !holding;
+      document.getElementById("restore-box").hidden = holding || !restoring;
+      document.getElementById("cont-box").hidden = holding || restoring || !hasKey;
+      document.getElementById("create-box").hidden = holding || restoring;
+      document.getElementById("other-box").hidden = holding;
+      document.getElementById("other").textContent = restoring
+        ? "Back"
+        : (hasKey ? "Use a different wallet" : "I have a wallet");
+      if (holding) document.getElementById("words").textContent = backup;
+    }
+    function showRestore(on) {
+      restoring = !!on;
+      layout();
+      if (restoring && !backup) document.getElementById("seed").focus();
+    }
+    function paint(s) {
+      if (!s) return;
+      if (s.seed) backup = String(s.seed);
+      if (s.logged_in && !backup) {
+        goIn();
+        return;
+      }
+      if (typeof s.has_key !== "boolean" && typeof s.logged_in !== "boolean") return;
+      busy = false;
+      hasKey = !!s.has_key;
+      document.getElementById("lede").textContent = backup
+        ? "This is the wallet."
+        : "Create a wallet, or sign in with a seed.";
+      document.getElementById("cont-addr").textContent = shortAddr(s.address);
+      document.getElementById("create-hint").textContent = hasKey
+        ? "Replaces the wallet on this PC."
+        : "A new wallet on this PC.";
+      document.getElementById("cont").textContent = "Continue";
+      document.getElementById("create").textContent = "Create wallet";
+      document.getElementById("restore").textContent = "Sign in";
+      layout();
+    }
+    window.__setWallet = paint;
+    window.__setLogin = paint;
+    window.__walletErr = function (msg) {
+      busy = false;
+      document.getElementById("restore").textContent = "Sign in";
+      document.getElementById("cont").textContent = "Continue";
+      document.getElementById("create").textContent = "Create wallet";
+      showRestore(true);
+      document.getElementById("err").textContent = msg || "could not sign in";
+    };
+    document.getElementById("cont").onclick = function () {
+      if (busy) return;
+      busy = true;
+      document.getElementById("err").textContent = "";
+      document.getElementById("cont").textContent = "Signing in…";
+      vapurr.send({ cmd: "login-continue" });
+    };
+    document.getElementById("create").onclick = function () {
+      if (busy) return;
+      busy = true;
+      document.getElementById("err").textContent = "";
+      document.getElementById("create").textContent = "Creating…";
+      vapurr.send({ cmd: "login-create" });
+    };
+    document.getElementById("got-seed").onclick = function () {
+      backup = "";
+      goIn();
+    };
+    document.getElementById("restore").onclick = function () {
+      if (busy) return;
+      var secret = document.getElementById("seed").value;
+      if (!String(secret || "").trim()) {
+        document.getElementById("err").textContent = "enter your seed or key";
+        return;
+      }
+      busy = true;
+      document.getElementById("err").textContent = "";
+      document.getElementById("restore").textContent = "Signing in…";
+      vapurr.send({ cmd: "login-restore", secret: secret });
+    };
+    document.getElementById("other").onclick = function () {
+      if (busy) return;
+      document.getElementById("err").textContent = "";
+      showRestore(!restoring);
+    };
+    document.getElementById("seed").addEventListener("keydown", function (e) {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        document.getElementById("restore").click();
+      }
+    });
+    vapurr.send({ cmd: "login-status" });
+  </script>
+</body>
+</html>

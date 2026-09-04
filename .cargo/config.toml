@@ -1,0 +1,4 @@
+# Applies to every vapurr gnu build, including dist/vapurr.zip.
+# Not target-cpu=native — that only helps this box.
+[target.x86_64-pc-windows-gnu]
+rustflags = ["-C", "target-cpu=x86-64-v2"]

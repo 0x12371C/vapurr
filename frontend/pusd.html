@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>$PUSD</title>
+  <link rel="stylesheet" href="/tokens.css"/>
+  <link rel="stylesheet" href="/chrome.css"/>
+  <style>
+    html, body { height: 100%; }
+    body {
+      overflow: auto;
+      position: relative;
+      background: var(--color-void);
+    }
+    .aura {
+      position: fixed; inset: 0; z-index: 0;
+      pointer-events: none; overflow: hidden;
+    }
+    .aura canvas { width: 100%; height: 100%; display: block; }
+    .wrap {
+      max-width: 880px;
+      margin: 0 auto;
+      padding: 28px 22px 96px;
+      position: relative;
+      z-index: 1;
+    }
+    .kicker {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px; flex-wrap: wrap; margin-bottom: 10px;
+    }
+    .kicker .mono { color: var(--color-lime); }
+    .live {
+      display: inline-flex; align-items: center; gap: 8px;
+      color: var(--color-muted); font-size: 12px;
+    }
+    .pip {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--color-muted);
+    }
+    .pip.on {
+      background: var(--color-lime);
+      box-shadow: 0 0 0 0 rgba(192,248,0,0.5);
+      animation: pip 1.6s ease-out infinite;
+    }
+    @keyframes pip {
+      0% { box-shadow: 0 0 0 0 rgba(192,248,0,0.5); }
+      70% { box-shadow: 0 0 0 8px rgba(192,248,0,0); }
+      100% { box-shadow: 0 0 0 0 rgba(192,248,0,0); }
+    }
+    .hero h1 {
+      font-size: 56px;
+      font-weight: 600;
+      letter-spacing: -0.05em;
+      line-height: 0.92;
+      font-variant-numeric: tabular-nums;
+    }
+    .hero h1 em {
+      font-style: normal;
+      font-size: 28px;
+      color: var(--color-muted);
+      letter-spacing: -0.04em;
+      margin-right: 2px;
+    }
+    .lede {
+      margin-top: 10px;
+      color: var(--color-muted);
+      font-size: 15px;
+      line-height: 1.45;
+      max-width: 40em;
+    }
+    .stats {
+      margin: 18px 0 20px;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+    }
+    .chip {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: color-mix(in srgb, var(--color-steel) 46%, transparent);
+      backdrop-filter: blur(22px) saturate(1.45);
+      -webkit-backdrop-filter: blur(22px) saturate(1.45);
+      border: 1px solid color-mix(in srgb, var(--color-snow) 8%, transparent);
+    }
+    .chip span {
+      color: var(--color-muted);
+      font-size: 11px;
+      letter-spacing: 0.06em;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .chip b {
+      font-size: 16px;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .desk {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 14px;
+      align-items: start;
+    }
+    .card {
+      padding: 16px;
+      border-radius: 18px;
+      background: color-mix(in srgb, var(--color-steel) 50%, transparent);
+      backdrop-filter: blur(24px) saturate(1.5);
+      -webkit-backdrop-filter: blur(24px) saturate(1.5);
+      border: 1px solid color-mix(in srgb, var(--color-snow) 8%, transparent);
+    }
+    .card + .card { margin-top: 12px; }
+    .card h2 {
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: -0.03em;
+      margin: 0 0 6px;
+    }
+    .card .note {
+      color: var(--color-muted);
+      font-size: 13px;
+      line-height: 1.45;
+      margin: 0 0 14px;
+    }
+    .seg {
+      display: flex; gap: 4px; padding: 3px;
+      border-radius: 14px;
+      background: color-mix(in srgb, var(--color-void) 40%, transparent);
+      border: 1px solid color-mix(in srgb, var(--color-snow) 8%, transparent);
+    }
+    .seg button {
+      flex: 1; height: 34px; border: 0; background: transparent;
+      color: var(--color-muted); font-size: 13px; font-weight: 600; border-radius: 11px;
+    }
+    .seg button.on {
+      color: var(--color-void);
+      background: var(--color-lime);
+    }
+    .amt {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .amt .field { width: 100%; }
+    .have {
+      margin-top: 8px;
+      color: var(--color-muted);
+      font-size: 12px;
+    }
+    .quote {
+      margin-top: 12px;
+      color: var(--color-lime);
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      min-height: 20px;
+    }
+    .card .btn { width: 100%; margin-top: 12px; height: 46px; border-radius: 12px; }
+    .err { color: #ff8a80; font-size: 13px; min-height: 16px; margin-top: 8px; }
+    .spend {
+      display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px;
+    }
+    .spend button {
+      height: 34px; padding: 0 12px; border-radius: 999px;
+      border: 1px solid var(--color-forest);
+      background: transparent;
+      color: var(--color-muted);
+      font-size: 12px; font-weight: 600;
+    }
+    .spend button:hover { border-color: var(--color-lime); color: var(--color-lime); }
+    .empty {
+      padding: 22px 16px;
+    }
+    .empty .lede { margin: 0 0 14px; }
+    #book, #side { display: none; }
+    #boot { display: block; }
+    body.is-live #book, body.is-live #side { display: block; }
+    body.is-live #boot { display: none; }
+    body.is-wait #boot { display: block; }
+    html[data-theme="light"] .chip,
+    html[data-theme="light"] .card {
+      background: color-mix(in srgb, var(--color-steel) 84%, transparent);
+    }
+    @media (max-width: 760px) {
+      .desk, .stats { grid-template-columns: 1fr 1fr; }
+      .hero h1 { font-size: 44px; }
+    }
+    @media (max-width: 520px) {
+      .desk { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="aura" aria-hidden="true"><canvas id="shader"></canvas></div>
+  <div class="wrap">
+    <div class="kicker">
+      <div class="mono">$PUSD</div>
+      <div class="live"><span class="pip" id="pip"></span><span id="live">talking to chain…</span></div>
+    </div>
+    <div class="hero">
+      <h1><em>$</em><span id="bal-p">0.00</span></h1>
+      <p class="lede">The dollar this window spends. Burn $VAPURR to mint it. Lithe drips 9% on every balance. No claim.</p>
+    </div>
+    <div class="stats">
+      <div class="chip"><span>$VAPURR</span><b id="bal-v">0.00</b></div>
+      <div class="chip"><span>Oracle</span><b id="oracle">—</b></div>
+      <div class="chip"><span>Spread</span><b id="spread">2%</b></div>
+      <div class="chip"><span>Lithe</span><b id="apy">9.00%</b></div>
+      <div class="chip"><span>Index</span><b id="index">1.000000</b></div>
+      <div class="chip"><span>Reserve</span><b id="reserve">0.00</b></div>
+      <div class="chip"><span>Supply</span><b id="supply">0.00</b></div>
+      <div class="chip"><span>ETH gas</span><b id="eth">—</b></div>
+    </div>
+
+    <div class="desk">
+      <div>
+        <div class="card" id="boot">
+          <h2 id="boot-title">Not on chain</h2>
+          <p class="lede" id="st">This device deploys the market. 1,000,000 $VAPURR mints to you. Then you burn V to mint $PUSD.</p>
+          <button class="btn" id="deploy" type="button">Deploy</button>
+          <button class="btn-ghost" id="faucet" type="button" style="margin-top:8px;height:40px;width:100%;display:none">Faucet</button>
+          <div class="err" id="dep-err"></div>
+        </div>
+        <div class="card" id="book">
+          <h2>Mint and redeem</h2>
+          <p class="note">Oracle is first spot of the block. Spread ≥ 2% funds Lithe. Redeem does not mint the $VAPURR spread.</p>
+          <div class="seg" id="seg">
+            <button type="button" class="on" data-mode="mint">Mint $PUSD</button>
+            <button type="button" data-mode="redeem">Redeem</button>
+          </div>
+          <div class="amt">
+            <input class="field" id="amt" placeholder="0.00" inputmode="decimal" autocomplete="off"/>
+            <button class="btn-ghost" id="max" type="button" style="height:44px">Max</button>
+          </div>
+          <div class="have" id="have">This device: 0.00 $VAPURR</div>
+          <div class="quote" id="quote">Enter an amount.</div>
+          <button class="btn" id="go" type="button">Mint $PUSD</button>
+          <div class="err" id="book-err"></div>
+        </div>
+      </div>
+      <div id="side">
+        <div class="card" id="lithe">
+          <div class="mono">Lithe</div>
+          <h2 style="margin-top:8px">9% on the index</h2>
+          <p class="note">Hold $PUSD. The index rises in place. No extra token. No claim tx. Earn (`vapurr://earn`) is browse-to-earn — different product.</p>
+          <div class="chip" style="margin:0"><span>Index</span><b id="index-big">1.000000</b></div>
+        </div>
+        <div class="card">
+          <h2>Spend</h2>
+          <p class="note">This is the unit of account in the window.</p>
+          <div class="spend">
+            <button type="button" id="go-404">404</button>
+            <button type="button" id="go-mail">zzzmail · 0.25¢</button>
+            <button type="button" id="go-bid">vapurrbid</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="/ipc.js"></script>
+  <script src="/sign.js"></script>
+  <script src="/shader.js"></script>
+  <script>
+    if (window.startShader) startShader(document.getElementById("shader"));
+    var snap = null;
+    var waitHash = "";
+    var mode = "mint";
+    function n(v) {
+      var x = parseFloat(String(v || "0").replace(/,/g, ""));
+      return isFinite(x) ? x : 0;
+    }
+    function trimNum(s) {
+      s = String(s || "0");
+      if (s.indexOf(".") < 0) return s;
+      return s.replace(/0+$/, "").replace(/\.$/, "") || "0";
+    }
+    function netLabel() {
+      if (snap && (snap.net === "testnet" || snap.chain_id === 46630)) return "Robinhood Chain Testnet 46630";
+      return "Robinhood Chain " + ((snap && snap.chain_id) || 4663);
+    }
+    function spreadPct() {
+      var s = n(snap && snap.min_spread);
+      return s > 0 ? s : 2;
+    }
+    function quote() {
+      var amt = n(document.getElementById("amt").value);
+      var px = n(snap && snap.price);
+      var sp = spreadPct();
+      var factor = (100 - sp) / 100;
+      var el = document.getElementById("quote");
+      var have = document.getElementById("have");
+      var go = document.getElementById("go");
+      if (mode === "mint") {
+        have.textContent = "This device: " + (snap && snap.vapurr || "0.00") + " $VAPURR";
+        go.textContent = "Mint $PUSD";
+        document.getElementById("amt").placeholder = "$VAPURR in";
+        if (amt > 0 && px > 0) {
+          el.textContent = "Burn " + trimNum(amt) + " V → ~" + (amt * px * factor).toFixed(4) + " $PUSD  ·  " + sp.toFixed(2) + "% spread";
+        } else {
+          el.textContent = "Burn $VAPURR. Mint $PUSD. Spread " + sp.toFixed(2) + "%.";
+        }
+      } else {
+        have.textContent = "This device: " + (snap && snap.pusd || "0.00") + " $PUSD";
+        go.textContent = "Redeem $PUSD";
+        document.getElementById("amt").placeholder = "$PUSD in";
+        if (amt > 0 && px > 0) {
+          el.textContent = "Burn " + trimNum(amt) + " P → ~" + (amt / px * factor).toFixed(4) + " $VAPURR  ·  " + sp.toFixed(2) + "% spread";
+        } else {
+          el.textContent = "Burn $PUSD. Mint $VAPURR. Spread is not minted back.";
+        }
+      }
+    }
+    function setMode(next) {
+      mode = next;
+      Array.prototype.forEach.call(document.querySelectorAll("#seg button"), function (b) {
+        b.classList.toggle("on", b.getAttribute("data-mode") === mode);
+      });
+      document.getElementById("book-err").textContent = "";
+      quote();
+    }
+    function paint(s) {
+      if (!s) return;
+      snap = s;
+      var live = !!s.live;
+      document.body.classList.toggle("is-live", live);
+      document.getElementById("pip").classList.toggle("on", live);
+      document.getElementById("live").textContent = live
+        ? ((s.net === "testnet" ? "testnet 46630" : "Robinhood " + (s.chain_id || 4663)) + "  ·  live")
+        : (s.status || "not on chain");
+      document.getElementById("bal-p").textContent = trimNum(s.pusd || "0.00");
+      document.getElementById("bal-v").textContent = trimNum(s.vapurr || "0.00");
+      var px = n(s.price);
+      document.getElementById("oracle").textContent = px > 0 ? (trimNum(s.price) + " P/V") : "—";
+      document.getElementById("spread").textContent = spreadPct().toFixed(2) + "%";
+      document.getElementById("apy").textContent = (s.apy || "0.00") + "%";
+      document.getElementById("index").textContent = s.index || "1.000000";
+      document.getElementById("index-big").textContent = s.index || "1.000000";
+      document.getElementById("reserve").textContent = s.yield_reserve || "0.00";
+      document.getElementById("supply").textContent = s.pusd_supply || "0.00";
+      document.getElementById("eth").textContent = s.eth ? trimNum(s.eth) : "—";
+      var st = document.getElementById("st");
+      if (st) {
+        st.textContent = s.need_eth
+          ? "Need testnet ETH on this device, then deploy."
+          : (s.status && s.status !== "live" ? s.status : "This device deploys the market. 1,000,000 $VAPURR mints to you.");
+      }
+      var fauc = document.getElementById("faucet");
+      if (fauc) fauc.style.display = s.faucet && s.need_eth ? "block" : "none";
+      quote();
+    }
+    window.__setEcon = function (s) {
+      paint(s);
+      if (!vapurr.pendingTx) return;
+      if (s.tx && s.tx !== waitHash) {
+        vapurr.finishTx(true, { tx: s.tx, txUrl: s.tx_url });
+        return;
+      }
+      if (vapurr.pendingTx.kind === "deploy" && s.live) {
+        vapurr.finishTx(true, { already: true, title: "Already live" });
+      }
+    };
+    window.__econErr = function (which, msg) {
+      if (vapurr.pendingTx) vapurr.finishTx(false, { error: msg || "failed" });
+      var id = which === "deploy" ? "dep-err" : "book-err";
+      var el = document.getElementById(id);
+      if (el) el.textContent = msg || "";
+    };
+    document.getElementById("amt").addEventListener("input", quote);
+    document.getElementById("seg").addEventListener("click", function (e) {
+      var b = e.target.closest("button");
+      if (!b) return;
+      setMode(b.getAttribute("data-mode"));
+    });
+    document.getElementById("max").onclick = function () {
+      var v = mode === "mint" ? (snap && snap.vapurr) : (snap && snap.pusd);
+      document.getElementById("amt").value = trimNum(v || "0");
+      quote();
+    };
+    document.getElementById("go").onclick = function () {
+      if (vapurr.pendingTx) return;
+      var amt = document.getElementById("amt").value.trim();
+      document.getElementById("book-err").textContent = "";
+      if (!amt || n(amt) <= 0) {
+        document.getElementById("book-err").textContent = "enter an amount";
+        return;
+      }
+      var mint = mode === "mint";
+      vapurr.beginTx({
+        title: mint ? "Mint $PUSD" : "Redeem $PUSD",
+        kicker: "This device signs",
+        lede: mint
+          ? "Burn $VAPURR, mint $PUSD. Spread funds Lithe. Hash or it failed."
+          : "Burn $PUSD, mint $VAPURR. Spread is not minted back. Hash or it failed.",
+        rows: [
+          { k: "Network", v: netLabel() },
+          { k: "From", v: (snap && snap.address) || "this device" },
+          { k: mint ? "Burn V" : "Burn P", v: amt },
+          { k: "Path", v: mint ? "burn VAPURR → mint PUSD" : "burn PUSD → mint VAPURR" },
+          { k: "Spread", v: spreadPct().toFixed(2) + "%" },
+          { k: "Lithe", v: (snap && snap.apy ? snap.apy : "9.00") + "%" }
+        ],
+        confirmLabel: mint ? "Sign and mint" : "Sign and redeem",
+        doneTitle: mint ? "Minted" : "Redeemed",
+        failTitle: mint ? "Not minted" : "Not redeemed",
+        explorer: snap && snap.explorer
+      }).then(function (ok) {
+        if (!ok) return;
+        waitHash = (snap && snap.tx) || "";
+        vapurr.send({ cmd: mint ? "econ-mint" : "econ-redeem", amt: amt });
+      });
+    };
+    document.getElementById("deploy").onclick = function () {
+      if (vapurr.pendingTx) return;
+      document.getElementById("dep-err").textContent = "";
+      vapurr.beginTx({
+        title: "Deploy $PUSD",
+        kicker: "This device signs",
+        kind: "deploy",
+        lede: "This device deploys the market. More than one tx. Last hash or it failed.",
+        rows: [
+          { k: "Network", v: netLabel() },
+          { k: "From", v: (snap && snap.address) || "this device" }
+        ],
+        confirmLabel: "Sign and deploy",
+        doneTitle: "Live",
+        failTitle: "Not deployed",
+        explorer: snap && snap.explorer
+      }).then(function (ok) {
+        if (!ok) return;
+        waitHash = (snap && snap.tx) || "";
+        vapurr.send({ cmd: "econ-deploy" });
+      });
+    };
+    document.getElementById("faucet").onclick = function () {
+      if (snap && snap.faucet) vapurr.go(snap.faucet);
+    };
+    document.getElementById("go-404").onclick = function () { vapurr.send({ cmd: "pane", id: "pay" }); };
+    document.getElementById("go-mail").onclick = function () { vapurr.send({ cmd: "pane", id: "zzzmail" }); };
+    document.getElementById("go-bid").onclick = function () { vapurr.send({ cmd: "pane", id: "vapurrbid" }); };
+    if (/lithe/i.test(location.hash + location.search)) {
+      setTimeout(function () {
+        var el = document.getElementById("lithe");
+        if (el) el.scrollIntoView({ block: "start" });
+      }, 80);
+    }
+    vapurr.send({ cmd: "econ" });
+  </script>
+</body>
+</html>

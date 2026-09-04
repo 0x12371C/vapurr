@@ -1,0 +1,9 @@
+[package]
+name = "vapurr-ui"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "vapurr brand tokens and egui visuals"
+
+[dependencies]
+egui.workspace = true

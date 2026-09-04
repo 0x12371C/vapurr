@@ -1,0 +1,14 @@
+[package]
+name = "vapurr-rhc"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Robinhood Chain constants for vapurr"
+
+[dependencies]
+chrono.workspace = true
+hex.workspace = true
+reqwest.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true

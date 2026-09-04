@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>PNS</title>
+  <link rel="stylesheet" href="/tokens.css"/>
+  <link rel="stylesheet" href="/chrome.css"/>
+  <style>
+    html, body { height: 100%; }
+    body {
+      overflow: auto;
+      position: relative;
+      background: var(--color-void);
+    }
+    .globe-layer {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      overflow: hidden;
+      opacity: 0.38;
+    }
+    .globe-layer canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    .wrap {
+      max-width: 440px;
+      margin: 0 auto;
+      padding: 40px 24px 96px;
+      position: relative;
+      z-index: 1;
+    }
+    .kicker {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .kicker .mono { color: var(--color-lime); }
+    .lock {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--color-muted);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+    .lock .pip {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--color-muted);
+    }
+    .lock.on { color: var(--color-lime); }
+    .lock.on .pip {
+      background: var(--color-lime);
+      box-shadow: 0 0 0 3px rgba(192, 248, 0, 0.16);
+    }
+    .hero { margin-bottom: 8px; }
+    .hero h1 {
+      font-size: 72px;
+      font-weight: 600;
+      letter-spacing: -0.06em;
+      line-height: 0.9;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .hero h1 em {
+      font-style: normal;
+      color: var(--color-muted);
+      letter-spacing: -0.05em;
+    }
+    .lede {
+      margin-top: 14px;
+      color: var(--color-muted);
+      font-size: 14px;
+      line-height: 1.5;
+      max-width: 32em;
+    }
+    .spec {
+      margin: 22px 0 26px;
+      border-top: 1px solid color-mix(in srgb, var(--color-snow) 8%, transparent);
+    }
+    .spec .row {
+      display: grid;
+      grid-template-columns: 92px 1fr;
+      gap: 12px;
+      align-items: baseline;
+      width: 100%;
+      padding: 11px 0;
+      border: 0;
+      border-bottom: 1px solid color-mix(in srgb, var(--color-snow) 8%, transparent);
+      background: transparent;
+      color: inherit;
+      border-radius: 0;
+      text-align: left;
+    }
+    .spec .row:hover .v { color: var(--color-lime); }
+    .spec .k {
+      color: var(--color-muted);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+    .spec .v {
+      font-size: 13px;
+      font-weight: 600;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+    .spec .v.on { color: var(--color-lime); }
+    .door {
+      margin-bottom: 10px;
+      padding: 16px 16px 14px;
+      border-radius: 16px;
+      background: color-mix(in srgb, var(--color-steel) 50%, transparent);
+      backdrop-filter: blur(24px) saturate(1.5);
+      -webkit-backdrop-filter: blur(24px) saturate(1.5);
+      border: 1px solid color-mix(in srgb, var(--color-snow) 8%, transparent);
+    }
+    .door label { display: block; }
+    .iname {
+      display: flex;
+      align-items: center;
+      margin-top: 10px;
+      border: 1px solid var(--color-forest);
+      background: color-mix(in srgb, var(--color-void) 35%, transparent);
+      border-radius: var(--radius-search);
+    }
+    .iname:focus-within { border-color: var(--color-lime); }
+    .iname .field {
+      flex: 1;
+      min-width: 0;
+      margin: 0;
+      border: 0;
+      background: transparent;
+      height: 44px;
+    }
+    .iname .tld {
+      padding: 0 14px 0 4px;
+      color: var(--color-muted);
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: -0.03em;
+      user-select: none;
+    }
+    .door .field {
+      width: 100%;
+      margin-top: 10px;
+      background: color-mix(in srgb, var(--color-void) 35%, transparent);
+    }
+    .door .btn { width: 100%; margin-top: 10px; height: 44px; border-radius: 10px; }
+    .btn:disabled { opacity: 0.45; }
+    .hint {
+      margin-top: 8px;
+      color: var(--color-muted);
+      font-size: 12px;
+      min-height: 16px;
+      line-height: 1.4;
+      word-break: break-all;
+    }
+    .hint.go { color: var(--color-lime); cursor: var(--cursor-arrow); }
+    .hint.open { color: var(--color-lime); }
+    .hint.taken { color: var(--color-snow); }
+    .err { color: #ff8a80; font-size: 13px; min-height: 16px; margin-top: 8px; }
+    .quiet { margin-top: 22px; }
+    .quiet .btn { width: 100%; }
+    .record {
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px solid color-mix(in srgb, var(--color-snow) 8%, transparent);
+    }
+    .record .spec { margin: 8px 0 0; border-top: 0; }
+    .record .spec .row { padding: 8px 0; }
+    html[data-theme="light"] .door {
+      background: color-mix(in srgb, var(--color-steel) 84%, transparent);
+    }
+    html[data-theme="light"] .iname,
+    html[data-theme="light"] .door .field {
+      background: color-mix(in srgb, var(--color-void) 55%, transparent);
+    }
+  </style>
+</head>
+<body>
+  <div class="globe-layer" aria-hidden="true"><canvas id="globe"></canvas></div>
+  <div class="wrap">
+    <div class="hero">
+      <div class="kicker">
+        <div class="mono">PNS</div>
+        <span class="lock" id="lock"><i class="pip"></i> TLD</span>
+      </div>
+      <h1 id="name"><em>.</em>hood</h1>
+      <p class="lede" id="lede">Labels under a locked TLD. Root holds .hood. You register a name.</p>
+    </div>
+
+    <div class="spec" id="spec">
+      <button class="row" type="button" id="row-tld" hidden><span class="k">TLD</span><span class="v on">.hood</span></button>
+      <button class="row" type="button" id="row-reg" hidden><span class="k">Registry</span><span class="v"></span></button>
+      <button class="row" type="button" id="row-root" hidden><span class="k">Root</span><span class="v"></span></button>
+      <button class="row" type="button" id="row-rev" hidden><span class="k">Reverse</span><span class="v"></span></button>
+      <button class="row" type="button" id="row-you" hidden><span class="k">Device</span><span class="v"></span></button>
+      <button class="row" type="button" id="row-chain" hidden><span class="k">Chain</span><span class="v">46630 testnet</span></button>
+    </div>
+
+    <div class="door" id="claim-box">
+      <label class="mono">Register</label>
+      <div class="iname">
+        <input class="field" id="claim-in" placeholder="label" spellcheck="false" autocomplete="off" maxlength="32"/>
+        <span class="tld">.hood</span>
+      </div>
+      <div class="hint" id="claim-hint">3–32 · a–z 0–9 -</div>
+      <button class="btn" id="claim" type="button">Register</button>
+      <div class="err" id="claim-err"></div>
+    </div>
+
+    <div class="door">
+      <label class="mono">Resolve</label>
+      <input class="field" id="look-in" placeholder="name.hood or 0x" spellcheck="false" autocomplete="off"/>
+      <div class="hint" id="look-hint">Name, reverse, or address.</div>
+      <button class="btn" id="look" type="button">Resolve</button>
+      <div class="err" id="look-err"></div>
+      <div class="record" id="record" hidden>
+        <div class="spec" id="rec-spec"></div>
+      </div>
+    </div>
+
+    <div class="door" id="rec-box" hidden>
+      <label class="mono">setAddr</label>
+      <input class="field" id="rec-in" placeholder="0x" spellcheck="false" autocomplete="off"/>
+      <div class="hint">This name resolves to that address. Owner only.</div>
+      <button class="btn" id="rec" type="button">Set addr</button>
+      <div class="err" id="rec-err"></div>
+    </div>
+
+    <div class="door" id="rev-box" hidden>
+      <label class="mono">Reverse</label>
+      <div class="hint" id="rev-hint">This address answers as this name.</div>
+      <button class="btn" id="rev" type="button">Set reverse</button>
+      <div class="err" id="rev-err"></div>
+    </div>
+
+    <div class="quiet" id="deploy-box" hidden>
+      <button class="btn" id="deploy" type="button">Deploy registry</button>
+      <div class="hint" id="st"></div>
+      <div class="err" id="dep-err"></div>
+    </div>
+  </div>
+  <script src="/ipc.js"></script>
+  <script src="/sign.js"></script>
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "/vendor/three.webgpu.min.js",
+      "three/webgpu": "/vendor/three.webgpu.min.js",
+      "three/tsl": "/vendor/three.tsl.min.js"
+    }
+  }
+  </script>
+  <script type="module">
+    import { startPns } from "/globe.js?v=halo";
+    startPns(document.getElementById("globe"));
+  </script>
+  <script>
+    var snap = null;
+    var busy = false;
+    var availTimer = 0;
+    var RESERVED = {
+      www: 1, mail: 1, email: 1, zzzmail: 1, zmail: 1, vapurr: 1, registry: 1,
+      resolver: 1, admin: 1, root: 1, ens: 1, eth: 1, hood: 1, localhost: 1,
+      official: 1, support: 1, nic: 1, pns: 1
+    };
+
+    function api(path, opt) {
+      return fetch("/zzzmail/api/" + path, Object.assign({ cache: "no-store" }, opt || {}))
+        .then(function (r) { return r.json(); });
+    }
+
+    function fail(id, res) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      var msg = (res && (res.error || res.msg)) || "";
+      if (msg === "unknown") msg = "This vapurr is old. Close it and reopen dist\\vapurr\\vapurr.exe";
+      el.textContent = msg;
+    }
+
+    function short(a) {
+      a = String(a || "");
+      if (a.length < 12) return a || "—";
+      if (a.charAt(0) === "0" && a.charAt(1) === "x" && a.length >= 10) return a.slice(0, 6) + "…" + a.slice(-4);
+      return a;
+    }
+
+    function zero(a) {
+      return !a || /^0x0+$/i.test(a);
+    }
+
+    function copy(v, el) {
+      v = String(v || "");
+      if (!v) return;
+      function done() {
+        if (!el) return;
+        var prev = el.textContent;
+        el.textContent = "copied";
+        setTimeout(function () { el.textContent = prev; }, 1100);
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(v).then(done).catch(function () {});
+      }
+    }
+
+    function deviceAddr() {
+      return (snap && ((snap.me && snap.me.address) || snap.address)) || "this device";
+    }
+
+    function explorer() {
+      return (snap && snap.explorer) || "https://explorer.testnet.chain.robinhood.com";
+    }
+
+    function mine(a) {
+      var me = String((snap && snap.address) || "").toLowerCase();
+      return !!(a && me && String(a).toLowerCase() === me);
+    }
+
+    function labelOf(s) {
+      return String(s || "").trim().replace(/^@+/, "").replace(/\.hood$/i, "").toLowerCase();
+    }
+
+    function setRow(id, val, cls) {
+      var row = document.getElementById(id);
+      if (!row) return;
+      var v = String(val || "").trim();
+      if (!v || zero(v)) {
+        row.hidden = true;
+        row.dataset.copy = "";
+        return;
+      }
+      row.hidden = false;
+      var el = row.querySelector(".v");
+      el.textContent = v.indexOf("0x") === 0 && v.length === 42 ? short(v) : v;
+      el.className = "v" + (cls ? " " + cls : "");
+      row.dataset.copy = v;
+    }
+
+    function paintLock(s) {
+      var el = document.getElementById("lock");
+      el.className = "lock" + (s.tld_locked ? " on" : "");
+      el.innerHTML = s.tld_locked
+        ? '<i class="pip"></i> locked'
+        : (s.live ? '<i class="pip"></i> TLD' : '<i class="pip"></i> no registry');
+    }
+
+    function paint(s) {
+      if (!s) return;
+      snap = s;
+      busy = false;
+      var claimed = (s.just_registered && (s.name || (s.receipt && s.receipt.name))) || "";
+      var primary = claimed || s.primary || "";
+      var label = s.label || (primary ? labelOf(primary) : "");
+      var h = document.getElementById("name");
+      if (label) {
+        h.innerHTML = "";
+        h.appendChild(document.createTextNode(label));
+        var em = document.createElement("em");
+        em.textContent = ".hood";
+        h.appendChild(em);
+      } else {
+        h.innerHTML = "<em>.</em>hood";
+      }
+      paintLock(s);
+      var chainPrimary = s.primary || "";
+      var lede = document.getElementById("lede");
+      if (claimed && chainPrimary && labelOf(claimed) !== labelOf(chainPrimary)) {
+        lede.textContent = claimed + " is registered. Reverse stays " + chainPrimary + ".";
+      } else if (primary) {
+        lede.textContent = "This device’s reverse name.";
+      } else if (s.tld_locked) {
+        lede.textContent = "Labels under a locked TLD. Root holds .hood. You register a name.";
+      } else if (s.live) {
+        lede.textContent = "Registry is live. TLD owner is not this contract.";
+      } else {
+        lede.textContent = "No registry on this device yet. Deploy once. That key is root.";
+      }
+
+      setRow("row-tld", ".hood", "on");
+      setRow("row-reg", s.registry);
+      setRow("row-root", s.root);
+      setRow("row-rev", primary || "");
+      setRow("row-you", (s.me && s.me.address) || s.address || "");
+      setRow("row-chain", s.chain_id ? String(s.chain_id) + " testnet" : "46630 testnet");
+
+      document.getElementById("rec-box").hidden = !primary;
+      document.getElementById("rev-box").hidden = !primary;
+      if (primary) {
+        document.getElementById("rev-hint").textContent = "This address answers as " + (String(primary).indexOf(".") >= 0 ? primary : primary + ".hood") + ".";
+      }
+
+      var depBox = document.getElementById("deploy-box");
+      var st = [];
+      if (s.need_eth) st.push("Need testnet ETH.");
+      var rec = s.receipt || {};
+      var tx = rec.tx || s.tx || "";
+      if (tx) {
+        st.push("tx " + short(tx));
+        document.getElementById("st").onclick = function () { vapurr.go(explorer() + "/tx/" + tx); };
+        document.getElementById("st").className = "hint go";
+      } else {
+        document.getElementById("st").onclick = s.need_eth && s.faucet ? function () { vapurr.go(s.faucet); } : null;
+        document.getElementById("st").className = s.need_eth ? "hint go" : "hint";
+      }
+      document.getElementById("st").textContent = st.join(" ");
+      depBox.hidden = !!s.live;
+
+      var look = s.lookup || s.record;
+      if (look && look.name) paintRecord(look);
+      quote();
+    }
+
+    function paintRecord(look) {
+      var box = document.getElementById("record");
+      var spec = document.getElementById("rec-spec");
+      spec.innerHTML = "";
+      box.hidden = false;
+      function add(k, v, go) {
+        if (!v) return;
+        var b = document.createElement("button");
+        b.type = "button";
+        b.className = "row";
+        b.innerHTML = '<span class="k"></span><span class="v"></span>';
+        b.querySelector(".k").textContent = k;
+        b.querySelector(".v").textContent = v.length === 42 ? short(v) : v;
+        b.onclick = function () {
+          if (go && v.indexOf("0x") === 0) vapurr.go("vapurr://scan?q=" + v);
+          else copy(v, b.querySelector(".v"));
+        };
+        spec.appendChild(b);
+      }
+      add("Name", look.name);
+      if (look.available) {
+        add("Status", "available");
+      } else {
+        add("Owner", look.owner);
+        add("Addr", look.addr || look.owner);
+      }
+      var hint = document.getElementById("look-hint");
+      hint.textContent = look.available ? look.name + " is available." : look.name;
+      hint.className = "hint" + (look.available ? " open" : "");
+    }
+
+    function quote() {
+      var btn = document.getElementById("claim");
+      var hint = document.getElementById("claim-hint");
+      var label = labelOf(document.getElementById("claim-in").value);
+      btn.textContent = busy ? "…" : "Register";
+      if (!label) {
+        hint.textContent = "3–32 · a–z 0–9 -";
+        hint.className = "hint";
+        btn.disabled = true;
+        return;
+      }
+      if (label.length < 3) {
+        hint.textContent = "Too short.";
+        hint.className = "hint";
+        btn.disabled = true;
+        return;
+      }
+      if (RESERVED[label]) {
+        hint.textContent = "Reserved.";
+        hint.className = "hint taken";
+        btn.disabled = true;
+        return;
+      }
+      hint.textContent = label + ".hood";
+      hint.className = "hint";
+      btn.disabled = busy || !snap || !snap.live;
+    }
+
+    function checkAvail() {
+      var label = labelOf(document.getElementById("claim-in").value);
+      quote();
+      if (!label || label.length < 3 || RESERVED[label] || !snap || !snap.live) return;
+      api("pns/resolve/" + encodeURIComponent(label)).then(function (res) {
+        if (labelOf(document.getElementById("claim-in").value) !== label) return;
+        var look = res && (res.lookup || res.record);
+        var hint = document.getElementById("claim-hint");
+        var btn = document.getElementById("claim");
+        if (!look) return;
+        if (look.available) {
+          hint.textContent = label + ".hood is available.";
+          hint.className = "hint open";
+          btn.disabled = busy;
+        } else if (mine(look.owner || look.addr)) {
+          hint.textContent = "Yours.";
+          hint.className = "hint open";
+          btn.disabled = true;
+        } else {
+          hint.textContent = "Taken · " + short(look.owner || look.addr);
+          hint.className = "hint taken";
+          btn.disabled = true;
+        }
+      }).catch(function () {});
+    }
+
+    document.getElementById("spec").onclick = function (e) {
+      var row = e.target.closest(".row");
+      if (!row) return;
+      var v = row.dataset.copy || "";
+      if (row.id === "row-reg" && v) {
+        if (e.shiftKey) vapurr.go(explorer() + "/address/" + v);
+        else copy(v, row.querySelector(".v"));
+        return;
+      }
+      if (row.id === "row-you" && v) {
+        if (e.shiftKey) vapurr.go("vapurr://scan?q=" + v);
+        else copy(v, row.querySelector(".v"));
+        return;
+      }
+      if (v) copy(v, row.querySelector(".v"));
+    };
+
+    window.__setPns = paint;
+    document.getElementById("claim-in").addEventListener("input", function () {
+      quote();
+      clearTimeout(availTimer);
+      availTimer = setTimeout(checkAvail, 280);
+    });
+    document.getElementById("claim").onclick = function () {
+      if (busy || document.getElementById("claim").disabled || vapurr.pendingTx) return;
+      document.getElementById("claim-err").textContent = "";
+      var label = labelOf(document.getElementById("claim-in").value);
+      if (!label) return;
+      busy = true;
+      quote();
+      vapurr.signAndWait({
+        title: "Register " + label + ".hood",
+        kicker: "PNS",
+        lede: "Mint a label under .hood. The TLD stays with the registry.",
+        rows: [
+          { k: "Network", v: "Robinhood Chain testnet 46630" },
+          { k: "TLD", v: ".hood" },
+          { k: "Name", v: label + ".hood" },
+          { k: "Registry", v: (snap && snap.registry) || "—" },
+          { k: "From", v: deviceAddr() }
+        ],
+        confirmLabel: "Sign and register",
+        doneTitle: "Registered",
+        failTitle: "Not registered",
+        explorer: explorer()
+      }, function () {
+        var path = "pns/register/" + encodeURIComponent(label);
+        return api(path, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ name: label })
+        }).then(function (res) {
+          if (res && res.error === "unknown") return api(path);
+          return res;
+        });
+      }).then(function (res) {
+        busy = false;
+        quote();
+        if (!res || res.rejected) return;
+        if (res.ok === false) { fail("claim-err", res); return; }
+        paint(res);
+      });
+    };
+    document.getElementById("look").onclick = function () {
+      document.getElementById("look-err").textContent = "";
+      var n = (document.getElementById("look-in").value || "").trim();
+      if (!n) return;
+      api("pns/resolve/" + encodeURIComponent(n)).then(function (res) {
+        if (res && res.ok === false) { fail("look-err", res); return; }
+        paint(res);
+      }).catch(function () { fail("look-err", { error: "quiet" }); });
+    };
+    document.getElementById("look-in").addEventListener("keydown", function (e) {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        document.getElementById("look").click();
+      }
+    });
+    document.getElementById("claim-in").addEventListener("keydown", function (e) {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        document.getElementById("claim").click();
+      }
+    });
+    document.getElementById("rec").onclick = function () {
+      if (vapurr.pendingTx) return;
+      document.getElementById("rec-err").textContent = "";
+      var name = (snap && snap.primary) || document.getElementById("claim-in").value;
+      var dest = document.getElementById("rec-in").value.trim();
+      vapurr.signAndWait({
+        title: "setAddr",
+        kicker: "PNS",
+        lede: "Owner of this node sets addr. Same call as ENS.",
+        rows: [
+          { k: "Network", v: "Robinhood Chain testnet 46630" },
+          { k: "Name", v: name },
+          { k: "Addr", v: dest },
+          { k: "From", v: deviceAddr() }
+        ],
+        confirmLabel: "Sign",
+        doneTitle: "Set",
+        failTitle: "Not set",
+        explorer: explorer()
+      }, function () {
+        return api("pns/set-addr", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ name: name, addr: dest })
+        });
+      }).then(function (res) {
+        if (!res || res.rejected) return;
+        if (res.ok === false) { fail("rec-err", res); return; }
+        paint(res);
+      });
+    };
+    document.getElementById("rev").onclick = function () {
+      if (vapurr.pendingTx) return;
+      document.getElementById("rev-err").textContent = "";
+      var name = (snap && snap.primary) || "";
+      var typed = labelOf(document.getElementById("claim-in").value);
+      if (typed) name = typed + ".hood";
+      vapurr.signAndWait({
+        title: "Set reverse",
+        kicker: "PNS",
+        lede: "This address’s primary name. You must own the node.",
+        rows: [
+          { k: "Network", v: "Robinhood Chain testnet 46630" },
+          { k: "Name", v: name },
+          { k: "From", v: deviceAddr() }
+        ],
+        confirmLabel: "Sign",
+        doneTitle: "Reverse set",
+        failTitle: "Not set",
+        explorer: explorer()
+      }, function () {
+        return api("pns/set-name", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ name: name })
+        });
+      }).then(function (res) {
+        if (!res || res.rejected) return;
+        if (res.ok === false) { fail("rev-err", res); return; }
+        paint(res);
+      });
+    };
+    document.getElementById("deploy").onclick = function () {
+      if (vapurr.pendingTx) return;
+      document.getElementById("dep-err").textContent = "";
+      vapurr.signAndWait({
+        title: "Deploy registry",
+        kicker: "PNS",
+        lede: "Constructor assigns .hood to this contract. This key is root. One registry.",
+        rows: [
+          { k: "Network", v: "Robinhood Chain testnet 46630" },
+          { k: "TLD", v: ".hood" },
+          { k: "From", v: deviceAddr() }
+        ],
+        confirmLabel: "Sign and deploy",
+        doneTitle: "Live",
+        failTitle: "Not deployed",
+        explorer: explorer()
+      }, function () {
+        return api("pns/deploy", { method: "POST" });
+      }).then(function (res) {
+        if (!res || res.rejected) { document.getElementById("st").textContent = ""; return; }
+        if (res.ok === false) { fail("dep-err", res); document.getElementById("st").textContent = ""; return; }
+        paint(res);
+      });
+    };
+    function bootPns() {
+      api("pns").then(function (s) {
+        paint(s);
+        if (s && s.loading) setTimeout(bootPns, 400);
+      }).catch(function () {});
+    }
+    bootPns();
+  </script>
+</body>
+</html>

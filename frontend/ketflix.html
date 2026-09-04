@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>Ketflix</title>
+  <link rel="stylesheet" href="/tokens.css"/>
+  <link rel="stylesheet" href="/chrome.css"/>
+  <style>
+    body { overflow: auto; }
+    .wrap { padding: 28px 32px 64px; max-width: 720px; margin: 0 auto; }
+    .kfx-block {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 6px;
+      width: 100%;
+      background: #0b0b0b;
+      border: 1px solid #2a0d0d;
+      border-radius: 12px;
+      padding: 20px;
+      text-align: left;
+      color: inherit;
+    }
+    .kfx-block .kfx-logo { max-width: 220px; }
+    .kfx-block .kfx-wall {
+      width: 100%;
+      margin-top: 10px;
+      border-radius: 10px;
+      display: block;
+      object-fit: cover;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <button type="button" class="kfx-block" id="kfx">
+      <img class="kfx-logo" src="/ketflix-logo.svg" alt="Ketflix"/>
+      <span class="kfx-sub">infinite slop</span>
+      <span class="kfx-by">powered by <em>$VAPURR</em></span>
+      <img class="kfx-wall" src="/ketflix.png" alt="Ketflix titles"/>
+    </button>
+  </div>
+  <script src="/ipc.js"></script>
+</body>
+</html>

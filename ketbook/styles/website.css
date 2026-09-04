@@ -1,0 +1,258 @@
+@font-face {
+  font-family: "Sora";
+  src: url("/fonts/Sora-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Sora";
+  src: url("/fonts/Sora-SemiBold.ttf") format("truetype");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+html {
+  font-size: 16px !important;
+  background: #0e0e0e;
+}
+body,
+.book,
+.book-summary,
+.book-body,
+.book-header,
+.body-inner,
+.page-wrapper,
+.markdown-section {
+  font-family: Sora, ui-sans-serif, system-ui, sans-serif !important;
+  background: #0e0e0e;
+  color: #8aa090;
+  letter-spacing: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+.book-summary {
+  width: 220px;
+  left: -220px;
+  background: #0e0e0e !important;
+  border-right: 1px solid #2a3800 !important;
+  color: #8aa090 !important;
+}
+.book.with-summary .book-summary { left: 0; }
+@media screen and (min-width: 600px) {
+  .book.with-summary .book-body { left: 220px; }
+}
+
+.kb-side-brand {
+  padding: 28px 22px 18px !important;
+  border-bottom: 1px solid #2a3800;
+  margin-bottom: 8px;
+}
+.kb-side-brand a {
+  display: block !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.22em !important;
+  text-transform: uppercase !important;
+  color: #f2f3f4 !important;
+  padding: 0 !important;
+  white-space: normal !important;
+}
+.kb-side-brand em {
+  display: block;
+  margin-top: 4px;
+  font-style: normal;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #c0f800;
+}
+
+.book-summary ul.summary { padding: 0 0 48px; }
+.book-summary ul.summary li.header {
+  padding: 22px 22px 6px !important;
+  font-size: 10px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.18em !important;
+  text-transform: uppercase !important;
+  color: #2a3800 !important;
+}
+.book-summary ul.summary li a,
+.book-summary ul.summary li span {
+  padding: 5px 22px !important;
+  font-size: 13px !important;
+  line-height: 1.35 !important;
+  color: #8aa090 !important;
+  white-space: normal !important;
+}
+.book-summary ul.summary li a:hover {
+  color: #f2f3f4 !important;
+  text-decoration: none !important;
+  background: transparent !important;
+}
+.book-summary ul.summary li.active > a {
+  color: #c0f800 !important;
+  background: transparent !important;
+  font-weight: 600 !important;
+}
+.book-summary ul.summary li.divider,
+.gitbook-link,
+#book-search-input,
+.fa-circle-o-notch {
+  display: none !important;
+}
+
+.book-header {
+  height: 52px;
+  padding: 0 28px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #0e0e0e !important;
+  border-bottom: 1px solid #2a3800;
+  color: #8aa090 !important;
+}
+.book-header h1 { display: none !important; }
+.kb-word {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #f2f3f4 !important;
+  text-decoration: none !important;
+}
+.kb-kicker {
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #c0f800;
+}
+.book-header .btn { color: #8aa090 !important; }
+
+.book-body,
+.body-inner,
+.page-wrapper,
+.page-inner {
+  background: #0e0e0e !important;
+  color: #8aa090 !important;
+}
+.page-inner {
+  max-width: 38rem !important;
+  padding: 56px 8px 120px !important;
+}
+
+.markdown-section {
+  overflow: visible !important;
+  color: #8aa090 !important;
+  font-size: 16px !important;
+  line-height: 1.7 !important;
+}
+.markdown-section h1,
+.markdown-section h2,
+.markdown-section h3 {
+  color: #f2f3f4 !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.035em;
+  line-height: 1.12;
+}
+.markdown-section h1 {
+  font-size: 2.4rem !important;
+  margin: 0 0 1.35em !important;
+  font-weight: 600 !important;
+}
+.markdown-section h2 {
+  font-size: 1.15rem !important;
+  margin-top: 2.2em !important;
+  letter-spacing: 0 !important;
+}
+.markdown-section p {
+  margin-bottom: 1.05em !important;
+}
+.markdown-section strong,
+.markdown-section b {
+  color: #f2f3f4 !important;
+  font-weight: 600 !important;
+}
+.markdown-section em {
+  color: #f2f3f4;
+  font-style: italic;
+}
+.markdown-section a {
+  color: #c0f800 !important;
+  text-decoration: none !important;
+  border-bottom: 1px solid rgba(192, 248, 0, 0.35);
+}
+.markdown-section a:hover {
+  border-bottom-color: #c0f800;
+  text-decoration: none !important;
+}
+.markdown-section code {
+  font-size: 0.84em !important;
+  background: #1f2327 !important;
+  color: #f2f3f4 !important;
+  padding: 0.12em 0.38em !important;
+  border-radius: 3px;
+}
+.markdown-section code:before,
+.markdown-section code:after { content: none !important; }
+.markdown-section pre,
+.markdown-section pre > code {
+  background: #1f2327 !important;
+  color: #f2f3f4 !important;
+  border: 1px solid #2a3800;
+  border-radius: 6px;
+}
+.markdown-section blockquote {
+  border-left: 2px solid #c0f800 !important;
+  color: #8aa090 !important;
+  padding-left: 1em;
+}
+.markdown-section hr {
+  background: #2a3800 !important;
+  height: 1px !important;
+}
+.markdown-section ul,
+.markdown-section ol {
+  color: #8aa090;
+}
+.markdown-section table {
+  font-size: 14px;
+}
+.markdown-section table td,
+.markdown-section table th {
+  border-color: #2a3800 !important;
+  padding: 8px 12px !important;
+}
+.markdown-section table tr,
+.markdown-section table tr:nth-child(2n) {
+  background: transparent !important;
+}
+.markdown-section th {
+  color: #f2f3f4 !important;
+  font-weight: 600 !important;
+}
+.markdown-section .glossary-term {
+  text-decoration: none !important;
+  border-bottom: 1px dotted #2a3800;
+  color: inherit;
+  cursor: inherit;
+}
+
+.navigation {
+  top: 52px;
+  font-size: 13px !important;
+  color: #2a3800 !important;
+  min-width: 48px;
+  max-width: 48px;
+}
+.navigation:hover { color: #c0f800 !important; }
+.navigation i.fa { font-size: 18px; }
+
+#book-search-results,
+.honkit-cloak { }
+
+@media screen and (max-width: 600px) {
+  .page-inner { padding: 36px 20px 96px !important; }
+  .markdown-section h1 { font-size: 1.85rem !important; }
+}

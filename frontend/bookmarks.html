@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <link rel="stylesheet" href="/tokens.css"/>
+  <link rel="stylesheet" href="/chrome.css"/>
+  <style>
+    body { overflow: auto; }
+    .wrap { max-width: 720px; margin: 0 auto; padding: 36px 24px 72px; }
+    h1 { font-size: 28px; font-weight: 600; letter-spacing: 0.02em; margin-bottom: 6px; }
+    .lede { color: var(--color-muted); margin-bottom: 20px; max-width: 520px; line-height: 1.5; }
+    .item {
+      display: grid;
+      grid-template-columns: 36px 1fr auto;
+      gap: 10px;
+      align-items: center;
+      width: 100%;
+      text-align: left;
+      margin-bottom: 8px;
+      padding: 10px 12px;
+    }
+    .mark {
+      width: 28px; height: 28px; border-radius: 8px;
+      background: var(--color-void); border: 1px solid var(--color-forest);
+      display: grid; place-items: center;
+      font-size: 12px; font-weight: 600; color: var(--color-lime);
+    }
+    .item b { display: block; font-size: 14px; font-weight: 600; }
+    .item .sub { color: var(--color-muted); font-size: 12px; }
+    .when { color: var(--color-muted); font-size: 11px; white-space: nowrap; }
+    .star {
+      width: 28px; height: 28px; border: 0; background: transparent;
+      color: var(--color-lime); border-radius: 8px; display: grid; place-items: center;
+    }
+    .star svg { width: 14px; height: 14px; fill: var(--color-lime); stroke: var(--color-lime); stroke-width: 1.8; }
+    .empty { color: var(--color-muted); margin-top: 24px; }
+    .row-main { min-width: 0; background: transparent; border: 0; color: inherit; text-align: left; }
+    .row-main b, .row-main .sub { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="mono" style="color:var(--color-lime);margin-bottom:8px">BOOKMARKS</div>
+    <h1>Starred.</h1>
+    <p class="lede">Ctrl+D or the toolbar star. www and plain host are the same star. Stored on this device.</p>
+    <div id="list"></div>
+  </div>
+  <script src="/ipc.js"></script>
+  <script>
+    function when(ts) {
+      var s = Math.max(0, Date.now() / 1000 - ts);
+      if (s < 45) return "just now";
+      if (s < 3600) return Math.floor(s / 60) + "m ago";
+      if (s < 86400) return Math.floor(s / 3600) + "h ago";
+      return new Date(ts * 1000).toLocaleDateString();
+    }
+    function initial(h) {
+      var s = (h.host || h.title || "?").replace(/^www\./, "").replace(/^vapurr:\/\//, "");
+      return (s.charAt(0) || "?").toUpperCase();
+    }
+    window.__setDesk = function (s) {
+      var list = document.getElementById("list");
+      list.innerHTML = "";
+      var rows = s.bookmarks || [];
+      if (!rows.length) {
+        list.innerHTML = "<div class='empty'>No stars yet. Open a page and hit the star, or Ctrl+D.</div>";
+        return;
+      }
+      rows.forEach(function (h) {
+        var row = document.createElement("div");
+        row.className = "steel item";
+        row.innerHTML = "<div class='mark'></div><button class='row-main' type='button'><b></b><div class='sub'></div></button><div style='display:flex;align-items:center;gap:6px'><span class='when'></span><button class='star' type='button' title='Remove bookmark'><svg viewBox='0 0 24 24'><path d='M12 3l2.4 6.8H21l-5.4 4.2 2 7-5.6-4.2L6.4 21l2-7L3 9.8h6.6z'/></svg></button></div>";
+        row.querySelector(".mark").textContent = initial(h);
+        row.querySelector("b").textContent = h.title || h.url;
+        row.querySelector(".sub").textContent = h.display || h.url;
+        row.querySelector(".when").textContent = when(h.ts || 0);
+        row.querySelector(".row-main").onclick = function () { vapurr.go(h.url); };
+        row.querySelector(".star").onclick = function (e) {
+          e.stopPropagation();
+          vapurr.send({ cmd: "star", url: h.url, title: h.title || "" });
+        };
+        list.appendChild(row);
+      });
+    };
+    vapurr.send({ cmd: "desk" });
+  </script>
+</body>
+</html>

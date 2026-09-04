@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>Ketcharts</title>
+  <link rel="stylesheet" href="/tokens.css"/>
+  <link rel="stylesheet" href="/chrome.css"/>
+  <style>
+    html, body { height: 100%; }
+    body {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background:
+        radial-gradient(1200px 560px at 8% -8%, rgba(192,248,0,0.09), transparent 52%),
+        radial-gradient(900px 480px at 100% 0%, rgba(88,70,255,0.10), transparent 48%),
+        radial-gradient(700px 380px at 70% 110%, rgba(229,9,20,0.07), transparent 50%),
+        #0e0e0e;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.35;
+      background-image:
+        linear-gradient(rgba(242,243,244,0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(242,243,244,0.035) 1px, transparent 1px);
+      background-size: 56px 56px;
+      mask-image: radial-gradient(ellipse at 50% 20%, #000 35%, transparent 80%);
+    }
+    .top, .chartbar {
+      position: relative;
+      z-index: 2;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .top { padding: 8px 12px 4px; }
+    .chartbar {
+      padding: 0 12px 8px;
+      gap: 8px;
+      flex-wrap: wrap;
+      min-height: 36px;
+    }
+    .brand { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+    .cat { width: 28px; height: 28px; object-fit: contain; display: block; }
+    .logo { height: 20px; width: auto; display: block; }
+    .tabs { display: flex; gap: 2px; flex-shrink: 0; }
+    .search {
+      width: min(180px, 22vw);
+      height: 30px;
+      border-radius: 8px;
+      padding: 0 10px;
+      font-size: 12px;
+    }
+    .pills { display: flex; gap: 3px; flex-wrap: wrap; align-items: center; }
+    .sep {
+      width: 1px;
+      height: 16px;
+      background: color-mix(in srgb, var(--color-snow) 12%, transparent);
+      flex-shrink: 0;
+    }
+    .pill, .tabs .pill {
+      height: 26px;
+      padding: 0 8px;
+      border: 0;
+      border-radius: 7px;
+      background: transparent;
+      color: var(--color-muted);
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .pill:hover { color: var(--color-snow); background: color-mix(in srgb, var(--color-forest) 55%, transparent); }
+    .pill.on { color: var(--color-void); background: var(--color-lime); }
+    .grow { flex: 1; min-width: 8px; }
+    .live {
+      display: flex; align-items: center; gap: 6px;
+      color: var(--color-muted); font-size: 11px; letter-spacing: 0.1em;
+      text-transform: uppercase; font-weight: 600; flex-shrink: 0;
+    }
+    .live .pip { width: 6px; height: 6px; border-radius: 50%; background: var(--color-muted); }
+    .live.on { color: var(--color-lime); }
+    .live.on .pip { background: var(--color-lime); box-shadow: 0 0 0 3px rgba(192,248,0,0.16); }
+    .live.warn { color: #e6c15a; }
+    .live.warn .pip { background: #e6c15a; box-shadow: 0 0 0 3px rgba(230,193,90,0.18); }
+    .tape-note {
+      color: var(--color-muted);
+      font-size: 11px;
+      font-weight: 600;
+      margin-left: auto;
+      max-width: 240px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .vela { color: var(--color-muted); font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-decoration: none; flex-shrink: 0; }
+    .vela:hover { color: var(--color-snow); text-decoration: none; }
+    .desk {
+      position: relative;
+      z-index: 1;
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: 348px 1fr 268px;
+      gap: 8px;
+      padding: 0 10px 10px;
+    }
+    .col {
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid color-mix(in srgb, var(--color-snow) 8%, transparent);
+      border-radius: 14px;
+      background: color-mix(in srgb, var(--color-void) 55%, transparent);
+      overflow: hidden;
+    }
+    .head {
+      padding: 10px 12px 6px;
+      color: var(--color-muted);
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+    .cols {
+      display: grid;
+      grid-template-columns: 22px 62px 1fr 50px 50px 50px;
+      gap: 4px;
+      padding: 0 10px 6px;
+      flex-shrink: 0;
+    }
+    .cols button {
+      height: 22px;
+      padding: 0;
+      border: 0;
+      border-radius: 4px;
+      background: transparent;
+      color: var(--color-muted);
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      text-align: left;
+    }
+    .cols button.num { text-align: right; }
+    .cols button.on { color: var(--color-lime); }
+    #rows { flex: 1; overflow: auto; }
+    .pair {
+      display: grid;
+      grid-template-columns: 22px 62px 1fr 50px 50px 50px;
+      gap: 4px;
+      width: 100%;
+      text-align: left;
+      padding: 7px 10px;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      color: inherit;
+      height: auto;
+      align-items: center;
+    }
+    .pair:hover { background: color-mix(in srgb, var(--color-forest) 40%, transparent); }
+    .pair.on { background: color-mix(in srgb, var(--color-forest) 70%, transparent); }
+    .star {
+      width: 22px;
+      height: 22px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: var(--color-muted);
+      font-size: 13px;
+      line-height: 1;
+    }
+    .star.on { color: var(--color-lime); }
+    .pair .sym { font-weight: 600; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .pair .px, .pair .chg, .pair .vol, .pair .liq {
+      font-size: 11px;
+      font-variant-numeric: tabular-nums;
+      text-align: right;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .pair .px { text-align: left; }
+    .up { color: var(--color-lime); }
+    .dn { color: #e50914; }
+    .empty { padding: 16px; color: var(--color-muted); font-size: 13px; }
+    .stage { position: relative; min-height: 0; }
+    .quote {
+      flex-shrink: 0;
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      padding: 8px 12px 0;
+      min-width: 0;
+      flex-wrap: wrap;
+    }
+    .quote .sym { font-size: 18px; font-weight: 600; letter-spacing: -0.03em; }
+    .quote .last { font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; }
+    .quote .chg { font-size: 13px; font-weight: 600; }
+    .quote .meta {
+      display: flex;
+      gap: 12px;
+      font-size: 11px;
+      color: var(--color-muted);
+      font-variant-numeric: tabular-nums;
+      min-width: 0;
+    }
+    .quote .meta b { color: var(--color-snow); font-weight: 600; }
+    .ohlcbar {
+      flex-shrink: 0;
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      padding: 4px 12px 4px;
+      min-width: 0;
+    }
+    .ohlcbar .name {
+      font-size: 11px;
+      color: var(--color-muted);
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .ohlcbar .ohlc {
+      display: flex;
+      gap: 10px;
+      font-size: 12px;
+      font-variant-numeric: tabular-nums;
+      color: var(--color-muted);
+      flex-shrink: 0;
+    }
+    .ohlcbar .ohlc b { color: var(--color-snow); font-weight: 600; }
+    .ohlcbar .utc { margin-left: auto; font-size: 10px; color: var(--color-muted); letter-spacing: 0.08em; }
+    #plot { flex: 1; min-height: 0; width: 100%; position: relative; z-index: 1; }
+    #trench, #paper, #alerts { padding: 0 12px 12px; }
+    .stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px 10px;
+      margin: 0 0 10px;
+      font-size: 12px;
+    }
+    .stats span { color: var(--color-muted); }
+    .stats b { font-variant-numeric: tabular-nums; text-align: right; display: block; }
+    .conv { display: flex; align-items: baseline; gap: 8px; margin: 4px 0 10px; }
+    .conv b { font-size: 36px; font-weight: 600; letter-spacing: -0.04em; }
+    .conv span { color: var(--color-lime); font-size: 12px; font-weight: 600; letter-spacing: 0.1em; }
+    .dims { display: flex; flex-direction: column; gap: 6px; }
+    .dim { display: flex; justify-content: space-between; font-size: 12px; }
+    .dim b { font-variant-numeric: tabular-nums; }
+    .hint { color: var(--color-muted); font-size: 11px; line-height: 1.4; margin-top: 10px; }
+    .paper-row { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; margin: 6px 0; }
+    .paper-row b { font-variant-numeric: tabular-nums; text-align: right; }
+    .notional, .alert-px {
+      width: 100%;
+      height: 32px;
+      margin-top: 8px;
+      border-radius: 8px;
+      padding: 0 10px;
+      font-size: 12px;
+    }
+    .acts { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; }
+    .acts .btn { height: 36px; font-size: 12px; }
+    .ghost {
+      background: transparent;
+      color: var(--color-snow);
+      border: 1px solid color-mix(in srgb, var(--color-snow) 12%, transparent);
+    }
+    .flash { color: var(--color-lime); font-size: 11px; font-weight: 600; min-height: 16px; margin-top: 8px; }
+    .alert-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      padding: 4px 0;
+    }
+    .alert-row button {
+      height: 22px;
+      padding: 0 8px;
+      font-size: 11px;
+    }
+    .keys { color: var(--color-muted); font-size: 10px; line-height: 1.45; margin-top: 8px; }
+    #slip {
+      position: fixed; inset: 0; z-index: 20;
+      display: flex; align-items: center; justify-content: center;
+    }
+    #slip[hidden] { display: none !important; }
+    .dimmer {
+      position: absolute; inset: 0;
+      background: rgba(14,14,14,0.55);
+      backdrop-filter: blur(10px);
+    }
+    .card {
+      position: relative;
+      width: min(420px, 92vw);
+      padding: 22px 22px 18px;
+      border-radius: 18px;
+      background:
+        radial-gradient(500px 200px at 0% 0%, rgba(192,248,0,0.12), transparent 50%),
+        color-mix(in srgb, var(--color-steel) 80%, #0e0e0e);
+      border: 1px solid color-mix(in srgb, var(--color-snow) 10%, transparent);
+    }
+    .card .kicker { color: var(--color-muted); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 600; }
+    .card h2 { font-size: 22px; margin: 8px 0 4px; }
+    .card .big { font-size: 56px; font-weight: 600; letter-spacing: -0.05em; line-height: 1; margin: 8px 0 14px; }
+    .kv { display: flex; justify-content: space-between; font-size: 13px; padding: 6px 0; border-top: 1px solid color-mix(in srgb, var(--color-snow) 8%, transparent); }
+    .card .btn { width: 100%; margin-top: 8px; height: 40px; }
+    html[data-theme="light"] body { background: var(--color-void); }
+  </style>
+</head>
+<body>
+  <div class="top">
+    <div class="brand">
+      <img class="cat" src="/mascot.png" alt=""/>
+      <img class="logo" src="/ketcharts-logo.svg" alt="Ketcharts"/>
+    </div>
+    <div class="tabs">
+      <button class="pill on" type="button" data-tab="stock">Stocks</button>
+      <button class="pill" type="button" data-tab="meme">Memes</button>
+      <button class="pill" type="button" data-tab="fav">Watch</button>
+      <button class="pill" type="button" data-tab="majors">Majors</button>
+    </div>
+    <input class="field search" id="q" placeholder="Search a pair"/>
+    <div class="grow"></div>
+    <div class="live" id="live"><i class="pip"></i><span class="lab">rhc</span></div>
+    <a class="vela" id="vela" href="https://luxalgo.com/vela">Vela™</a>
+  </div>
+  <div class="chartbar">
+    <div class="pills" id="tfs"></div>
+    <i class="sep"></i>
+    <div class="pills" id="styles"></div>
+    <i class="sep"></i>
+    <div class="pills" id="scale"></div>
+    <i class="sep"></i>
+    <div class="pills" id="range"></div>
+    <button class="pill" type="button" id="shot">Shot</button>
+    <div class="pills" id="inds"></div>
+    <div class="tape-note" id="tape-note"></div>
+  </div>
+  <div class="desk">
+    <div class="col">
+      <div class="head">Pairs</div>
+      <div class="cols" id="cols"></div>
+      <div id="rows"></div>
+    </div>
+    <div class="col stage">
+      <div class="quote" id="quote" hidden>
+        <div class="sym">—</div>
+        <div class="last">—</div>
+        <div class="chg">—</div>
+        <div class="meta">
+          <span>Vol <b class="qvol">—</b></span>
+          <span>Liq <b class="qliq">—</b></span>
+          <span>Mcap <b class="qmcap">—</b></span>
+          <span>Range <b class="qrange">—</b></span>
+          <span>ATR <b class="qatr">—</b></span>
+        </div>
+      </div>
+      <div class="ohlcbar" id="hud" hidden>
+        <div class="name"></div>
+        <div class="ohlc">
+          <span>O <b class="o">—</b></span>
+          <span>H <b class="h">—</b></span>
+          <span>L <b class="l">—</b></span>
+          <span>C <b class="c">—</b></span>
+        </div>
+        <div class="utc">UTC</div>
+      </div>
+      <div id="plot"></div>
+    </div>
+    <div class="col">
+      <div class="head">Stats</div>
+      <div id="trench"></div>
+      <div class="head">Alert</div>
+      <div id="alerts">
+        <input class="field alert-px" id="alert-px" type="number" step="any" placeholder="Price"/>
+        <div class="acts">
+          <button class="btn ghost" id="alert-up" type="button">Above</button>
+          <button class="btn ghost" id="alert-dn" type="button">Below</button>
+        </div>
+        <div id="alert-list"></div>
+        <p class="hint">Local only. Fires once at the last print. Not a broker.</p>
+      </div>
+      <div class="head">Paper</div>
+      <div id="paper">
+        <div class="paper-row"><span>Cash</span><b id="cash">$10,000</b></div>
+        <div class="paper-row"><span>Pos</span><b id="pos">Flat</b></div>
+        <div class="paper-row"><span>Mark</span><b id="mark">—</b></div>
+        <div class="paper-row"><span>P&amp;L</span><b id="pnl">—</b></div>
+        <div class="pills" id="risk" style="margin-top:8px"></div>
+        <input class="field notional" id="notional" type="number" min="1" step="50" value="500" placeholder="Size USD"/>
+        <div class="acts">
+          <button class="btn" id="buy" type="button">Long</button>
+          <button class="btn ghost" id="short" type="button">Short</button>
+        </div>
+        <button class="btn ghost" id="flat" type="button" style="width:100%;margin-top:6px;height:36px;font-size:12px">Close</button>
+        <button class="btn ghost" id="copyca" type="button" style="width:100%;margin-top:6px;height:32px;font-size:11px">Copy pool</button>
+        <div class="flash" id="flash"></div>
+        <p class="hint">Local paper at the last print. Not a fill on chain.</p>
+        <p class="keys">1–8 time · C B N type · G log · L long S short X close / search</p>
+      </div>
+    </div>
+  </div>
+  <div id="slip" hidden>
+    <div class="dimmer"></div>
+    <div class="card">
+      <div class="kicker">Paper slip</div>
+      <h2><span id="slip-sym">—</span> · <span id="slip-side">LONG</span></h2>
+      <div class="big up" id="slip-pct">+0.00%</div>
+      <div class="kv"><span>P&amp;L</span><b id="slip-pnl">—</b></div>
+      <div class="kv"><span>In</span><b id="slip-entry">—</b></div>
+      <div class="kv"><span>Out</span><b id="slip-exit">—</b></div>
+      <button class="btn" id="slip-png" type="button">Save card</button>
+      <button class="btn ghost" id="slip-copy" type="button">Copy line</button>
+      <button class="btn ghost" id="slip-x" type="button">Done</button>
+    </div>
+  </div>
+  <script src="/ipc.js"></script>
+  <script src="/vendor/vela.global.min.js"></script>
+  <script src="/ketcharts.js"></script>
+  <script>bootKetcharts();</script>
+</body>
+</html>

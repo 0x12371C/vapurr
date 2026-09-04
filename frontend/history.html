@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <link rel="stylesheet" href="/tokens.css"/>
+  <link rel="stylesheet" href="/chrome.css"/>
+  <style>
+    body { overflow: auto; }
+    .wrap { max-width: 720px; margin: 0 auto; padding: 36px 24px 72px; }
+    h1 { font-size: 28px; font-weight: 600; letter-spacing: 0.02em; margin-bottom: 6px; }
+    .lede { color: var(--color-muted); margin-bottom: 20px; max-width: 520px; line-height: 1.5; }
+    .tools { display: flex; gap: 8px; margin-bottom: 22px; }
+    .tools .field { flex: 1; }
+    .day { margin: 22px 0 8px; color: var(--color-lime); }
+    .item {
+      display: grid;
+      grid-template-columns: 36px 1fr auto;
+      gap: 10px;
+      align-items: center;
+      width: 100%;
+      text-align: left;
+      margin-bottom: 8px;
+      padding: 10px 12px;
+    }
+    .mark {
+      width: 28px; height: 28px; border-radius: 8px;
+      background: var(--color-void); border: 1px solid var(--color-forest);
+      display: grid; place-items: center;
+      font-size: 12px; font-weight: 600; color: var(--color-lime);
+    }
+    .item b { display: block; font-size: 14px; font-weight: 600; }
+    .item .sub { color: var(--color-muted); font-size: 12px; }
+    .when { color: var(--color-muted); font-size: 11px; white-space: nowrap; }
+    .star {
+      width: 28px; height: 28px; border: 0; background: transparent;
+      color: var(--color-muted); border-radius: 8px; display: grid; place-items: center;
+    }
+    .star svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+    .star.on { color: var(--color-lime); }
+    .star.on svg { fill: var(--color-lime); stroke: var(--color-lime); }
+    .empty { color: var(--color-muted); margin-top: 24px; }
+    .row-main { min-width: 0; background: transparent; border: 0; color: inherit; text-align: left; }
+    .row-main b, .row-main .sub { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="mono" style="color:var(--color-lime);margin-bottom:8px">HISTORY</div>
+    <h1>This device.</h1>
+    <p class="lede">One row per page. Sign-in hops stay out. Earn never sees these titles or URLs.</p>
+    <div class="tools">
+      <input class="field" id="q" placeholder="Search history" spellcheck="false"/>
+      <button class="btn-ghost" id="cookies" type="button">Cookies</button>
+    </div>
+    <div id="list"></div>
+  </div>
+  <script src="/ipc.js"></script>
+  <script>
+    function when(ts) {
+      var s = Math.max(0, Date.now() / 1000 - ts);
+      if (s < 45) return "just now";
+      if (s < 3600) return Math.floor(s / 60) + "m ago";
+      if (s < 86400) return Math.floor(s / 3600) + "h ago";
+      if (s < 86400 * 7) return Math.floor(s / 86400) + "d ago";
+      return new Date(ts * 1000).toLocaleDateString();
+    }
+    function dayLabel(ts) {
+      var d = new Date(ts * 1000);
+      var today = new Date(); today.setHours(0, 0, 0, 0);
+      var that = new Date(d); that.setHours(0, 0, 0, 0);
+      var diff = Math.round((today - that) / 86400000);
+      if (diff <= 0) return "Today";
+      if (diff === 1) return "Yesterday";
+      return d.toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" });
+    }
+    function initial(h) {
+      var s = (h.host || h.title || "?").replace(/^www\./, "");
+      return (s.charAt(0) || "?").toUpperCase();
+    }
+    var last = [];
+    function render(rows, q) {
+      var list = document.getElementById("list");
+      list.innerHTML = "";
+      q = (q || "").toLowerCase();
+      var filtered = (rows || []).filter(function (h) {
+        if (!q) return true;
+        return (h.title || "").toLowerCase().indexOf(q) >= 0
+          || (h.host || "").toLowerCase().indexOf(q) >= 0
+          || (h.display || h.url || "").toLowerCase().indexOf(q) >= 0;
+      });
+      if (!filtered.length) {
+        list.innerHTML = "<div class='empty'>" + (q ? "Nothing matches." : "Nothing yet.") + "</div>";
+        return;
+      }
+      var lastDay = "";
+      filtered.forEach(function (h) {
+        var day = dayLabel(h.ts || 0);
+        if (day !== lastDay) {
+          var lab = document.createElement("div");
+          lab.className = "mono day";
+          lab.textContent = day;
+          list.appendChild(lab);
+          lastDay = day;
+        }
+        var row = document.createElement("div");
+        row.className = "steel item";
+        row.innerHTML = "<div class='mark'></div><button class='row-main' type='button'><b></b><div class='sub'></div></button><div style='display:flex;align-items:center;gap:6px'><span class='when'></span><button class='star' type='button'><svg viewBox='0 0 24 24'><path d='M12 3l2.4 6.8H21l-5.4 4.2 2 7-5.6-4.2L6.4 21l2-7L3 9.8h6.6z'/></svg></button></div>";
+        row.querySelector(".mark").textContent = initial(h);
+        row.querySelector("b").textContent = h.title || h.host || h.url;
+        row.querySelector(".sub").textContent = h.display || h.host || "";
+        row.querySelector(".when").textContent = when(h.ts || 0);
+        row.querySelector(".row-main").onclick = function () { vapurr.go(h.url); };
+        var star = row.querySelector(".star");
+        star.classList.toggle("on", !!h.starred);
+        star.title = h.starred ? "Remove bookmark" : "Bookmark";
+        star.onclick = function (e) {
+          e.stopPropagation();
+          vapurr.send({ cmd: "star", url: h.url, title: h.title || "" });
+          h.starred = !h.starred;
+          star.classList.toggle("on", !!h.starred);
+          star.title = h.starred ? "Remove bookmark" : "Bookmark";
+        };
+        list.appendChild(row);
+      });
+    }
+    window.__setDesk = function (s) {
+      last = s.history || [];
+      render(last, document.getElementById("q").value);
+    };
+    document.getElementById("q").addEventListener("input", function () {
+      render(last, this.value);
+    });
+    document.getElementById("cookies").onclick = function () { vapurr.send({ cmd: "pane", id: "cookies" }); };
+    vapurr.send({ cmd: "desk" });
+  </script>
+</body>
+</html>

@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>zzzmail — vapurr</title>
+  <link rel="stylesheet" href="/tokens.css"/>
+  <link rel="stylesheet" href="/chrome.css"/>
+  <style>
+    html, body { height: 100%; overflow: hidden; }
+    body {
+      background:
+        radial-gradient(ellipse 90% 70% at 18% -10%, color-mix(in srgb, var(--color-lime) 14%, transparent), transparent 58%),
+        radial-gradient(ellipse 70% 50% at 110% 110%, color-mix(in srgb, var(--color-forest) 80%, transparent), transparent 54%),
+        var(--color-void);
+    }
+    .app {
+      display: grid;
+      grid-template-columns: minmax(260px, 320px) 1fr;
+      height: 100%;
+      min-height: 0;
+    }
+    .glass {
+      background: color-mix(in srgb, var(--color-steel) 52%, transparent);
+      backdrop-filter: blur(28px) saturate(1.55);
+      -webkit-backdrop-filter: blur(28px) saturate(1.55);
+      border: 1px solid color-mix(in srgb, var(--color-snow) 8%, var(--color-forest));
+    }
+    .list {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      border-right: 1px solid color-mix(in srgb, var(--color-snow) 8%, var(--color-forest));
+      background: color-mix(in srgb, var(--color-void) 42%, transparent);
+      backdrop-filter: blur(22px) saturate(1.4);
+      -webkit-backdrop-filter: blur(22px) saturate(1.4);
+    }
+    .list-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 14px 10px;
+      flex-shrink: 0;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+    .mark-wrap {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      overflow: hidden;
+      flex-shrink: 0;
+      background: #0e0e0e;
+      border: 1px solid color-mix(in srgb, var(--color-lime) 22%, transparent);
+      box-shadow: 0 0 18px color-mix(in srgb, var(--color-lime) 18%, transparent);
+    }
+    .mark {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+    .list-head h1 {
+      font-size: 22px;
+      font-weight: 600;
+      letter-spacing: -0.03em;
+      line-height: 1.05;
+    }
+    .list-head .kicker {
+      color: var(--color-muted);
+      font-size: 11px;
+      letter-spacing: 0.04em;
+      margin-top: 2px;
+    }
+    .icon-round {
+      width: 34px; height: 34px; border-radius: 50%;
+      border: 0; display: grid; place-items: center;
+      background: var(--color-lime); color: var(--color-on-lime);
+      flex-shrink: 0;
+    }
+    .icon-round svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .icon-round:hover { filter: brightness(1.06); }
+    .namebar {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      margin: 0 14px 10px;
+      flex-shrink: 0;
+    }
+    .namebar.on { display: flex; }
+    .namebar .field {
+      flex: 1;
+      height: 34px;
+      border-radius: 999px;
+      font-size: 13px;
+    }
+    .namebar .claim {
+      height: 34px;
+      border-radius: 999px;
+      border: 0;
+      padding: 0 12px;
+      background: var(--color-lime);
+      color: var(--color-on-lime);
+      font: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      flex-shrink: 0;
+    }
+    .namebar .claim:disabled { opacity: 0.32; }
+    .search {
+      margin: 0 14px 12px;
+      flex-shrink: 0;
+    }
+    .search .field {
+      width: 100%;
+      height: 36px;
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--color-steel) 70%, transparent);
+      border-color: color-mix(in srgb, var(--color-forest) 80%, transparent);
+      font-size: 13px;
+    }
+    .convos {
+      flex: 1;
+      min-height: 0;
+      overflow: auto;
+      padding: 0 8px 16px;
+    }
+    .convo {
+      display: grid;
+      grid-template-columns: 44px 1fr auto;
+      gap: 10px;
+      align-items: center;
+      width: 100%;
+      text-align: left;
+      padding: 10px 10px;
+      border: 0;
+      border-radius: 16px;
+      background: transparent;
+      color: inherit;
+      height: auto;
+    }
+    .convo:hover { background: color-mix(in srgb, var(--color-forest) 55%, transparent); }
+    .convo.on {
+      background: color-mix(in srgb, var(--color-lime) 16%, var(--color-forest));
+    }
+    .ava {
+      width: 44px; height: 44px; border-radius: 50%;
+      display: grid; place-items: center;
+      background: var(--color-forest);
+      color: var(--color-lime);
+      font-weight: 600; font-size: 16px;
+      border: 1px solid color-mix(in srgb, var(--color-lime) 28%, transparent);
+    }
+    .convo .who { font-weight: 600; font-size: 14px; }
+    .convo .prev {
+      color: var(--color-muted); font-size: 12px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px;
+    }
+    .convo .when { color: var(--color-muted); font-size: 11px; align-self: start; padding-top: 4px; }
+    .list-empty {
+      color: var(--color-muted);
+      font-size: 13px;
+      padding: 28px 18px;
+      line-height: 1.45;
+    }
+    .thread {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      min-height: 0;
+    }
+    .thread-head {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 18px;
+      flex-shrink: 0;
+      background: color-mix(in srgb, var(--color-void) 35%, transparent);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid color-mix(in srgb, var(--color-snow) 7%, var(--color-forest));
+    }
+    .back {
+      display: none;
+      width: 34px; height: 34px; border-radius: 50%;
+      border: 1px solid var(--color-forest);
+      background: transparent; color: var(--color-lime);
+    }
+    .back svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; }
+    .thread-head .meta { min-width: 0; flex: 1; }
+    .thread-head .handle { font-weight: 600; font-size: 16px; }
+    .thread-head .sub { color: var(--color-muted); font-size: 11px; letter-spacing: 0.06em; margin-top: 2px; }
+    .lock {
+      width: 14px; height: 14px; stroke: var(--color-lime); fill: none; stroke-width: 2;
+      vertical-align: -2px; margin-right: 4px;
+    }
+    .msgs {
+      flex: 1;
+      min-height: 0;
+      overflow: auto;
+      padding: 18px 20px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .day {
+      align-self: center;
+      color: var(--color-muted);
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin: 10px 0 8px;
+    }
+    .row {
+      display: flex;
+      flex-direction: column;
+      max-width: min(72%, 420px);
+      margin: 1px 0;
+    }
+    .row.me { align-self: flex-end; align-items: flex-end; }
+    .row.them { align-self: flex-start; align-items: flex-start; }
+    .bubble {
+      padding: 9px 14px;
+      font-size: 15px;
+      line-height: 1.35;
+      word-break: break-word;
+      user-select: text;
+      white-space: pre-wrap;
+    }
+    .row.me .bubble {
+      background: var(--color-lime);
+      color: var(--color-on-lime);
+      border-radius: 18px 18px 6px 18px;
+    }
+    .row.them .bubble {
+      background: color-mix(in srgb, var(--color-steel) 78%, transparent);
+      color: var(--color-snow);
+      border: 1px solid color-mix(in srgb, var(--color-snow) 8%, var(--color-forest));
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-radius: 18px 18px 18px 6px;
+    }
+    .row.me.solo .bubble, .row.me.first .bubble { border-radius: 18px 18px 6px 18px; }
+    .row.me.mid .bubble { border-radius: 16px 6px 6px 16px; }
+    .row.me.last .bubble { border-radius: 16px 6px 6px 18px; }
+    .row.them.solo .bubble, .row.them.first .bubble { border-radius: 18px 18px 18px 6px; }
+    .row.them.mid .bubble { border-radius: 6px 16px 16px 6px; }
+    .row.them.last .bubble { border-radius: 6px 16px 18px 16px; }
+    .stamp {
+      color: var(--color-muted);
+      font-size: 11px;
+      margin-top: 4px;
+      padding: 0 4px;
+    }
+    .blank {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      text-align: center;
+      padding: 32px;
+      color: var(--color-muted);
+    }
+    .blank .hero {
+      width: min(280px, 70%);
+      height: auto;
+      object-fit: contain;
+      filter: drop-shadow(0 0 28px color-mix(in srgb, var(--color-lime) 28%, transparent));
+    }
+    .blank h2 { color: var(--color-snow); font-size: 28px; font-weight: 600; letter-spacing: -0.03em; }
+    .blank p { max-width: 320px; line-height: 1.5; font-size: 14px; }
+    .composer {
+      flex-shrink: 0;
+      padding: 10px 16px 16px;
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+    }
+    .tobar {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 18px 0;
+      flex-shrink: 0;
+    }
+    .tobar.on { display: flex; }
+    .tobar span { color: var(--color-muted); font-size: 13px; }
+    .tobar .field {
+      flex: 1; height: 36px; border: 0; border-bottom: 1px solid var(--color-forest);
+      border-radius: 0; background: transparent; padding: 0 4px;
+    }
+    .grow {
+      flex: 1;
+      min-width: 0;
+      border-radius: 22px;
+      border: 1px solid color-mix(in srgb, var(--color-snow) 10%, var(--color-forest));
+      background: color-mix(in srgb, var(--color-steel) 62%, transparent);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      padding: 8px 16px;
+      display: flex;
+      align-items: flex-end;
+    }
+    .grow textarea {
+      width: 100%;
+      border: 0;
+      background: transparent;
+      color: var(--color-snow);
+      font: inherit;
+      font-size: 15px;
+      line-height: 1.35;
+      resize: none;
+      outline: none;
+      max-height: 120px;
+      min-height: 22px;
+      padding: 0;
+      height: 22px;
+    }
+    .send {
+      width: 36px; height: 36px; border-radius: 50%;
+      border: 0; background: var(--color-lime); color: var(--color-on-lime);
+      display: grid; place-items: center; flex-shrink: 0;
+    }
+    .send svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+    .send:disabled { opacity: 0.32; }
+    .send:not(:disabled):hover { filter: brightness(1.06); }
+    .toast {
+      position: fixed; bottom: 22px; left: 50%;
+      transform: translateX(-50%) translateY(10px);
+      background: var(--color-lime); color: var(--color-on-lime);
+      padding: 8px 14px; border-radius: 999px;
+      font-size: 12px; font-weight: 600; letter-spacing: 0.04em;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.16s ease, transform 0.16s ease;
+      z-index: 8;
+    }
+    .toast.on { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .thread.idle .composer, .thread.idle .tobar { display: none; }
+    @media (max-width: 720px) {
+      .app { grid-template-columns: 1fr; }
+      .app.show-thread .list { display: none; }
+      .app:not(.show-thread) .thread { display: none; }
+      .back { display: grid; place-items: center; }
+    }
+    html[data-theme="light"] .glass,
+    html[data-theme="light"] .list {
+      background: color-mix(in srgb, var(--color-steel) 78%, transparent);
+    }
+    html[data-theme="light"] .row.them .bubble {
+      background: color-mix(in srgb, var(--color-steel) 88%, transparent);
+    }
+  </style>
+</head>
+<body>
+  <div class="app" id="app">
+    <aside class="list">
+      <div class="list-head">
+        <div class="brand">
+          <div class="mark-wrap">
+            <img class="mark" src="/zzzmail-icon.png" alt=""/>
+          </div>
+          <div>
+            <h1>zzzmail</h1>
+            <div class="kicker">PNS · .hood · testnet</div>
+          </div>
+        </div>
+        <button class="icon-round" id="compose" type="button" title="New message" aria-label="New message">
+          <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+        </button>
+      </div>
+      <form class="namebar" id="namebar">
+        <input class="field" id="hoodname" placeholder="yourname.hood" spellcheck="false" autocomplete="off"/>
+        <button class="claim" id="claim" type="submit">Claim</button>
+      </form>
+      <div class="search">
+        <input class="field" id="q" placeholder="Search mail" spellcheck="false"/>
+      </div>
+      <div class="convos" id="convos" role="listbox" aria-label="Conversations"></div>
+    </aside>
+    <section class="thread idle" id="thread">
+      <header class="thread-head glass" id="thead" hidden>
+        <button class="back" id="back" type="button" aria-label="Back">
+          <svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg>
+        </button>
+        <div class="ava" id="tava">@</div>
+        <div class="meta">
+          <div class="handle" id="thandle">zzzmail</div>
+          <div class="sub" id="tsub">
+            <svg class="lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg>
+            Encrypted · CID off-chain · 0.25¢ postage · 0 ETH
+          </div>
+        </div>
+      </header>
+      <div class="tobar" id="tobar">
+        <span>To</span>
+        <input class="field" id="to" placeholder="@name.hood or @0x…" spellcheck="false" autocomplete="off"/>
+      </div>
+      <div class="msgs" id="msgs"></div>
+      <form class="composer" id="composer">
+        <div class="grow">
+          <textarea id="body" rows="1" placeholder="Message"></textarea>
+        </div>
+        <button class="send" id="go" type="submit" disabled aria-label="Send">
+          <svg viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6"/></svg>
+        </button>
+      </form>
+    </section>
+  </div>
+  <div class="toast" id="toast" role="status"></div>
+  <script src="/ipc.js"></script>
+  <script src="/sign.js"></script>
+  <script src="/zzzmail.js"></script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+{
+  "title": "Ketbook",
+  "description": "vapurr — the on-chain browser",
+  "author": "vapurr",
+  "language": "en",
+  "plugins": ["-sharing", "-search", "-lunr", "-fontsettings"],
+  "styles": {
+    "website": "styles/website.css"
+  }
+}

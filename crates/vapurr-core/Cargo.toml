@@ -1,0 +1,11 @@
+[package]
+name = "vapurr-core"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "tabs, site keys, process policy"
+
+[dependencies]
+serde.workspace = true
+thiserror.workspace = true
+url.workspace = true

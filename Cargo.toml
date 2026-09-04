@@ -1,0 +1,70 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/vapurr-rhc",
+    "crates/vapurr-core",
+    "crates/vapurr-id",
+    "crates/vapurr-wallet",
+    "crates/vapurr-pay",
+    "crates/vapurr-zmail",
+    "crates/vapurr-blob",
+    "crates/vapurr-net",
+    "crates/vapurr-engine",
+    "crates/vapurr-ui",
+    "crates/vapurr-shell",
+    "crates/vapurr-shield",
+    "crates/vapurr-fomo",
+    "crates/vapurr-econ",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+authors = ["vapurr"]
+description = "vapurr — the on-chain browser"
+
+[workspace.dependencies]
+base64 = "0.22"
+chrono = { version = "0.4", features = ["serde"] }
+chacha20poly1305 = "0.10"
+egui = "0.31"
+hex = "0.4"
+hkdf = "0.12"
+hmac = "0.12"
+bip39 = { version = "2", default-features = false, features = ["std"] }
+k256 = { version = "0.13", features = ["ecdsa"] }
+rand = "0.8"
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls", "rustls-tls-native-roots", "blocking", "http2", "gzip", "brotli", "deflate"] }
+scraper = "0.23"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10"
+sha3 = "0.10"
+thiserror = "2"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+url = "2"
+x25519-dalek = { version = "2", features = ["static_secrets", "getrandom"] }
+zeroize = { version = "1", features = ["zeroize_derive"] }
+
+vapurr-rhc = { path = "crates/vapurr-rhc" }
+vapurr-core = { path = "crates/vapurr-core" }
+vapurr-id = { path = "crates/vapurr-id" }
+vapurr-wallet = { path = "crates/vapurr-wallet" }
+vapurr-pay = { path = "crates/vapurr-pay" }
+vapurr-zmail = { path = "crates/vapurr-zmail" }
+vapurr-blob = { path = "crates/vapurr-blob" }
+vapurr-net = { path = "crates/vapurr-net" }
+vapurr-engine = { path = "crates/vapurr-engine" }
+vapurr-ui = { path = "crates/vapurr-ui" }
+vapurr-shield = { path = "crates/vapurr-shield" }
+vapurr-fomo = { path = "crates/vapurr-fomo" }
+vapurr-econ = { path = "crates/vapurr-econ" }
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+panic = "abort"
+strip = true

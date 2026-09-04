@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <link rel="stylesheet" href="/tokens.css"/>
+  <link rel="stylesheet" href="/chrome.css"/>
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 12px 0 10px;
+      gap: 4px;
+      height: 100%;
+      border-right: 1px solid color-mix(in srgb, var(--color-snow) 8%, transparent);
+    }
+    #logo {
+      width: 36px;
+      height: 36px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      object-fit: contain;
+      background: transparent;
+    }
+    button .mark {
+      width: 28px;
+      height: 28px;
+      object-fit: contain;
+      pointer-events: none;
+    }
+    button {
+      width: 40px;
+      height: 40px;
+      border: 0;
+      background: transparent;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      color: var(--color-lime);
+      transition: background 0.15s ease;
+    }
+    button:hover { background: color-mix(in srgb, var(--color-forest) 70%, transparent); }
+    button.active { background: var(--color-forest); }
+    svg {
+      width: 22px;
+      height: 22px;
+      stroke: var(--color-lime);
+      fill: none;
+      stroke-width: 2.05;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    button.active svg { stroke: var(--color-lime); }
+    button:hover svg { stroke: var(--color-lime); filter: brightness(1.12); }
+    #theme .theme-sun {
+      display: block;
+      fill: none;
+      stroke: var(--color-lime);
+    }
+    #theme .theme-sun circle { fill: var(--color-lime); stroke: none; }
+    #theme .theme-moon {
+      display: none;
+      fill: var(--color-lime);
+      stroke: none;
+    }
+    html[data-theme="light"] #theme .theme-sun { display: none; }
+    html[data-theme="light"] #theme .theme-moon { display: block; }
+    .spacer { flex: 1; }
+  </style>
+</head>
+<body>
+  <img id="logo" src="/mascot.png" alt="vapurr" title="Home"/>
+  <button data-cmd="home" title="Home" class="active">
+    <svg viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v9H4z"/><path d="M10 20v-6h4v6"/></svg>
+  </button>
+  <button data-cmd="pane" data-id="wallet" title="Wallet">
+    <svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="12" rx="2"/><rect x="14" y="10" width="5" height="4" rx="1"/></svg>
+  </button>
+  <button data-cmd="pane" data-id="defi" title="DeFi">
+    <svg viewBox="0 0 24 24"><path d="M5 8h14M15 5l4 3-4 3M19 16H5M9 13l-4 3 4 3"/></svg>
+  </button>
+  <button data-cmd="go" data-url="https://fomo.family" data-id="fomo" title="Live Trenches">
+    <svg viewBox="0 0 24 24"><path d="M4 16l4-6 4 3 4-8 4 11"/><circle cx="8" cy="10" r="1.2" fill="currentColor" stroke="none"/><circle cx="16" cy="5" r="1.2" fill="currentColor" stroke="none"/></svg>
+  </button>
+  <button data-cmd="pane" data-id="scan" title="Scan">
+    <svg viewBox="0 0 24 24"><path d="M4 8l8-4 8 4v8l-8 4-8-4z"/><path d="M4 8l8 4 8-4M12 12v8"/></svg>
+  </button>
+  <button data-cmd="pane" data-id="history" title="History">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v5l3 2"/></svg>
+  </button>
+  <button data-cmd="pane" data-id="bookmarks" title="Bookmarks">
+    <svg viewBox="0 0 24 24"><path d="M7 4h10v16l-5-3-5 3z"/></svg>
+  </button>
+  <button data-cmd="pane" data-id="earn" title="Earn">
+    <svg viewBox="0 0 24 24"><circle cx="9" cy="14" r="5"/><circle cx="16" cy="9" r="4.5"/><path d="M9 12v4M7.6 14h2.8"/></svg>
+  </button>
+  <button data-cmd="pane" data-id="zmail" title="zzzmail">
+    <svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 8l9 6 9-6"/></svg>
+  </button>
+  <div class="spacer"></div>
+  <button data-cmd="pane" data-id="settings" title="Settings">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.2a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.2a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.2a1.7 1.7 0 001.1 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9c.3.6.9 1 1.5 1.1H21a2 2 0 110 4h-.2a1.7 1.7 0 00-1.4.9z"/></svg>
+  </button>
+  <button id="theme" type="button" title="Light mode" aria-label="Light mode">
+    <svg class="theme-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 3.5A8.5 8.5 0 1110.5 21 7 7 0 0015 3.5z"/></svg>
+    <svg class="theme-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2.4M12 19.6V22M2 12h2.4M19.6 12H22M5.05 5.05l1.7 1.7M17.25 17.25l1.7 1.7M18.95 5.05l-1.7 1.7M6.75 17.25l-1.7 1.7"/></svg>
+  </button>
+  <button data-cmd="pane" data-id="shield" id="shield" title="Adblock">
+    <svg viewBox="0 0 24 24"><path d="M12 3l7 3v6c0 5-3.2 8.2-7 9-3.8-.8-7-4-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg>
+  </button>
+  <script src="/ipc.js"></script>
+  <script>
+    document.getElementById("logo").onclick = function () { vapurr.send({ cmd: "home" }); };
+    var buttons = document.querySelectorAll("button[data-cmd]");
+    function paintNav(id) {
+      buttons.forEach(function (x) {
+        var mine = x.getAttribute("data-cmd") === "home" ? "home" : x.getAttribute("data-id");
+        x.classList.toggle("active", mine === id);
+      });
+    }
+    function paintTheme(t) {
+      var light = t === "light";
+      var btn = document.getElementById("theme");
+      var label = light ? "Dark mode" : "Light mode";
+      btn.title = label;
+      btn.setAttribute("aria-label", label);
+    }
+    window.__onTheme = paintTheme;
+    paintTheme(vapurr.theme());
+    document.getElementById("theme").onclick = function () {
+      vapurr.toggleTheme();
+    };
+    buttons.forEach(function (b) {
+      b.onclick = function () {
+        var cmd = b.getAttribute("data-cmd");
+        var id = b.getAttribute("data-id");
+        if (cmd === "home") {
+          paintNav("home");
+          vapurr.send({ cmd: "home" });
+          return;
+        }
+        if (cmd === "go") {
+          paintNav(id);
+          vapurr.go(b.getAttribute("data-url"));
+          return;
+        }
+        if (id === "settings" || id === "shield") {
+          vapurr.togglePane(id);
+          try {
+            var pane = localStorage.getItem("vapurr.pane") || "";
+            if ((id === "settings" && pane === "settings") || (id === "shield" && pane === "shield")) {
+              paintNav("home");
+            } else {
+              paintNav(id);
+            }
+          } catch (e) {
+            paintNav(id);
+          }
+          return;
+        }
+        paintNav(id);
+        vapurr.send({ cmd: "pane", id: id });
+      };
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <link rel="stylesheet" href="/tokens.css"/>
+  <link rel="stylesheet" href="/chrome.css"/>
+  <style>
+    body { overflow: auto; }
+    .wrap { max-width: 760px; margin: 0 auto; padding: 36px 24px 72px; }
+    h1 { font-size: 28px; font-weight: 600; letter-spacing: 0.02em; margin-bottom: 6px; }
+    .lede { color: var(--color-muted); margin-bottom: 20px; max-width: 560px; line-height: 1.5; }
+    .tools { display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; }
+    .tools .field { flex: 1; min-width: 180px; }
+    .stat { color: var(--color-muted); font-size: 13px; margin-bottom: 16px; }
+    .host {
+      margin: 18px 0 8px;
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    }
+    .host b { font-size: 14px; }
+    .host .n { color: var(--color-muted); font-size: 12px; }
+    .item {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: start;
+      margin-bottom: 8px;
+      padding: 10px 12px;
+    }
+    .item b { display: block; font-size: 13px; font-weight: 600; word-break: break-all; }
+    .flags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+    .chip {
+      height: 20px; padding: 0 6px; border: 1px solid var(--color-forest);
+      border-radius: 6px; font-size: 10px; letter-spacing: 0.06em;
+      color: var(--color-muted); display: inline-flex; align-items: center;
+    }
+    .val { color: var(--color-muted); font-size: 12px; margin-top: 4px; word-break: break-all; }
+    .empty { color: var(--color-muted); margin-top: 24px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="mono" style="color:var(--color-lime);margin-bottom:8px">COOKIES</div>
+    <h1>First-party jar.</h1>
+    <p class="lede">Lives on this machine. Sign-in cookies stay. Earn never sees them. Logins stick.</p>
+    <div class="tools">
+      <input class="field" id="q" placeholder="Search name or host" spellcheck="false"/>
+      <button class="btn-ghost" id="reload" type="button">Refresh</button>
+      <button class="btn-ghost" id="wipe" type="button">Clear all</button>
+    </div>
+    <div class="stat" id="stat">Reading jar…</div>
+    <div id="list"></div>
+  </div>
+  <script src="/ipc.js"></script>
+  <script>
+    var last = [];
+    function flags(c) {
+      var out = [];
+      if (c.session) out.push("session");
+      else out.push("persistent");
+      if (c.secure) out.push("secure");
+      if (c.http_only) out.push("httponly");
+      if (c.same_site) out.push(String(c.same_site).toLowerCase());
+      if (c.path && c.path !== "/") out.push(c.path);
+      return out;
+    }
+    function hostOf(c) {
+      return (c.domain || "").replace(/^\./, "") || "unknown";
+    }
+    function render(rows, q) {
+      var list = document.getElementById("list");
+      list.innerHTML = "";
+      q = (q || "").toLowerCase();
+      var filtered = (rows || []).filter(function (c) {
+        if (!q) return true;
+        return (c.name || "").toLowerCase().indexOf(q) >= 0
+          || hostOf(c).toLowerCase().indexOf(q) >= 0;
+      });
+      var groups = {};
+      filtered.forEach(function (c) {
+        var h = hostOf(c);
+        if (!groups[h]) groups[h] = [];
+        groups[h].push(c);
+      });
+      var hosts = Object.keys(groups).sort();
+      if (!hosts.length) {
+        list.innerHTML = "<div class='empty'>" + (q ? "Nothing matches." : "Jar is empty. Visit a site and come back.") + "</div>";
+        return;
+      }
+      hosts.forEach(function (h) {
+        var head = document.createElement("div");
+        head.className = "host";
+        head.innerHTML = "<div><b></b><div class='n'></div></div><button class='btn-ghost' type='button'>Remove site</button>";
+        head.querySelector("b").textContent = h;
+        head.querySelector(".n").textContent = groups[h].length + (groups[h].length === 1 ? " cookie" : " cookies");
+        head.querySelector("button").onclick = function () {
+          vapurr.send({ cmd: "cookie-del", host: h });
+        };
+        list.appendChild(head);
+        groups[h].forEach(function (c) {
+          var row = document.createElement("div");
+          row.className = "steel item";
+          row.innerHTML = "<div><b></b><div class='val'></div><div class='flags'></div></div><button class='btn-ghost' type='button'>Delete</button>";
+          row.querySelector("b").textContent = c.name || "(unnamed)";
+          row.querySelector(".val").textContent = c.value || "";
+          var box = row.querySelector(".flags");
+          flags(c).forEach(function (f) {
+            var chip = document.createElement("span");
+            chip.className = "chip";
+            chip.textContent = f;
+            box.appendChild(chip);
+          });
+          row.querySelector("button").onclick = function () {
+            vapurr.send({ cmd: "cookie-del", name: c.name, domain: c.domain, path: c.path || "/" });
+          };
+          list.appendChild(row);
+        });
+      });
+    }
+    window.__setCookies = function (s) {
+      last = (s && s.cookies) || [];
+      var n = last.length;
+      var stat = document.getElementById("stat");
+      stat.textContent = n + (n === 1 ? " cookie" : " cookies") + " in the profile. First-party, persistent, on this device.";
+      render(last, document.getElementById("q").value);
+    };
+    document.getElementById("q").addEventListener("input", function () {
+      render(last, this.value);
+    });
+    document.getElementById("reload").onclick = function () { vapurr.send({ cmd: "cookies" }); };
+    document.getElementById("wipe").onclick = function () {
+      if (!confirm("Clear every cookie in this profile? You will be signed out of sites.")) return;
+      vapurr.send({ cmd: "clear", what: "cookies" });
+    };
+    vapurr.send({ cmd: "cookies" });
+  </script>
+</body>
+</html>

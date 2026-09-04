@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>Settings</title>
+  <link rel="stylesheet" href="/tokens.css"/>
+  <link rel="stylesheet" href="/chrome.css"/>
+  <style>
+    body { overflow: auto; }
+    .wrap { max-width: 720px; margin: 0 auto; padding: 36px 24px 72px; }
+    h1 { font-size: 28px; font-weight: 600; letter-spacing: 0.02em; margin-bottom: 6px; }
+    .lede { color: var(--color-muted); margin-bottom: 28px; max-width: 520px; line-height: 1.5; }
+    .sec { margin-bottom: 22px; }
+    .sec h2 { font-size: 13px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-lime); margin-bottom: 10px; }
+    .row { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+    .row + .row { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--color-forest); }
+    .hint { color: var(--color-muted); font-size: 13px; line-height: 1.4; margin-top: 4px; }
+    .switch {
+      width: 44px; height: 24px; border-radius: 999px; flex-shrink: 0;
+      background: var(--color-steel); border: 1px solid var(--color-forest);
+      position: relative; cursor: pointer;
+    }
+    .switch.on { background: var(--color-lime); border-color: var(--color-lime); }
+    .knob {
+      width: 18px; height: 18px; border-radius: 50%;
+      background: var(--color-muted); position: absolute; top: 2px; left: 3px;
+    }
+    .switch.on .knob { left: 21px; background: var(--color-on-lime); }
+    .zoom-pct { font-size: 28px; font-weight: 600; letter-spacing: 0.02em; min-width: 92px; }
+    input[type="range"] {
+      width: 100%; accent-color: var(--color-lime); margin-top: 10px;
+    }
+    .presets { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+    .chip {
+      height: 28px; padding: 0 10px; border: 1px solid var(--color-forest);
+      background: transparent; color: var(--color-snow); border-radius: 8px; font-size: 12px;
+    }
+    .chip.on, .chip:hover { border-color: var(--color-lime); background: var(--color-forest); }
+    select, .field { width: 100%; }
+    .keys { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .keys td { padding: 8px 0; border-bottom: 1px solid var(--color-forest); color: var(--color-muted); }
+    .keys td:first-child { color: var(--color-snow); width: 46%; }
+    kbd {
+      display: inline-block; padding: 1px 6px; border: 1px solid var(--color-forest);
+      border-radius: 6px; font-size: 11px; color: var(--color-snow);
+    }
+    .danger { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="mono" style="color:var(--color-lime);margin-bottom:8px">SETTINGS</div>
+    <h1>Browser.</h1>
+    <p class="lede">Page zoom, startup, privacy, downloads. Stored on this device.</p>
+
+    <div class="sec">
+      <h2>Appearance</h2>
+      <div class="steel">
+        <div class="row">
+          <div>
+            <b>Page zoom</b>
+            <div class="hint">Page only. Sidebar and toolbar stay 100%. Ctrl + / − / 0, or Ctrl+scroll.</div>
+          </div>
+          <div class="zoom-pct" id="zoom-pct">100%</div>
+        </div>
+        <input id="zoomrange" type="range" min="25" max="500" step="1" value="100"/>
+        <div class="presets" id="presets"></div>
+        <div class="row">
+          <div>
+            <b>Light mode</b>
+            <div class="hint">Same switch as the sun/moon in the rail. Dark is the default.</div>
+          </div>
+          <button class="switch" id="theme" type="button" aria-label="light mode"><span class="knob"></span></button>
+        </div>
+        <div class="row">
+          <div>
+            <b>Show zoom in toolbar</b>
+            <div class="hint">Percent chip next to bookmarks.</div>
+          </div>
+          <button class="switch" id="show-zoom" type="button" aria-label="show zoom chip"><span class="knob"></span></button>
+        </div>
+        <div class="row">
+          <div>
+            <b>Ctrl + scroll to zoom</b>
+            <div class="hint">Same as Chrome. Off if you only want the keys.</div>
+          </div>
+          <button class="switch" id="ctrl-scroll" type="button" aria-label="ctrl scroll zoom"><span class="knob"></span></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <h2>On startup</h2>
+      <div class="steel">
+        <div class="row">
+          <div style="flex:1">
+            <b>Home page</b>
+            <div class="hint">Home button, new tab, and Ctrl+T.</div>
+            <select class="field" id="home-mode" style="margin-top:10px;height:40px">
+              <option value="vapurr://home">VAPURR home</option>
+              <option value="https://fomo.family">Live Trenches</option>
+              <option value="vapurr://scan">Scan</option>
+              <option value="https://www.google.com">Google</option>
+              <option value="custom">Custom URL</option>
+            </select>
+            <input class="field" id="home-custom" placeholder="https://…" style="margin-top:8px;display:none"/>
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <b>Continue where I left off</b>
+            <div class="hint">Reopen the last site on launch. Tabs themselves are not restored yet.</div>
+          </div>
+          <button class="switch" id="restore" type="button" aria-label="restore last"><span class="knob"></span></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <h2>Search engine</h2>
+      <div class="steel">
+        <div class="row">
+          <div>
+            <b>Address bar</b>
+            <div class="hint">Anything that isn’t a URL goes to Google. Same as typing in the home search.</div>
+          </div>
+          <span class="mono">GOOGLE</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <h2>Boost</h2>
+      <div class="steel">
+        <div class="row">
+          <div>
+            <b>Boost</b>
+            <div class="hint">On: prefetch and prerender recent sites, keep GPU hot. Off: drop heat when idle. Back still uses bfcache. Same switch as the toolbar chip.</div>
+          </div>
+          <button class="switch" id="boost" type="button"
+            aria-label="Boost"><span class="knob"></span></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <h2>Shield</h2>
+      <div class="steel">
+        <div class="row">
+          <div>
+            <b>Block ads and trackers</b>
+            <div class="hint" id="shield-stat">Ad block on before the page paints. EasyList, EasyPrivacy, uBlock Origin.</div>
+          </div>
+          <button class="switch" id="adblock" type="button" aria-label="adblock"><span class="knob"></span></button>
+        </div>
+        <div class="row">
+          <div>
+            <b>Block trackers</b>
+            <div class="hint">EasyPrivacy + uBlock privacy lists. Analytics, pixels, fingerprinting.</div>
+          </div>
+          <button class="switch" id="adblock-privacy" type="button" aria-label="block trackers"><span class="knob"></span></button>
+        </div>
+        <div class="row">
+          <div>
+            <b>Block annoyances</b>
+            <div class="hint">Cookie banners, newsletter modals, extra overlays. Fanboy + uBlock annoyances.</div>
+          </div>
+          <button class="switch" id="adblock-annoy" type="button" aria-label="block annoyances"><span class="knob"></span></button>
+        </div>
+        <div class="row">
+          <div>
+            <b>Hide leftover ad slots</b>
+            <div class="hint">Cosmetic CSS. Collapses empty banners after the network filter kills the request.</div>
+          </div>
+          <button class="switch" id="adblock-cosmetic" type="button" aria-label="cosmetic filters"><span class="knob"></span></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <h2>Privacy</h2>
+      <div class="steel">
+        <div class="row">
+          <div>
+            <b>Share browsing hosts (Earn)</b>
+            <div class="hint">Host + HTTPS + time only. No path, query, cookies, or keystrokes.</div>
+          </div>
+          <button class="switch" id="earn" type="button" aria-label="earn opt in"><span class="knob"></span></button>
+        </div>
+        <div class="danger">
+          <button class="btn-ghost" id="clr-hist" type="button">Clear history</button>
+          <button class="btn-ghost" id="clr-stars" type="button">Clear bookmarks</button>
+          <button class="btn-ghost" id="clr-visits" type="button">Clear earn visits</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <h2>Cookies</h2>
+      <div class="steel">
+        <div class="row">
+          <div>
+            <b>First-party jar</b>
+            <div class="hint">Persistent Edge profile on this device. Tracking prevention is off so sign-in cookies stick. Earn never sees cookie values.</div>
+          </div>
+          <button class="btn-ghost" id="open-cookies" type="button">Open jar</button>
+        </div>
+        <div class="danger">
+          <button class="btn-ghost" id="clr-cookies" type="button">Clear cookies</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <h2>Downloads</h2>
+      <div class="steel">
+        <div class="row">
+          <div>
+            <b>Save files to</b>
+            <div class="hint" id="dl-path">Downloads</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <h2>Shortcuts</h2>
+      <div class="steel">
+        <table class="keys">
+          <tr><td>Back / forward</td><td><kbd>Alt</kbd> + <kbd>←</kbd> / <kbd>→</kbd></td></tr>
+          <tr><td>New tab</td><td><kbd>Ctrl</kbd> + <kbd>T</kbd></td></tr>
+          <tr><td>Close tab</td><td><kbd>Ctrl</kbd> + <kbd>W</kbd></td></tr>
+          <tr><td>Reload</td><td><kbd>Ctrl</kbd> + <kbd>R</kbd></td></tr>
+          <tr><td>Focus address bar</td><td><kbd>Ctrl</kbd> + <kbd>L</kbd></td></tr>
+          <tr><td>Find in page</td><td><kbd>Ctrl</kbd> + <kbd>F</kbd></td></tr>
+          <tr><td>Bookmark</td><td><kbd>Ctrl</kbd> + <kbd>D</kbd></td></tr>
+          <tr><td>History</td><td><kbd>Ctrl</kbd> + <kbd>H</kbd></td></tr>
+          <tr><td>Cookies</td><td>Settings → Cookies, or History → Cookies</td></tr>
+          <tr><td>Settings</td><td><kbd>Ctrl</kbd> + <kbd>,</kbd></td></tr>
+          <tr><td>Zoom in / out / reset</td><td><kbd>Ctrl</kbd> + <kbd>+</kbd> / <kbd>−</kbd> / <kbd>0</kbd></td></tr>
+          <tr><td>Zoom (scroll)</td><td><kbd>Ctrl</kbd> + scroll</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="sec">
+      <h2>About</h2>
+      <div class="steel">
+        <div class="row"><b>vapurr</b><span class="mono" id="build-ver">0.1.0</span></div>
+        <div class="row"><b>This build</b><span class="mono" id="build-sha">…</span></div>
+        <div class="row">
+          <div>
+            <b>Channel</b>
+            <div class="hint" id="build-hint">Checking…</div>
+          </div>
+          <button class="btn" id="build-apply" type="button" disabled>Apply</button>
+        </div>
+        <div class="row"><b>Home chain</b><span class="mono">ROBINHOOD 4663</span></div>
+        <div class="row"><b>Pages</b><span class="hint">Sites in the page. Wallet, 404, and zzzmail stay in vapurr.</span></div>
+        <div class="row"><b>Shield</b><span class="hint">Ad block on before the page paints. EasyList, EasyPrivacy, uBlock Origin.</span></div>
+      </div>
+    </div>
+  </div>
+  <script src="/ipc.js"></script>
+  <script>
+    var PRESETS = [50, 67, 75, 90, 100, 110, 125, 150, 175, 200, 250, 300];
+    var box = document.getElementById("presets");
+    PRESETS.forEach(function (p) {
+      var b = document.createElement("button");
+      b.className = "chip";
+      b.type = "button";
+      b.textContent = p + "%";
+      b.dataset.pct = String(p);
+      b.onclick = function () { vapurr.send({ cmd: "zoomset", factor: p / 100 }); };
+      box.appendChild(b);
+    });
+
+    function on(el, yes) { el.classList.toggle("on", !!yes); }
+
+    function homeMode(url) {
+      if (!url || url === "vapurr://home") return "vapurr://home";
+      if (url === "https://www.google.com" || url === "https://www.google.com/") return "https://www.google.com";
+      return "custom";
+    }
+
+    window.__setBoost = function (yes) {
+      var el = document.getElementById("boost");
+      on(el, !!yes);
+    };
+    window.__onBoost = function (s) {
+      window.__setBoost(!!(s && s.on));
+    };
+    window.__setDesk = function (s) {
+      if (!s) return;
+      var pct = s.zoom_pct || Math.round((s.zoom || 1) * 100);
+      document.getElementById("zoom-pct").textContent = pct + "%";
+      document.getElementById("zoomrange").value = String(pct);
+      Array.prototype.forEach.call(box.children, function (c) {
+        c.classList.toggle("on", Number(c.dataset.pct) === pct);
+      });
+      var prefs = s.prefs || {};
+      on(document.getElementById("theme"), (prefs.theme || vapurr.theme()) === "light");
+      on(document.getElementById("show-zoom"), prefs.show_zoom_chip !== false);
+      on(document.getElementById("ctrl-scroll"), prefs.ctrl_scroll_zoom !== false);
+      on(document.getElementById("restore"), !!prefs.restore_last);
+      on(document.getElementById("boost"), !!prefs.boost);
+      on(document.getElementById("earn"), !!s.opt_in);
+      var sh = s.shield || {};
+      on(document.getElementById("adblock"), sh.enabled !== false);
+      on(document.getElementById("adblock-privacy"), sh.privacy !== false);
+      on(document.getElementById("adblock-annoy"), sh.annoyances !== false);
+      on(document.getElementById("adblock-cosmetic"), sh.cosmetic !== false);
+      var stat = document.getElementById("shield-stat");
+      if (stat) {
+        var n = sh.blocked || 0;
+        var lists = sh.ready ? "EasyList + EasyPrivacy + uBlock loaded." : "Core list on. Full EasyList loading…";
+        var last = sh.last ? " Last: " + sh.last + "." : "";
+        stat.textContent = n + " blocked this session. " + lists + last;
+      }
+      var hp = prefs.homepage || "vapurr://home";
+      var mode = homeMode(hp);
+      document.getElementById("home-mode").value = mode;
+      var custom = document.getElementById("home-custom");
+      custom.style.display = mode === "custom" ? "block" : "none";
+      if (mode === "custom") custom.value = hp;
+      document.getElementById("dl-path").textContent = s.downloads || "Downloads";
+    };
+    window.__setZoom = function (pct) {
+      document.getElementById("zoom-pct").textContent = (pct || 100) + "%";
+      document.getElementById("zoomrange").value = String(pct || 100);
+      Array.prototype.forEach.call(box.children, function (c) {
+        c.classList.toggle("on", Number(c.dataset.pct) === pct);
+      });
+    };
+
+    document.getElementById("zoomrange").addEventListener("input", function () {
+      vapurr.send({ cmd: "zoomset", factor: Number(this.value) / 100 });
+    });
+    window.__onTheme = function (t) {
+      on(document.getElementById("theme"), t === "light");
+    };
+    document.getElementById("theme").onclick = function () {
+      vapurr.toggleTheme();
+    };
+    document.getElementById("show-zoom").onclick = function () {
+      vapurr.send({ cmd: "pref", key: "show_zoom_chip", value: !this.classList.contains("on") });
+    };
+    document.getElementById("ctrl-scroll").onclick = function () {
+      vapurr.send({ cmd: "pref", key: "ctrl_scroll_zoom", value: !this.classList.contains("on") });
+    };
+    document.getElementById("restore").onclick = function () {
+      vapurr.send({ cmd: "pref", key: "restore_last", value: !this.classList.contains("on") });
+    };
+    document.getElementById("boost").onclick = function () {
+      vapurr.send({ cmd: "boost" });
+    };
+    document.getElementById("earn").onclick = function () { vapurr.send({ cmd: "earn-toggle" }); };
+    document.getElementById("adblock").onclick = function () {
+      vapurr.send({ cmd: "pref", key: "adblock", value: !this.classList.contains("on") });
+    };
+    document.getElementById("adblock-privacy").onclick = function () {
+      vapurr.send({ cmd: "pref", key: "adblock_privacy", value: !this.classList.contains("on") });
+    };
+    document.getElementById("adblock-annoy").onclick = function () {
+      vapurr.send({ cmd: "pref", key: "adblock_annoyances", value: !this.classList.contains("on") });
+    };
+    document.getElementById("adblock-cosmetic").onclick = function () {
+      vapurr.send({ cmd: "pref", key: "adblock_cosmetic", value: !this.classList.contains("on") });
+    };
+    document.getElementById("home-mode").onchange = function () {
+      var v = this.value;
+      var custom = document.getElementById("home-custom");
+      custom.style.display = v === "custom" ? "block" : "none";
+      if (v !== "custom") vapurr.send({ cmd: "pref", key: "homepage", value: v });
+      else if (custom.value) vapurr.send({ cmd: "pref", key: "homepage", value: custom.value });
+    };
+    function paintPatch(s) {
+      if (!s || !s.ok) {
+        document.getElementById("build-hint").textContent = (s && s.error) || "channel quiet";
+        return;
+      }
+      var run = s.running || {};
+      document.getElementById("build-ver").textContent = run.version || "0.1.0";
+      document.getElementById("build-sha").textContent = run.short || "—";
+      var btn = document.getElementById("build-apply");
+      var u = s.update;
+      if (u) {
+        var who = u.source || "channel";
+        var tag = u.rev || u.short || "";
+        document.getElementById("build-hint").textContent = "Ready · " + who + (tag ? " · " + tag : "") + ". Apply swaps this exe and relaunches.";
+        btn.disabled = false;
+        btn.textContent = "Apply";
+      } else if (s.has_channel) {
+        document.getElementById("build-hint").textContent = "This build matches the channel.";
+        btn.disabled = true;
+        btn.textContent = "Current";
+      } else {
+        document.getElementById("build-hint").textContent = "No channel yet. From a new build: vapurr.exe --publish";
+        btn.disabled = true;
+        btn.textContent = "Current";
+      }
+    }
+    window.__onPatch = function (s) {
+      if (!s) return;
+      if (s.ok === false) {
+        document.getElementById("build-hint").textContent = s.error || "apply failed";
+        var btn = document.getElementById("build-apply");
+        btn.disabled = false;
+        btn.textContent = "Apply";
+        return;
+      }
+      paintPatch(s);
+    };
+    function loadPatch() {
+      fetch("/patch/api/status").then(function (r) { return r.json(); }).then(paintPatch).catch(function () {
+        document.getElementById("build-hint").textContent = "channel quiet";
+      });
+    }
+    document.getElementById("build-apply").onclick = function () {
+      this.disabled = true;
+      this.textContent = "Swapping…";
+      document.getElementById("build-hint").textContent = "Staging the new exe. vapurr will reopen.";
+      vapurr.send({ cmd: "patch-apply" });
+    };
+    loadPatch();
+    document.getElementById("home-custom").addEventListener("change", function () {
+      if (this.value.trim()) vapurr.send({ cmd: "pref", key: "homepage", value: this.value.trim() });
+    });
+    function wipe(what, label) {
+      if (!confirm("Clear " + label + " on this device?")) return;
+      vapurr.send({ cmd: "clear", what: what });
+    }
+    document.getElementById("clr-hist").onclick = function () { wipe("history", "history"); };
+    document.getElementById("clr-stars").onclick = function () { wipe("bookmarks", "bookmarks"); };
+    document.getElementById("clr-visits").onclick = function () { wipe("visits", "earn visits"); };
+    document.getElementById("open-cookies").onclick = function () { vapurr.send({ cmd: "pane", id: "cookies" }); };
+    document.getElementById("clr-cookies").onclick = function () { wipe("cookies", "cookies"); };
+
+    vapurr.send({ cmd: "desk" });
+  </script>
+</body>
+</html>

@@ -1,0 +1,105 @@
+@font-face {
+  font-family: "Sora";
+  src: url("/fonts/Sora-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Sora";
+  src: url("/fonts/Sora-SemiBold.ttf") format("truetype");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --color-lime: #c0f800;
+  --color-forest: #2a3800;
+  --color-void: #0e0e0e;
+  --color-steel: #1f2327;
+  --color-snow: #f2f3f4;
+  --color-muted: #8aa090;
+  --color-on-lime: #0e0e0e;
+  --lime: var(--color-lime);
+  --forest: var(--color-forest);
+  --void: var(--color-void);
+  --steel: var(--color-steel);
+  --snow: var(--color-snow);
+  --muted: var(--color-muted);
+  --radius-btn: 10px;
+  --radius-tile: 14px;
+  --radius-search: 12px;
+  --radius-pill: 9999px;
+  --rail: 64px;
+  --top: 84px;
+  --space: 4px;
+  --font: "Sora", ui-sans-serif, system-ui, sans-serif;
+  --cursor-arrow: url("/cursors/arrow.svg") 3 1, url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32'><path fill='%23c0f800' stroke='%230e0e0e' stroke-width='1.1' d='M3 2v21l7-6 4.6 10.4 3.2-1.4L13.2 17H22z'/></svg>") 3 1, default;
+  --cursor-text: url("/cursors/text.svg") 12 16, url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='32'><path fill='none' stroke='%23c0f800' stroke-width='2' stroke-linecap='round' d='M6 4h12M12 4v24M6 28h12'/></svg>") 12 16, text;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html[data-theme="light"] {
+  --color-lime: #4d8a00;
+  --color-forest: #c8d6b0;
+  --color-void: #f3f5f0;
+  --color-steel: #e6ebe0;
+  --color-snow: #161816;
+  --color-muted: #3f5340;
+  color-scheme: light;
+}
+
+html, body {
+  height: 100%;
+  background: var(--color-void);
+  color: var(--color-snow);
+  font-family: var(--font);
+  overflow: hidden;
+  user-select: none;
+  color-scheme: dark;
+  cursor: var(--cursor-arrow);
+}
+html[data-theme="light"], html[data-theme="light"] body { color-scheme: light; }
+
+button, input, textarea { font-family: inherit; }
+input, textarea { user-select: text; caret-color: var(--color-lime); }
+
+a {
+  color: var(--color-lime);
+  text-decoration: none;
+  cursor: var(--cursor-arrow);
+}
+a:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+button,
+[role="button"],
+.tile,
+.icon-btn,
+.tab,
+.switch,
+.chip,
+select,
+label[for],
+summary {
+  cursor: var(--cursor-arrow);
+}
+input[type="text"],
+input[type="search"],
+input:not([type]),
+input[type="url"],
+input[type="number"],
+textarea,
+[contenteditable="true"] {
+  cursor: var(--cursor-text);
+}
+
+button:focus-visible, input:focus-visible, a:focus-visible {
+  outline: 1px solid var(--color-lime);
+  outline-offset: 2px;
+}
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: var(--color-forest); border-radius: 8px; }
+::-webkit-scrollbar-track { background: transparent; }

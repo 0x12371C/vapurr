@@ -1,0 +1,13 @@
+{
+  "name": "vapurr-docs",
+  "private": true,
+  "description": "HonKit book for vapurr. Not the browser.",
+  "scripts": {
+    "docs": "honkit serve ketbook",
+    "docs:build": "honkit build ketbook _book",
+    "docs:app": "node scripts/build-ketbook.js"
+  },
+  "devDependencies": {
+    "honkit": "^6.2.2"
+  }
+}

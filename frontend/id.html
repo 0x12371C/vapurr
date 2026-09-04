@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>zer0ID</title>
+  <link rel="stylesheet" href="/tokens.css"/>
+  <link rel="stylesheet" href="/chrome.css"/>
+  <style>
+    body { overflow: auto; }
+    .wrap { max-width: 560px; margin: 0 auto; padding: 36px 24px 72px; }
+    .mark-wrap {
+      width: 64px; height: 64px; border-radius: 18px; overflow: hidden;
+      margin-bottom: 18px;
+      background: #0e0e0e;
+      border: 1px solid color-mix(in srgb, var(--color-lime) 22%, transparent);
+      box-shadow: 0 0 22px color-mix(in srgb, var(--color-lime) 16%, transparent);
+    }
+    .mark { width: 100%; height: 100%; object-fit: contain; display: block; }
+    .kicker { color: var(--color-lime); margin-bottom: 8px; }
+    h1 { font-size: 32px; font-weight: 600; letter-spacing: -0.03em; margin-bottom: 8px; }
+    .lede { color: var(--color-muted); margin-bottom: 24px; max-width: 460px; line-height: 1.5; }
+    .card {
+      padding: 18px 20px 20px;
+      margin-bottom: 18px;
+      background: color-mix(in srgb, var(--color-steel) 58%, transparent);
+      backdrop-filter: blur(24px) saturate(1.45);
+      -webkit-backdrop-filter: blur(24px) saturate(1.45);
+      border: 1px solid color-mix(in srgb, var(--color-snow) 8%, var(--color-forest));
+    }
+    .card b { display: block; font-size: 15px; margin-bottom: 6px; }
+    .card p { color: var(--color-muted); font-size: 14px; line-height: 1.5; margin: 0; }
+    .facts { list-style: none; padding: 0; margin: 0 0 22px; }
+    .facts li {
+      padding: 12px 0;
+      border-top: 1px solid var(--color-forest);
+      color: var(--color-muted);
+      font-size: 14px;
+      line-height: 1.45;
+    }
+    .facts li:first-child { border-top: 0; }
+    .facts strong { color: var(--color-snow); font-weight: 600; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="mark-wrap"><img class="mark" src="/mascot.png" alt=""/></div>
+    <div class="mono kicker">IDENTITY</div>
+    <h1>zer0ID</h1>
+    <p class="lede">Prove a person. We keep a handle, not a passport.</p>
+    <div class="steel card">
+      <b>Not live in this build.</b>
+      <p>No issuer. No KYC form. No attestation on this device. vapurr will not store passports or selfies.</p>
+    </div>
+    <ul class="facts">
+      <li><strong>Handle, not hex.</strong> When identity is live, pay and zzzmail use a handle. Until then they work without it.</li>
+      <li><strong>Claims only.</strong> Over-18, unique human, sanctions-clear, jurisdiction. Not a selfie, SSN, or address book.</li>
+      <li><strong>Ad block is Shield.</strong> This page is identity. The rail shield is EasyList / EasyPrivacy / uBlock.</li>
+    </ul>
+    <button class="btn-ghost" id="to-shield" type="button">Open Shield</button>
+  </div>
+  <script src="/ipc.js"></script>
+  <script>
+    document.getElementById("to-shield").onclick = function () {
+      vapurr.send({ cmd: "pane", id: "shield" });
+    };
+  </script>
+</body>
+</html>

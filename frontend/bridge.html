@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>Bridge</title>
+  <link rel="stylesheet" href="/tokens.css"/>
+  <link rel="stylesheet" href="/chrome.css"/>
+  <link rel="stylesheet" href="/route.css"/>
+</head>
+<body>
+  <div class="globe-layer" aria-hidden="true"><canvas id="globe"></canvas></div>
+  <div class="wrap">
+    <div class="hero">
+      <div class="mono">BRIDGE</div>
+      <h1 id="receive">—</h1>
+      <p class="lede">Into Robinhood Chain. Live quote. 0.25% fee. Does not bridge.</p>
+      <div class="meta">
+        <div class="chip"><span>Fee</span><b>0.25%</b></div>
+        <div class="chip"><span>To</span><b>RH 4663</b></div>
+        <div class="chip"><span>Route</span><b id="chip-hops">—</b></div>
+      </div>
+    </div>
+
+    <div class="ticket">
+      <div class="pair">
+        <div class="leg">
+          <div class="leg-head">
+            <span class="mono">You pay</span>
+            <select class="field" id="from-chain"></select>
+          </div>
+          <div class="leg-row">
+            <input class="amt" id="amt" placeholder="0" inputmode="decimal"/>
+            <select class="field" id="from-tok"></select>
+          </div>
+        </div>
+        <button class="flip" id="flip" type="button" aria-label="flip">
+          <svg class="ico" viewBox="0 0 24 24"><path d="M8 6v12M8 18l-3-3M16 18V6M16 6l3 3"/></svg>
+        </button>
+        <div class="leg">
+          <div class="leg-head">
+            <span class="mono">You get</span>
+            <select class="field" id="to-chain"></select>
+          </div>
+          <div class="leg-row">
+            <div class="get" id="to-amt">—</div>
+            <select class="field" id="to-tok"></select>
+          </div>
+        </div>
+      </div>
+      <div class="quote" id="route"><div class="empty">Enter an amount.</div></div>
+    </div>
+    <button class="btn go" type="button" id="go" disabled>Bridge</button>
+  </div>
+  <script src="/ipc.js"></script>
+  <script src="/route.js"></script>
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "/vendor/three.webgpu.min.js",
+      "three/webgpu": "/vendor/three.webgpu.min.js",
+      "three/tsl": "/vendor/three.tsl.min.js"
+    }
+  }
+  </script>
+  <script type="module">
+    import { startBridge } from "/globe.js?v=span";
+    startBridge(document.getElementById("globe"));
+  </script>
+  <script>bootRoute({ mode: "bridge" });</script>
+</body>
+</html>

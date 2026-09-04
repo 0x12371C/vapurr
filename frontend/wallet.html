@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>Wallet</title>
+  <link rel="stylesheet" href="/tokens.css"/>
+  <link rel="stylesheet" href="/chrome.css"/>
+  <style>
+    html, body { height: 100%; }
+    body { overflow: hidden; background: var(--color-void); }
+    .aura {
+      position: absolute; inset: 0; z-index: 0;
+      pointer-events: none; overflow: hidden;
+    }
+    .aura canvas { width: 100%; height: 100%; display: block; }
+    .app {
+      position: relative; z-index: 1;
+      height: 100%; display: flex; flex-direction: column; min-height: 0;
+    }
+    .top {
+      flex-shrink: 0;
+      padding: 18px 22px 12px;
+      background: color-mix(in srgb, var(--color-void) 28%, transparent);
+      backdrop-filter: blur(20px) saturate(1.35);
+      -webkit-backdrop-filter: blur(20px) saturate(1.35);
+    }
+    .nav {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    }
+    h1 { font-size: 34px; font-weight: 600; letter-spacing: -0.038em; line-height: 1; }
+    .chip {
+      border: 0;
+      background: color-mix(in srgb, var(--color-steel) 45%, transparent);
+      backdrop-filter: blur(20px) saturate(1.4);
+      -webkit-backdrop-filter: blur(20px) saturate(1.4);
+      color: var(--color-muted);
+      font-size: 12px; font-weight: 600;
+      padding: 7px 12px; border-radius: 999px;
+      border: 1px solid color-mix(in srgb, var(--color-snow) 8%, transparent);
+    }
+    .chip:hover { color: var(--color-snow); }
+    .hero { padding: 10px 0 4px; }
+    .usd {
+      font-size: 56px; font-weight: 600; letter-spacing: -0.045em;
+      line-height: 1; font-variant-numeric: tabular-nums;
+    }
+    .usd em {
+      font-style: normal; font-size: 28px; color: var(--color-muted);
+      letter-spacing: -0.04em; margin-right: 1px;
+    }
+    .sub { margin-top: 8px; color: var(--color-muted); font-size: 13px; line-height: 1.4; }
+    .pip {
+      display: inline-block; width: 7px; height: 7px; border-radius: 50%;
+      background: var(--color-muted); margin-right: 6px; vertical-align: 1px;
+    }
+    .pip.on {
+      background: var(--color-lime);
+      box-shadow: 0 0 8px color-mix(in srgb, var(--color-lime) 55%, transparent);
+    }
+    .scroll {
+      flex: 1; min-height: 0; overflow: auto;
+      padding: 8px 22px 96px;
+    }
+    .col { max-width: 460px; margin: 0 auto; }
+    .actions {
+      display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin: 16px 0 22px;
+    }
+    .act {
+      appearance: none; -webkit-appearance: none; font: inherit;
+      height: 78px; border-radius: 20px;
+      border: 1px solid color-mix(in srgb, var(--color-snow) 8%, transparent);
+      background: color-mix(in srgb, var(--color-steel) 46%, transparent);
+      backdrop-filter: blur(16px) saturate(1.3);
+      -webkit-backdrop-filter: blur(16px) saturate(1.3);
+      color: var(--color-snow);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 8px; font-size: 11px; font-weight: 600; letter-spacing: 0.02em;
+    }
+    .act:hover { background: color-mix(in srgb, var(--color-forest) 50%, transparent); }
+    .act:active { transform: scale(0.96); }
+    .act svg {
+      width: 22px; height: 22px; stroke: var(--color-lime); fill: none;
+      stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round;
+    }
+    .sec {
+      display: flex; align-items: baseline; justify-content: space-between;
+      margin: 8px 2px 10px; font-size: 13px; font-weight: 600;
+    }
+    .sec span { color: var(--color-muted); font-weight: 400; font-size: 12px; }
+    .glass {
+      border-radius: 20px; overflow: hidden;
+      background: color-mix(in srgb, var(--color-steel) 50%, transparent);
+      backdrop-filter: blur(16px) saturate(1.3);
+      -webkit-backdrop-filter: blur(16px) saturate(1.3);
+      border: 1px solid color-mix(in srgb, var(--color-snow) 8%, transparent);
+    }
+    .asset {
+      display: grid; grid-template-columns: 40px 1fr auto; gap: 12px; align-items: center;
+      width: 100%; text-align: left; padding: 13px 16px; border: 0;
+      background: transparent; color: inherit; height: auto; border-radius: 0;
+    }
+    .asset + .asset { box-shadow: inset 0 1px 0 color-mix(in srgb, var(--color-snow) 7%, transparent); }
+    .asset:hover { background: color-mix(in srgb, var(--color-forest) 38%, transparent); }
+    .dot {
+      width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center;
+      background: color-mix(in srgb, var(--color-void) 50%, transparent);
+      border: 1px solid color-mix(in srgb, var(--color-lime) 24%, transparent);
+      color: var(--color-lime); font-size: 11px; font-weight: 600;
+    }
+    .asset b { display: block; font-size: 15px; font-weight: 600; }
+    .asset .hint { color: var(--color-muted); font-size: 12px; margin-top: 2px; }
+    .asset .amt { font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; text-align: right; }
+    .asset .usd-s { display: block; color: var(--color-muted); font-size: 11px; font-weight: 400; margin-top: 2px; }
+    .empty {
+      padding: 28px 18px; text-align: center; color: var(--color-muted);
+      font-size: 13px; line-height: 1.45;
+    }
+    .sheet {
+      position: absolute; inset: 0; z-index: 8;
+      display: none; align-items: flex-end; justify-content: center;
+    }
+    .sheet.on { display: flex; }
+    .dim {
+      position: absolute; inset: 0;
+      background: rgba(0,0,0,0.42);
+      backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    }
+    .panel {
+      position: relative; width: min(420px, 100%);
+      border-radius: 24px 24px 0 0; padding: 10px 22px 28px;
+      background: color-mix(in srgb, var(--color-steel) 72%, var(--color-void));
+      backdrop-filter: blur(22px) saturate(1.35);
+      -webkit-backdrop-filter: blur(22px) saturate(1.35);
+      border: 1px solid color-mix(in srgb, var(--color-snow) 10%, transparent);
+      border-bottom: 0;
+    }
+    .grab {
+      width: 36px; height: 4px; border-radius: 999px;
+      background: color-mix(in srgb, var(--color-snow) 22%, transparent);
+      margin: 6px auto 16px;
+    }
+    .panel h2 { font-size: 22px; font-weight: 600; letter-spacing: -0.03em; margin-bottom: 6px; }
+    .panel p { color: var(--color-muted); font-size: 13px; line-height: 1.45; margin-bottom: 18px; }
+    .ident {
+      display: block; width: 96px; height: 96px; margin: 8px auto 16px; border-radius: 22px;
+      background: var(--color-void);
+      border: 1px solid color-mix(in srgb, var(--color-lime) 28%, transparent);
+    }
+    .full-addr {
+      font-size: 13px; line-height: 1.45; word-break: break-all; user-select: text;
+      text-align: center; margin-bottom: 16px; color: var(--color-snow);
+    }
+    .panel .btn { width: 100%; height: 48px; border-radius: 14px; font-size: 15px; }
+    .panel .btn + .btn { margin-top: 8px; }
+    .ghost {
+      background: transparent;
+      border: 1px solid color-mix(in srgb, var(--color-snow) 12%, transparent);
+      color: var(--color-snow);
+    }
+    .seg {
+      display: flex; flex-wrap: wrap; gap: 4px; position: relative;
+      min-height: 32px; padding: 2px; border-radius: 16px;
+      background: color-mix(in srgb, var(--color-steel) 55%, transparent);
+      border: 1px solid color-mix(in srgb, var(--color-snow) 8%, transparent);
+    }
+    .seg button {
+      flex: 1 1 22%; min-width: 64px; height: 28px;
+      position: relative; z-index: 1; border: 0; background: transparent;
+      color: var(--color-muted); font-size: 12px; font-weight: 600; border-radius: 999px;
+    }
+    .seg button.on {
+      color: var(--color-snow);
+      background: color-mix(in srgb, var(--color-snow) 14%, transparent);
+    }
+    .in { color: var(--color-lime); }
+    html[data-theme="light"] .glass,
+    html[data-theme="light"] .act,
+    html[data-theme="light"] .chip,
+    html[data-theme="light"] .panel {
+      background: color-mix(in srgb, var(--color-steel) 86%, transparent);
+    }
+  </style>
+</head>
+<body>
+  <div class="aura" aria-hidden="true"><canvas id="shader"></canvas></div>
+  <div class="app" id="app">
+    <header class="top">
+      <div class="nav">
+        <h1>Wallet</h1>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">
+          <button class="chip" id="net-chip" type="button">TESTNET 46630</button>
+          <button class="chip" id="addr-chip" type="button" title="Copy address">talking to chain…</button>
+          <button class="chip" id="sign-out" type="button">Sign out</button>
+        </div>
+      </div>
+      <div class="hero">
+        <div class="usd" id="usd"><em>$</em>…</div>
+        <div class="sub"><span class="pip" id="pip"></span><span id="sub">Robinhood testnet · waiting</span></div>
+      </div>
+    </header>
+    <div class="scroll" id="scroll">
+      <div class="col">
+        <div class="actions">
+          <button class="act" id="go-receive" type="button">
+            <svg viewBox="0 0 24 24"><path d="M12 4v12M7 11l5 5 5-5"/><path d="M5 19h14"/></svg>
+            Receive
+          </button>
+          <button class="act" id="go-send" type="button">
+            <svg viewBox="0 0 24 24"><path d="M12 20V8M7 13l5-5 5 5"/><path d="M5 5h14"/></svg>
+            Send
+          </button>
+          <button class="act" id="go-scan" type="button">
+            <svg viewBox="0 0 24 24"><path d="M4 8l8-4 8 4v8l-8 4-8-4z"/><path d="M4 8l8 4 8-4M12 12v8"/></svg>
+            Scan
+          </button>
+        </div>
+        <div class="sec">On this device <span id="rpc-lab">testnet 46630</span></div>
+        <div class="glass" id="list"></div>
+        <div class="sec" style="margin-top:22px">Activity</div>
+        <div class="glass" id="activity">
+          <div class="empty" id="act-empty">No transfers in the last window yet.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sheet" id="sheet-recv" hidden>
+    <div class="dim" data-close="1"></div>
+    <div class="panel">
+      <div class="grab"></div>
+      <h2>Receive</h2>
+      <p id="recv-copy">Fund this device. Copy the address, then send testnet ETH.</p>
+      <canvas class="ident" id="ident" width="96" height="96"></canvas>
+      <div class="full-addr" id="full-addr">—</div>
+      <button class="btn" id="copy-addr" type="button">Copy Address</button>
+      <button class="btn ghost" id="go-faucet" type="button" style="display:none">Faucet</button>
+      <button class="btn ghost" data-close="1" type="button">Done</button>
+    </div>
+  </div>
+  <div class="sheet" id="sheet-send" hidden>
+    <div class="dim" data-close="1"></div>
+    <div class="panel">
+      <div class="grab"></div>
+      <h2>Send</h2>
+      <p id="send-copy">Signed on this device.</p>
+      <div class="seg" id="asset-seg" style="width:100%;margin:0 0 14px"></div>
+      <label class="mono" style="display:block;margin-bottom:6px">To</label>
+      <input class="field" id="send-to" placeholder="0x…" spellcheck="false" autocomplete="off" style="width:100%;margin-bottom:12px"/>
+      <label class="mono" style="display:block;margin-bottom:6px">Amount</label>
+      <input class="field" id="send-amt" placeholder="0.00" inputmode="decimal" style="width:100%;margin-bottom:8px"/>
+      <div class="sub" id="send-bal" style="margin:0 0 14px">—</div>
+      <div class="empty" id="send-err" hidden style="padding:0 0 12px;text-align:left;color:#ff8a80"></div>
+      <button class="btn" id="send-go" type="button">Review</button>
+      <button class="btn ghost" data-close="1" type="button">Cancel</button>
+    </div>
+  </div>
+  <div class="sheet" id="sheet-book" hidden>
+    <div class="dim" data-close="1"></div>
+    <div class="panel">
+      <div class="grab"></div>
+      <h2 id="book-title">Mint $PUSD</h2>
+      <p id="book-copy">Burn $VAPURR, mint $PUSD at the oracle. Spread ≥ 2%. Lithe is 9%.</p>
+      <div class="seg" id="book-seg" style="width:100%;margin:0 0 14px">
+        <button type="button" id="book-mint" class="on" data-book="mint">Mint</button>
+        <button type="button" id="book-red" data-book="redeem">Redeem</button>
+      </div>
+      <label class="mono" style="display:block;margin-bottom:6px" id="book-lab">VAPURR in</label>
+      <input class="field" id="book-amt" placeholder="0.00" inputmode="decimal" style="width:100%;margin-bottom:8px"/>
+      <div class="sub" id="book-hint" style="margin:0 0 14px">Burn V to mint P.</div>
+      <div class="empty" id="book-err" hidden style="padding:0 0 12px;text-align:left;color:#ff8a80"></div>
+      <button class="btn" id="book-go" type="button">Review</button>
+      <button class="btn ghost" id="book-send" type="button">Send token instead</button>
+      <button class="btn ghost" data-close="1" type="button">Cancel</button>
+    </div>
+  </div>
+  <script src="/ipc.js"></script>
+  <script src="/sign.js"></script>
+  <script src="/shader.js"></script>
+  <script>
+    var addr = "";
+    var snap = null;
+    var asset = "vapurr";
+    var sending = false;
+    var waitHash = "";
+    var bookMode = "mint";
+
+    function shortAddr(a) {
+      if (!a || a.length < 12) return a || "—";
+      return a.slice(0, 6) + "…" + a.slice(-4);
+    }
+    function paintIdent(a) {
+      var c = document.getElementById("ident");
+      var ctx = c.getContext("2d");
+      ctx.fillStyle = "#0e0e0e";
+      ctx.fillRect(0, 0, 96, 96);
+      if (!a) return;
+      var cells = 5, pad = 10, cell = (96 - pad * 2) / cells;
+      for (var y = 0; y < cells; y++) {
+        for (var x = 0; x < 3; x++) {
+          var i = (y * 3 + x + 2) * 2;
+          var h = parseInt((a.charAt(i) || "0") + (a.charAt(i + 1) || "0"), 16);
+          if (isNaN(h) || h % 2 === 0) continue;
+          ctx.fillStyle = "#c0f800";
+          ctx.fillRect(pad + x * cell, pad + y * cell, cell - 2, cell - 2);
+          ctx.fillRect(pad + (4 - x) * cell, pad + y * cell, cell - 2, cell - 2);
+        }
+      }
+    }
+    function openSheet(id) {
+      var el = document.getElementById(id);
+      el.hidden = false;
+      el.classList.add("on");
+      if (id === "sheet-send") {
+        document.getElementById("send-err").hidden = true;
+        document.getElementById("send-go").textContent = "Review";
+        sending = false;
+        if (snap) paintAssetSeg(snap);
+        paintSendBal();
+      }
+      if (id === "sheet-book") paintBook();
+    }
+    function closeSheets() {
+      document.querySelectorAll(".sheet").forEach(function (el) {
+        el.classList.remove("on");
+        el.hidden = true;
+      });
+    }
+    function copied() {
+      document.getElementById("copy-addr").textContent = "Copied";
+      document.getElementById("addr-chip").textContent = "copied";
+      setTimeout(function () {
+        document.getElementById("copy-addr").textContent = "Copy Address";
+        document.getElementById("addr-chip").textContent = shortAddr(addr);
+      }, 1200);
+    }
+    function copyAddr() {
+      if (!addr) return;
+      function fallback() {
+        var ta = document.createElement("textarea");
+        ta.value = addr;
+        ta.setAttribute("readonly", "");
+        ta.style.position = "fixed";
+        ta.style.left = "-9999px";
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand("copy"); copied(); } catch (e) {}
+        document.body.removeChild(ta);
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(addr).then(copied).catch(fallback);
+      } else fallback();
+    }
+    function assetSym(id) {
+      if (id === "eth") return "ETH";
+      if (id === "pusd") return "PUSD";
+      if (id === "vapurr") return "VAPURR";
+      if (id === "weth") return "WETH";
+      return "USDG";
+    }
+    function setAsset(id) {
+      asset = id || asset;
+      var box = document.getElementById("asset-seg");
+      if (box) {
+        Array.prototype.forEach.call(box.querySelectorAll("button"), function (b) {
+          b.classList.toggle("on", b.getAttribute("data-id") === asset);
+        });
+      }
+      paintSendBal();
+    }
+    function paintAssetSeg(s) {
+      var box = document.getElementById("asset-seg");
+      if (!box) return;
+      var ids = [];
+      (s.assets || []).forEach(function (a) {
+        if (a && a.id) ids.push(a.id);
+      });
+      if (!ids.length) ids = ["eth"];
+      if (ids.indexOf(asset) < 0) asset = ids[0];
+      box.innerHTML = "";
+      ids.forEach(function (id) {
+        var b = document.createElement("button");
+        b.type = "button";
+        b.setAttribute("data-id", id);
+        b.textContent = assetSym(id);
+        if (id === asset) b.className = "on";
+        b.onclick = function () { setAsset(id); };
+        box.appendChild(b);
+      });
+    }
+    function paintSendBal() {
+      if (!snap) return;
+      var lab = asset === "eth"
+        ? (snap.eth || "0") + " ETH"
+        : asset === "pusd"
+          ? (snap.pusd || "0") + " PUSD"
+          : asset === "vapurr"
+            ? (snap.vapurr || "0") + " VAPURR"
+            : asset === "weth"
+              ? (snap.weth || "0") + " WETH"
+              : (snap.usdg || "0") + " USDG";
+      document.getElementById("send-bal").textContent = lab + " on this address";
+    }
+    function paintList(s) {
+      var list = document.getElementById("list");
+      list.innerHTML = "";
+      (s.assets || []).forEach(function (a) {
+        var b = document.createElement("button");
+        b.className = "asset";
+        b.type = "button";
+        b.innerHTML =
+          "<span class=\"dot\"></span><span><b></b><span class=\"hint\"></span></span>" +
+          "<span><span class=\"amt\"></span><span class=\"usd-s\"></span></span>";
+        b.querySelector(".dot").textContent = (a.symbol || "?").slice(0, 2);
+        b.querySelector("b").textContent = a.symbol || "";
+        b.querySelector(".hint").textContent = a.hint || "";
+        b.querySelector(".amt").textContent = a.amount || "0";
+        b.querySelector(".usd-s").textContent = a.dollar ? ("$" + (a.amount || "0")) : "";
+        b.onclick = function () {
+          if (a.id === "vapurr" || a.id === "pusd" || a.id === "usdg") openBook(a.id);
+          else { setAsset(a.id); openSheet("sheet-send"); }
+        };
+        list.appendChild(b);
+      });
+    }
+    function paintActivity(s) {
+      var box = document.getElementById("activity");
+      var rows = s.activity || [];
+      box.innerHTML = "";
+      if (!rows.length) {
+        var empty = document.createElement("div");
+        empty.className = "empty";
+        empty.id = "act-empty";
+        empty.textContent = s.ok
+          ? "No transfers in the last window. Fund this address, then they show here."
+          : (s.error || "Could not reach RPC.");
+        box.appendChild(empty);
+        return;
+      }
+      rows.forEach(function (row) {
+        var b = document.createElement("button");
+        b.className = "asset";
+        b.type = "button";
+        var inbound = row.dir === "in";
+        b.innerHTML =
+          "<span class=\"dot\"></span><span><b></b><span class=\"hint\"></span></span>" +
+          "<span class=\"amt\"></span>";
+        b.querySelector(".dot").textContent = inbound ? "In" : "Out";
+        b.querySelector("b").textContent = inbound ? "Received" : "Sent";
+        b.querySelector(".hint").textContent = (row.tx || "").slice(0, 10) + (row.tx ? "…" : "");
+        var amt = b.querySelector(".amt");
+        amt.textContent = (typeof row.amount === "string" ? row.amount : "") || "—";
+        if (inbound) amt.classList.add("in");
+        b.onclick = function () { if (row.url) vapurr.go(row.url); };
+        box.appendChild(b);
+      });
+    }
+
+    window.__setWallet = function (s) {
+      if (!s) return;
+      snap = s;
+      addr = s.address || "";
+      document.getElementById("addr-chip").textContent = shortAddr(addr);
+      document.getElementById("full-addr").textContent = addr || "—";
+      paintIdent(addr);
+      document.getElementById("pip").classList.toggle("on", !!s.ok);
+      document.getElementById("usd").innerHTML = "<em>$</em>" + (s.total_usd || "0");
+      var netlab = (s.net === "testnet" || s.chain_id === 46630) ? "TESTNET 46630" : ("CHAIN " + String(s.chain_id || ""));
+      var nc = document.getElementById("net-chip");
+      if (nc) nc.textContent = netlab;
+      document.getElementById("rpc-lab").textContent = (s.net || "") + " " + String(s.chain_id || "");
+      var bits = [];
+      bits.push(netlab);
+      bits.push(s.ok ? "live" : "rpc wait");
+      bits.push((s.eth || "0") + " ETH");
+      if (s.need_eth) bits.push("needs gas");
+      if (s.error) bits.push(s.error);
+      var v0 = !s.vapurr || s.vapurr === "0" || s.vapurr === "0.00";
+      var p0 = !s.pusd || s.pusd === "0" || s.pusd === "0.00";
+      if (s.vapurr != null && v0 && p0) bits.push("book live · this bag is empty");
+      document.getElementById("sub").textContent = bits.join(" · ");
+      document.getElementById("send-copy").textContent = s.testnet || s.net === "testnet"
+        ? "Signed here. Robinhood testnet 46630."
+        : "Signed here.";
+      document.getElementById("recv-copy").textContent = s.net === "testnet"
+        ? "Fund this device on testnet 46630. Copy, then faucet or send ETH."
+        : "Fund this device on Robinhood Chain.";
+      var fauc = document.getElementById("go-faucet");
+      if (s.faucet) {
+        fauc.style.display = "block";
+        fauc.onclick = function () { vapurr.go(s.faucet); };
+      } else {
+        fauc.style.display = "none";
+      }
+      paintAssetSeg(s);
+      paintList(s);
+      paintActivity(s);
+      paintSendBal();
+      document.getElementById("send-go").textContent = "Review";
+      if (sending && s.tx && s.tx !== waitHash) {
+        sending = false;
+        closeSheets();
+        vapurr.finishTx(true, { tx: s.tx, txUrl: s.tx_url });
+      }
+    };
+    window.__walletErr = function (msg) {
+      sending = false;
+      document.getElementById("send-go").textContent = "Review";
+      vapurr.finishTx(false, { error: msg || "send failed" });
+    };
+    window.__setEcon = function (s) {
+      if (!vapurr.pendingTx) return;
+      if (s && s.tx && s.tx !== waitHash) {
+        vapurr.finishTx(true, { tx: s.tx, txUrl: s.tx_url });
+        vapurr.send({ cmd: "wallet" });
+      }
+    };
+    window.__econErr = function (which, msg) {
+      if (vapurr.pendingTx) vapurr.finishTx(false, { error: msg || "failed" });
+      var el = document.getElementById("book-err");
+      if (el) { el.hidden = false; el.textContent = msg || ""; }
+    };
+
+    function paintBook() {
+      var mint = bookMode !== "redeem";
+      document.getElementById("book-mint").classList.toggle("on", mint);
+      document.getElementById("book-red").classList.toggle("on", !mint);
+      document.getElementById("book-title").textContent = mint ? "Mint $PUSD" : "Redeem $PUSD";
+      document.getElementById("book-copy").textContent = mint
+        ? "Burn $VAPURR, mint $PUSD at the oracle. Spread ≥ 2%. Lithe is 9%."
+        : "Burn $PUSD, mint $VAPURR at the oracle. Spread ≥ 2%.";
+      document.getElementById("book-lab").textContent = mint ? "VAPURR in" : "PUSD in";
+      document.getElementById("book-amt").placeholder = mint ? "VAPURR" : "PUSD";
+      var v = (snap && snap.vapurr) || "0";
+      var p = (snap && snap.pusd) || "0";
+      document.getElementById("book-hint").textContent = mint
+        ? ("This device: " + v + " VAPURR. Burn V to mint P.")
+        : ("This device: " + p + " PUSD. Burn P to mint V.");
+      document.getElementById("book-err").hidden = true;
+    }
+    function openBook(id) {
+      if (id === "pusd") bookMode = "redeem";
+      else bookMode = "mint";
+      if (id === "vapurr" || id === "pusd" || id === "usdg") setAsset(id);
+      openSheet("sheet-book");
+    }
+
+    document.getElementById("addr-chip").onclick = copyAddr;
+    document.getElementById("go-receive").onclick = function () { openSheet("sheet-recv"); };
+    document.getElementById("go-send").onclick = function () { openSheet("sheet-send"); };
+    document.getElementById("sign-out").onclick = function () {
+      vapurr.send({ cmd: "logout" });
+      vapurr.send({ cmd: "pane", id: "login" });
+    };
+    document.getElementById("go-scan").onclick = function () {
+      if (snap && snap.addr_url) vapurr.go(snap.addr_url);
+      else vapurr.send({ cmd: "pane", id: "scan" });
+    };
+    document.getElementById("copy-addr").onclick = copyAddr;
+    document.getElementById("book-mint").onclick = function () { bookMode = "mint"; paintBook(); };
+    document.getElementById("book-red").onclick = function () { bookMode = "redeem"; paintBook(); };
+    document.getElementById("book-send").onclick = function () {
+      closeSheets();
+      openSheet("sheet-send");
+    };
+    document.getElementById("book-go").onclick = function () {
+      if (vapurr.pendingTx) return;
+      var amt = document.getElementById("book-amt").value.trim();
+      var err = document.getElementById("book-err");
+      if (!amt) { err.hidden = false; err.textContent = "enter an amount"; return; }
+      err.hidden = true;
+      var mint = bookMode !== "redeem";
+      var net = (snap && (snap.net === "testnet" || snap.chain_id === 46630))
+        ? "Robinhood Chain Testnet 46630"
+        : ("Robinhood Chain " + ((snap && snap.chain_id) || 4663));
+      vapurr.beginTx({
+        title: mint ? "Mint $PUSD" : "Redeem $PUSD",
+        kicker: "This device signs",
+        lede: mint
+          ? "Burn $VAPURR, mint $PUSD at the oracle. Spread ≥ 2%. Lithe 9%. Hash or it failed."
+          : "Burn $PUSD, mint $VAPURR at the oracle. Spread ≥ 2%. Hash or it failed.",
+        rows: [
+          { k: "Network", v: net },
+          { k: "From", v: addr },
+          { k: mint ? "Burn V" : "Burn P", v: amt },
+          { k: "Path", v: mint ? "burn VAPURR → mint PUSD" : "burn PUSD → mint VAPURR" },
+          { k: "Spread", v: "≥ 2%" },
+          { k: "Lithe", v: "9%" }
+        ],
+        confirmLabel: mint ? "Sign and mint" : "Sign and redeem",
+        doneTitle: mint ? "Minted" : "Redeemed",
+        failTitle: mint ? "Not minted" : "Not redeemed",
+        explorer: snap && snap.explorer
+      }).then(function (ok) {
+        if (!ok) return;
+        waitHash = (snap && snap.tx) || "";
+        closeSheets();
+        vapurr.send({ cmd: mint ? "econ-mint" : "econ-redeem", amt: amt });
+      });
+    };
+    document.getElementById("send-go").onclick = function () {
+      if (sending || vapurr.pendingTx) return;
+      var to = document.getElementById("send-to").value.trim();
+      var amt = document.getElementById("send-amt").value.trim();
+      var err = document.getElementById("send-err");
+      if (!to || to.length !== 42) { err.hidden = false; err.textContent = "paste a 0x address"; return; }
+      if (!amt) { err.hidden = false; err.textContent = "enter an amount"; return; }
+      err.hidden = true;
+      var sym = assetSym(asset);
+      var net = (snap && (snap.net === "testnet" || snap.chain_id === 46630))
+        ? "Robinhood Chain Testnet 46630"
+        : ("Robinhood Chain " + ((snap && snap.chain_id) || 4663));
+      vapurr.beginTx({
+        title: "Send " + sym,
+        kicker: "This device signs",
+        lede: "Nothing leaves until you sign. Then you get a hash, or it failed.",
+        rows: [
+          { k: "Network", v: net },
+          { k: "From", v: addr },
+          { k: "To", v: to },
+          { k: "Amount", v: amt + " " + sym }
+        ],
+        confirmLabel: "Sign and send",
+        doneTitle: "Sent",
+        failTitle: "Not sent",
+        explorer: snap && snap.explorer
+      }).then(function (ok) {
+        if (!ok) return;
+        sending = true;
+        waitHash = (snap && snap.tx) || "";
+        closeSheets();
+        vapurr.send({ cmd: "wallet-send", asset: asset, to: to, amt: amt });
+      });
+    };
+    document.querySelectorAll("[data-close]").forEach(function (el) {
+      el.onclick = closeSheets;
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") {
+        var overlay = document.querySelector(".vapurr-sign");
+        if (overlay && !overlay.hidden) return;
+        closeSheets();
+      }
+    });
+    vapurr.send({ cmd: "wallet" });
+    setTimeout(function () { if (!snap) vapurr.send({ cmd: "wallet" }); }, 400);
+    setTimeout(function () { if (!snap) vapurr.send({ cmd: "wallet" }); }, 1600);
+    if (window.startShader) startShader(document.getElementById("shader"));
+  </script>
+</body>
+</html>
