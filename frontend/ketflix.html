@@ -299,7 +299,8 @@
     var cur = "the-ketrix";
     function poster(s) { return "/ketflix/posters/" + s + ".png"; }
     function backdrop(s) { return "/ketflix/backdrops/" + s + ".png"; }
-    function trailer(s) { return "/ketflix/trailers/" + s + ".mp4"; }
+    var TRAILER_BASE = "https://thesecretlab.app/vapurr/ketflix/trailers/";
+    function trailer(s) { return TRAILER_BASE + s + ".mp4"; }
     function esc(s) {
       return String(s || "").replace(/[&<>"']/g, function (c) {
         return ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" })[c];

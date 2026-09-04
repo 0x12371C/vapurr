@@ -10,3 +10,8 @@
 | install_id | Bind+House | code-verified; idle; PID **28128 gone** | don't reopen setup.rs; no respawn |
 | Token economy | vapurrbot+Pilot | TRACKS claims gen-4 live on 46630; frontend pay/wallet/pusd/trenches touched ~13:16–13:50 | confirm CAs in STATUS; vault undeployed; `TESTNET_SHAPE.md` |
 | Charts/Psy/Tube | PARK | | |
+
+## Media pack rule (Relic 2026-09-04)
+- **Do not** include mp4/webm in install/zip. Host Ketflix trailers at https://thesecretlab.app/vapurr/ketflix/trailers/.
+- See docs/ketflix/HOSTING.md. Next House pack should shrink vs 50.6 MB zip.
+
