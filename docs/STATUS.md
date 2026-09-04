@@ -21,7 +21,7 @@ Milestone: **pre-v1** — ship bar is [`V1.md`](V1.md). v1.2 money is **testnet 
 |---|---|
 | Native Windows window (tao + 4 WebView2s) | Ships |
 | Chrome HTML in `frontend/` at `vapurr.localhost` | Ships |
-| Packed `dist\vapurr\vapurr.exe` via `pack.ps1` | Ships `dist\vapurr-1.1.0-windows-x64.zip` (**50.6 MB** at 10:28 — Ketflix trailers rust-embedded). **Install vapurr.exe** is the branded first-run (no admin, Start Menu). Logs in `%LOCALAPPDATA%\vapurr`. MP4/WEBM never pack — host on thesecretlab.app/vapurr/ (see docs/ketflix/HOSTING.md). House only. |
+| Packed `dist\vapurr\vapurr.exe` via `pack.ps1` | Ships `dist\vapurr-1.1.1-windows-x64.zip` (**43.3 MB**, git 341b022, no mp4; posters still in embed). **Install vapurr.exe** is the branded first-run (no admin, Start Menu). Logs in `%LOCALAPPDATA%\vapurr`. MP4/WEBM never pack — host on thesecretlab.app/vapurr/ (see docs/ketflix/HOSTING.md). House only. |
 | Per-machine `install_id` | Ships — UUID at `%LOCALAPPDATA%\vapurr\install_id`, minted on successful Install (idempotent). Desk/earn payload includes it. See `docs/ketpay/INSTALL_ID.md`. |
 | Brand tokens on screen (`frontend/tokens.css`) | Ships (`#c0f800` lime) |
 | Tabs, home, settings â†’ `desk.json` | Ships |
