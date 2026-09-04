@@ -1,31 +1,28 @@
-# vapurr worker coordination (hub: vapurrbot)
+﻿# vapurr worker coordination (hub: vapurrbot)
 
-Relic talks to **vapurrbot** (Grok Bot). CLI `grok.exe` sessions cannot join that chat.
+Relic talks to **vapurrbot** (Grok Bot). CLI `grok.exe` credits may be dry — Bot is the live hub.
 
-## Org board (2026-09-04 ~10:30 ET)
+## Org board (2026-09-04 ~15:00 ET)
 
 | Codename | Status | Owns |
 |----------|--------|------|
-| **vapurrbot** | HUB | board, TRACKS, BUILD_VERSIONS, ship bar, econ shape |
+| **vapurrbot** | HUB | board, TRACKS, SNAPSHOT, BUILD_VERSIONS, ship bar, media hosting, commercial/slop |
 | **House** | KEEP | install/zip/`pack.ps1`, plan.md P0, doc canon — **sole packer** |
 | **Pilot** | KEEP | $PUSD desk, copy, Scan liq, pitch — **no pack** |
-| **KFX** | ACTIVE (approved) | Ketflix UI / posters / trailers |
+| **KFX** | ACTIVE (approved) | Ketflix UI / posters / trailers (local cook only) |
 | **PayId** | ACTIVE (approved) | KetPay + zer0ID / earn KYC |
 | **Bind** | ACTIVE (approved) | `install_id` mint + SYBIL |
 | Charts / Psy / Tube | **PARK** | freeze unless Relic reopens |
 
 ## Hard rules (Relic)
-1. **No new grok/powershell process spawns.** Only the three approved organizers (KFX/PayId/Bind) + existing House/Pilot windows. Idle = note in TRACKS/OVERNIGHT or inbox text — never Start-Process.
+1. **No new grok/powershell process spawns.** Only KFX/PayId/Bind + existing House/Pilot. Idle = TRACKS/OVERNIGHT/inbox — never Start-Process.
 2. House alone runs `pack.ps1`. No pack wars.
-3. Canon: **404 = load-fail page.** **KetPay = HTTP 402 / x402 / $PUSD.** Never fuse them.
-4. Earn payout needs zer0ID KYC (`thesecretlab.app/kyc`) + `install_id`. Sybil = per machine install bound.
-5. After-v1 (Servo, Rain settle) only if Relic names them. Exception: live zer0ID is earn-critical.
-6. Version **1.1.0** (rev 223a962). Economy: `docs/econ/TESTNET_SHAPE.md`.
-
-## Economy (locked)
-Genesis `$VAPURR`: **50% treasury** / **50% LP**. Of the LP half, burn **half** → `$PUSD`, keep **half** `$VAPURR`, seed Uni v4 CL on **46630**. `TESTNET_HOUSE` empty until Relic signs. Details: `docs/econ/TESTNET_SHAPE.md`.
+3. Canon: **404 = load-fail.** **KetPay = HTTP 402 / x402 / $PUSD.** Never fuse.
+4. Earn payout needs zer0ID KYC + `install_id`.
+5. **Never embed mp4/webm.** Host on thesecretlab.app (`docs/ketflix/HOSTING.md`).
+6. Version **1.1.0**. Economy: `docs/econ/TESTNET_SHAPE.md`. Living truth: `docs/SNAPSHOT.md` + `STATUS.md`.
 
 ## Open tracks
-See `docs/TRACKS.md`. Flash file: `docs/ORG_FLASH.md`.
+See `docs/TRACKS.md`. Flash: `docs/ORG_FLASH.md`. Graph: `docs/GRAPHIFY.md`.
 
-If it is not on ORG_FLASH, it is drift. Do not add a sixth builder, a new `vapurr://` id, or another isolated `target-*`.
+If it is not on ORG_FLASH / TRACKS, it is drift.

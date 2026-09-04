@@ -1,17 +1,21 @@
 ﻿# Tracks
 
+Living owner board. Snapshot: `docs/SNAPSHOT.md`. Flash: `docs/ORG_FLASH.md`.
+
 | Track | Owner | Status | Next |
 |-------|-------|--------|------|
-| Org board | vapurrbot | live | KEEP House+Pilot; ACTIVE KFX/PayId/Bind only; no new grok procs |
-| Build versions | vapurrbot | **1.1.0** pack @ 10:28 (sha 947c585371b6); Install.exe **13:53** (2fe78275be53); vapurr.exe 11:03 / next.exe 11:15 no zip | next House pack must re-log; avoid silent exe drift |
-| Ketflix UI | KFX | posters+hero 1080p; landscape UI | idle / review |
-| Ketflix trailer | KFX | **12/12** mp4; last touch the-ketrix ~13:07; PID 21016 up | **stop packing trailers into zip.** Review clips; director scaffold |
-| KetPay/zer0ID | PayId | NeedKyc + KYC URL; earn.html idle since ~10:26; PID 9228 up | freeze unless Relic names a hole |
-| install_id | Bind+House | code-verified; idle; PID **28128 gone** | don't reopen setup.rs; no respawn |
-| Token economy | vapurrbot+Pilot | TRACKS claims gen-4 live on 46630; frontend pay/wallet/pusd/trenches touched ~13:16–13:50 | confirm CAs in STATUS; vault undeployed; `TESTNET_SHAPE.md` |
-| Charts/Psy/Tube | PARK | | |
+| Org board | vapurrbot | live — Bot is primary (CLI credits dry) | KEEP House+Pilot; ACTIVE KFX/PayId/Bind only; **no new grok procs** |
+| Build / pack | House | **1.1.3** zip+Install @16:12 (HOUSE_REFUND_BPS=3 / swap rebate) | quit+reinstall to leave old binary; **no mp4/webm in embed** |
+| Media hosting | vapurrbot + TSL | Ketflix `TRAILER_BASE` → thesecretlab.app; CDN 404 until upload | sync `frontend/ketflix/trailers/*.mp4`; see HOSTING.md |
+| Ketflix UI | KFX | posters+hero 1080p landscape; **idle** since ~13:07 | review only; no new proc |
+| Ketflix trailers | KFX | **12/12** local; last ~13:07 | host on TSL; do not pack |
+| SuperApp commercial | vapurrbot | AAA pass ~25.6s brand-locked mascot | Relic feedback; pad to 30s |
+| Mascot slop lore | vapurrbot | director rewritten (T2V inventer); not sustained-running | start `run_vapurr_slop_machine.py` when wanted |
+| KetPay / zer0ID | PayId | NeedKyc + KYC URL; **idle** since ~10:26 | freeze unless Relic names hole |
+| install_id | Bind+House | code-verified; Bind PID **gone**; **idle** | no respawn; don't reopen setup.rs |
+| Token economy | vapurrbot+Pilot | gen-4 / HouseLp claimed live 46630; Pilot touched pay/wallet/pusd PM | keep STATUS CAs honest; vault live |
+| Charts / Psy / Tube | PARK | | |
 
-## Media pack rule (Relic 2026-09-04)
-- **Do not** include mp4/webm in install/zip. Host Ketflix trailers at https://thesecretlab.app/vapurr/ketflix/trailers/.
-- See docs/ketflix/HOSTING.md. Next House pack should shrink vs 50.6 MB zip.
+## Hard media rule (Relic)
+Never pack `.mp4` / `.webm`. Host at `https://thesecretlab.app/vapurr/…`. Embed excludes in `crates/vapurr-shell/src/host/assets.rs`.
 

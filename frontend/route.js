@@ -376,6 +376,11 @@
       var sim = q.sim || {};
       var refund = q.refund || {};
       var refundLine = refund.display ? ("+" + refund.display + " $VAPURR") : "small $VAPURR refund";
+      var refChip = byId("chip-refund");
+      if (refChip) {
+        var rb = (refund.bps != null ? refund.bps : q.refund_bps);
+        refChip.textContent = rb != null ? ((Number(rb) / 100).toFixed(2) + "%") : "—";
+      }
       var sink = (q.fee_sink && q.fee_sink.label) || "0.25% buys $VAPURR. Rest burns to mint $PUSD.";
       var gasBits = [];
       if (sim.gas) gasBits.push(Number(sim.gas).toLocaleString() + " gas");

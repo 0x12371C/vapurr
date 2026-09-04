@@ -974,7 +974,7 @@ fn loop_pos(rpc: &Rpc, vault: &str, holder: Address) -> LoopPos {
 }
 
 fn loop_hint(p: &LoopPos) -> String {
-    let mut h = "Euler supplied".to_string();
+    let mut h = "Oliver supplied".to_string();
     if p.apy_bps > 0 {
         h.push_str(" · ");
         h.push_str(&fmt_apy_bps(p.apy_bps));

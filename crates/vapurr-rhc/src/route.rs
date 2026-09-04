@@ -13,7 +13,7 @@ use serde_json::{json, Value};
 
 use crate::{
     CHAIN_ID, NATIVE, PUSD_TOKEN, ROUTE_FEE_BPS, ROUTE_FEE_MINT_SPREAD_BPS, ROUTE_INTEGRATOR,
-    ROUTE_REFUND_BPS, STOCKS, TESTNET_CHAIN_ID, TESTNET_PUSD, TESTNET_STOCKS, TESTNET_SWAP,
+    HOUSE_REFUND_BPS, ROUTE_REFUND_BPS, STOCKS, TESTNET_CHAIN_ID, TESTNET_PUSD, TESTNET_STOCKS, TESTNET_SWAP,
     TESTNET_USDG, TESTNET_VAPURR, USDG, USDG_DECIMALS, VAPURR_TOKEN, WETH,
 };
 
@@ -291,10 +291,10 @@ pub fn net_after_fee(gross: u128) -> (u128, u128) {
     (gross.saturating_sub(fee), fee)
 }
 
-/// 5 bps of notional, paid in $VAPURR (18 dec). $1 genesis until the live book feeds a px.
-pub fn vapurr_refund_wei(from_usd: f64, from_amount: u128, from_dec: u32) -> u128 {
+/// `bps` of notional, paid in $VAPURR (18 dec). $1 genesis until the live book feeds a px.
+pub fn vapurr_refund_wei_bps(bps: u32, from_usd: f64, from_amount: u128, from_dec: u32) -> u128 {
     if from_usd > 0.0 {
-        let usd = from_usd * (ROUTE_REFUND_BPS as f64) / 10_000.0;
+        let usd = from_usd * (bps as f64) / 10_000.0;
         if !usd.is_finite() || usd <= 0.0 {
             return 0;
         }
@@ -305,7 +305,12 @@ pub fn vapurr_refund_wei(from_usd: f64, from_amount: u128, from_dec: u32) -> u12
     } else {
         from_amount.saturating_mul(10u128.pow(18 - from_dec))
     };
-    scoop(as_18, ROUTE_REFUND_BPS)
+    scoop(as_18, bps)
+}
+
+/// LiFi/integrator path: 5 bps $VAPURR rebate.
+pub fn vapurr_refund_wei(from_usd: f64, from_amount: u128, from_dec: u32) -> u128 {
+    vapurr_refund_wei_bps(ROUTE_REFUND_BPS, from_usd, from_amount, from_dec)
 }
 
 /// User net in output units: full route + $VAPURR refund − gas. The route is not haircut.
@@ -760,7 +765,7 @@ fn house_pay_flags(v: &mut Value, req: &QuoteReq, bag: &HouseBag) {
     }
     let sym = req.from_sym.trim_start_matches('$');
     let note = if payable {
-        "House $VAPURR / $PUSD. 0.30%. This device signs.".to_string()
+        "House $VAPURR / $PUSD. 0.30% fee + 0.03% $VAPURR refund. This device signs.".to_string()
     } else if !sim_ok {
         obj.get("sim")
             .and_then(|s| s.get("revert"))
@@ -1234,16 +1239,8 @@ fn pack_ranked(req: &QuoteReq, cands: &[Cand], baseline: Option<&Cand>) -> Value
     } else {
         fee_plan(req, winner)
     };
-    let refund = if house {
-        json!({
-            "bps": 0,
-            "asset": "",
-            "display": "",
-            "label": "none",
-        })
-    } else {
-        refund_plan(req, winner)
-    };
+    let refund_bps = if house { HOUSE_REFUND_BPS } else { ROUTE_REFUND_BPS };
+    let refund = refund_plan_at(req, winner, refund_bps);
     let refund_disp = refund
         .get("display")
         .and_then(|x| x.as_str())
@@ -1259,7 +1256,7 @@ fn pack_ranked(req: &QuoteReq, cands: &[Cand], baseline: Option<&Cand>) -> Value
                 "hops": c.hops,
                 "net_out": c.net_out.to_string(),
                 "net_display": fmt_units(&c.net_out.to_string(), req.to_dec),
-                "score": score_of(c, req),
+                "score": score_of(c, req).to_string(),
                 "gas_usd": if c.gas_usd > 0.0 { format!("${:.2}", c.gas_usd) } else { String::new() },
                 "sim_ok": c.sim.ok,
                 "sim_ran": c.sim.ran,
@@ -1274,7 +1271,7 @@ fn pack_ranked(req: &QuoteReq, cands: &[Cand], baseline: Option<&Cand>) -> Value
         "provider": winner.provider,
         "fee_bps": ROUTE_FEE_BPS,
         "fee": "0.25%",
-        "refund_bps": ROUTE_REFUND_BPS,
+        "refund_bps": refund_bps,
         "integrator": ROUTE_INTEGRATOR,
         "from_chain": req.from_chain,
         "to_chain": req.to_chain,
@@ -1299,7 +1296,7 @@ fn pack_ranked(req: &QuoteReq, cands: &[Cand], baseline: Option<&Cand>) -> Value
         "hops": winner.hops,
         "tx": winner.tx,
         "tool": winner.tool,
-        "score": score_of(winner, req),
+        "score": score_of(winner, req).to_string(),
         "best": beat_json(req, winner, cands, baseline),
         "payable": payable,
         "simulated": winner.sim.ok,
@@ -1309,7 +1306,7 @@ fn pack_ranked(req: &QuoteReq, cands: &[Cand], baseline: Option<&Cand>) -> Value
         "fee_sink": fee,
         "routes": alts,
         "note": if house && payable {
-            "House $VAPURR / $PUSD. 0.30%. This device signs.".to_string()
+            "House $VAPURR / $PUSD. 0.30% fee + 0.03% $VAPURR refund. This device signs.".to_string()
         } else if payable {
             "RPC simulated. Full route. Small $VAPURR refund. Remainder of 0.25% burns to $PUSD.".to_string()
         } else if !winner.sim.ran {
@@ -1411,12 +1408,18 @@ fn beat_json(req: &QuoteReq, winner: &Cand, cands: &[Cand], baseline: Option<&Ca
         "of": n,
         "simulated": simmed,
         "sim_ok": sim_ok,
-        "score": score_of(winner, req),
+        "score": score_of(winner, req).to_string(),
         "vs_tool": baseline.map(|b| b.tool.clone()).unwrap_or_default(),
         "extra_out": extra.to_string(),
         "extra_display": fmt_units(&extra.to_string(), req.to_dec),
         "refund_display": fmt_units(
-            &vapurr_refund_wei(winner.from_usd, req.from_amount, req.from_dec).to_string(),
+            &vapurr_refund_wei_bps(
+                if winner.tool == "house" { HOUSE_REFUND_BPS } else { ROUTE_REFUND_BPS },
+                winner.from_usd,
+                req.from_amount,
+                req.from_dec,
+            )
+            .to_string(),
             18
         ),
         "why": if winner.sim.ok {
@@ -1428,14 +1431,19 @@ fn beat_json(req: &QuoteReq, winner: &Cand, cands: &[Cand], baseline: Option<&Ca
 }
 
 fn refund_plan(req: &QuoteReq, c: &Cand) -> Value {
-    let wei = vapurr_refund_wei(c.from_usd, req.from_amount, req.from_dec);
+    refund_plan_at(req, c, ROUTE_REFUND_BPS)
+}
+
+fn refund_plan_at(req: &QuoteReq, c: &Cand, bps: u32) -> Value {
+    let wei = vapurr_refund_wei_bps(bps, c.from_usd, req.from_amount, req.from_dec);
+    let pct = format!("{:.2}%", bps as f64 / 100.0);
     json!({
-        "bps": ROUTE_REFUND_BPS,
+        "bps": bps,
         "asset": "VAPURR",
         "decimals": 18,
         "amount": wei.to_string(),
         "display": fmt_units(&wei.to_string(), 18),
-        "label": "small $VAPURR refund — the route is not cut",
+        "label": format!("{pct} $VAPURR refund — the route is not cut"),
     })
 }
 
@@ -1998,6 +2006,13 @@ mod tests {
     }
 
     #[test]
+    fn house_refund_is_three_bps() {
+        let wei = vapurr_refund_wei_bps(HOUSE_REFUND_BPS, 1.0, 1_000_000, 6);
+        assert_eq!(wei, 3 * 10u128.pow(14)); // 0.0003 VAPURR
+        assert_eq!(HOUSE_REFUND_BPS, 3);
+    }
+
+    #[test]
     fn vapurr_refund_is_five_bps() {
         let wei = vapurr_refund_wei(1.0, 1_000_000, 6);
         assert_eq!(wei, 5 * 10u128.pow(14)); // 0.0005 VAPURR
@@ -2144,6 +2159,14 @@ mod tests {
         assert_eq!(impact_pct(100.0, 99.5), "0.50%");
         assert_eq!(impact_pct(1.0, 1.0), "~0%");
         assert_eq!(impact_pct(0.0, 1.0), "");
+    }
+
+    #[test]
+    fn score_i128_serializes_as_string() {
+        // token-unit scores exceed i64; json!(i128) panics "number out of range"
+        let huge: i128 = (u128::MAX / 2) as i128;
+        let v = serde_json::json!({ "score": huge.to_string() });
+        assert_eq!(v["score"].as_str().unwrap(), huge.to_string());
     }
 
     #[test]

@@ -12,3 +12,8 @@ Track every pack/channel/exe change overnight.
 | 2026-09-04 11:03 ET | 1.1.0 | rev=223a962 sha=75b0a6e26e9a | dist/vapurr/vapurr.exe (61.0 MB) | silent rebuild; no new zip - next House pack re-logs |
 | 2026-09-04 11:15 ET | 1.1.0 | rev=223a962 sha=e7a381d13559 | dist/vapurr/vapurr.next.exe (61.1 MB) | next.exe drift after 11:03; still no zip |
 | 2026-09-04 13:53 ET | 1.1.0 | rev=223a962 sha=2fe78275be53 | dist/vapurr/Install vapurr.exe (66.7 MB) | Install.exe refreshed; zip still 10:28 — next House pack re-logs |
+| 2026-09-04 15:57 ET | 1.1.2 | rev=ce99dac sha=2C783EF3FA03 | dist vapurr-1.1.2-windows-x64.zip + channel | swap score i128→string (json! panic fix) |
+| 2026-09-04 16:12 ET | 1.1.3 | rev=ce99dac sha=CE20D957068F | dist vapurr-1.1.3-windows-x64.zip (43.3 MB) + channel | HOUSE_REFUND_BPS=3 (0.03% $VAPURR); LiFi stays 5 bps; UI chip shows amount |
+| 2026-09-04 16:35 ET | 1.1.4 | pending pack | Oliver wallet label + PUSD polish |
+
+| 2026-09-04 16:37 ET | 1.1.4 | rev=ce99dac sha=0A64731F1867 | dist vapurr-1.1.4-windows-x64.zip + channel | Oliver wallet label + PUSD polish jump rail |

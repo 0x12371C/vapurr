@@ -117,6 +117,8 @@ pub const ROUTE_FEE_BPS: u32 = 25;
 pub const ROUTE_FEE: f64 = 0.0025;
 /// User rebate in $VAPURR. 5 bps of notional — the route itself is not stopped.
 pub const ROUTE_REFUND_BPS: u32 = 5;
+/// House book ($VAPURR/$PUSD) user rebate in $VAPURR. 3 bps of notional.
+pub const HOUSE_REFUND_BPS: u32 = 3;
 pub const ROUTE_INTEGRATOR: &str = "vapurr";
 /// Mint spread assumed when estimating $PUSD created from the burned slice (market min 2%).
 pub const ROUTE_FEE_MINT_SPREAD_BPS: u32 = 200;

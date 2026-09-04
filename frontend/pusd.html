@@ -99,6 +99,11 @@
       margin: 0 0 14px;
     }
     .say b { color: var(--color-snow); font-weight: 600; }
+    /* polish-1.1.4 */
+    .card > .say { max-width: 62ch; }
+    .board { gap: 16px; }
+    .card h2 { letter-spacing: -0.03em; }
+
     .say code {
       font-family: inherit;
       font-size: 0.92em;
@@ -455,6 +460,20 @@
       .hero h1 { font-size: 52px; }
       .spend, .strip { grid-template-columns: 1fr 1fr; }
     }
+
+    .jump {
+      display: flex; flex-wrap: wrap; gap: 8px;
+      margin: 0 0 14px; position: relative; z-index: 1;
+    }
+    body.is-live .jump { display: flex; }
+    .jump[hidden] { display: none !important; }
+    .jump button {
+      appearance: none; border: 1px solid color-mix(in srgb, var(--color-snow) 12%, transparent);
+      background: color-mix(in srgb, var(--color-steel) 55%, transparent);
+      color: var(--color-snow); border-radius: 999px; padding: 8px 14px;
+      font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+    }
+    .jump button:hover { border-color: var(--color-lime); color: var(--color-lime); }
   </style>
 </head>
 <body>
@@ -497,14 +516,21 @@
       <div class="card" id="lithe">
         <h2>Lithe</h2>
         <p class="rate"><b id="apy">9.00%</b><span id="earned"></span></p>
-        <p class="say">Every <b>$PUSD</b> earns in place. No claim. Mint spread funds it. Oliver stacks on top. Browse-earn is <code>vapurr://earn</code> — different product.</p>
+        <p class="say">Every <b>$PUSD</b> earns in place — no claim. Mint spread funds it. Oliver stacks on top. Browse-earn is separate (<code>vapurr://earn</code>).</p>
       </div>
     </div>
 
+    
+    <div class="jump" id="jump" hidden>
+      <button type="button" data-jump="book">Mint</button>
+      <button type="button" data-jump="euler">Oliver</button>
+      <button type="button" data-jump="house">House</button>
+      <button type="button" data-jump="lithe">Lithe</button>
+    </div>
     <div class="board" id="board">
     <div class="card" id="book">
       <h2>Mint and redeem</h2>
-      <p class="say">Burn <b>$VAPURR</b> → mint <b>$PUSD</b>. Reverse mints V back. Oracle is first spot of the block. Spread ≥ 2% funds Lithe. Redeem does not mint the V spread. <b>USDG</b> is not this mint.</p>
+      <p class="say">Burn <b>$VAPURR</b> → mint <b>$PUSD</b> (and reverse). Oracle = first spot of the block. Spread ≥2% funds Lithe. Not USDG.</p>
       <div class="amt">
         <input class="field" id="amt" placeholder="0" inputmode="decimal" autocomplete="off"/>
         <button class="btn-ghost" id="max" type="button" style="height:44px">Max</button>
@@ -520,7 +546,7 @@
         <h2>Oliver</h2>
         <span class="hint" id="e-hint"></span>
       </div>
-      <p class="say">Oliver is isolated <b>$PUSD</b> credit. <b>$VAPURR</b> is the collateral. Supply $PUSD to earn borrow interest; Lithe still drips on cash sitting in the vault. Borrow $PUSD against $VAPURR and supplied $PUSD — you can borrow up to 85% of that collateral value. Loop is recursive supply and borrow: new $PUSD depth stays in the vault. If health falls through 90%, the position can be liquidated. The boot borrow rate starts at 150% and fades to 6% as 100,000 real $PUSD cash lands in the vault. Looping does not count as that cash. No USDG vault. No ETH vault.</p>
+      <p class="say">Isolated <b>$PUSD</b> credit with <b>$VAPURR</b> collateral. Supply to earn. Borrow up to <b>85%</b> LTV. Loop stacks depth in-vault. Liquidation under 90% health. Boot borrow <b>150% → 6%</b> as real cash fills.</p>
       <div id="e-tick">Supplied $0.00</div>
       <div id="euler-boot">
         <p class="note" id="euler-st">Deploy Oliver after the market is live.</p>
@@ -564,7 +590,7 @@
         <h2>House book</h2>
         <span class="hint" id="h-hint"></span>
       </div>
-      <p class="say">Uniswap v4 concentrated liquidity for <b>$VAPURR / $PUSD</b> only. Fee is 0.30%. The range is ±20% around the oracle. The house swapper is the tape you trade. No USDG in this pool. Stock tokens on this device are not house liquidity. Seed 50/50 keeps half of $VAPURR as treasury, burns a quarter to mint $PUSD, and puts the rest in the pool. You cannot dump $VAPURR or $PUSD into Robinhood’s dollar from this desk.</p>
+      <p class="say"><b>$VAPURR / $PUSD</b> Uni v4 CL — <b>0.30%</b> fee, ±20% around oracle. Seed 50/50: half treasury, quarter burn→mint $PUSD, rest LP. No USDG.</p>
         <div class="facts">
           <div class="chip"><span>$VAPURR</span><b id="h-v">0.00</b></div>
           <div class="chip"><span>$PUSD</span><b id="h-p">0.00</b></div>

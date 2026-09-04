@@ -1,5 +1,7 @@
 # vapurr status
 
+Afternoon board: [SNAPSHOT.md](SNAPSHOT.md) · tracks: [TRACKS.md](TRACKS.md) · graph: [GRAPHIFY.md](GRAPHIFY.md)
+
 Last audited: **2026-09-04** (House lock: `docs/ORG_FLASH.md`).
 
 Milestone: **pre-v1** — ship bar is [`V1.md`](V1.md). v1.2 money is **testnet 46630 only**. If README or ARCHITECTURE disagree with this file, this file plus the code win — then those docs get fixed.
@@ -30,9 +32,9 @@ Milestone: **pre-v1** — ship bar is [`V1.md`](V1.md). v1.2 money is **testnet 
 | RHC liquidity graph (`/scan/api/liq`, Scan Liquidity tab) | Ships. Live Robinhood RPC (`vapurr-rhc::liq`). View is capped (â‰¤48 nodes / 72 edges). Factory-log archive crawl was removed â€” it froze the chrome. Lookups use the full RPC book. |
 | Live Trenches | Ships â€” rail/home open https://fomo.family in this window |
 | PUSD/VAPURR on-chain market (`vapurr-econ` + `PusdMarket.sol`) | Burn `$VAPURR` ↔ mint `$PUSD` at the oracle. Virtual CP spread, min 2%. **Lithe** is 9% on `$PUSD`. No USDG in the mint/burn loop. |
-| PUSD vault (`PusdLoop.sol`, Euler-shaped) | Isolated `$PUSD` credit + `$VAPURR` collateral. Boot kink **150%** → **6%** as 100k real `$PUSD` cash lands. Looping does not fade the boot. **Live** `0x89E17eef…4521`. Old `0xC4d4…` retired. |
+| PUSD vault (`PusdLoop.sol`, Oliver-shaped (Euler-family)) | Isolated `$PUSD` credit + `$VAPURR` collateral. Boot kink **150%** → **6%** as 100k real `$PUSD` cash lands. Looping does not fade the boot. **Live** `0x89E17eef…4521`. Old `0xC4d4…` retired. |
 | House Uni v4 CL (`HouseLp.sol`) | **Live on 46630.** `0x667bFcAF…1bf7`. NFT #2273. `$VAPURR`/`$PUSD` 0.30% ±20%. Swapper `0x6304419b…4dD2` (PUSD settle-safe). Dead `0xb699…` / `0xb10d…` / `0xbD6b…` do not count. |
-| Euler vault (`PusdLoop.sol`) | **Live.** `0x89E17eef…4521`. Boot 150% kink, fades with exogenous cash. |
+| Oliver vault (`PusdLoop.sol`) | **Live.** `0x89E17eef…4521`. Boot 150% kink, fades with exogenous cash. |
 | vapurrbid (`vapurr://vapurrbid`, $PUSD pay-to-rank) | Ships. `Outbid.sol` + `vapurr-econ::outbid`. Rank is $PUSD paid. Aliases: `outbid`, `bid`, `board`. |
 | Ketcharts listing (`vapurr://ketcharts` Listed) | Ships. `KetList.sol` + `vapurr-econ::ketlist`. Pay `$PUSD` to list a token (50 min, +25 to take #1). Profile (web/X/tg/discord/bio/logo) is on-chain with the payment. Snap paints Listed + pair card. Inbox copy `%LOCALAPPDATA%\vapurr\ketlist.json`. Never refunded. Organic tape stays. `TESTNET_KETLIST` empty until this device deploys it. |
 | PNS (`vapurr://pns`, `.hood` names) | Live on testnet 46630. Registry `0x13C9fCaB70e8f7eED688A5548B0E3849B1ae0fC4` (owns namehash `hood`). ENS-shaped (namehash, addr, reverse, setAddr). Type `alice.hood` in the bar. |
