@@ -180,9 +180,9 @@ fn solve(book: &mut Book) {
     }
 }
 
-/// Live book. Warms the RH price map, records a relative, solves W*.
+/// Live book from the Scan cache. Do not warm the mainnet crawler here —
+/// pulse and the econ thread would 429 Robinhood RPC and stall testnet txs.
 pub fn snap() -> Value {
-    rhc::liq::warm();
     let mut book = load();
     if let Some(liq) = rhc::liq::cached_ok() {
         ingest(&mut book, universe(&liq));

@@ -280,7 +280,7 @@ impl Client {
         Ok(())
     }
 
-    fn board_stats(&self, board: &Address) -> Result<(u128, u128), EconError> {
+    pub(crate) fn board_stats(&self, board: &Address) -> Result<(u128, u128), EconError> {
         let data = encode_fn("stats()");
         let raw = self
             .rpc

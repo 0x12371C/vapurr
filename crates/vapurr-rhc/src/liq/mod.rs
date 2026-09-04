@@ -1,11 +1,15 @@
 //! Robinhood Chain liquidity graph. All Rust. Live RPC only.
 //!
-//! Tokens are nodes. Pools are edges. Factories on 4663 emit PoolCreated /
-//! PairCreated; we crawl those logs, then `balanceOf` the pool for TVL.
-//! USDG is $1. Everything else prices through USDG (then WETH). No Gecko,
-//! no vis-network, no HTTP market book.
+//! This map is the **chain**: factories on 4663 emit PoolCreated / PairCreated;
+//! we crawl those logs, then `balanceOf` the pool for TVL. USDG/WETH hubs are
+//! how Robinhood Chain memes actually price. That is not the house book.
 //!
-//! The HTTP payload and SVG stay capped so Scan does not freeze.
+//! House liquidity is $VAPURR ↔ $PUSD only. No house pool vs USDG, WETH, or ETH.
+//! $PUSD has to stand as the dollar. Euler-shaped supply/borrow (`PusdLoop`) is
+//! how that dollar gets its own depth — not a house USDG/ETH pool.
+//!
+//! No Gecko, no vis-network, no HTTP market book. Payload stays capped so Scan
+//! does not freeze.
 
 use std::collections::{HashMap, HashSet};
 use std::fs;
@@ -27,8 +31,10 @@ mod crawl;
 mod price;
 mod swaps;
 mod graph;
+mod tape;
 
 pub use snapshot::{warm, snapshot, snapshot_json, cached_ok, stats_if_ready, token_hit, pools_for, token_list};
+pub use tape::{tape_json, trades_json};
 use crawl::*;
 use price::*;
 use swaps::*;

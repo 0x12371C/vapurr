@@ -78,7 +78,12 @@ fn master(seed: &[u8]) -> Result<([u8; 32], [u8; 32]), WalletError> {
     split(&hmac512(b"Bitcoin seed", seed))
 }
 
-fn derive(k: &[u8; 32], chain: &[u8; 32], i: u32, hard: bool) -> Result<([u8; 32], [u8; 32]), WalletError> {
+fn derive(
+    k: &[u8; 32],
+    chain: &[u8; 32],
+    i: u32,
+    hard: bool,
+) -> Result<([u8; 32], [u8; 32]), WalletError> {
     let idx = if hard { i | 0x8000_0000 } else { i };
     let mut data = Vec::with_capacity(37);
     if hard {

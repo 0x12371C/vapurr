@@ -127,12 +127,28 @@ impl Rpc {
     }
 
     pub fn eth_call(&self, from: &str, to: Option<&str>, data: &str) -> Result<String, RpcError> {
+        self.eth_call_tx(from, to, data, None)
+    }
+
+    pub fn eth_call_tx(
+        &self,
+        from: &str,
+        to: Option<&str>,
+        data: &str,
+        value: Option<&str>,
+    ) -> Result<String, RpcError> {
         let mut obj = serde_json::Map::new();
         obj.insert("from".into(), json!(from));
         if let Some(t) = to {
             obj.insert("to".into(), json!(t));
         }
         obj.insert("data".into(), json!(data));
+        if let Some(v) = value {
+            let t = v.trim();
+            if !t.is_empty() && t != "0x" && t != "0x0" && t != "0" {
+                obj.insert("value".into(), json!(t));
+            }
+        }
         let v = self.call("eth_call", json!([Value::Object(obj), "latest"]))?;
         Ok(v.as_str().unwrap_or("0x").into())
     }

@@ -2,7 +2,11 @@
 //! $VAPURR / $PUSD. Burn V mint P, burn P mint V. Lithe is 9% on $PUSD.
 
 pub mod cfg;
+pub mod euler;
+pub mod house;
 pub mod kelly;
+pub mod swap;
+pub mod ketlist;
 pub mod outbid;
 pub mod treasury;
 
@@ -44,12 +48,24 @@ pub enum EconError {
     NeedBoard,
     #[error("need a URL or @handle")]
     BadUrl,
-    #[error("that URL is already listed")]
+    #[error("need a token address")]
+    BadToken,
+    #[error("need a pool address")]
+    BadPool,
+    #[error("need a ticker and a name")]
+    BadTicker,
+    #[error("already listed")]
     Owned,
-    #[error("need 5 more $PUSD to take #1")]
+    #[error("need more $PUSD to take #1")]
     Top,
     #[error("board is full")]
     Full,
+    #[error("vault is not on chain yet")]
+    NeedLoop,
+    #[error("house book is not on chain yet")]
+    NeedHouse,
+    #[error("house swap is not on chain yet")]
+    NeedSwap,
     #[error("tx pending {0}")]
     Pending(String),
 }
@@ -74,6 +90,34 @@ pub enum EconCmd {
         amt: String,
     },
     OutbidDeploy,
+    KetList,
+    KetListPay {
+        token: String,
+        pool: String,
+        symbol: String,
+        name: String,
+        amt: String,
+        meta: String,
+    },
+    KetListDeploy,
+    LoopDeploy,
+    LoopOp {
+        op: String,
+        amt: String,
+        steps: String,
+    },
+    HouseDeploy,
+    HouseSeed {
+        vapurr: String,
+        pusd: String,
+    },
+    HouseBootstrap,
+    SwapDeploy,
+    HouseSwap {
+        sell_v: bool,
+        amt: String,
+    },
+    Pulse,
 }
 
 pub struct Client {
@@ -128,6 +172,14 @@ impl Client {
             EconCmd::Seed { .. } => "seed",
             EconCmd::Outbid | EconCmd::OutbidBid { .. } => "outbid",
             EconCmd::OutbidDeploy => "deploy",
+            EconCmd::KetList | EconCmd::KetListPay { .. } => "ketlist",
+            EconCmd::KetListDeploy => "deploy",
+            EconCmd::LoopDeploy | EconCmd::LoopOp { .. } => "loop",
+            EconCmd::HouseDeploy
+            | EconCmd::HouseSeed { .. }
+            | EconCmd::HouseBootstrap
+            | EconCmd::HouseSwap { .. } => "house",
+            EconCmd::SwapDeploy | EconCmd::Pulse => "pulse",
         };
         match self.run_inner(cmd) {
             Ok(v) => Ok(v),
@@ -166,15 +218,57 @@ impl Client {
                 self.outbid_deploy()?;
                 Ok(self.outbid_snap())
             }
+            EconCmd::KetList => Ok(self.ketlist_snap()),
+            EconCmd::KetListPay {
+                token,
+                pool,
+                symbol,
+                name,
+                amt,
+                meta,
+            } => self.ketlist_pay(&token, &pool, &symbol, &name, &amt, &meta),
+            EconCmd::KetListDeploy => {
+                self.ketlist_deploy()?;
+                Ok(self.ketlist_snap())
+            }
+            EconCmd::LoopDeploy => {
+                self.euler_deploy()?;
+                Ok(self.snapshot())
+            }
+            EconCmd::LoopOp { op, amt, steps } => self.euler_op(&op, &amt, &steps),
+            EconCmd::HouseDeploy => {
+                self.house_deploy()?;
+                Ok(self.snapshot())
+            }
+            EconCmd::HouseSeed { vapurr, pusd } => self.house_seed_cmd(&vapurr, &pusd),
+            EconCmd::HouseBootstrap => self.house_bootstrap(),
+            EconCmd::SwapDeploy => {
+                self.swap_deploy()?;
+                Ok(self.snapshot())
+            }
+            EconCmd::HouseSwap { sell_v, amt } => {
+                let n = parse_amt(&amt)?;
+                self.house_swap(sell_v, n)?;
+                Ok(self.snapshot())
+            }
+            EconCmd::Pulse => self.pulse(),
         }
     }
 
     pub fn snapshot(&self) -> Value {
+        let mut v = self.book_snap();
+        v["treasury"] = crate::treasury::snap();
+        v
+    }
+
+    /// Market + vault + house. No treasury, no mainnet liq crawl.
+    pub(crate) fn book_snap(&self) -> Value {
         let mut v = match self.snapshot_inner() {
             Ok(v) => v,
             Err(e) => self.base_snap(&e.to_string()),
         };
-        v["treasury"] = crate::treasury::snap();
+        v["loop"] = self.euler_snap();
+        v["house"] = self.house_snap();
         v
     }
 
@@ -267,16 +361,26 @@ impl Client {
     }
 
     pub(crate) fn live_market(&self) -> Option<Address> {
-        if self.cfg.market.is_empty() {
+        self.live_ca(&self.cfg.market)
+    }
+
+    /// Code at `hex`. RPC errors keep a known CA (do not re-deploy).
+    pub(crate) fn live_ca(&self, hex: &str) -> Option<Address> {
+        if hex.is_empty() {
             return None;
         }
-        let addr = addr_from_hex(&self.cfg.market)?;
-        let code = self.rpc.eth_code(&addr.to_hex()).ok()?;
-        let hex = code.trim().trim_start_matches("0x").trim();
-        if hex.len() <= 2 {
-            return None;
+        let addr = addr_from_hex(hex)?;
+        match self.rpc.eth_code(&addr.to_hex()) {
+            Ok(code) => {
+                let h = code.trim().trim_start_matches("0x").trim();
+                if h.len() <= 2 {
+                    None
+                } else {
+                    Some(addr)
+                }
+            }
+            Err(_) => Some(addr),
         }
-        Some(addr)
     }
 
     fn transact(&mut self, sig: &str, amt: u128) -> Result<String, EconError> {
@@ -293,7 +397,7 @@ impl Client {
             return addr_from_hex(&self.cfg.usdg).ok_or_else(|| EconError::Rpc("usdg".into()));
         }
         let s = if self.is_testnet() {
-            rhc::TESTNET_USDG
+            rhc::TESTNET_MOCK_USDG
         } else {
             USDG
         };
@@ -329,7 +433,7 @@ impl Client {
         Ok(usdg)
     }
 
-    fn token_raw(&self, token: Address, holder: Address) -> u128 {
+    pub(crate) fn token_raw(&self, token: Address, holder: Address) -> u128 {
         let data = encode_fn_addr("balanceOf(address)", holder);
         let raw = self
             .rpc
@@ -523,7 +627,15 @@ fn map_revert(r: &str) -> EconError {
         "TOP" => EconError::Top,
         "OWNER" => EconError::Owned,
         "URL" | "TITLE" => EconError::BadUrl,
+        "TOKEN" => EconError::BadToken,
+        "POOL" => EconError::BadPool,
+        "SYM" | "NAME" | "META" => EconError::BadTicker,
         "FULL" => EconError::Full,
+        "LTV" => EconError::Rpc("over 85% LTV".into()),
+        "CASH" => EconError::Rpc("vault cash too thin — unwind or wait".into()),
+        "LIQ" => EconError::Rpc("not liquidatable".into()),
+        "DEBT" => EconError::Rpc("no debt".into()),
+        "STEP" => EconError::Rpc("steps 1–16".into()),
         _ => EconError::Rpc(r.into()),
     }
 }
@@ -584,7 +696,7 @@ fn fmt_index(v: u128) -> String {
     format!("{whole}.{frac:06}")
 }
 
-fn fmt_bps(bps: u128) -> String {
+pub(crate) fn fmt_bps(bps: u128) -> String {
     format!("{}.{:02}", bps / 100, bps % 100)
 }
 

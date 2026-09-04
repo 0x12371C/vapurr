@@ -21,8 +21,10 @@ pub use tx::{
     abi_addr, abi_u256, decode_abi_string, decode_dyn_string, decode_hex_bytes, decode_word_addr,
     decode_word_u128, encode_fn, encode_fn_addr, encode_fn_addr_addr, encode_fn_addr_u256,
     encode_fn_bytes32, encode_fn_bytes32_addr, encode_fn_four_u256, encode_fn_str,
-    encode_fn_str_bytes32,
-    encode_fn_two_str_u256, encode_fn_two_u256, encode_fn_u256, hex0x, revert_reason, Tx,
+    encode_fn_str_bytes32, encode_fn_two_addr_three_str_u256, encode_fn_two_addr_two_str_u256,
+    encode_fn_two_str_u256,
+    encode_fn_two_u256, encode_fn_u256, hex0x,
+    revert_reason, Tx,
 };
 
 #[derive(Clone)]
@@ -121,10 +123,7 @@ pub(crate) fn device_key_path() -> PathBuf {
 pub fn data_dir() -> PathBuf {
     let base = std::env::var_os("LOCALAPPDATA")
         .map(PathBuf::from)
-        .or_else(|| {
-            std::env::var_os("USERPROFILE")
-                .map(|h| PathBuf::from(h).join("AppData/Local"))
-        })
+        .or_else(|| std::env::var_os("USERPROFILE").map(|h| PathBuf::from(h).join("AppData/Local")))
         .unwrap_or_else(|| PathBuf::from("."));
     base.join("vapurr")
 }
@@ -191,7 +190,9 @@ impl std::fmt::Debug for Address {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Account {
     Guest,
-    LocalUnverified { address: Address },
+    LocalUnverified {
+        address: Address,
+    },
     Verified {
         address: Address,
         account: VerifiedAccount,
@@ -214,7 +215,9 @@ impl Account {
     pub fn address(&self) -> Option<Address> {
         match self {
             Account::Guest => None,
-            Account::LocalUnverified { address } | Account::Verified { address, .. } => Some(*address),
+            Account::LocalUnverified { address } | Account::Verified { address, .. } => {
+                Some(*address)
+            }
         }
     }
 }
@@ -305,7 +308,10 @@ impl WalletFacade {
         self.account.is_verified() && self.spendable_usd() >= amount_minor
     }
 
-    pub fn sign_session_intent(&mut self, intent: SessionIntent) -> Result<SignedIntent, WalletError> {
+    pub fn sign_session_intent(
+        &mut self,
+        intent: SessionIntent,
+    ) -> Result<SignedIntent, WalletError> {
         if !self.account.is_verified() {
             return Err(WalletError::NeedKyc);
         }

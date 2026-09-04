@@ -5,8 +5,8 @@ use serde_json::{json, Value};
 use vapurr_rhc::{self as rhc, Rpc, USDG, USDG_DECIMALS, WETH};
 
 use crate::{
-    addr_from_hex, decode_hex_bytes, decode_word_u128, encode_fn_addr_u256, hex0x, Address,
-    DeviceKey, Tx, WalletError,
+    addr_from_hex, decode_hex_bytes, decode_word_addr, decode_word_u128, encode_fn_addr_u256,
+    encode_fn_str, hex0x, Address, DeviceKey, Tx, WalletError,
 };
 
 const MIN_GAS_MAIN: u128 = 2_000_000_000_000_000;
@@ -30,6 +30,19 @@ pub enum WalletCmd {
         secret: String,
     },
     Logout,
+    SetNet(String),
+    RevealSeed,
+    ExportKey,
+    Resolve {
+        to: String,
+    },
+    Exec {
+        to: String,
+        data: String,
+        value: String,
+        chain_id: u64,
+        gas: u64,
+    },
 }
 
 struct Net {
@@ -52,19 +65,52 @@ fn cfg_str(v: &Value, key: &str) -> String {
         .to_string()
 }
 
+fn normalize_net(net: &str) -> &'static str {
+    if net.trim().eq_ignore_ascii_case("mainnet") {
+        "mainnet"
+    } else {
+        "testnet"
+    }
+}
+
+fn write_net(net: &str) -> Result<(), WalletError> {
+    let n = normalize_net(net);
+    let path = crate::data_dir().join("market.json");
+    let mut v = std::fs::read(&path)
+        .ok()
+        .and_then(|b| serde_json::from_slice::<Value>(&b).ok())
+        .unwrap_or_else(|| json!({}));
+    if !v.is_object() {
+        v = json!({});
+    }
+    if let Some(obj) = v.as_object_mut() {
+        obj.insert("net".into(), json!(n));
+    }
+    let bytes = serde_json::to_vec_pretty(&v).map_err(|_| WalletError::Io)?;
+    let _ = std::fs::create_dir_all(crate::data_dir());
+    std::fs::write(path, bytes).map_err(|_| WalletError::Io)?;
+    Ok(())
+}
+
 fn load_net() -> Net {
     let v = std::fs::read(crate::data_dir().join("market.json"))
         .ok()
         .and_then(|b| serde_json::from_slice::<Value>(&b).ok())
         .unwrap_or(Value::Null);
     let testnet = v.get("net").and_then(|x| x.as_str()).unwrap_or("testnet") != "mainnet";
-    let pusd = cfg_str(&v, "pusd");
-    let vapurr = cfg_str(&v, "vapurr");
+    let mut pusd = cfg_str(&v, "pusd");
+    let mut vapurr = cfg_str(&v, "vapurr");
     if testnet {
+        if pusd.is_empty() {
+            pusd = rhc::TESTNET_PUSD.to_string();
+        }
+        if vapurr.is_empty() {
+            vapurr = rhc::TESTNET_VAPURR.to_string();
+        }
         let usdg = {
             let s = cfg_str(&v, "usdg");
             if s.is_empty() {
-                rhc::TESTNET_USDG.to_string()
+                rhc::TESTNET_MOCK_USDG.to_string()
             } else {
                 s
             }
@@ -172,6 +218,21 @@ impl Desk {
                 Ok(self.snap())
             }
             WalletCmd::Logout => Ok(crate::session::logout()),
+            WalletCmd::SetNet(net) => {
+                write_net(&net)?;
+                self.reload_net();
+                Ok(self.snap())
+            }
+            WalletCmd::RevealSeed => crate::session::reveal_seed(),
+            WalletCmd::ExportKey => crate::session::export_key(),
+            WalletCmd::Resolve { to } => resolve_preview(&to),
+            WalletCmd::Exec {
+                to,
+                data,
+                value,
+                chain_id,
+                gas,
+            } => self.exec_route(&to, &data, &value, chain_id, gas),
         }
     }
 
@@ -182,7 +243,11 @@ impl Desk {
     }
 
     fn min_gas(&self) -> u128 {
-        if self.testnet { MIN_GAS_TEST } else { MIN_GAS_MAIN }
+        if self.testnet {
+            MIN_GAS_TEST
+        } else {
+            MIN_GAS_MAIN
+        }
     }
 
     pub fn snap(&self) -> Value {
@@ -208,6 +273,7 @@ impl Desk {
                 "usdg_raw": "0",
                 "pusd": "0",
                 "pusd_raw": "0",
+                "pusd_token": "",
                 "vapurr": "0",
                 "vapurr_raw": "0",
                 "weth": "0",
@@ -219,6 +285,8 @@ impl Desk {
                 "assets": [],
                 "activity": [],
                 "total_usd": "0",
+                "signer": "device",
+                "has_seed": false,
             });
         }
         let address = self.key.address.to_checksum();
@@ -257,11 +325,7 @@ impl Desk {
         let vapurr_s = fmt_units(vapurr, 18);
         let eth_s = fmt_units(eth, 18);
         let weth_s = fmt_units(weth, 18);
-        let activity = if self.testnet {
-            vec![]
-        } else {
-            chain_activity(&from)
-        };
+        let activity = chain_activity(&from, &self.explorer, self.testnet);
         let mut assets = Vec::new();
         if !self.vapurr.is_empty() {
             assets.push(asset(
@@ -271,30 +335,52 @@ impl Desk {
                 &vapurr_s,
                 vapurr,
                 false,
+                &self.vapurr,
+                18,
             ));
         }
         if !self.pusd.is_empty() {
-            assets.push(asset("pusd", "PUSD", "The dollar. Index rebases", &pusd_s, pusd, true));
+            assets.push(asset(
+                "pusd",
+                "PUSD",
+                "The dollar. Lithe 9%",
+                &pusd_s,
+                pusd,
+                true,
+                &self.pusd,
+                18,
+            ));
         }
         if !self.usdg.is_empty() {
             assets.push(asset(
                 "usdg",
                 "USDG",
                 if self.testnet {
-                    "Book collateral (test)"
+                    "Robinhood dollar (test)"
                 } else {
-                    "Book collateral"
+                    "Robinhood dollar"
                 },
                 &usdg_s,
                 usdg,
                 true,
+                &self.usdg,
+                USDG_DECIMALS,
             ));
         }
-        assets.push(asset("eth", "ETH", "Gas", &eth_s, eth, false));
+        assets.push(asset("eth", "ETH", "Gas", &eth_s, eth, false, "", 18));
         if !self.testnet {
-            assets.push(asset("weth", "WETH", "Wrapped ether", &weth_s, weth, false));
+            assets.push(asset(
+                "weth",
+                "WETH",
+                "Wrapped ether",
+                &weth_s,
+                weth,
+                false,
+                WETH,
+                18,
+            ));
         }
-        let total = if pusd > 0 { pusd_s.clone() } else { usdg_s.clone() };
+        let total = fmt_usd_bag(pusd, usdg);
         json!({
             "ok": err.is_empty(),
             "live": err.is_empty(),
@@ -314,6 +400,7 @@ impl Desk {
             "usdg_raw": usdg.to_string(),
             "pusd": pusd_s,
             "pusd_raw": pusd.to_string(),
+            "pusd_token": self.pusd,
             "vapurr": vapurr_s,
             "vapurr_raw": vapurr.to_string(),
             "weth": weth_s,
@@ -329,11 +416,13 @@ impl Desk {
             "assets": assets,
             "activity": activity,
             "total_usd": total,
+            "signer": "device",
+            "has_seed": crate::session::has_seed(),
         })
     }
 
     pub fn send(&mut self, asset: &str, to: &str, amt: &str) -> Result<Value, WalletError> {
-        let to = addr_from_hex(to).ok_or_else(|| WalletError::Fail("bad address".into()))?;
+        let to = dest_addr(to)?;
         if to.0 == self.key.address.0 {
             return Err(WalletError::Fail("that is this device".into()));
         }
@@ -355,16 +444,25 @@ impl Desk {
                 self.send_token(token, to, value)?
             }
             "pusd" => {
+                if !self.testnet {
+                    return Err(WalletError::Fail(
+                        "$PUSD spend is testnet 46630 only".into(),
+                    ));
+                }
                 let value = parse_units(amt, 18)?;
                 if value == 0 {
                     return Err(WalletError::Fail("enter an amount".into()));
                 }
-                let token = addr_from_hex(&self.pusd).ok_or_else(|| {
-                    WalletError::Fail("no $PUSD on this net".into())
-                })?;
+                let token = addr_from_hex(&self.pusd)
+                    .ok_or_else(|| WalletError::Fail("no $PUSD on this net".into()))?;
                 self.send_token(token, to, value)?
             }
             "vapurr" | "v" => {
+                if !self.testnet {
+                    return Err(WalletError::Fail(
+                        "$VAPURR spend is testnet 46630 only".into(),
+                    ));
+                }
                 let value = parse_units(amt, 18)?;
                 if value == 0 {
                     return Err(WalletError::Fail("enter an amount".into()));
@@ -379,11 +477,7 @@ impl Desk {
                 if value == 0 {
                     return Err(WalletError::Fail("enter an amount".into()));
                 }
-                self.send_token(
-                    addr_from_hex(WETH).ok_or(WalletError::Rpc)?,
-                    to,
-                    value,
-                )?
+                self.send_token(addr_from_hex(WETH).ok_or(WalletError::Rpc)?, to, value)?
             }
             _ => return Err(WalletError::Fail("pick VAPURR, PUSD, USDG, or ETH".into())),
         };
@@ -410,7 +504,87 @@ impl Desk {
         self.broadcast(Some(token), 0, &data)
     }
 
-    fn broadcast(&self, to: Option<Address>, value: u128, data: &[u8]) -> Result<String, WalletError> {
+    fn exec_route(
+        &mut self,
+        to: &str,
+        data: &str,
+        value: &str,
+        chain_id: u64,
+        gas: u64,
+    ) -> Result<Value, WalletError> {
+        let rpc_url = rhc::rpc_http(chain_id).ok_or_else(|| {
+            WalletError::Fail("unsupported chain".into())
+        })?;
+        let to_addr = addr_from_hex(to).ok_or_else(|| WalletError::Fail("bad to".into()))?;
+        let data_b = decode_hex_bytes(data).unwrap_or_else(|_| Vec::new());
+        if data_b.is_empty() && value.trim().is_empty() {
+            return Err(WalletError::Fail("empty route tx".into()));
+        }
+        let value_n = parse_hex_u128(value);
+        let rpc = Rpc::at(rpc_url);
+        let from = self.key.address.to_hex();
+        let eth = rpc.eth_balance(&from).map_err(rpc_err)?;
+        let floor = if chain_id == rhc::TESTNET_CHAIN_ID {
+            MIN_GAS_TEST
+        } else {
+            MIN_GAS_MAIN
+        };
+        if eth < value_n.saturating_add(floor / 4) {
+            return Err(WalletError::Fail("not enough ETH for gas".into()));
+        }
+        let nonce = rpc.eth_nonce(&from).map_err(rpc_err)?;
+        let gas_price = rpc.eth_gas_price().unwrap_or(100_000_000);
+        let to_hex = to_addr.to_hex();
+        let data_hex = hex0x(&data_b);
+        let est = if gas > 21_000 {
+            gas
+        } else {
+            rpc.eth_estimate_gas_value(&from, Some(&to_hex), &data_hex, value_n)
+                .unwrap_or(220_000)
+        };
+        let gas_use = est.saturating_mul(13) / 10;
+        let tx = Tx {
+            chain_id,
+            nonce,
+            max_priority_fee: 1_000_000,
+            max_fee: gas_price.saturating_mul(3).max(1_000_000),
+            gas: gas_use.max(80_000),
+            to: Some(to_addr),
+            value: value_n,
+            data: data_b,
+        };
+        let raw = self.key.sign_tx(&tx)?;
+        let hash = rpc.eth_send_raw(&hex0x(&raw)).map_err(rpc_err)?;
+        for _ in 0..80 {
+            match rpc.eth_receipt(&hash) {
+                Ok(Some(r)) => {
+                    if r.get("status").and_then(|v| v.as_str()).unwrap_or("0x0") != "0x1" {
+                        return Err(WalletError::Fail("tx reverted".into()));
+                    }
+                    break;
+                }
+                _ => std::thread::sleep(std::time::Duration::from_millis(400)),
+            }
+        }
+        self.last_tx = hash.clone();
+        let mut snap = self.snap();
+        snap["tx"] = json!(hash);
+        snap["tx_url"] = json!(if chain_id == rhc::CHAIN_ID || chain_id == rhc::TESTNET_CHAIN_ID
+        {
+            format!("vapurr://scan?q={hash}")
+        } else {
+            String::new()
+        });
+        snap["ok"] = json!(true);
+        Ok(snap)
+    }
+
+    fn broadcast(
+        &self,
+        to: Option<Address>,
+        value: u128,
+        data: &[u8],
+    ) -> Result<String, WalletError> {
         let from = self.key.address.to_hex();
         let nonce = self.rpc.eth_nonce(&from).map_err(rpc_err)?;
         let gas_price = self.rpc.eth_gas_price().unwrap_or(100_000_000);
@@ -419,7 +593,11 @@ impl Desk {
         let est = self
             .rpc
             .eth_estimate_gas_value(&from, to_hex.as_deref(), &data_hex, value)
-            .unwrap_or(if data.is_empty() { ORBIT_GAS_FLOOR } else { 200_000 });
+            .unwrap_or(if data.is_empty() {
+                ORBIT_GAS_FLOOR
+            } else {
+                200_000
+            });
         let mut gas = est.saturating_mul(13) / 10;
         if data.is_empty() {
             gas = gas.max(ORBIT_GAS_FLOOR);
@@ -451,41 +629,224 @@ impl Desk {
     }
 }
 
-fn chain_activity(addr: &str) -> Vec<Value> {
+fn resolve_preview(raw: &str) -> Result<Value, WalletError> {
+    let t = raw.trim();
+    if t.is_empty() {
+        return Err(WalletError::Fail(
+            "paste a 0x address or a .hood name".into(),
+        ));
+    }
+    let addr = dest_addr(t)?;
+    let name = if looks_like_hood(t) {
+        let n = t.trim().trim_start_matches('@').to_ascii_lowercase();
+        if n.ends_with(".hood") {
+            n
+        } else {
+            format!("{n}.hood")
+        }
+    } else {
+        String::new()
+    };
+    Ok(json!({
+        "ok": true,
+        "resolved": addr.to_checksum(),
+        "name": name,
+        "address": crate::session::peek_address().unwrap_or_default(),
+    }))
+}
+
+fn looks_like_hood(raw: &str) -> bool {
+    let n = raw.trim().trim_start_matches('@').to_ascii_lowercase();
+    n.ends_with(".hood")
+        || (n.chars().all(|c| c.is_ascii_alphanumeric() || c == '-')
+            && n.len() >= 2
+            && !n.starts_with("0x"))
+}
+
+fn dest_addr(raw: &str) -> Result<Address, WalletError> {
+    let t = raw.trim().trim_start_matches('@');
+    if let Some(a) = addr_from_hex(t) {
+        return Ok(a);
+    }
+    let n = t.to_ascii_lowercase();
+    if n.ends_with(".hood")
+        || (n.chars().all(|c| c.is_ascii_alphanumeric() || c == '-') && n.len() >= 2)
+    {
+        return resolve_pns(&n);
+    }
+    Err(WalletError::Fail(
+        "paste a 0x address or a .hood name".into(),
+    ))
+}
+
+fn resolve_pns(name: &str) -> Result<Address, WalletError> {
+    let name = if name.ends_with(".hood") {
+        name.to_string()
+    } else {
+        format!("{name}.hood")
+    };
+    let rpc = Rpc::at(rhc::TESTNET_RPC_HTTP);
+    let data = encode_fn_str("resolveName(string)", &name);
+    let raw = rpc
+        .eth_call(
+            "0x0000000000000000000000000000000000000000",
+            Some(rhc::TESTNET_PNS),
+            &hex0x(&data),
+        )
+        .map_err(rpc_err)?;
+    let bytes = decode_hex_bytes(&raw).map_err(|_| WalletError::Rpc)?;
+    let addr = decode_word_addr(&bytes, 1)
+        .ok_or_else(|| WalletError::Fail(format!("{name} is not on PNS")))?;
+    if addr.0.iter().all(|&b| b == 0) {
+        return Err(WalletError::Fail(format!("{name} is not on PNS")));
+    }
+    Ok(addr)
+}
+
+fn chain_activity(addr: &str, explorer: &str, testnet: bool) -> Vec<Value> {
+    if let Some(rows) = explorer_activity(addr, explorer) {
+        return rows;
+    }
+    if testnet {
+        return Vec::new();
+    }
     let raw = vapurr_rhc::scan::api("addr", &format!("a={addr}"));
     let v: Value = serde_json::from_str(&raw).unwrap_or(Value::Null);
     let rows = v
         .pointer("/addr/transfers")
+        .or_else(|| v.get("token_transfers"))
         .or_else(|| v.get("transfers"))
         .and_then(|x| x.as_array())
         .cloned()
         .unwrap_or_default();
-    let me = addr.to_ascii_lowercase();
     rows.into_iter()
+        .filter_map(|row| map_scan_row(&row, addr, explorer))
         .take(12)
-        .map(|row| {
-            let to = row
-                .get("to")
-                .and_then(|x| x.as_str())
-                .unwrap_or("")
-                .to_ascii_lowercase();
-            let tx = row.get("tx").and_then(|x| x.as_str()).unwrap_or("").to_string();
-            let inbound = to == me;
-            json!({
-                "tx": tx,
-                "url": if tx.is_empty() {
-                    String::new()
-                } else {
-                    format!("{}/tx/{}", rhc::EXPLORER, tx)
-                },
-                "from": row.get("from").cloned().unwrap_or(json!("")),
-                "to": row.get("to").cloned().unwrap_or(json!("")),
-                "amount": row.get("amount").cloned().unwrap_or(json!("")),
-                "dir": if inbound { "in" } else { "out" },
-                "usdg": row.get("usdg").and_then(|x| x.as_bool()).unwrap_or(false),
-            })
-        })
         .collect()
+}
+
+fn explorer_activity(addr: &str, explorer: &str) -> Option<Vec<Value>> {
+    let base = explorer.trim_end_matches('/');
+    let url = format!("{base}/api/v2/addresses/{addr}/token-transfers");
+    let http = reqwest::blocking::Client::builder()
+        .timeout(std::time::Duration::from_millis(1500))
+        .user_agent("vapurr/0.1")
+        .build()
+        .ok()?;
+    let v: Value = http.get(&url).send().ok()?.json().ok()?;
+    let items = v.get("items").and_then(|x| x.as_array())?;
+    let rows: Vec<Value> = items
+        .iter()
+        .filter_map(|row| map_blockscout_xfer(row, addr, explorer))
+        .take(12)
+        .collect();
+    Some(rows)
+}
+
+fn hash_field(v: Option<&Value>) -> String {
+    match v {
+        Some(Value::String(s)) => s.clone(),
+        Some(obj) if obj.is_object() => obj
+            .get("hash")
+            .or_else(|| obj.get("address_hash"))
+            .and_then(|x| x.as_str())
+            .unwrap_or("")
+            .to_string(),
+        _ => String::new(),
+    }
+}
+
+fn map_blockscout_xfer(row: &Value, me: &str, explorer: &str) -> Option<Value> {
+    let from = hash_field(row.get("from"));
+    let to = hash_field(row.get("to"));
+    let tx = row
+        .get("transaction_hash")
+        .or_else(|| row.get("tx_hash"))
+        .and_then(|x| x.as_str())
+        .unwrap_or("")
+        .to_string();
+    if tx.is_empty() {
+        return None;
+    }
+    let token = row.get("token");
+    let symbol = token
+        .and_then(|t| t.get("symbol"))
+        .and_then(|x| x.as_str())
+        .unwrap_or("token")
+        .to_string();
+    let dec = token
+        .and_then(|t| t.get("decimals"))
+        .and_then(|x| match x {
+            Value::String(s) => s.parse::<u8>().ok(),
+            Value::Number(n) => n.as_u64().map(|v| v as u8),
+            _ => None,
+        })
+        .unwrap_or(18)
+        .min(18);
+    let raw_amt = row
+        .get("total")
+        .and_then(|t| t.get("value"))
+        .and_then(|x| x.as_str())
+        .unwrap_or("0");
+    let amt_u = raw_amt.parse::<u128>().unwrap_or(0);
+    let ty = row.get("type").and_then(|x| x.as_str()).unwrap_or("");
+    let method = row.get("method").and_then(|x| x.as_str()).unwrap_or("");
+    let me_l = me.to_ascii_lowercase();
+    let to_l = to.to_ascii_lowercase();
+    let inbound = to_l == me_l;
+    let kind = if ty.contains("mint") || method == "mint" {
+        "mint"
+    } else if ty.contains("burn") || method == "redeem" {
+        "burn"
+    } else if method == "stake" {
+        "stake"
+    } else if method == "unstake" {
+        "unstake"
+    } else if inbound {
+        "in"
+    } else {
+        "out"
+    };
+    let peer = if inbound { from.clone() } else { to.clone() };
+    Some(json!({
+        "tx": tx,
+        "url": format!("{}/tx/{}", explorer.trim_end_matches('/'), tx),
+        "from": from,
+        "to": to,
+        "peer": peer,
+        "amount": fmt_units(amt_u, dec),
+        "symbol": symbol,
+        "dir": if inbound { "in" } else { "out" },
+        "kind": kind,
+        "ts": row.get("timestamp").cloned().unwrap_or(json!("")),
+    }))
+}
+
+fn map_scan_row(row: &Value, me: &str, explorer: &str) -> Option<Value> {
+    let from = hash_field(row.get("from"));
+    let to = hash_field(row.get("to"));
+    let tx = row
+        .get("tx")
+        .or_else(|| row.get("hash"))
+        .and_then(|x| x.as_str())
+        .unwrap_or("")
+        .to_string();
+    if tx.is_empty() {
+        return None;
+    }
+    let inbound = to.to_ascii_lowercase() == me.to_ascii_lowercase();
+    let peer = if inbound { from.clone() } else { to.clone() };
+    Some(json!({
+        "tx": tx,
+        "url": format!("{}/tx/{}", explorer.trim_end_matches('/'), tx),
+        "from": from,
+        "to": to,
+        "peer": peer,
+        "amount": row.get("amount").cloned().unwrap_or(json!("")),
+        "symbol": row.get("symbol").cloned().unwrap_or(json!("")),
+        "dir": if inbound { "in" } else { "out" },
+        "kind": if inbound { "in" } else { "out" },
+    }))
 }
 
 fn token_bal(rpc: &Rpc, token: &str, holder: &str) -> Result<u128, WalletError> {
@@ -496,7 +857,16 @@ fn token_bal(rpc: &Rpc, token: &str, holder: &str) -> Result<u128, WalletError> 
     Ok(decode_word_u128(&bytes, 0).unwrap_or(0))
 }
 
-fn asset(id: &str, symbol: &str, hint: &str, amount: &str, raw: u128, dollar: bool) -> Value {
+fn asset(
+    id: &str,
+    symbol: &str,
+    hint: &str,
+    amount: &str,
+    raw: u128,
+    dollar: bool,
+    token: &str,
+    decimals: u8,
+) -> Value {
     json!({
         "id": id,
         "symbol": symbol,
@@ -505,11 +875,35 @@ fn asset(id: &str, symbol: &str, hint: &str, amount: &str, raw: u128, dollar: bo
         "raw": raw.to_string(),
         "zero": raw == 0,
         "dollar": dollar,
+        "token": token,
+        "decimals": decimals,
     })
+}
+
+fn fmt_usd_bag(pusd: u128, usdg: u128) -> String {
+    let p = pusd as f64 / 1e18;
+    let u = usdg as f64 / 1e6;
+    let t = p + u;
+    if !t.is_finite() || t <= 0.0 {
+        return "0.00".into();
+    }
+    format!("{t:.2}")
 }
 
 fn rpc_err(e: impl std::fmt::Display) -> WalletError {
     WalletError::Fail(e.to_string())
+}
+
+pub(crate) fn parse_hex_u128(s: &str) -> u128 {
+    let t = s.trim();
+    if t.is_empty() || t == "0x" || t == "0x0" || t == "0" {
+        return 0;
+    }
+    if let Some(h) = t.strip_prefix("0x").or_else(|| t.strip_prefix("0X")) {
+        u128::from_str_radix(h, 16).unwrap_or(0)
+    } else {
+        t.parse().unwrap_or(0)
+    }
 }
 
 pub fn parse_units(s: &str, decimals: u8) -> Result<u128, WalletError> {
@@ -571,7 +965,8 @@ pub fn fmt_units(n: u128, decimals: u8) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{fmt_units, parse_units};
+    use super::{fmt_units, fmt_usd_bag, map_blockscout_xfer, normalize_net, parse_units};
+    use serde_json::json;
 
     #[test]
     fn units_round_trip() {
@@ -583,6 +978,9 @@ mod tests {
         assert_eq!(fmt_units(10u128.pow(18), 18), "1");
         assert!(parse_units("1.1234567", 6).is_err());
         assert!(parse_units("-1", 6).is_err());
+        assert_eq!(super::parse_hex_u128("0x0"), 0);
+        assert_eq!(super::parse_hex_u128("0x10"), 16);
+        assert_eq!(super::parse_hex_u128("100"), 100);
     }
 
     #[test]
@@ -596,5 +994,69 @@ mod tests {
         assert_eq!(s.get("ok").and_then(|v| v.as_bool()), Some(true));
         let eth = s.get("eth").and_then(|v| v.as_str()).unwrap_or("0");
         assert_ne!(eth, "0", "device has no testnet ETH: {s}");
+    }
+
+    #[test]
+    fn net_normalizes() {
+        assert_eq!(normalize_net("mainnet"), "mainnet");
+        assert_eq!(normalize_net("MAINNET"), "mainnet");
+        assert_eq!(normalize_net("testnet"), "testnet");
+        assert_eq!(normalize_net("whatever"), "testnet");
+    }
+
+    #[test]
+    fn blockscout_xfer_maps_mint() {
+        let row = json!({
+            "transaction_hash": "0xabc",
+            "from": { "hash": "0x0000000000000000000000000000000000000000" },
+            "to": { "hash": "0xc9371911D6b5a6e36306334Ab56D27Cb35E669c9" },
+            "token": { "symbol": "PUSD", "decimals": "18", "address_hash": "0x59bb" },
+            "total": { "value": "1500000000000000000" },
+            "type": "token_minting",
+            "method": "mint",
+            "timestamp": "2026-09-03T04:56:50.000000Z"
+        });
+        let v = map_blockscout_xfer(
+            &row,
+            "0xc9371911d6b5a6e36306334ab56d27cb35e669c9",
+            "https://explorer.testnet.chain.robinhood.com",
+        )
+        .unwrap();
+        assert_eq!(v.get("kind").and_then(|x| x.as_str()), Some("mint"));
+        assert_eq!(v.get("dir").and_then(|x| x.as_str()), Some("in"));
+        assert_eq!(v.get("symbol").and_then(|x| x.as_str()), Some("PUSD"));
+        assert_eq!(v.get("amount").and_then(|x| x.as_str()), Some("1.5"));
+        assert!(v
+            .get("url")
+            .and_then(|x| x.as_str())
+            .unwrap()
+            .contains("/tx/0xabc"));
+    }
+
+    #[test]
+    fn dest_hex_ok_hood_needs_rpc() {
+        let a = super::dest_addr("0xc9371911d6b5a6e36306334ab56d27cb35e669c9").unwrap();
+        assert_eq!(hex::encode(a.0), "c9371911d6b5a6e36306334ab56d27cb35e669c9");
+        let e = super::dest_addr("not a name!!").unwrap_err().to_string();
+        assert!(e.contains("0x") || e.contains("hood"));
+    }
+
+    #[test]
+    fn usd_bag_sums_dollars() {
+        assert_eq!(fmt_usd_bag(0, 0), "0.00");
+        assert_eq!(fmt_usd_bag(2 * 10u128.pow(18), 1_500_000), "3.50");
+    }
+
+    #[test]
+    fn resolve_hex_preview() {
+        let v = super::resolve_preview("0xc9371911d6b5a6e36306334ab56d27cb35e669c9").unwrap();
+        assert_eq!(
+            v.get("resolved")
+                .and_then(|x| x.as_str())
+                .unwrap()
+                .to_ascii_lowercase(),
+            "0xc9371911d6b5a6e36306334ab56d27cb35e669c9"
+        );
+        assert_eq!(v.get("name").and_then(|x| x.as_str()), Some(""));
     }
 }

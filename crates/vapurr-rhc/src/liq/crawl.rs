@@ -157,6 +157,28 @@ pub(crate) fn pad32(addr: &str) -> String {
 
 
 pub(crate) fn seed_known(idx: &mut PoolIdx) {
+    if !crate::TESTNET_HOUSE.is_empty()
+        && !crate::TESTNET_VAPURR.is_empty()
+        && !crate::TESTNET_PUSD.is_empty()
+    {
+        let v = crate::TESTNET_VAPURR;
+        let p = crate::TESTNET_PUSD;
+        let (t0, t1) = if v.to_ascii_lowercase() < p.to_ascii_lowercase() {
+            (v, p)
+        } else {
+            (p, v)
+        };
+        ingest(
+            idx,
+            PoolRow {
+                address: crate::TESTNET_HOUSE.into(),
+                token0: t0.into(),
+                token1: t1.into(),
+                fee: crate::UNI_V4_FEE_VOL,
+                dex: "uniswap v4 house".into(),
+            },
+        );
+    }
     // Live 4663 USDG/WETH hubs. getPool batch sometimes returns empty; pin the ones we have seen.
     for (address, fee, dex) in [
         (

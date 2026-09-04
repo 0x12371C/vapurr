@@ -297,6 +297,56 @@ pub fn encode_fn_two_str_u256(sig: &str, a: &str, b: &str, n: u128) -> Vec<u8> {
     d
 }
 
+/// `fn(address,address,string,string,uint256)` — head is addr/addr/offset/offset/value.
+pub fn encode_fn_two_addr_two_str_u256(
+    sig: &str,
+    a: Address,
+    b: Address,
+    s: &str,
+    t: &str,
+    n: u128,
+) -> Vec<u8> {
+    let s_enc = abi_string(s);
+    let t_enc = abi_string(t);
+    let mut d = Vec::with_capacity(4 + 160 + s_enc.len() + t_enc.len());
+    d.extend_from_slice(&crate::keccak4(sig));
+    d.extend_from_slice(&abi_addr(a));
+    d.extend_from_slice(&abi_addr(b));
+    d.extend_from_slice(&abi_u256(160));
+    d.extend_from_slice(&abi_u256(160 + s_enc.len() as u128));
+    d.extend_from_slice(&abi_u256(n));
+    d.extend_from_slice(&s_enc);
+    d.extend_from_slice(&t_enc);
+    d
+}
+
+/// `fn(address,address,string,string,string,uint256)` — head is addr/addr/off/off/off/value.
+pub fn encode_fn_two_addr_three_str_u256(
+    sig: &str,
+    a: Address,
+    b: Address,
+    s: &str,
+    t: &str,
+    u: &str,
+    n: u128,
+) -> Vec<u8> {
+    let s_enc = abi_string(s);
+    let t_enc = abi_string(t);
+    let u_enc = abi_string(u);
+    let mut d = Vec::with_capacity(4 + 192 + s_enc.len() + t_enc.len() + u_enc.len());
+    d.extend_from_slice(&crate::keccak4(sig));
+    d.extend_from_slice(&abi_addr(a));
+    d.extend_from_slice(&abi_addr(b));
+    d.extend_from_slice(&abi_u256(192));
+    d.extend_from_slice(&abi_u256(192 + s_enc.len() as u128));
+    d.extend_from_slice(&abi_u256(192 + s_enc.len() as u128 + t_enc.len() as u128));
+    d.extend_from_slice(&abi_u256(n));
+    d.extend_from_slice(&s_enc);
+    d.extend_from_slice(&t_enc);
+    d.extend_from_slice(&u_enc);
+    d
+}
+
 pub fn decode_dyn_string(data: &[u8], offset: usize) -> Option<String> {
     if data.len() < offset.saturating_add(32) {
         return None;
@@ -381,12 +431,64 @@ mod tests {
         assert_eq!(&d[..4], &crate::keccak4("bid(string,string,uint256)"));
         assert_eq!(&d[4..36], &abi_u256(96));
         let a_len = 32 + 32; // " @vapurr" padded: len word + 7 bytes → 32
-        // "@vapurr" is 7 bytes → length word + 32 pad = 64
+                             // "@vapurr" is 7 bytes → length word + 32 pad = 64
         assert_eq!(&d[36..68], &abi_u256(96 + 64));
         assert_eq!(&d[68..100], &abi_u256(10));
         assert_eq!(decode_dyn_string(&d[4..], 96).as_deref(), Some("@vapurr"));
         assert_eq!(decode_dyn_string(&d[4..], 96 + 64).as_deref(), Some("cat"));
         let _ = a_len;
+    }
+
+    #[test]
+    fn two_addr_two_str_u256_head() {
+        let token = Address([0x11u8; 20]);
+        let pool = Address([0x22u8; 20]);
+        let d = encode_fn_two_addr_two_str_u256(
+            "list(address,address,string,string,uint256)",
+            token,
+            pool,
+            "FOO",
+            "Foo Token",
+            50,
+        );
+        assert_eq!(
+            &d[..4],
+            &crate::keccak4("list(address,address,string,string,uint256)")
+        );
+        assert_eq!(&d[4..36], &abi_addr(token));
+        assert_eq!(&d[36..68], &abi_addr(pool));
+        assert_eq!(&d[68..100], &abi_u256(160));
+        let s_len = 32 + 32; // "FOO" → length word + 32 pad
+        assert_eq!(&d[100..132], &abi_u256(160 + s_len as u128));
+        assert_eq!(&d[132..164], &abi_u256(50));
+        assert_eq!(decode_dyn_string(&d[4..], 160).as_deref(), Some("FOO"));
+        assert_eq!(
+            decode_dyn_string(&d[4..], 160 + s_len).as_deref(),
+            Some("Foo Token")
+        );
+    }
+
+    #[test]
+    fn two_addr_three_str_u256_head() {
+        let token = Address([0x11u8; 20]);
+        let pool = Address([0x22u8; 20]);
+        let d = encode_fn_two_addr_three_str_u256(
+            "list(address,address,string,string,string,uint256)",
+            token,
+            pool,
+            "FOO",
+            "Foo Token",
+            "{\"w\":\"https://foo.hood\"}",
+            50,
+        );
+        assert_eq!(
+            &d[..4],
+            &crate::keccak4("list(address,address,string,string,string,uint256)")
+        );
+        assert_eq!(&d[4..36], &abi_addr(token));
+        assert_eq!(&d[68..100], &abi_u256(192));
+        assert_eq!(&d[164..196], &abi_u256(50));
+        assert_eq!(decode_dyn_string(&d[4..], 192).as_deref(), Some("FOO"));
     }
 
     #[test]

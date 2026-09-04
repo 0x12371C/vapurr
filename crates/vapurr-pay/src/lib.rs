@@ -3,7 +3,7 @@
 
 use chrono::{DateTime, Duration, Utc};
 use serde::{Deserialize, Serialize};
-use vapurr_rhc::{self as rhc, format_usd, USDG};
+use vapurr_rhc::{self as rhc, format_usd_units, USDG};
 
 pub const HEADER_REQUIRED: &str = "PAYMENT-REQUIRED";
 pub const HEADER_SIGNATURE: &str = "PAYMENT-SIGNATURE";
@@ -116,13 +116,26 @@ fn is_pusd(asset: &str) -> bool {
     if a.eq_ignore_ascii_case("PUSD") || a.eq_ignore_ascii_case("$PUSD") {
         return true;
     }
-    let ca = rhc::PUSD_TOKEN;
-    !ca.is_empty() && a.eq_ignore_ascii_case(ca)
+    [rhc::PUSD_TOKEN, rhc::TESTNET_PUSD]
+        .iter()
+        .any(|ca| !ca.is_empty() && a.eq_ignore_ascii_case(ca))
+}
+
+fn accept_decimals(a: &Accept) -> u8 {
+    if let Some(d) = a.extra.get("decimals").and_then(|v| v.as_u64()) {
+        return d.min(36) as u8;
+    }
+    if is_pusd(&a.asset) || a.asset.eq_ignore_ascii_case("VAPURR") {
+        18
+    } else {
+        rhc::USDG_DECIMALS
+    }
 }
 
 fn pick_rhc_dollar(required: &PaymentRequired) -> Option<Accept> {
+    // v1.2: settle on testnet 46630 only. Do not pick mainnet 4663.
     let on_rhc = |a: &&Accept| {
-        a.network == rhc::CAIP2 && (a.scheme == "exact" || a.scheme == "upto")
+        a.network == rhc::TESTNET_CAIP2 && (a.scheme == "exact" || a.scheme == "upto")
     };
     required
         .accepts
@@ -175,11 +188,9 @@ pub fn paywall_from(
         None
     }
     .or_else(|| body.and_then(|b| serde_json::from_str(b).ok()))?;
-    let amount = required
-        .accepts
-        .first()
-        .map(|a| parse_amount(&a.amount))
-        .unwrap_or(0);
+    let accept = required.accepts.first();
+    let amount = accept.map(|a| parse_amount(&a.amount)).unwrap_or(0);
+    let decimals = accept.map(accept_decimals).unwrap_or(18);
     let resource = if required.resource.url.is_empty() {
         url.to_string()
     } else {
@@ -187,7 +198,7 @@ pub fn paywall_from(
     };
     Some(Paywall {
         title: "Pay to continue".into(),
-        amount_label: format_usd(amount),
+        amount_label: format_usd_units(amount, decimals),
         amount_minor: amount,
         resource,
         required,
@@ -215,7 +226,7 @@ pub fn mail_postage(pay_to: &str, asset: &str) -> PaymentRequired {
         },
         accepts: vec![Accept {
             scheme: "voucher".into(),
-            network: rhc::CAIP2.into(),
+            network: rhc::TESTNET_CAIP2.into(),
             amount: MAIL_POSTAGE_TOKEN.to_string(),
             asset: symbol.into(),
             pay_to: pay_to.into(),
@@ -223,6 +234,7 @@ pub fn mail_postage(pay_to: &str, asset: &str) -> PaymentRequired {
             extra: serde_json::json!({
                 "symbol": symbol,
                 "decimals": 18,
+                "token": if symbol == "VAPURR" { rhc::TESTNET_VAPURR } else { rhc::TESTNET_PUSD },
                 "gasless": true,
                 "usdMicros": MAIL_POSTAGE_USD_MICROS,
                 "label": format!("0.25¢ ${symbol}"),
@@ -242,12 +254,16 @@ pub fn home_accept(pay_to: &str, amount_minor: u128, url: &str) -> PaymentRequir
         },
         accepts: vec![Accept {
             scheme: "exact".into(),
-            network: rhc::CAIP2.into(),
+            network: rhc::TESTNET_CAIP2.into(),
             amount: amount_minor.to_string(),
-            asset: USDG.into(),
+            asset: "PUSD".into(),
             pay_to: pay_to.into(),
             max_timeout_seconds: Some(60),
-            extra: serde_json::json!({ "symbol": "USDG", "decimals": 6 }),
+            extra: serde_json::json!({
+                "symbol": "PUSD",
+                "decimals": 18,
+                "token": rhc::TESTNET_PUSD,
+            }),
         }],
     }
 }
@@ -273,13 +289,15 @@ mod tests {
     fn header_roundtrip() {
         let req = home_accept(
             "0x0000000000000000000000000000000000000001",
-            1_200_000,
+            1_200_000_000_000_000_000,
             "https://api.example/premium",
         );
         let h = encode_required_header(&req).unwrap();
         let back = decode_required_header(&h).unwrap();
         assert_eq!(back.x402_version, 2);
-        assert_eq!(back.accepts[0].network, "eip155:4663");
+        assert_eq!(back.accepts[0].network, rhc::TESTNET_CAIP2);
+        assert_eq!(back.accepts[0].asset, "PUSD");
+        assert_eq!(back.accepts[0].extra["token"], rhc::TESTNET_PUSD);
         let wall = paywall_from(402, Some(&h), None, "https://api.example/premium").unwrap();
         assert_eq!(wall.amount_label, "$1.20");
     }
@@ -324,7 +342,7 @@ mod tests {
             0,
             Accept {
                 scheme: "exact".into(),
-                network: rhc::CAIP2.into(),
+                network: rhc::TESTNET_CAIP2.into(),
                 amount: "2000".into(),
                 asset: "PUSD".into(),
                 pay_to: "0xabc".into(),
@@ -344,6 +362,23 @@ mod tests {
                 assert_eq!(amount_minor, 2000);
             }
             other => panic!("expected PUSD x402, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn router_ignores_mainnet_dollar() {
+        let mut req = home_accept("0xabc", 1000, "https://x");
+        req.accepts[0].network = rhc::CAIP2.into();
+        req.accepts[0].asset = USDG.into();
+        let ctx = PayContext {
+            verified: true,
+            card_linked: true,
+            card_collateral: Some("0xcard".into()),
+            prefer_card_for_fiat: false,
+        };
+        match PayRouter::decide(&req, &ctx) {
+            PayPlan::CardPassthrough { .. } => {}
+            other => panic!("mainnet 4663 must not settle KetPay, got {other:?}"),
         }
     }
 }
