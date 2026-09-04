@@ -7,6 +7,7 @@ Track every pack/channel/exe change overnight.
 | 2026-09-04 01:51 ET | 1.1.0 | rev=223a962 sha=5c305fc359b4 | dist vapurr-1.1.0-windows-x64.zip (15.3 MB) + Install vapurr.exe (23.1 MB) | Cargo workspace bumped 0.1.0?1.1.0; release pack OK |
 | 2026-09-04 01:25 ET | 0.1.0 | build=1788496196 sha=4bd126e36141â€¦ | channel + dist vapurr.next.exe (20.5 MB) | baseline at watch start; last pack ~12:29 AM |
 | 2026-09-04 10:28 ET | 1.1.0 | rev=223a962 sha=947c585371b6 | dist vapurr-1.1.0-windows-x64.zip (50.6 MB) + Install vapurr.exe (58.7 MB) | House re-pack; zip/exe grew (trailers in pack tree); same rev |
+| 2026-09-04 14:34 ET | 1.1.1 | rev=341b022 sha=351D4879D55A | dist vapurr-1.1.1-windows-x64.zip (43.3 MB) + Install vapurr.exe (51.8 MB) | House thin pack: no mp4. Posters still embedded. --install smoke: Programs + Start Menu + install_id minted |
 
 | 2026-09-04 11:03 ET | 1.1.0 | rev=223a962 sha=75b0a6e26e9a | dist/vapurr/vapurr.exe (61.0 MB) | silent rebuild; no new zip - next House pack re-logs |
 | 2026-09-04 11:15 ET | 1.1.0 | rev=223a962 sha=e7a381d13559 | dist/vapurr/vapurr.next.exe (61.1 MB) | next.exe drift after 11:03; still no zip |
