@@ -69,3 +69,16 @@ Desktop.ini
 # Local dumps
 tmp-rh-wallet/
 tmp-*.txt
+
+# Overnight / worker chatter (board lives in COORDINATION + TRACKS + ORG_FLASH)
+docs/OVERNIGHT.md
+docs/workers/
+docs/ketflix/NEXT.md
+docs/ketflix/SESSION.txt
+docs/ketpay/NEXT.md
+
+# Ketflix trailers stay on disk for KFX. Not git. Not the zip.
+frontend/ketflix/trailers/*.mp4
+
+# One-off grinders
+crates/vapurr-wallet/examples/vanity.rs

@@ -21,6 +21,8 @@ Mark is a cat. Palette and type: `DESIGN.md`, `frontend/tokens.css`.
 
 Writes `dist\vapurr-<version>-windows-x64.zip`. Open `Install vapurr.exe`. Profile and keys live under `%LOCALAPPDATA%\vapurr`, not in this tree.
 
+Git tracks source. `dist/`, `target/`, overnight logs, and `frontend/ketflix/trailers/*.mp4` stay local. Trailers are not rust-embedded.
+
 ```
 cargo +stable-x86_64-pc-windows-gnu test --workspace
 ```
@@ -33,7 +35,7 @@ cargo +stable-x86_64-pc-windows-gnu test --workspace
 |---|---|
 | `crates/` | Workspace. `vapurr-shell` is the window. |
 | `frontend/` | Chrome HTML/CSS/JS, rust-embedded in the exe |
-| `contracts/` | `PusdMarket`, Outbid, PNS, MockUsdg |
+| `contracts/` | `PusdMarket`, Outbid, KetList, PNS, MockUsdg |
 | `ketbook/` | Product book (HonKit). In-app: `vapurr://ketbook` |
 | `docs/` | Ship bar, chrome map, status |
 | `assets/` | Brand board and fonts (reference, not blit into chrome) |
