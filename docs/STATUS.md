@@ -1,8 +1,19 @@
 # vapurr status
 
-Last audited: **2026-09-04**.
+Last audited: **2026-09-04** (House lock: `docs/ORG_FLASH.md`).
 
-Milestone: **pre-v1** — ship bar is [`V1.md`](V1.md). If README or ARCHITECTURE disagree with this file, this file plus the code win — then those docs get fixed.
+Milestone: **pre-v1** — ship bar is [`V1.md`](V1.md). v1.2 money is **testnet 46630 only**. If README or ARCHITECTURE disagree with this file, this file plus the code win — then those docs get fixed.
+
+## v1.2 (testnet money)
+
+| Gate | State |
+|---|---|
+| Canonical 46630 market | **Gen-4 live.** Market `0x47Aca529…3617` · V `0xD4b36DDe…7585` · P `0xBe71EF3e…E42e`. Retired `0x447F…` do not count. |
+| KetPay settle | `pay.html` signs `wallet-send` `$PUSD` on 46630. Wallet refuses `$PUSD`/`$VAPURR` on 4663. `PayRouter` ignores `eip155:4663`. |
+| Postage | `mail_postage` extra.token = canonical testnet `$PUSD` / `$VAPURR`. Still a gasless voucher (no relayer). |
+| vapurrbid | Live `$PUSD` pay-to-rank on the testnet book. |
+| Ketcharts listing | `$PUSD` pay-to-list. `TESTNET_KETLIST` empty until this device deploys `KetList.sol`. |
+| Not v1.2 | Servo, Rain, live zer0ID issuer, swap/bridge execute, mainnet `$PUSD`. |
 
 ## v1 progress
 
@@ -10,32 +21,37 @@ Milestone: **pre-v1** — ship bar is [`V1.md`](V1.md). If README or ARCHITECTUR
 |---|---|
 | Native Windows window (tao + 4 WebView2s) | Ships |
 | Chrome HTML in `frontend/` at `vapurr.localhost` | Ships |
-| Packed `dist\vapurr\vapurr.exe` via `pack.ps1` | Ships `dist\vapurr-0.1.0-windows-x64.zip`. **Install vapurr.exe** is the branded first-run (no admin, Start Menu). Logs in `%LOCALAPPDATA%\vapurr`. |
+| Packed `dist\vapurr\vapurr.exe` via `pack.ps1` | Ships `dist\vapurr-1.1.0-windows-x64.zip` (**50.6 MB** at 10:28 — Ketflix trailers rust-embedded). **Install vapurr.exe** is the branded first-run (no admin, Start Menu). Logs in `%LOCALAPPDATA%\vapurr`. Next pack: Relic says if mp4 ships. House only. |
+| Per-machine `install_id` | Ships — UUID at `%LOCALAPPDATA%\vapurr\install_id`, minted on successful Install (idempotent). Desk/earn payload includes it. See `docs/ketpay/INSTALL_ID.md`. |
 | Brand tokens on screen (`frontend/tokens.css`) | Ships (`#c0f800` lime) |
-| Tabs, home, settings → `desk.json` | Ships |
+| Tabs, home, settings â†’ `desk.json` | Ships |
 | Shield hooked into WebResourceRequested | Ships |
 | Scan live (`/scan/api/*`, `vapurr-rhc`) | Ships |
-| RHC liquidity graph (`/scan/api/liq`, Scan Liquidity tab) | Ships. Live Robinhood RPC (`vapurr-rhc::liq`). View is capped (≤48 nodes / 72 edges). Factory-log archive crawl was removed — it froze the chrome. Lookups use the full RPC book. |
-| Live Trenches | Ships — rail/home open https://fomo.family in this window |
+| RHC liquidity graph (`/scan/api/liq`, Scan Liquidity tab) | Ships. Live Robinhood RPC (`vapurr-rhc::liq`). View is capped (â‰¤48 nodes / 72 edges). Factory-log archive crawl was removed â€” it froze the chrome. Lookups use the full RPC book. |
+| Live Trenches | Ships â€” rail/home open https://fomo.family in this window |
 | PUSD/VAPURR on-chain market (`vapurr-econ` + `PusdMarket.sol`) | Burn `$VAPURR` ↔ mint `$PUSD` at the oracle. Virtual CP spread, min 2%. **Lithe** is 9% on `$PUSD`. No USDG in the mint/burn loop. |
+| PUSD vault (`PusdLoop.sol`, Euler-shaped) | Isolated `$PUSD` credit + `$VAPURR` collateral. Supply / borrow / loop under 85% LTV, kink IRM, liquidations. **Live** `0xC4d4BC75…39Bb`. Not a Euler fork. No USDG/ETH vaults. |
+| House Uni v4 CL (`HouseLp.sol`) | **Live on 46630.** `0x667bFcAF…1bf7`. NFT #2273. `$VAPURR`/`$PUSD` 0.30% ±20%. Swapper `0xb699c0CD…4FE2`. |
+| Euler vault (`PusdLoop.sol`) | **Live.** `0xC4d4BC75…39Bb`. Supply/borrow/loop on `$PUSD` with `$VAPURR` collat. |
 | vapurrbid (`vapurr://vapurrbid`, $PUSD pay-to-rank) | Ships. `Outbid.sol` + `vapurr-econ::outbid`. Rank is $PUSD paid. Aliases: `outbid`, `bid`, `board`. |
-| PNS (`vapurr://pns`, `.hood` names) | Live on testnet 46630. Registry `0x7eAc2c587Dbb60B2a7f357cfCB28c37c74A6E7d6`. ENS-shaped (namehash, addr, reverse, setAddr). Type `alice.hood` in the bar. |
-| Swap / Bridge (`vapurr://swap`, `vapurr://bridge`) | Ships as LI.FI quote chrome (`/route/api/*`). CTA copies the route JSON and opens Wallet — does not settle |
-| Light theme (`data-theme="light"`) | Ships — rail + settings. Sage set in `frontend/tokens.css` |
+| Ketcharts listing (`vapurr://ketcharts` Listed) | Ships. `KetList.sol` + `vapurr-econ::ketlist`. Pay `$PUSD` to list a token (50 min, +25 to take #1). Profile (web/X/tg/discord/bio/logo) is on-chain with the payment. Snap paints Listed + pair card. Inbox copy `%LOCALAPPDATA%\vapurr\ketlist.json`. Never refunded. Organic tape stays. `TESTNET_KETLIST` empty until this device deploys it. |
+| PNS (`vapurr://pns`, `.hood` names) | Live on testnet 46630. Registry `0x13C9fCaB70e8f7eED688A5548B0E3849B1ae0fC4` (owns namehash `hood`). ENS-shaped (namehash, addr, reverse, setAddr). Type `alice.hood` in the bar. |
+| Swap / Bridge (`vapurr://swap`, `vapurr://bridge`) | Best simulated user-net. Sign on this device broadcasts the RPC-simmed tx. MAX + balances + impact. `$VAPURR` refund. Scan for 4663/46630. |
+| Light theme (`data-theme="light"`) | Ships â€” rail + settings. Sage set in `frontend/tokens.css` |
 | Bookmarks, history, cookies, Boost, radio | Ships |
 | `cargo test --workspace` | Protocol crates have unit tests; keep green |
-| 404 / zzzmail / card / wallet / swap / bridge / id as **honest skins** | Product dollar is **$PUSD**. 404 prefers $PUSD on x402 (USDG if that is all they list). zzzmail postage 0.25¢ $PUSD/$VAPURR voucher. vapurrbid is $PUSD. Swap/bridge 25 bps vapurr scoop — quote only. Pay does not settle. `vapurr://id` is parked zer0ID. |
-| `vapurr://id` vs Shield | Split. `id.html` is parked identity. `shield.html` is adblock. Rail is `data-id="shield"` |
-| Ketbook (`vapurr://ketbook`) | Ships — public product docs (what vapurr is, how it works). Source `ketbook/`. Internal specs stay in `docs/`. |
+| 404 / zzzmail / card / wallet / swap / bridge / id as **honest skins** | Product dollar is **$PUSD**. **KetPay** (`vapurr://pay` / `ketpay`) settles `$PUSD` on **testnet 46630 only** — not mainnet 4663. 404 is load-fail. Postage voucher is bound to canonical testnet `$PUSD`. vapurrbid is `$PUSD`. Swap/bridge 25 bps vapurr scoop — quote only. Earn-submit refuses payout without a VerifiedAccount (visits stay queued). `vapurr://id` opens thesecretlab.app/kyc; no fake Proven. See docs/zeroid/RHC.md. |
+| `vapurr://id` vs Shield | Split. `id.html` is zer0ID (KYC CTA to Secret Lab). `shield.html` is adblock. Rail is `data-id="shield"` |
+| Ketbook (`vapurr://ketbook`) | Ships â€” public product docs (what vapurr is, how it works). Source `ketbook/`. Internal specs stay in `docs/`. |
 | WebView2 guest | **Allowed for v1.** Not the product engine. |
 
 ## After v1 (do not gold-plate)
 
 - **Servo** as the page engine. `vapurr-engine` feature `servo` `compile_error!`s until libservo is pinned.
 - FetcherEngine as the user's browser.
-- egui chrome (`vapurr-ui`) — unused by the binary.
-- Live Rain card / zer0ID issuer. No secrets in tree.
-- x402 settlement from the 404 sheet. zzzmail postage voucher settlement when $PUSD is live.
+- egui chrome (`vapurr-ui`) â€” unused by the binary.
+- Live Rain card. zer0ID issuer (Secret Lab) is required for browse-earn payout; chrome does not fake Proven. No secrets in tree.
+- KetPay / `$PUSD` spend on **mainnet 4663**. Testnet 46630 settlement is v1.2. zzzmail postage still a voucher until a relayer posts it.
 - One site-process per eTLD+1 with freeze (`vapurr-core` types only).
 
 ## Brand tokens that are on screen
@@ -51,7 +67,7 @@ Source of truth: `frontend/tokens.css`
 | snow | `#f2f3f4` |
 | muted | `#8aa090` |
 
-`DESIGN.md` / `BRAND.md` must match that table. `vapurr-ui` still has the older `#00F05A` / `#0A2E1B` pair — leave it unless you are deleting or rewiring egui (after v1).
+`DESIGN.md` / `BRAND.md` must match that table. `vapurr-ui` still has the older `#00F05A` / `#0A2E1B` pair â€” leave it unless you are deleting or rewiring egui (after v1).
 
 Optional light theme (`html[data-theme="light"]`): lime `#4d8a00`, forest `#c8d6b0`, void `#f3f5f0`, steel `#e6ebe0`, snow `#161816`, muted `#3f5340`.
 
@@ -62,9 +78,12 @@ Radio chrome is allowed a private palette (`frontend/radio.css`).
 | Item | Bytecode |
 |---|---|
 | `contracts/PusdMarket.sol` | `crates/vapurr-econ/src/market.hex` — `contracts/compile-market.mjs` |
+| `contracts/HouseLp.sol` | `crates/vapurr-econ/src/house.hex` — `contracts/compile-house.mjs` |
+| `contracts/PusdLoop.sol` | `crates/vapurr-econ/src/loop.hex` — `contracts/compile-loop.mjs` |
 | `contracts/Outbid.sol` | `crates/vapurr-econ/src/outbid.hex` — `contracts/compile-outbid.mjs` |
-| `contracts/PnsRegistry.sol` | `crates/vapurr-zmail/src/pns.hex` — `contracts/compile-pns.mjs` |
-| `contracts/MockUsdg.sol` | `crates/vapurr-econ/src/mock_usdg.hex` — `contracts/compile-mock.mjs` |
+| `contracts/KetList.sol` | `crates/vapurr-econ/src/ketlist.hex` — `contracts/compile-ketlist.mjs` |
+| `contracts/PnsRegistry.sol` | `crates/vapurr-zmail/src/pns.hex` â€” `contracts/compile-pns.mjs` |
+| `contracts/MockUsdg.sol` | `crates/vapurr-econ/src/mock_usdg.hex` â€” `contracts/compile-mock.mjs` |
 
 `vapurr-ui` is a workspace member, not linked by the shell. `dist/`, `target/`, crash dumps, and `%LOCALAPPDATA%\vapurr` are not in git.
 
@@ -77,7 +96,7 @@ From `crates/vapurr-rhc/src/lib.rs`:
 - Explorer `https://robinhoodchain.blockscout.com`
 - USDG `0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168` (6 decimals)
 - Native gas: ETH
-- Testnet `46630` — econ deploys here until mainnet has gas. RPC `https://rpc.testnet.chain.robinhood.com`. Official Paxos testnet USDG is not mintable; desk deploys `MockUsdg.sol`.
+- Testnet `46630` — econ and KetPay spend here until mainnet has gas. RPC `https://rpc.testnet.chain.robinhood.com`. Canonical gen-4 book: market `0x47Aca5292423e2133A3eE983aB38291de3983617`, `$PUSD` `0xBe71EF3e1b49ec35b4C3A80c257342A39CEEE42e`, `$VAPURR` `0xD4b36DDe47d6294274193d1Bf546E5C32c1E7585`, vault `0xC4d4BC75EAB5FA1dF4d81599E006C25318a239Bb`, house `0x667bFcAF9D3Ee809336788Bf52511D35AE9C1bf7`, swapper `0xb699c0CDA2C41f28A458e8Fd59Fa7e68d06e4FE2`. Retired `0x447F…` / `0x435C…` / `0x59bB…` do not count. `TESTNET_OUTBID` / `TESTNET_KETLIST` / mock USDG empty.
 
 ## How to run
 

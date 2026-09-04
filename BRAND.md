@@ -44,7 +44,7 @@ Bolt · wallet · **404** · card · shield · swap · lock · phones · chart �
 - Home: giant VAPURR, command search, tiles (Wallet, Swap, Stake, Bridge, PUSD, vapurrbid, PNS, Live Trenches, Scan, dApps)
 - Sidebar: cat + home, wallet, PUSD, Live Trenches, scan, history, bookmarks, earn, zzzmail, settings, theme, shield
 - Card: black Visa, cat mark, VAPURR BY AVALANCHE — drawn, not a photo
-- Pay sheet: **404 PAYMENTS** (product name). Wire is HTTP 402 / x402.
+- Pay sheet: **KetPay**. Wire is HTTP 402 / x402. 404 is load-fail only.
 
 ## Vibe
 

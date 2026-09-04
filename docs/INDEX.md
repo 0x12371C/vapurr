@@ -8,6 +8,7 @@ This folder is the ship record.
 |---|---|
 | [../README.md](../README.md) | Build, chain, layout |
 | [V1.md](V1.md) | What v1 is |
+| [ORG_FLASH.md](ORG_FLASH.md) | Today’s lanes — read before you edit |
 | [STATUS.md](STATUS.md) | What already runs |
 | [SURFACES.md](SURFACES.md) | `vapurr://` map |
 | [../ARCHITECTURE.md](../ARCHITECTURE.md) | Process model, crates |
@@ -17,4 +18,4 @@ This folder is the ship record.
 
 `assets/brand-board.png` is a reference still. Do not blit it into the UI.
 
-Solidity: `contracts/` (`PusdMarket.sol`, `Outbid.sol`, `PnsRegistry.sol`, `MockUsdg.sol`).
+Solidity: `contracts/` (`PusdMarket.sol`, `Outbid.sol`, `KetList.sol`, `PnsRegistry.sol`, `MockUsdg.sol`).

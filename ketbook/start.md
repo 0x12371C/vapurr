@@ -13,4 +13,4 @@ Needs Microsoft Edge WebView2 Runtime (already on most boxes). If the window nev
 
 The app lives in `%LOCALAPPDATA%\Programs\vapurr`. Profile, bookmarks, and logs live in `%LOCALAPPDATA%\vapurr`.
 
-You can browse without the on-chain market. Scan, Shield, and Live Trenches work today. Mint, names, and 404 settlement wait on the live market and do not fake it.
+You can browse without the on-chain market. Scan, Shield, and Live Trenches work today. KetPay settles `$PUSD` on testnet 46630. Mainnet spend waits.

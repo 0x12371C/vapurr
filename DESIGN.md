@@ -79,8 +79,8 @@ Steel fill, forest 1px stroke, 10px radius. Placeholder: `Search the chain or ty
 ### Feature tile
 Steel plate, 12px radius, lime line-icon, snow 13px label. Home tiles today: Wallet, Swap, Stake, Bridge, PUSD, vapurrbid, PNS, Live Trenches, Scan, dApps.
 
-### 404 payments sheet
-Product name **404**. Wire is HTTP 402 / x402. Amount in snow 36px. Lime CTA.
+### KetPay sheet
+Product name **KetPay**. Wire is HTTP 402 / x402. Amount in snow 36px. Lime CTA. 404 is load-fail only.
 
 ### VAPURR card
 Void plate, forest hairline, drawn cat, `VAPURR` / `BY AVALANCHE` / `VISA`. Diagonal steel sheen. No photo of the board.

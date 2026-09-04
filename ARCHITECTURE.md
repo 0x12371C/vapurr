@@ -86,18 +86,18 @@ KYC is a prover/verifier protocol. vapurr never stores passport, SSN, selfie, or
 
 Attestation claims are boolean/enum only: over-18, unique human, sanctions-clear, jurisdiction code. The shell keeps `attestation_id` + `handle`. Re-prove on demand. Issuer URL is `VAPURR_ZEROID_URL` when live; tests use a local simulator.
 
-v1 chrome: `vapurr://id` is a parked sheet (`frontend/id.html`). It does not call `vapurr-id`. Ad block is `vapurr://shield` (`frontend/shield.html`). Live issuer is after v1.
+v1 chrome: `vapurr://id` is zer0ID (`frontend/id.html`). Start KYC opens thesecretlab.app/kyc. It does not call `vapurr-id` and does not fake Proven. Ad block is `vapurr://shield` (`frontend/shield.html`). Live issuer stays after v1 except earn payout (`docs/zeroid/RHC.md`).
 
 ## Payments
 
-The user asked for "404 for payments". HTTP **404** is Not Found. The status code reserved for money is **402 Payment Required**. vapurr speaks **x402 v2** (Linux Foundation). 404 stays 404. The pay sheet is branded **404**.
+HTTP **404** is load-fail (`frontend/404.png`). Money is HTTP **402** / x402. The pay sheet is **KetPay** (`vapurr://pay` / `ketpay`). 404 is not payments.
 
 Flow:
 
 1. Navigation hits a resource.
 2. If `402` + `PAYMENT-REQUIRED`, the shell shows a pay sheet: **Pay $X to continue**.
 3. `PayRouter` picks a plan:
-   - **X402** on Robinhood Chain: **$PUSD** first when the accept list has it on `eip155:4663`. USDG if that is all they list. The product dollar is $PUSD; USDG is the chain’s dollar.
+   - **X402** on Robinhood Chain: **$PUSD** first when the accept list has it on testnet `eip155:46630`. v1.2 does not settle on mainnet `4663`. USDG if that is all they list on 46630. The product dollar is $PUSD; USDG is the chain’s dollar.
    - **Avalanche Card passthrough** for Visa-shaped / fiat merchants: a scoped Rain authorization (merchant, max cents, expiry, single-use). vapurr never sees PAN/CVV. Collateral stays in the user's C-Chain card contract. Native USDC `0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E`
    - **NeedKyc** / **NeedCardLink** if the account is not ready
 
@@ -108,7 +108,7 @@ Passthrough means vapurr is the frontend and policy layer. Settlement is the car
 Mail is a protocol inside the browser, not Gmail in a tab.
 
 - Address: `@name.hood`, `@handle`, or `@0x` (40-hex)
-- **PNS** (`vapurr://pns`): TLD `.hood` on testnet 46630. Registry `0x7eAc2c587Dbb60B2a7f357cfCB28c37c74A6E7d6`. ENS-shaped (namehash, `addr` / `setAddr`, reverse). Type `name.hood` in the bar.
+- **PNS** (`vapurr://pns`): TLD `.hood` on testnet 46630. Registry `0x13C9fCaB70e8f7eED688A5548B0E3849B1ae0fC4`. ENS-shaped (namehash, `addr` / `setAddr`, reverse). Type `name.hood` in the bar.
 - Seal: X25519 + ChaCha20-Poly1305
 - Body: IPFS-shaped CID of ciphertext (veildb-style: encrypt, then pin). Never on-chain.
 - Postage: **0.25¢** in `$PUSD` or `$VAPURR` as a **gasless voucher** (0 ETH from the sender). Hard cap **1¢** all-in if a relayer later posts a pointer.
@@ -120,7 +120,7 @@ Device identity is enough to send. zer0ID is not the delivery gate.
 ## Crate map
 
 ```
-vapurr-rhc      chain constants, JSON-RPC, Scan APIs, liquidity graph (`liq`), LI.FI route quotes
+vapurr-rhc      chain constants, JSON-RPC, Scan APIs, liquidity graph (`liq`), swap/bridge router (score + sim + $VAPURR refund + buy-and-burn remainder)
 vapurr-core     tabs, site keys, process policy, profile
 vapurr-id       zer0ID
 vapurr-wallet   7702 / 4337 / session keys / USDG

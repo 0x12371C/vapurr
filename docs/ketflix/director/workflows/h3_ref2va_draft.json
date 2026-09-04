@@ -1,0 +1,35 @@
+﻿{
+  "name": "h3_turbo_fast_3090",
+  "status": "READY — uses justin ComfyUI generate_fast.py stack",
+  "target": "MiniMax H3 FL2VA + Turbo v4 on RTX 3090",
+  "first_title": "the-ketrix",
+  "source_post": ".grok/inbox/ketflix-h3-benchmark.md (FASTEST: 0.5MP/4 FastVideo INT8 + INT8 ConvRot VAE + Turbo)",
+  "hf": "https://huggingface.co/drbaph/MiniMax-H3-Turbo-Lora-ComfyUI",
+  "comfy_root": "C:/Users/jfren/ComfyUI",
+  "runner": "generate_fast.py (I2V from poster)",
+  "defaults": {
+    "width": 864,
+    "height": 480,
+    "mp": 0.5,
+    "steps": 4,
+    "length_frames": 124,
+    "fps": 24,
+    "eta_note": "5090 bench ~42s; expect slower on 3090",
+    "unet": "minimax_h3_fl2va_pruned_int8_convrot.safetensors",
+    "lora": "minimax_h3_turbo_v4_step600_ema_pruned_comfyui.safetensors",
+    "clip": "qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors",
+    "vae_v": "minimax_h3_video_vae_fp16.safetensors",
+    "clip_device": "cpu"
+  },
+  "io": {
+    "poster": "frontend/ketflix/posters/{slug}.png",
+    "backdrop": "frontend/ketflix/backdrops/{slug}.png",
+    "shots": "docs/ketflix/director/SHOTS.md",
+    "trailer": "frontend/ketflix/trailers/{slug}.mp4"
+  },
+  "real_graphs": [
+    "C:/Users/jfren/ComfyUI/user/default/workflows/minimax_h3_director_r2v.json",
+    "C:/Users/jfren/ComfyUI/user/default/workflows/MiniMax_H3_Dual_Reference.json"
+  ],
+  "notes": "Do NOT invent fake Comfy node graphs. Relic GPU is 3090. No new grok CLI spawns."
+}

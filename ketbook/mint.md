@@ -30,3 +30,5 @@ A trade that would empty the virtual pool reverts `THIN`.
 4. Mint $VAPURR to you. The $VAPURR spread is **not minted**.
 
 No USDG moves. There is no `addLiquidity`. Deploy is what puts 1,000,000 $VAPURR on the deploying device.
+
+Supply, borrow, and loop are a second contract (`PusdLoop`). They do not mint. [Supply and borrow](euler.md).

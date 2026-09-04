@@ -8,10 +8,10 @@ On chain, the take is the market and the board. No founder wallet.
 
 **vapurrbid.** $PUSD paid for rank sits in the bid contract. Never refunded. Never swept to an admin.
 
-**404 / x402.** When settlement is live: merchant is paid. vapurr does not custody.
+**KetPay / x402.** On testnet 46630: merchant is paid in `$PUSD`. vapurr does not custody.
 
 **zzzmail postage.** 0.25¢ voucher in $PUSD or $VAPURR. Settles later, under a cent.
 
-**Swap / bridge.** 25 bps integrator fee on the route (`vapurr`). Quote only today.
+**Swap / bridge.** The route is not cut. 25 bps buys `$VAPURR`; a small refund goes to you in `$VAPURR`; the rest burns to mint `$PUSD`. Quote + simulation today. Does not execute.
 
 That is the whole take. The $PUSD desk does not run a second treasury.

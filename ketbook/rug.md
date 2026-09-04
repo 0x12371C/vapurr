@@ -8,4 +8,6 @@ There **is** an owner. It is set in the constructor and cannot be transferred. T
 
 vapurrbid takes $PUSD into a second contract. Bids are never refunded. Nothing in that contract sends the pot out.
 
+The vault (`PusdLoop`) is a third contract. Owner is the deployer and cannot be transferred. Owner receives reserve shares of borrow interest (10%). Owner cannot pull deposits, pause, or change LTV. Liquidators repay `$PUSD` and seize `$VAPURR` / supplied `$PUSD` at a 5% bonus. No USDG in that contract.
+
 What this does **not** claim: smart-contract bugs, a bad `feed`, or a virtual pool that reverts `THIN`. Those are market and code risk.
