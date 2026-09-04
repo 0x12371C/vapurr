@@ -3,8 +3,9 @@ use super::*;
 #[derive(RustEmbed)]
 #[folder = "../../frontend"]
 #[exclude = "*.zip"]
-#[exclude = "*.mp4"]
-#[exclude = "commercial/*"]
+#[exclude = "*.mp4"] // Relic: never embed video — host on thesecretlab.app/vapurr/
+#[exclude = "*.webm"]
+#[exclude = "commercial/*"] // masters/outtakes stay out of the install
 pub(crate) struct Frontend;
 
 pub fn frontend_root() -> PathBuf {
