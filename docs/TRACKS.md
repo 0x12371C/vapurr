@@ -12,9 +12,9 @@ Living owner board. Snapshot: `docs/SNAPSHOT.md`. Flash: `docs/ORG_FLASH.md`.
 
 | Org board | vapurrbot | live ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Bot is primary (CLI credits dry) | KEEP House+Pilot; ACTIVE KFX/PayId/Bind only; **no new grok procs** |
 
-| Code signing | Relic + House | **P0 SHIP BLOCKER** - unsigned Defender hit. Wallet IPC hardening **in-tree** (Codex); Relic hostile-page retest open Ã¢â‚¬â€ `docs/RELEASE_REVIEW_2026-09-04.md`. | OV/Artifact Signing; `pack.ps1` must sign; MSFT FP; Relic security retest before public ship |
+| Code signing | Relic + House | **P0 SHIP BLOCKER** - unsigned Defender hit (`NotSigned` on Programs exe). Wallet IPC hardening in-tree; Relic hostile-page retest open — `docs/RELEASE_REVIEW_2026-09-04.md`. | OV/Artifact Signing; `pack.ps1` must sign; MSFT FP; Relic security retest before public ship |
 
-| Build / pack | House | **1.1.9** Programs rev `a825573` @ 11:02 ET (sha fa404567…); local TSL channel manifest **missing** this hour; Defender still hostile to unsigned dist. Hold pack until signed + Relic security bar. | Signed 1.1.10 pack to TSL after Relic retest; then Programs hot-patch/reinstall |
+| Build / pack | House | **1.1.9** Programs FileVersion live sha `E8C00783…` @ 11:58 ET (registry DisplayVersion still stale 1.1.1); dist zip refreshed ~12:07; local TSL `channel/manifest.json` **missing**; dist exe absent; **NotSigned**. Hold pack until signed + Relic security bar. | Signed 1.1.10 pack to TSL after Relic retest; restore channel manifest; then Programs hot-patch/reinstall |
 
 | Media hosting | vapurrbot + TSL | Ketflix `TRAILER_BASE` ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ thesecretlab.app; CDN 404 until upload | sync `frontend/ketflix/trailers/*.mp4`; see HOSTING.md |
 
@@ -32,7 +32,7 @@ Living owner board. Snapshot: `docs/SNAPSHOT.md`. Flash: `docs/ORG_FLASH.md`.
 
 | Token economy | vapurrbot+Pilot | gen-4 / HouseLp claimed live 46630; Pilot touched pay/wallet/pusd PM | keep STATUS CAs honest; vault live |
 
-| Token economy / Fed gV | Relic+House | **slice green** — gV walls + fee/skim/CD/wgV stubs + **SavingsRouter/BondMarket live-by-default** (`60f3744`+) | Live wire / Uni IHooks / House AMM wgV deploy when Relic opens; SignPath remains ship P0 |
+| Token economy / Fed gV | Relic+House | **slice green** — gV walls + fee/skim/CD/wgV stubs + SavingsRouter/BondMarket live-by-default + gen-5 Lithe cutover source + **$PUSD/USDG pool params sketch** (0.05% / +/-1% par) | Live wire / Uni IHooks / House AMM wgV deploy / USDG pool deploy when Relic opens; SignPath remains ship P0 |
 
 | Charts / Psy / Tube | PARK | | |
 

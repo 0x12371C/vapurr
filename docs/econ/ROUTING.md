@@ -56,7 +56,7 @@ Cash peg trust is the **`$PUSD` / USDG** book (and other exogenous cash legs) - 
 - Fed LOLR policy for Oliver bad debt
 - Bond capacity / when not to bond
 - BondMarket gated skeleton + HouseFeeRemit sketch + FeeAttribution ledger landed (P1 live enable still open; Uni skim adapter HouseUniSkim landed) - sPUSD CD sketch + Bonds `#spusd-cd` UI stub landed; Bonds tab Unavailable/Gated stub landed (GATE map; live wire open); House tab **wgV / $PUSD** visual stub on `pusd.html` (wrap-first gate; live pairConfig deploy still open)
-- `$PUSD`/USDG pool params / fee / tick ranges (P1) - names locked in `PUSD_LIQUIDITY.md`
+- `$PUSD`/USDG pool params / fee / tick ranges (P1) - **sketch landed** in `PUSD_LIQUIDITY.md` (0.05% / +/-1% par proposed; deploy/addresses still open); Cash depth UI stub on `bonds.html`
 
 ## Market V redeem fence (2026-09-05)
 

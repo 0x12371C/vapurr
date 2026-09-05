@@ -26,11 +26,26 @@ Forced `$PUSD` float earns trust when it has **depth against outside money**. In
 
 Cash surfaces show **exogenous depth** (USDG book first). House/equity depth lives on the equity / House surface - never collapse both into one "liquidity" number.
 
+## Pool params (P1 sketch - 2026-09-05)
+
+Proposed Uni v4 defaults for the **primary peg book** `$PUSD` / USDG. **Not deployed. Not live quotes.** House stays `wgV/$PUSD` at 0.30% / ±20% - different job.
+
+| Param | Proposed | Why |
+|-------|----------|-----|
+| **Fee tier** | **0.05%** (500) | Stable exogenous pair; tighter than House equity desk |
+| **Tick spacing** | Fee-tier default (Uni v4 0.05% spacing) | Match fee; no custom weirdness |
+| **Active range** | **+/-1% around par (1.0)** | Forced-float trust is near-par exit depth, not wide equity bands |
+| **Secondary** | `$PUSD` / ETH optional later | Never a substitute for USDG primary |
+| **Seed** | Fed/Treasury RFV + real outside USDG | Never sink-only / recursive `$PUSD` inventory as "depth" |
+| **UI posture** | Show book + proposed params as **not live** until address book | Same honesty pattern as Bonds capacity (`-` / not configured) |
+
+Still open after this sketch: deploy scripts, pool addresses in `STATUS.md`, and any hook if pool-held `$PUSD` Lithe drip needs LP allocation (see `HOUSE_PAIR.md` P1 - same cash-leg class).
+
 ## Out of scope (for later)
 
-- Pool params / fee / tick ranges
 - Deploy scripts and addresses (record in `STATUS.md` when live)
-- Contracts beyond naming the books
+- Contracts beyond naming the books + these param defaults
+
 
 ## Related
 
