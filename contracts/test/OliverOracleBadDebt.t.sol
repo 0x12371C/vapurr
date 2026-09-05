@@ -239,4 +239,36 @@ contract OliverOracleBadDebtTest is Test {
         loop.liquidate(borrower, 1_000 ether);
         vm.stopPrank();
     }
+
+    /// P0: Lithe swap/_spot must NOT heartbeat rateUpdatedAt. Only owner feed() may.
+    /// Before fix: warp past MAX_RATE_AGE, tiny expand swap, borrow succeeds on stale px.
+    function test_swap_does_not_refresh_stale_heartbeat() public {
+        _seedBook();
+        uint256 hb0 = market.rateUpdatedAt();
+        uint256 maxAge = loop.MAX_RATE_AGE();
+
+        vm.warp(block.timestamp + maxAge + 1);
+        vm.prank(borrower);
+        vm.expectRevert(bytes("STALE"));
+        loop.borrow(1 ether);
+
+        // Permissionless expand after time passes — applies pending via _spot, must not launder freshness.
+        vm.roll(block.number + 1);
+        vm.prank(supplier);
+        market.swapVToPusd(1 ether);
+
+        assertEq(market.rateUpdatedAt(), hb0, "swap must not refresh oracle heartbeat");
+
+        vm.prank(borrower);
+        vm.expectRevert(bytes("STALE"));
+        loop.borrow(1 ether);
+
+        // Owner feed restores freshness; over-LTV still blocked.
+        market.feed(PRICE);
+        assertGt(market.rateUpdatedAt(), hb0, "feed heartbeats");
+        vm.prank(borrower);
+        vm.expectRevert(bytes("LTV"));
+        loop.borrow(1_000 ether);
+    }
+
 }

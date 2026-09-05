@@ -211,7 +211,7 @@ contract PusdMarket {
     }
 
     /// Oracle vote. Live rate snapshots on first swap of the block (first-spot).
-    /// Heartbeats `rateUpdatedAt` immediately so credit freshness does not wait on a swap.
+    /// Heartbeats `rateUpdatedAt` here only — swaps must not refresh credit freshness.
     function feed(uint256 rate) external onlyOwner {
         require(rate > 0, "PRICE");
         if (vapurrRate > 0) {
@@ -281,7 +281,8 @@ contract PusdMarket {
         if (liveBlock != block.number) {
             if (pendingRate > 0) vapurrRate = pendingRate;
             liveBlock = block.number;
-            rateUpdatedAt = block.timestamp;
+            // Do NOT refresh rateUpdatedAt here — only owner feed() heartbeats.
+            // Swap applying pending must not launder a stale oracle past Oliver STALE.
         }
         require(vapurrRate > 0, "PRICE");
     }

@@ -6,6 +6,7 @@ pragma solidity ^0.8.24;
 /// Two intentional printers (documented, not silent):
 /// 1. Policy minter (`minter`) - gV / RebasePolicy inflate to stakers (dynamic 1-9%/yr).
 /// 2. Market minter (`marketMinter`) - Lithe seigniorage: mint V on PUSD redeem, burn V on PUSD expand.
+///    Burn authority is marketMinter-only; policy minter cannot incinerate holders.
 ///
 /// - `minter == address(0)` -> policy mint disabled (revoked).
 /// - `marketMinter == address(0)` -> Lithe cannot mint/burn V (seigniorage offline).

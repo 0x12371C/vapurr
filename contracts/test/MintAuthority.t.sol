@@ -156,4 +156,46 @@ contract MintAuthorityTest is Test {
         vm.expectRevert(bytes("MINTER"));
         v.mint(stranger, 1);
     }
+
+    /// P0 boundary: after handoff, policy minter (gV) mints only — burn is marketMinter-exclusive.
+    function test_policy_minter_cannot_burn_holders() public {
+        VapurrToken v = new VapurrToken();
+        address lithe = address(uint160(0x1177E));
+        v.mint(staker, 10 ether);
+        v.setMarketMinter(lithe);
+        v.setMinter(address(gV));
+
+        // gV / policy path cannot burn
+        vm.prank(address(gV));
+        vm.expectRevert(bytes("MARKET"));
+        v.burn(staker, 1 ether);
+
+        vm.prank(stranger);
+        vm.expectRevert(bytes("MARKET"));
+        v.burn(staker, 1 ether);
+
+        // marketMinter still can (seigniorage expand)
+        vm.prank(lithe);
+        v.burn(staker, 1 ether);
+        assertEq(v.balanceOf(staker), 9 ether, "market burn ok");
+    }
+
+    /// Handoff race fence: setMarketMinter then setMinter(gV); deployer loses both roles.
+    function test_handoff_order_deployer_loses_mint_after_setMinter() public {
+        VapurrToken v = new VapurrToken();
+        address lithe = address(uint160(0x1177E));
+        v.setMarketMinter(lithe);
+        v.setMinter(address(gV));
+
+        vm.expectRevert(bytes("MINTER"));
+        v.mint(staker, 1);
+
+        vm.expectRevert(bytes("MINTER"));
+        v.setMarketMinter(stranger);
+
+        vm.prank(address(gV));
+        v.mint(staker, 1 ether);
+        assertEq(v.balanceOf(staker), 1 ether);
+    }
+
 }

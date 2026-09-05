@@ -60,7 +60,9 @@ contract VapurrToken is IVapurrMinter {
         emit Transfer(address(0), to, amt);
     }
 
-    function burn(address from, uint256 amt) external onlyAuthorizedMinter {
+    /// Seigniorage burn — Lithe marketMinter only. Policy minter (gV) may mint, never burn.
+    function burn(address from, uint256 amt) external {
+        require(msg.sender == marketMinter, "MARKET");
         uint256 b = balanceOf[from];
         require(b >= amt, "VAPURR");
         unchecked {

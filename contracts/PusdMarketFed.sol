@@ -125,7 +125,8 @@ contract PusdMarketFed {
         if (liveBlock != block.number) {
             if (pendingRate > 0) vapurrRate = pendingRate;
             liveBlock = block.number;
-            rateUpdatedAt = block.timestamp;
+            // Do NOT refresh rateUpdatedAt here — only owner feed() heartbeats.
+            // Swap applying pending must not launder a stale oracle past Oliver STALE.
         }
         require(vapurrRate > 0, "PRICE");
     }

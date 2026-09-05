@@ -36,12 +36,13 @@ No Luna / UST / Olympus product names in UI or docs. No silent 46630 broadcast.
 
 | Role | Who | Prints V? | Burns V? |
 |------|-----|-----------|----------|
-| Policy minter | gV after handoff | Yes — staker rebase | No (unused) |
+| Policy minter | gV after handoff | Yes — staker rebase | **No** (enforced) |
 | Market minter | Lithe (`PusdMarketFed`) | Yes — on PUSD redeem | Yes — on PUSD expand |
 | BrowserStream | distributor | No | No |
 | LegacyVConverter | — | No | No |
 
 `setMinter` / `setMarketMinter` are callable only by the current **policy** minter.
+`burn` is **marketMinter-only** (Lithe seigniorage); policy minter cannot incinerate holders.
 Factory order: genesis mint → fund converter → `setMarketMinter(Lithe)` → `setMinter(gV)`.
 
 ## Embedded gen-4 book (`PusdMarket`)
