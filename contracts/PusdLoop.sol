@@ -135,6 +135,8 @@ contract PusdLoop {
         totalSupplyShares -= sh;
         require(pusd.approve(address(remittance), assets), "ALLOW");
         require(remittance.receiveRemittance(assets), "SINK");
+        // Owner supply is collateral; remittance must leave owner within LTV.
+        _requireLtv(owner);
         emit Remitted(address(remittance), assets, sh);
         return assets;
     }
@@ -158,8 +160,9 @@ contract PusdLoop {
         require(pusd.balanceOf(address(this)) >= amt, "CASH");
         supplyShares[msg.sender] = have - sh;
         totalSupplyShares -= sh;
-        _requireLtv(msg.sender);
+        // Health against post-withdraw cash (supply collateral must not be inflated mid-exit).
         require(pusd.transfer(msg.sender, amt), "PUSD");
+        _requireLtv(msg.sender);
         emit Withdraw(msg.sender, amt, sh);
     }
 
@@ -190,8 +193,9 @@ contract PusdLoop {
         borrowShares[msg.sender] += sh;
         totalBorrowShares += sh;
         totalBorrowAssets += amt;
-        _requireLtv(msg.sender);
+        // Health against post-borrow cash / utilization (no mid-transfer collateral inflation).
         require(pusd.transfer(msg.sender, amt), "PUSD");
+        _requireLtv(msg.sender);
         emit Borrow(msg.sender, amt, sh);
     }
 
@@ -432,9 +436,16 @@ contract PusdLoop {
         }
         emit Accrue(interest, totalBorrowAssets);
         // Remittance hook: best-effort push reserve cash to sink after owner share mint.
+        // Isolated so a sink revert cannot freeze repay / withdraw / liquidate / accrue.
         if (remitOnAccrue && address(remittance) != address(0) && fee > 0) {
-            _remitReserve(fee);
+            try this.remitReserveFromAccrue(fee) {} catch {}
         }
+    }
+
+    /// External only so accrue can try/catch sink failures without holding a nested lock.
+    function remitReserveFromAccrue(uint256 assets) external returns (uint256) {
+        require(msg.sender == address(this), "SELF");
+        return _remitReserve(assets);
     }
 
     function _flow(uint256 cash) internal pure returns (uint256) {
