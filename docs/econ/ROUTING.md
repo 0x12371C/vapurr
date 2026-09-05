@@ -1,4 +1,4 @@
-# VAPURR economic routing (canon)
+﻿# VAPURR economic routing (canon)
 
 Relic lock 2026-09-05. Living truth for Fed/branches split.
 
@@ -18,9 +18,9 @@ What normals open in the app - not plumbing labels:
 
 | Surface | Tokens / assets | One-liner |
 |---------|-----------------|-----------|
-| **Cash** | `$PUSD` Â· `sPUSD` Â· **`$PUSD`/USDG** | Spend/mint rail Â· savings after runway Â· **tight exogenous depth** (USDG book) |
-| **Equity** | `gV` Â· stake | Bond claim / stake path; Fed 3.5%/yr to stakers only |
-| **Bonds** | **ETH Â· USDG Â· major stocks** | Park asset -> get **gV at a discount** after a wait. Exogenous RFV in. |
+| **Cash** | `$PUSD` Ã‚Â· `sPUSD` Ã‚Â· **`$PUSD`/USDG** | Spend/mint rail Ã‚Â· savings after runway Ã‚Â· **tight exogenous depth** (USDG book) |
+| **Equity** | `gV` Ã‚Â· stake | Bond claim / stake path; Fed 3.5%/yr to stakers only |
+| **Bonds** | **ETH Ã‚Â· USDG Ã‚Â· major stocks** | Park asset -> get **gV at a discount** after a wait. Exogenous RFV in. |
 | **House** | **wgV / $PUSD** | Equity meets cash. Wrap gV -> wgV before LP. **Not** peg defense. |
 
 Bonds are a **first-class visible surface** (see `BONDS.md` + `vapurr://bonds`). They are not a hidden OMO footnote.
@@ -50,10 +50,10 @@ Cash peg trust is the **`$PUSD` / USDG** book (and other exogenous cash legs) - 
 
 ## Open eng choices
 
-- House leg: **wgV locked** (wstETH pattern) - see HOUSE_PAIR.md. Do not pair raw rebasing gV in AMM.
+- House leg: **wgV locked** (wstETH pattern) - see HOUSE_PAIR.md + WGV_HOUSE.md. Do not pair raw rebasing gV in AMM.
 - Fed LOLR policy for Oliver bad debt
 - Bond capacity / when not to bond
-- BondMarket gated skeleton + HouseFeeRemit sketch landed (P1 live enable still open; Uni skim adapter HouseUniSkim landed) · sPUSD CD sketch + Bonds `#spusd-cd` UI stub landed (live wire open)
+- BondMarket gated skeleton + HouseFeeRemit sketch landed (P1 live enable still open; Uni skim adapter HouseUniSkim landed) Â· sPUSD CD sketch + Bonds `#spusd-cd` UI stub landed (live wire open)
 - `$PUSD`/USDG pool params / fee / tick ranges (P1) - names locked in `PUSD_LIQUIDITY.md`
 
 ## Market V redeem fence (2026-09-05)

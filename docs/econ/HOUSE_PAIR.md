@@ -1,4 +1,4 @@
-# House pair (canon)
+﻿# House pair (canon)
 
 Relic lock 2026-09-05.
 
@@ -8,32 +8,32 @@ Relic lock 2026-09-05.
 
 | Leg | Token | Why |
 |-----|-------|-----|
-| Equity | **wgVAPURR** | Non-rebasing shares (wstETH pattern). Rebase accrues in exchange rate, not balance â€” LP / CL math stays honest. |
+| Equity | **wgVAPURR** | Non-rebasing shares (wstETH pattern). Rebase accrues in exchange rate, not balance Ã¢â‚¬â€ LP / CL math stays honest. |
 | Cash | **$PUSD** | Product dollar (Lithe index separate). |
 
 ## Hard invariant (enforce)
 
 1. **Raw `gVAPURR` is never a House pool currency.** Uni v4 / CPMM `PoolKey` currencies must be exactly `{wgV, $PUSD}` (either order).
 2. Deploy / factory path MUST call `HousePairConfig.requireHousePair` (or `HousePairFactory.validateAndMark`) before `initializePool` / seed. Revert: `RawGvNotHouseEquity` if either currency is gV.
-3. Equity leg check: `requireHouseEquity(token)` â€” only `wgV` passes; raw gV and raw `$VAPURR` fail.
-4. Wrapping gV â†’ wgV fixes **only the equity leg**. It does **not** fix cash-leg rebase accounting (see PUSD note below).
+3. Equity leg check: `requireHouseEquity(token)` Ã¢â‚¬â€ only `wgV` passes; raw gV and raw `$VAPURR` fail.
+4. Wrapping gV Ã¢â€ â€™ wgV fixes **only the equity leg**. It does **not** fix cash-leg rebase accounting (see PUSD note below).
 
 Code SoT: `contracts/HousePairConfig.sol` (+ thin `HousePairFactory`). Proofs: `contracts/test/HousePairGuard.t.sol`.
 
 ## Do not pair
 
-- Raw **gVAPURR** in Uni v4 / CPMM â€” index rebase soft-taxes the pool (balance drift without swaps).
-- Raw **$VAPURR** as the house equity leg once staking is live â€” stakers receive the 3.5%/yr; house should quote claim-wrapped gV.
+- Raw **gVAPURR** in Uni v4 / CPMM Ã¢â‚¬â€ index rebase soft-taxes the pool (balance drift without swaps).
+- Raw **$VAPURR** as the house equity leg once staking is live Ã¢â‚¬â€ stakers receive the 3.5%/yr; house should quote claim-wrapped gV.
 
 ## Wrap path
 
-1. Stake `$VAPURR` â†’ `gVAPURR` (index rebase, Fed policy only).
-2. Wrap `gVAPURR` â†’ `wgVAPURR` for AMM / LP.
-3. Unwrap `wgVAPURR` â†’ `gVAPURR` (more gV after rebase) â†’ unstake to `$VAPURR`.
+1. Stake `$VAPURR` Ã¢â€ â€™ `gVAPURR` (index rebase, Fed policy only).
+2. Wrap `gVAPURR` Ã¢â€ â€™ `wgVAPURR` for AMM / LP.
+3. Unwrap `wgVAPURR` Ã¢â€ â€™ `gVAPURR` (more gV after rebase) Ã¢â€ â€™ unstake to `$VAPURR`.
 
 ## $PUSD rebase note (P1)
 
-Naked `$PUSD` **is** rebasing in this stack (`PusdToken`: shares Ã— Lithe index; `drip` lifts index). **sPUSD** is the savings vault (non-rebasing shares claiming rebasing PUSD) â€” not the House cash leg.
+Naked `$PUSD` **is** rebasing in this stack (`PusdToken`: shares Ãƒâ€” Lithe index; `drip` lifts index). **sPUSD** is the savings vault (non-rebasing shares claiming rebasing PUSD) Ã¢â‚¬â€ not the House cash leg.
 
 Pool-held `$PUSD` therefore accrues Lithe drip to whoever holds the pool balance. Ordinary Uni v4 reserve math does **not** allocate that gain to LPs correctly without an explicit hook / accounting path. Treat **pool-held PUSD rebase accounting** as **P1** (same class as the CODEX attack note: wgV fixes one leg only).
 
@@ -58,5 +58,9 @@ Uni v4 LP fees stay with LPs. Protocol carve (ops / hook / swapper skim) lands a
 - creditFees pulls inventory only (never mints).
 - emitSurplus requires a wired sink; empty reserve reverts TINY.
 - Proofs: contracts/test/HouseFeeRemit.t.sol (credit+remit, empty, partial, unset sink).
-- Skim adapter sketch: `contracts/HouseUniSkim.sol` — authorized hook/owner `skimToCredit` pulls realized $PUSD inventory into `HouseFeeRemit.creditFees` (never mints). Proofs: `HouseUniSkimTest` 4/4 (skim→remit sink, stranger AUTH, zero TINY, owner path).
+- Skim adapter sketch: `contracts/HouseUniSkim.sol` â€” authorized hook/owner `skimToCredit` pulls realized $PUSD inventory into `HouseFeeRemit.creditFees` (never mints). Proofs: `HouseUniSkimTest` 4/4 (skimâ†’remit sink, stranger AUTH, zero TINY, owner path).
 - Still open: full Uni v4 `IHooks` / swapper integration + deploy + Rust bootstrap (adapter is the inventory bridge only).
+
+## Operator notes
+
+Short ops checklist: [WGV_HOUSE.md](WGV_HOUSE.md) (wrap path, green/open, do-nots).
