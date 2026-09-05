@@ -471,7 +471,7 @@
     <div class="panel">
       <div class="grab"></div>
       <h2 id="book-title">Mint $PUSD</h2>
-      <p id="book-copy">Burn $VAPURR, mint $PUSD at the oracle.</p>
+      <p id="book-copy">Seigniorage: burn $VAPURR → mint $PUSD at the oracle. Not inventory.</p>
       <div class="seg" id="book-seg" style="width:100%;margin:0 0 8px">
         <button type="button" id="book-mint" class="on" data-book="mint">Mint</button>
         <button type="button" id="book-red" data-book="redeem">Redeem</button>
@@ -480,7 +480,7 @@
         <input class="cash-amt" id="book-amt" placeholder="0" inputmode="decimal" autocomplete="off"/>
         <div class="cash-sym" id="book-lab">VAPURR</div>
       </div>
-      <div class="sub" id="book-hint" style="margin:0 0 16px">Burn V to mint P.</div>
+      <div class="sub" id="book-hint" style="margin:0 0 16px">Seigniorage: burn V → mint P (not inventory).</div>
       <div class="empty" id="book-err" hidden style="padding:0 0 12px;text-align:left;color:#ff8a80"></div>
       <button class="btn" id="book-go" type="button">Review</button>
       <button class="btn ghost" id="book-send" type="button">Send token instead</button>
@@ -1223,8 +1223,8 @@
       document.getElementById("book-red").classList.toggle("on", !mint);
       document.getElementById("book-title").textContent = mint ? "Mint $PUSD" : "Redeem $PUSD";
       document.getElementById("book-copy").textContent = mint
-        ? "Burn $VAPURR, mint $PUSD at the oracle. Spread ≥ 2%."
-        : "Burn $PUSD, mint $VAPURR at the oracle. Spread ≥ 2%.";
+        ? "Seigniorage: burn $VAPURR → mint $PUSD at the oracle. Spread ≥ 2%. Not inventory."
+        : "Seigniorage: burn $PUSD → mint $VAPURR at the oracle. Spread ≥ 2%. Not inventory unwrap.";
       document.getElementById("book-lab").textContent = mint ? "VAPURR" : "PUSD";
       var v = (snap && snap.vapurr) || "0";
       var p = (snap && snap.pusd) || "0";
@@ -1369,13 +1369,13 @@
         title: mint ? "Mint $PUSD" : "Redeem $PUSD",
         kicker: "This device signs",
         lede: mint
-          ? "Burn $VAPURR, mint $PUSD at the oracle. Spread ≥ 2%. Hash or it failed."
-          : "Burn $PUSD, mint $VAPURR at the oracle. Spread ≥ 2%. Hash or it failed.",
+          ? "Seigniorage: burn $VAPURR → mint $PUSD at the oracle. Not inventory. Spread ≥ 2%. Hash or it failed."
+          : "Seigniorage: burn $PUSD → mint $VAPURR at the oracle. Not inventory unwrap. Spread ≥ 2%. Hash or it failed.",
         rows: [
           { k: "Network", v: netName() },
           { k: "From", v: addr },
           { k: mint ? "Burn V" : "Burn P", v: amt },
-          { k: "Path", v: mint ? "burn VAPURR → mint PUSD" : "burn PUSD → mint VAPURR" },
+          { k: "Path", v: mint ? "seigniorage: burn VAPURR → mint PUSD" : "seigniorage: burn PUSD → mint VAPURR" },
           { k: "Spread", v: "≥ 2%" },
           { k: "Lithe", v: "—" }
         ],

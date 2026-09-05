@@ -642,7 +642,7 @@
     <div class="board" id="board">
     <div class="card" id="book">
       <h2>Mint and redeem</h2>
-      <p class="say">Burn <b>$VAPURR</b> → mint <b>$PUSD</b> (and reverse). Oracle = first spot of the block. Spread ≥2% funds Lithe. Not USDG.</p>
+      <p class="say">Seigniorage: burn <b>$VAPURR</b> → mint <b>$PUSD</b>; redeem burns <b>$PUSD</b> → mint <b>$VAPURR</b>. Not inventory / stocked V. Oracle = first spot of the block. Spread ≥2% funds Lithe. Not USDG.</p>
       <div class="amt">
         <input class="field" id="amt" placeholder="0" inputmode="decimal" autocomplete="off"/>
         <button class="btn-ghost" id="max" type="button" style="height:44px">Max</button>
@@ -1323,13 +1323,13 @@
         title: mint ? "Mint $PUSD" : "Redeem $PUSD",
         kicker: "This device signs",
         lede: mint
-          ? "Burn $VAPURR, mint $PUSD. Spread funds Lithe. Hash or it failed."
-          : "Burn $PUSD, mint $VAPURR. Spread is not minted back. Hash or it failed.",
+          ? "Seigniorage: burn $VAPURR → mint $PUSD (not inventory). Spread funds Lithe. Hash or it failed."
+          : "Seigniorage: burn $PUSD → mint $VAPURR (not inventory unwrap). Spread is not minted back. Hash or it failed.",
         rows: [
           { k: "Network", v: netLabel() },
           { k: "From", v: (snap && snap.address) || "this device" },
           { k: mint ? "Burn V" : "Burn P", v: amt },
-          { k: "Path", v: mint ? "burn VAPURR → mint PUSD" : "burn PUSD → mint VAPURR" },
+          { k: "Path", v: mint ? "seigniorage: burn VAPURR → mint PUSD" : "seigniorage: burn PUSD → mint VAPURR" },
           { k: "Spread", v: spreadPct().toFixed(2) + "%" },
           { k: "Lithe", v: (snap && snap.apy != null && snap.apy !== "" ? Number(snap.apy).toFixed(2) + "%" : "—") }
         ],
