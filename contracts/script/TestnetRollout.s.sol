@@ -269,7 +269,7 @@ contract TestnetRollout is Script {
         bool confirm = vm.envOr("CONFIRM_TESTNET_DEPLOY", uint256(0)) == 1;
         uint256 rate = vm.envOr("LITHE_RATE_WAD", uint256(1 ether));
         address owner_ = vm.envOr("ROLLOUT_OWNER", address(0));
-        uint256 bootstrapV = vm.envOr("BOOTSTRAP_V", uint256(0));
+        uint256 bootstrapV = vm.envOr("BOOTSTRAP_V", uint256(200_000 ether));
 
         console2.log("chain planned: 46630 (testnet)");
         console2.log("CONFIRM_TESTNET_DEPLOY", confirm ? uint256(1) : uint256(0));

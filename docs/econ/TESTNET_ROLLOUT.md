@@ -16,6 +16,8 @@ Proxy pattern: **UUPS + ERC1967Proxy** (`contracts/proxy/*`, `PusdMarketFedUpgra
 
 USDG is **bond / treasury intake only** (`BondAssetTag`). No USDG AMM / peg-pool.
 
+**Genesis allocation (locked):** `bootstrapV` default **200_000 ether** (fatter: BrowserStream 50k / V/ETH 80k / V/NVDA 25k / V/AMD 25k / House 20k) + DevFund **200k** separate. See `GENESIS_ALLOCATION.md`.
+
 **Script coverage legend:** `[IN SCRIPT]` = composed by `script/TestnetRollout.s.sol` dry-run / gated live path. `[MANUAL]` / `[FOLLOW-UP]` = still operator or later PR.
 
 ---
@@ -177,7 +179,7 @@ $env:CONFIRM_TESTNET_DEPLOY = "1"
 forge script script/TestnetHouseFollowup.s.sol:TestnetHouseFollowup -vv
 ```
 
-Optional env (dry-run deploys MockUsdg / mock exo legs when unset): `USDG`, `EXO_ETH`, `EXO_NVDA`, `EXO_AMD`, `BOOTSTRAP_V`, `RUNWAY_FLOOR`, `BOND_USDG_CAPACITY`, `BOND_TREASURY`, `DEVFUND_RECIPIENT`, `SEED_POL`, `AUTO_REMIT`, `ROLLOUT_OWNER`, `LITHE_RATE_WAD`, `CD_COUPON_BPS`, `CD_BREAK_FEE_BPS`, `CD_TERM`, `LEGACY_MARKET`, `LEGACY_V`, `LEGACY_V_SUPPLY`.
+Optional env (dry-run deploys MockUsdg / mock exo legs when unset): `USDG`, `EXO_ETH`, `EXO_NVDA`, `EXO_AMD`, `BOOTSTRAP_V` (default **200000 ether** / `200_000 ether` — see `GENESIS_ALLOCATION.md`), `RUNWAY_FLOOR`, `BOND_USDG_CAPACITY`, `BOND_TREASURY`, `DEVFUND_RECIPIENT`, `SEED_POL`, `AUTO_REMIT`, `ROLLOUT_OWNER`, `LITHE_RATE_WAD`, `CD_COUPON_BPS`, `CD_BREAK_FEE_BPS`, `CD_TERM`, `LEGACY_MARKET`, `LEGACY_V`, `LEGACY_V_SUPPLY`.
 
 House follow-up env: `GV`, `PUSD`, `LITHE_PROXY` / `HOUSE_LITHE_PROXY`, `CONFIRM_HOUSE_FOLLOWUP` (see §9).
 
@@ -214,7 +216,7 @@ Captured from `forge script script/TestnetRollout.s.sol:TestnetRollout -vv` (CON
 4. BondMarket (USDG BondAssetTag only) + `policy.bindBondMarket`
 5. RemittanceSink + RunwayFloor + `setRemittance` on Lithe + Oliver
 6. **SavingsRouter + SPUSD + SpusdCd** + `sink.setForward` — **starts DISABLED**
-7. Genesis mint DevFund 200k (+ optional `BOOTSTRAP_V`) + cutover converter inventory **before** `setMinter(gV)`
+7. Genesis mint DevFund 200k (+ `BOOTSTRAP_V` default **200_000 ether**) + cutover converter inventory **before** `setMinter(gV)`
 8. **LegacyVConverter + LitheCutoverMigrator** (factory-shaped; dry-run mocks if `LEGACY_*` unset)
 9. LaunchBootstrap: DevFundStream start + V/ETH+V/NVDA+V/AMD
 10. Dual-minter: `setMarketMinter(Lithe)` then `setMinter(gV)` (no Lithe redeem inventory)
@@ -240,6 +242,7 @@ HONEST: gen-4 remains live on 46630 until Relic-approved CutoverDeploy. Do not i
 
 - `STATUS.md` — live gen-4 addresses + vanity line
 - `POLICY_RATE.md` — 1–9% bond-utilization policy
+- `GENESIS_ALLOCATION.md` — locked bootstrapV 200k split + launch markets
 - `DEV_FUND.md` — 200k → Oliver collateral
 - `BONDS.md` / `ROUTING.md` — USDG bond-only lock
 - `SPUSD.md` / `EARNINGS_ENGINE.md` — savings forward + post-floor split

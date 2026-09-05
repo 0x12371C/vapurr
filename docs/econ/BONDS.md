@@ -113,14 +113,16 @@ Formula and clamp: `POLICY_RATE.md`. Contracts: `BondMarket.capacityUtilizationW
 
 ## Trading / POL books (not bond purchase)
 
-At genesis/cutover, stand up ** paired with each bondable exogenous asset** as **trading/POL books**:
+At genesis/cutover, stand up **V paired with each bondable exogenous asset** as **trading/POL books**:
 
 | Pair | Role |
 |------|------|
-| **V/ETH** | POL / trading depth for ETH leg |
-| **V/NVDA** | POL / trading depth for NVDA stock wrapper |
-| **V/AMD** | POL / trading depth for AMD stock wrapper |
+| **V/ETH** | Hub POL / trading depth (genesis) |
+| **V/NVDA** | POL / trading depth for NVDA stock wrapper (genesis) |
+| **V/AMD** | POL / trading depth for AMD stock wrapper (genesis) |
 | (+ configured stock tags) | Same pattern via ExogenousPairRegistry.registerPair |
+
+**Locked bootstrap seed (fatter):** V/ETH **80k** · V/NVDA **25k** · V/AMD **25k** of `bootstrapV=200_000` — full split in `GENESIS_ALLOCATION.md`.
 
 These are **distinct from Open Bond** (exogenous in → gV out). Bond purchase still uses BondMarket / BondAssetTag.
 

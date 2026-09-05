@@ -7,6 +7,12 @@ Last audited: **2026-09-04** (House lock: `docs/ORG_FLASH.md`).
 Milestone: **pre-v1** — ship bar is [`V1.md`](V1.md). v1.2 money is **testnet 46630 only**. If README or ARCHITECTURE disagree with this file, this file plus the code win — then those docs get fixed.
 
 
+## 2026-09-05 — Genesis allocation lock (fatter bootstrapV)
+
+- Locked working default (allocation widget skipped): **bootstrapV = 200_000 ether** — BrowserStream **50k** / V/ETH **80k** / V/NVDA **25k** / V/AMD **25k** / House wgV/$PUSD **20k**.
+- Still locked: DevFund **200k** (Oliver/$PUSD-only), BrowserStream 50k from bootstrap, legacy converter = live gen-4 supply (~288k last check), USDG bond-only, no V/USDG cash books. Launch markets: V/ETH + V/NVDA + V/AMD.
+- Canon: `docs/econ/GENESIS_ALLOCATION.md`. `TestnetRollout` env `BOOTSTRAP_V` default **200000 ether**. No broadcast.
+
 ## 2026-09-05 — Testnet rollout prep (UUPS Lithe / vanity)
 
 - Prep-only: `docs/econ/TESTNET_ROLLOUT.md` ordered gen-5 checklist for **46630** (Fed V, gV, RebasePolicy 1-9%, Lithe behind UUPS ERC1967 at vanity target, Oliver, BondMarket USDG-only, remittance, DevFund 200k->Oliver collateral, V/ETH+V/NVDA+V/AMD, House/wgV follow-up).

@@ -67,8 +67,13 @@ Properties:
 - **Source-landed:** `DevFundStream.sol`, `LaunchBootstrap.sol`, proofs in `DevFundStream.t.sol` / `LaunchBootstrap.t.sol`.
 - **Not live** on 46630 until approved CutoverDeploy. UI honest-empty until addresses exist.
 
+## Bootstrap float (distinct)
+
+DevFund **200k** is **not** the liquid `bootstrapV` float. Working locked default: **bootstrapV = 200_000 ether** (fatter) split BrowserStream 50k / V/ETH 80k / V/NVDA 25k / V/AMD 25k / House 20k -- see `GENESIS_ALLOCATION.md`. Env `BOOTSTRAP_V` default **200000 ether** in `TestnetRollout`.
+
 ## Related
 
+- `GENESIS_ALLOCATION.md` -- locked bootstrapV + launch markets
 - `ROUTING.md` ? Fed outflows / BrowserStream wall
 - `BONDS.md` ? exogenous bond intake vs POL trading books
 - `EARNINGS_ENGINE.md` ? BrowserStream global 50k budget
