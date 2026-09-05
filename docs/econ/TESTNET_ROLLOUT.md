@@ -141,8 +141,6 @@ forge test --match-contract PusdMarketFedProxyTest -vv
 
 ---
 
----
-
 ## Dry-run notes (prep — no live addresses)
 
 Captured from `forge script script/TestnetRollout.s.sol:TestnetRollout -vv` (CONFIRM unset).
@@ -160,7 +158,7 @@ Planned order (script `_plan` / checklist):
 
 HONEST: gen-4 remains live on 46630 until Relic-approved CutoverDeploy. Do not invent live gen-5 addresses here.
 
-**Last dry-run:** `forge script script/TestnetRollout.s.sol:TestnetRollout -vv` — exit 0, `CONFIRM_TESTNET_DEPLOY 0`, no broadcast. Plan owner defaulted to forge script sender; vanity target logged; dual-minter step 7 present in plan logs.
+**Last dry-run (2026-09-05 ET):** `forge script script/TestnetRollout.s.sol:TestnetRollout -vv` from `contracts/` — **exit 0**, `CONFIRM_TESTNET_DEPLOY 0`, no broadcast. Logs: vanity `0xC47f00D61F8379337f9fb42E6DcC695AE2d6EBD2`, dual-minter step 7 (`setMarketMinter(Lithe)` then `setMinter(gV)`), no Lithe redeem inventory fund. Gas used 83993 (plan-only).
 
 ## Related
 

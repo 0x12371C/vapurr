@@ -95,15 +95,15 @@ Canonical redeem surfaces:
 
 | Action | Delivers | Under stress |
 |--------|----------|--------------|
-| Lithe `swapPusdToV` | Extant `$VAPURR` from **market inventory** | Reverts `INV` / empty inventory — **never** Fed mint |
-| Lithe mint/redeem ~par (cash rail) | `$PUSD` <-> inventory / spread path | Spread widens; still no V print |
+| Lithe `swapPusdToV` | **Mint** `$VAPURR` via `marketMinter` (seigniorage) | Spread/rate stress; **not** inventory-gated |
+| Lithe mint/redeem ~par (cash rail) | Burn V→mint `$PUSD` / burn `$PUSD`→mint V | Spread widens; Lithe + gV are dual printers |
 | Exit vs outside money | No `$PUSD`/USDG cash market; USDG = **bond/treasury intake only** | Peg = mint-redeem ~par; House = equity exit |
 | sPUSD redeem | Underlying `$PUSD` at vault NAV | NAV can lag; seigniorage V mint on redeem into shortfall |
 | V "backing" intuition | **Not** a dollar claim on Fed RFV | Equity token; mcap != RFV |
 
 **Forced float:** social trust is ~par mint/redeem (`PUSD_LIQUIDITY.md`). **USDG** is BondAssetTag / Fed treasury intake only — not a competing cash or peg book. Sink-held nominal `$PUSD` is **not** dollar solvency.
 
-Stress sentence: *If inventory is empty, `$PUSD` does not conjure V or dollars — it waits on inventory or discounted equity exit via House. No USDG cash/peg pool fills the gap.*
+Stress sentence: *`$PUSD`→V redeem mints via Lithe `marketMinter` (seigniorage); empty inventory is not the gate. Peg trust remains mint-redeem ~par — not a USDG cash/peg pool. House remains discounted equity exit.*
 
 ---
 
@@ -176,7 +176,7 @@ Frame (stress, not a happy path):
 
 | Bucket | Must hold |
 |--------|-----------|
-| Lithe V redeem | Inventory >= expected `swapPusdToV` demand or redeem cleanly reverts (no mint) |
+| Lithe V redeem | Seigniorage: `swapPusdToV` mints via `marketMinter` (no redeem inventory fund) |
 | Oliver | Depositor claims backed by `cash + totalBorrowAssets`; remits only `realizedReserve`; owner LTV after remit |
 | RemittanceSink | `accountedRfv` respects single `RunwayFloor`; `forwardSurplus` cannot pierce floor |
 | Peg trust | Mint-redeem ~par / social proof — **no** `$PUSD`/USDG depth book; sink nominal `$PUSD` insufficient alone |
@@ -184,7 +184,7 @@ Frame (stress, not a happy path):
 
 **Fail tells**
 
-- Any path that mints V to meet `$PUSD`->V redeem.
+- Any path that mints V for browse/earn outside Lithe `marketMinter` + gV policy rebase.
 - Counting unpaid Oliver interest or depositor principal as RFV (**circular**).
 - Dual local runway floors on Oliver/Lithe that double-retain vs sink.
 - TVL that sums recursive legs as exogenous backing.

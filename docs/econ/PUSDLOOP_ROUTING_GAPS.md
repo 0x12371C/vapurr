@@ -1,5 +1,8 @@
 # PusdLoop / Oliver vs ROUTING - gaps (audit)
 
+> **Superseded (2026-09-05 seigniorage rewrite):** Lithe redeem is Terra-style `marketMinter` mint (not inventory/`INV`). Dual printers = Lithe seigniorage + gV policy 1–9%. See `MINT_AUTHORITY.md`, `PUSD_V_REDEEM.md`, `ROUTING.md` wall #1. Historical inventory-fence notes below are gen-4 / pre-cutover audit context only.
+
+
 First pass by vapurrbothelper, 2026-09-05. Updated 2026-09-05 after trust fences (inventory V redeem, remittance/runway/sPUSD stubs).
 
 Scope: `contracts/PusdLoop.sol` (Oliver), adjacent Lithe/mint paths in `PusdMarket.sol`, House fee surface. Walls checked: browse never taps V mint; remittance can hit sPUSD.

@@ -1,6 +1,8 @@
 # Codex brain pass (econ hard knots)
 
 ## Overnight final
+
+> **Later lock (same day):** dual V printers / Lithe `marketMinter` seigniorage supersedes “Fed single-minter interim” and inventory-redeem fences in this pass. See `MINT_AUTHORITY.md`.
 Date: 2026-09-05 ~03:30 America/New_York. Model: gpt-6-astra (high). Mode: brain-only, no patches.
 Branch: `fix/gv-spusd-guards` @ `da678ad` (BondMarket + P0 wave).
 Note: First Codex probe hit read-only PowerShell policy denials; this verdict used on-disk evidence (BondMarket.sol + BondMarketTest + BONDS/MINT_AUTHORITY/HOUSE_PAIR + prior pass) fed as authoritative context. No patches; no organizer windows.
