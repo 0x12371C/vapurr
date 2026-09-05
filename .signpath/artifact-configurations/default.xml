@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SignPath default PE Authenticode config for vapurr -->
+<artifact-configuration xmlns="http://signpath.io/artifact-configuration/v1">
+  <pe-file>
+    <authenticode-sign hash-algorithm="sha256" />
+  </pe-file>
+</artifact-configuration>

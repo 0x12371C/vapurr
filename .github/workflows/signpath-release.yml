@@ -1,0 +1,29 @@
+name: signpath-release
+
+# After SignPath OSS approval, set:
+#   secrets.SIGNPATH_API_TOKEN
+#   vars.SIGNPATH_ORGANIZATION_ID
+#   vars.SIGNPATH_PROJECT_SLUG=vapurr
+#   vars.SIGNPATH_POLICY_SLUG=release-signing
+# Then extend this workflow to pack on windows-latest and call
+# signpath/github-action-submit-signing-request@v2 on dist/vapurr-setup.exe.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  checklist:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Print SignPath checklist
+        run: |
+          echo "Policy: docs/SIGNING.md"
+          echo "Apply draft: docs/SIGNPATH_APPLY.md"
+          echo "Artifact XML: .signpath/artifact-configurations/default.xml"
+          echo "Repo: https://github.com/0x12371C/vapurr"
+          echo "Download: https://thesecretlab.app/vapurr"
