@@ -13,6 +13,9 @@ pragma solidity ^0.8.24;
 /// consolidated sink balance (accounted RFV cash), not as dual local pools on
 /// Oliver/Lithe. Branches remit realized surplus into one RemittanceSink;
 /// forward/drain above floor happens at the sink.
+///
+/// Tagged who-paid ledger: optional FeeAttribution proxy in front of this
+/// sink (House/Lithe/Oliver). Attribution does not apply a second floor.
 
 interface IERC20Remit {
     function balanceOf(address) external view returns (uint256);

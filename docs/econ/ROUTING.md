@@ -2,6 +2,8 @@
 
 Relic lock 2026-09-05. Living truth for Fed/branches split.
 
+**Earnings / NERDOMICS:** `EARNINGS_ENGINE.md` - who pays whom, BrowserStream 50k **global** budget, flat-V solvency, Oliver ~6x banking leverage, `FeeAttribution` source ledger (House/Lithe/Oliver) -> RemittanceSink -> sPUSD.
+
 ## Institutional map
 
 | Layer | Role | Surfaces |
@@ -53,7 +55,7 @@ Cash peg trust is the **`$PUSD` / USDG** book (and other exogenous cash legs) - 
 - House leg: **wgV locked** (wstETH pattern) - see HOUSE_PAIR.md + WGV_HOUSE.md. Do not pair raw rebasing gV in AMM.
 - Fed LOLR policy for Oliver bad debt
 - Bond capacity / when not to bond
-- BondMarket gated skeleton + HouseFeeRemit sketch landed (P1 live enable still open; Uni skim adapter HouseUniSkim landed) — sPUSD CD sketch + Bonds `#spusd-cd` UI stub landed; Bonds tab Unavailable/Gated stub landed (GATE map; live wire open); House tab **wgV / $PUSD** visual stub on `pusd.html` (wrap-first gate; live pairConfig deploy still open)
+- BondMarket gated skeleton + HouseFeeRemit sketch + FeeAttribution ledger landed (P1 live enable still open; Uni skim adapter HouseUniSkim landed) - sPUSD CD sketch + Bonds `#spusd-cd` UI stub landed; Bonds tab Unavailable/Gated stub landed (GATE map; live wire open); House tab **wgV / $PUSD** visual stub on `pusd.html` (wrap-first gate; live pairConfig deploy still open)
 - `$PUSD`/USDG pool params / fee / tick ranges (P1) - names locked in `PUSD_LIQUIDITY.md`
 
 ## Market V redeem fence (2026-09-05)
@@ -63,7 +65,9 @@ Cash peg trust is the **`$PUSD` / USDG** book (and other exogenous cash legs) - 
 
 ## Shared runway + realized remittance (2026-09-05)
 
-One `RemittanceSink` consolidates branch RFV cash; one `RunwayFloor` is enforced **at the sink** on `accountedRfv` (not as dual local pools on Oliver/Lithe). Branches remit **all realized** surplus into that sink; `forwardSurplus` cannot drain below the shared floor. Unpaid accrued interest and depositor principal are **not** exogenous RFV (circular if counted as both RFV and a user claim). Oliver: `pendingReserve`->`realizedReserve` on repay/liq, then remit realized (sole-owner cash OK). Lithe: inventory-backed `yieldReserve` remits in full to the same sink. See `RunwayRfv.t.sol` (`test_two_branches_remit_one_sink_floor`).
+One `RemittanceSink` consolidates branch RFV cash; one `RunwayFloor` is enforced **at the sink** on `accountedRfv` (not as dual local pools on Oliver/Lithe). Branches remit **all realized** surplus into that sink; `forwardSurplus` cannot drain below the shared floor. Unpaid accrued interest and depositor principal are **not** exogenous RFV (circular if counted as both RFV and a user claim). Oliver: `pendingReserve`->`realizedReserve` on repay/liq, then remit realized (sole-owner cash OK). Lithe: inventory-backed `yieldReserve` remits in full to the same sink. See `RunwayRfv.t.sol` (`test_two_branches_remit_one_sink_floor`).
+
+Tagged remits (UI/TVL "who paid"): wire branches through `FeeAttribution` (House/Lithe/Oliver) before `RemittanceSink`. Direct sink remits remain valid but unattributed. See `EARNINGS_ENGINE.md` + `FeeAttribution.t.sol`.
 
 ## Lithe remittance (2026-09-05)
 
