@@ -1,4 +1,4 @@
-﻿# wgV House notes (operator)
+# wgV House notes (operator)
 
 Relic lock 2026-09-05. Short checklist for House equity leg. Pair canon stays in `HOUSE_PAIR.md`.
 
@@ -45,6 +45,10 @@ Revert class: `RawGvNotHouseEquity` if either Uni currency is raw gV.
 - Pair raw gV or raw `$VAPURR` as House equity once staking is live
 - Treat House volume as `$PUSD` peg depth (peg books are `$PUSD`/USDG — see `PUSD_LIQUIDITY.md`)
 - Fund browse earn from gV rebase mint (BrowserStream = treasury earmark only)
+
+## UI visual stub (2026-09-05)
+
+`frontend/pusd.html` House tab now labels the book **wgV / $PUSD** with an explicit wrap-first gate and fee-skim to RemittanceSink note. Live `econ-house-*` cmds unchanged; backend still surfaces `house.vapurr` until deploy encodes `pairConfig` / wgV inventory.
 
 ## Pointers
 

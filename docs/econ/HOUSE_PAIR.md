@@ -1,4 +1,4 @@
-﻿# House pair (canon)
+# House pair (canon)
 
 Relic lock 2026-09-05.
 
@@ -64,3 +64,7 @@ Uni v4 LP fees stay with LPs. Protocol carve (ops / hook / swapper skim) lands a
 ## Operator notes
 
 Short ops checklist: [WGV_HOUSE.md](WGV_HOUSE.md) (wrap path, green/open, do-nots).
+
+## UI stub
+
+`vapurr://house` (`pusd.html?tab=house`) copy locks **wgV / $PUSD** + wrap-first gate. Deploy/seed still open until live Uni + pairConfig.

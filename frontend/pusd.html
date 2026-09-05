@@ -633,13 +633,14 @@
         <h2>House book</h2>
         <span class="hint" id="h-hint"></span>
       </div>
-      <p class="say"><b>$VAPURR / $PUSD</b> Uni v4 CL — <b>0.30%</b> fee, ±20% around oracle. Seed 50/50: half treasury, quarter burn→mint $PUSD, rest LP. No USDG.</p>
+      <p class="say"><b>wgV / $PUSD</b> Uni v4 CL — <b>0.30%</b> fee, ±20% around oracle. Equity leg is <b>wgV</b> only (wrap gV first; raw gV never pools). Seed 50/50 after wrap: half treasury, quarter burn→mint $PUSD, rest LP. No USDG. Not peg depth.</p>
         <div class="facts">
-          <div class="chip"><span>$VAPURR</span><b id="h-v">0.00</b></div>
+          <div class="chip"><span>wgV</span><b id="h-v">0.00</b></div>
           <div class="chip"><span>$PUSD</span><b id="h-p">0.00</b></div>
           <div class="chip"><span id="h-treas-lab">Treasury</span><b id="h-treas">0.00</b></div>
           <div class="chip"><span id="h-lpv-lab">LP</span><b id="h-lpv">0.00</b></div>
         </div>
+        <div class="have" id="h-gate">Gate: wrap <b>gV to wgV</b> before Deploy/Seed. Raw $VAPURR / gV is not House equity. Fees skim → RemittanceSink.</div>
         <div class="have" id="h-have">Not seeded.</div>
         <div class="have" id="h-stocks"></div>
         <div class="two" id="house-boot-row">
@@ -648,7 +649,7 @@
         </div>
         <div id="house-swap" style="display:none">
           <div class="seg" id="h-seg">
-            <button type="button" class="on" data-hmode="v">Sell $VAPURR</button>
+            <button type="button" class="on" data-hmode="v">Sell wgV</button>
             <button type="button" data-hmode="p">Sell $PUSD</button>
           </div>
           <div class="amt">
@@ -1448,7 +1449,7 @@
         return;
       }
       var out = amt * 0.997;
-      q.textContent = "≈ " + out.toFixed(2) + (sellV ? " $PUSD" : " $VAPURR");
+      q.textContent = "≈ " + out.toFixed(2) + (sellV ? " $PUSD" : " wgV");
     }
     document.getElementById("h-amt").addEventListener("input", quoteHouse);
     document.getElementById("h-seg").addEventListener("click", function (e) {
@@ -1472,14 +1473,14 @@
       var sellV = hmode !== "p";
       var H = (snap && snap.house) || {};
       vapurr.beginTx({
-        title: sellV ? "Sell $VAPURR" : "Sell $PUSD",
+        title: sellV ? "Sell wgV" : "Sell $PUSD",
         kicker: "House Uni v4",
         kind: "house-swap",
-        lede: "Exact-in on the house $VAPURR / $PUSD book. Hash or it failed.",
+        lede: "Exact-in on the house wgV / $PUSD book. Hash or it failed.",
         rows: [
           { k: "Network", v: netLabel() },
-          { k: "Sell", v: amt + (sellV ? " $VAPURR" : " $PUSD") },
-          { k: "Buy", v: sellV ? "$PUSD" : "$VAPURR" },
+          { k: "Sell", v: amt + (sellV ? " wgV" : " $PUSD") },
+          { k: "Buy", v: sellV ? "$PUSD" : "wgV" },
           { k: "Swapper", v: H.swap || "house swap" }
         ],
         confirmLabel: "Sign and swap",
@@ -1499,11 +1500,11 @@
         title: "Deploy house book",
         kicker: "This device signs",
         kind: "house-deploy",
-        lede: "Uniswap v4 concentrated $VAPURR / $PUSD helper. No USDG. Empty until this hash lands.",
+        lede: "Uniswap v4 concentrated wgV / $PUSD helper. Wrap first. No USDG. Empty until this hash lands.",
         rows: [
           { k: "Network", v: netLabel() },
           { k: "From", v: (snap && snap.address) || "this device" },
-          { k: "Pool", v: "$VAPURR / $PUSD 0.30%" },
+          { k: "Pool", v: "wgV / $PUSD 0.30%" },
           { k: "Range", v: "±20% around oracle" }
         ],
         confirmLabel: "Sign and deploy",
@@ -1523,12 +1524,12 @@
       vapurr.beginTx({
         title: "Seed house book 50/50",
         kicker: "This device signs",
-        lede: "Keep 50% $VAPURR as treasury. Burn a quarter to mint $PUSD. Seed the rest plus $PUSD as a Uni v4 CL NFT. Multiple txs. Hash or it failed.",
+        lede: "Keep 50% wgV as treasury (wrap gV first). Burn a quarter path mints $PUSD. Seed the rest plus $PUSD as a Uni v4 CL NFT. Multiple txs. Hash or it failed.",
         rows: [
           { k: "Network", v: netLabel() },
           { k: "From", v: (snap && snap.address) || "this device" },
           { k: "Treasury keep", v: (H.treasury_v || "0") + " V" },
-          { k: "LP $VAPURR", v: (H.lp_v || "0") + " V + minted P" },
+          { k: "LP wgV", v: (H.lp_v || "0") + " wgV + minted P" },
           { k: "Range", v: "±20% · 0.30%" }
         ],
         confirmLabel: "Sign and seed",

@@ -1,4 +1,4 @@
-﻿# Tracks
+# Tracks
 
 
 
@@ -32,7 +32,7 @@ Living owner board. Snapshot: `docs/SNAPSHOT.md`. Flash: `docs/ORG_FLASH.md`.
 
 | Token economy | vapurrbot+Pilot | gen-4 / HouseLp claimed live 46630; Pilot touched pay/wallet/pusd PM | keep STATUS CAs honest; vault live |
 
-| Token economy / Fed gV | Relic+House | **slice green** â€” gV 3.5% + wgV + BrowserStream walls tested | HouseFeeRemit + CD UI + HouseUniSkim + WGV_HOUSE + Bonds gated UI stub green; full Uni IHooks + House AMM wgV deploy when Relic opens |
+| Token economy / Fed gV | Relic+House | **slice green** â€” gV 3.5% + wgV + BrowserStream walls tested | HouseFeeRemit + CD UI + HouseUniSkim + WGV_HOUSE + Bonds gated UI + House wgV visual stub green; full Uni IHooks + House AMM wgV deploy when Relic opens |
 
 | Charts / Psy / Tube | PARK | | |
 
