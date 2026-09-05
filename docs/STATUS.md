@@ -9,6 +9,8 @@ Milestone: **pre-v1** — ship bar is [`V1.md`](V1.md). v1.2 money is **testnet 
 
 ## 2026-09-05 — Fed gV / BrowserStream trust wall (slice)
 
+- **USDG lock:** USDG is **Fed treasury bond intake only** (`BondAssetTag`). `$PUSD` peg = social-proof mint-redeem ~par. Retract d1f04a0-era `$PUSD`/USDG pool / peg-depth / cash-depth sketches — they hurt `$PUSD` (see `docs/econ/PUSD_LIQUIDITY.md`, `ROUTING.md`, `BONDS.md`). Helper stripped cash-depth UI stub.
+
 - `contracts/GvFed.sol`: `VapurrToken` + **gVAPURR** (index rebase **3.5%/yr**, policy-only) + **wgVAPURR** (wstETH wrapper) + **BrowserStream** (50k/3y earmark, **no mint**) + `RebasePolicy`.
 - Foundry proofs: `contracts/test/GvBoundaries.t.sol` — annualized ~3.5%, stream drip supply-unchanged, browse cannot rebase, wgV tracks gV across rebase.
 - Docs: `docs/econ/HOUSE_PAIR.md` — House pairs **wgV/$PUSD**, not raw gV. `ROUTING.md` open choice locked to wgV.
@@ -21,6 +23,12 @@ Source-landed successor book (MarketCfg GEN 5). **Live 46630 remains gen-4** unt
 - LegacyVConverter / LitheCutoverMigrator: inventory-only; migration swaps inventory V through Lithe to mint PUSD — **does not mint V** / does not grow canonical V supply.
 - Factory deploys V + gV/policy + Lithe + converter + migrator + Oliver only. **Does not** deploy wgV, HousePairConfig, or House (ROUTING: House = wgV/). Remittance / sPUSD / SavingsRouter are **not** auto-wired — initiator must setRemittance (and related) post-deploy.
 - Proofs: CanonicalVMarket.t.sol + CanonicalLitheFactory.t.sol. Local cutover clears house/pair_config so gen-4 House is not mixed with gen-5 V.
+
+## 2026-09-05 — USDG relic lock (docs)
+
+- **USDG** accepted **only** as Fed **treasury bond** asset (`BondAssetTag`: exogenous RFV in -> gV out).
+- `$PUSD` stability = social-proof / mint-redeem ~par — **not** USDG depth.
+- Scrubbed `$PUSD`/USDG pool / peg-depth / cash-depth product plans from `PUSD_LIQUIDITY.md`, `ROUTING.md`, `BONDS.md`, `TRACKS.md`. BondMarket USDG tag stays. No USDG AMM/pool contracts.
 
 ## v1.2 (testnet money)
 

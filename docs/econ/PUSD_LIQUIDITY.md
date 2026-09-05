@@ -1,58 +1,47 @@
 # $PUSD liquidity (canon)
 
-Relic lock 2026-09-05. **`$PUSD` stability = social-proof / forced float** (mint-redeem ~par). USDG books are **exit depth**, not the peg story.
+Relic lock 2026-09-05. **`$PUSD` stability = social-proof / forced float** (mint-redeem ~par). **Not** USDG depth.
 
 ## Thesis
 
-Forced `$PUSD` float is trusted when mint/redeem stays near **par** (social proof). **Outside depth** (USDG primary) makes that float usable — it does **not** replace mint-redeem as the peg mechanism. Inside inventory and House equity flow do not substitute for either.
+Forced `$PUSD` float is trusted when mint/redeem stays near **par** (social proof). That is the whole peg story.
 
-## Books
+**USDG** is accepted **only** as a Fed **treasury bond** asset: exogenous RFV in -> **gV** out (`BONDS.md`, `BondAssetTag`). Doing anything else with USDG - `$PUSD`/USDG pools, peg-depth books, cash-depth stubs, competing stable markets - **hurts `$PUSD`** and must not ship.
+
+Inside inventory and House equity flow do not substitute for mint-redeem ~par.
+
+## Books (what ships)
 
 | Book | Pair | Job |
 |------|------|-----|
-| **Cash (primary depth)** | **`$PUSD` / USDG** | Exit / spend float vs chain dollar. **Exogenous** depth around the forced float — **not** the peg definition. |
-| **Cash (secondary)** | `$PUSD` / ETH (optional) | Extra outside cash leg when useful - not a substitute for USDG depth. |
+| **Cash (product)** | **`$PUSD` / `sPUSD`** | Spend/mint rail / savings after runway. Peg trust = mint-redeem ~par. |
 | **Equity (House)** | **wgV / `$PUSD`** | Equity meets cash (see `HOUSE_PAIR.md`). **Not** peg defense. |
+| **Bonds (RFV in)** | **ETH / USDG / stocks** | Outside assets -> discounted gV. USDG here is **BondAssetTag only**. |
+
+**Do not ship:** `$PUSD`/USDG AMM or Uni depth books, peg-depth product surfaces, cash-depth stubs that promote USDG as exit/peg liquidity, or any competing USDG<->`$PUSD` stable market.
 
 ## Hard rules
 
-1. **Peg = mint-redeem ~par / social proof.** Do not narrate USDG depth as what “holds the peg.” Depth supports exit quality around the forced float.
-2. **Exogenous depth still matters.** Forced `$PUSD` should feel deep against **outside** stables/cash (**USDG** primary). Do not fake tightness with recursive protocol inventory alone.
-3. **House is equity, not peg.** wgV/`$PUSD` can be thick and still leave exit soft if `$PUSD`/USDG is thin. Quote House as the equity market; keep dollar **par** via mint-redeem policy.
-4. **Bond inflows thicken RFV.** Bonding ETH / USDG / stocks (`BONDS.md`) grows the Fed/Treasury battery and can seed POL - it does **not** replace mint-redeem ~par or a live `$PUSD`/USDG depth book.
-5. **Forced-float trust.** Users judge `$PUSD` by par mint/redeem **and** how cheaply they can enter/exit against USDG — not by how busy House is.
-6. **Names.** Ship vapurr-native only (`$PUSD`, USDG, wgV, House). No external brand copy.
+1. **Peg = mint-redeem ~par / social proof.** Never narrate USDG depth, books, or pools as what "holds the peg."
+2. **USDG = bond asset only.** Bond USDG into Fed/Treasury RFV for gV at a discount. No `$PUSD`/USDG pool params, deploy plans, or UI that sells USDG depth as product.
+3. **House is equity, not peg.** Quote House as the equity market; keep dollar **par** via mint-redeem policy.
+4. **Bond inflows thicken RFV.** Bonding ETH / USDG / stocks (`BONDS.md`) grows the Fed/Treasury battery - it does **not** create a `$PUSD`/USDG depth book and must not be framed that way.
+5. **Forced-float trust.** Users judge `$PUSD` by par mint/redeem - not by USDG pool depth or how busy House is.
+6. **Names.** Ship vapurr-native only (`$PUSD`, USDG-as-bond-tag, wgV, House). No external brand copy.
 
 ## Frontend hint
 
-Cash surfaces show **exogenous depth** (USDG book first). House/equity depth lives on the equity / House surface - never collapse both into one "liquidity" number.
+Cash surfaces: **`$PUSD` / `sPUSD`** honesty. Bonds surface may show USDG as a **bond asset tab**. Never promote a USDG depth / peg-pool book. Honest empty on cash-depth stubs is OK. House/equity depth lives on the equity / House surface - never collapse both into one "liquidity" number.
 
-## Pool params (P1 sketch - 2026-09-05)
+## Out of scope (banned product)
 
-Proposed Uni v4 defaults for the **primary depth book** `$PUSD` / USDG. **Not deployed. Not live quotes.** House stays `wgV/$PUSD` at 0.30% / ±20% - different job.
-
-| Param | Proposed | Why |
-|-------|----------|-----|
-| **Fee tier** | **0.05%** (500) | Stable exogenous pair; tighter than House equity desk |
-| **Tick spacing** | Fee-tier default (Uni v4 0.05% spacing) | Match fee; no custom weirdness |
-| **Active range** | **+/-1% around par (1.0)** | Forced-float trust is near-par exit depth, not wide equity bands |
-| **Secondary** | `$PUSD` / ETH optional later | Never a substitute for USDG primary |
-| **Seed** | Fed/Treasury RFV + real outside USDG | Never sink-only / recursive `$PUSD` inventory as "depth" |
-| **UI posture** | Show book + proposed params as **not live** until address book | Same honesty pattern as Bonds capacity (`-` / not configured) |
-
-Still open after this sketch: deploy scripts, pool addresses in `STATUS.md`, and any hook if pool-held `$PUSD` Lithe drip needs LP allocation (see `HOUSE_PAIR.md` P1 - same cash-leg class).
-
-## Out of scope (for later)
-
-- Deploy scripts and addresses (record in `STATUS.md` when live)
-- Contracts beyond naming the books + these param defaults
-
+- `$PUSD` / USDG Uni v4 (or any AMM) pool params, fee tiers, tick ranges, seed plans, deploy scripts
+- Cash-depth UI that frames USDG as primary exit / peg liquidity
+- Treating sink-held nominal `$PUSD` or recursive inventory as "outside USDG depth"
 
 ## Related
 
-- `ROUTING.md` / Lithe: mint-spread `yieldReserve` can remit surplus above runway to sPUSD (branch cash path), separate from exogenous `$PUSD`/USDG depth books
-
-- `ROUTING.md` - Fed/branches map; visible Cash points at exogenous books
+- `ROUTING.md` / Lithe: mint-spread `yieldReserve` can remit surplus above runway to sPUSD (branch cash path). Remittance does not invent a USDG depth book; peg remains mint-redeem ~par.
 - `HOUSE_PAIR.md` - wgV / `$PUSD` House leg
-- `BONDS.md` - exogenous RFV in
+- `BONDS.md` - USDG as BondAssetTag (exogenous RFV in)
 - `TESTNET_SHAPE.md` - bootstrap context (do not treat House CL alone as peg)

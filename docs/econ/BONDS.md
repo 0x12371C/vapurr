@@ -43,13 +43,17 @@ Same tab pattern for every v1 asset. Capacity / valuation are Fed policy params 
 
 ## v1 bond assets (exogenous RFV in)
 
+**Relic lock:** USDG is accepted **only** as this bond asset (exogenous RFV in -> gV out). No `$PUSD`/USDG AMM, peg-depth books, or competing stable markets — those hurt `$PUSD` (see `PUSD_LIQUIDITY.md`).
+
 | Asset | Role | Notes |
 |-------|------|-------|
 | **ETH** | Major exogenous collateral | Bond in → gV out at discount (WETH/ERC20 path in skeleton) |
-| **USDG** | Chain dollar | Bond in → gV out at discount (**not** product `$PUSD`) |
+| **USDG** | Fed treasury bond asset (`BondAssetTag`) | Bond in -> gV out at discount. **Only** role for USDG: exogenous RFV in. **Not** product `$PUSD`, **not** a `$PUSD`/USDG pool or peg-depth book. |
 | **Major stocks** | Testnet/ops set (e.g. AMZN / TSLA / AMD / NFLX / PLTR where live) | Bond in → gV out at discount; same Bonds UI tab pattern; valuation params apply |
 
 `$PUSD` is **not** the headline bond asset — it is the spend/mint rail. Bonds are how **outside** value becomes protocol RFV + discounted gV.
+
+**Relic lock:** USDG is **BondAssetTag only** (Fed treasury bond intake → discounted gV). No `$PUSD`/USDG pool, peg-depth, or cash-depth product — that hurts `$PUSD` (see `PUSD_LIQUIDITY.md`).
 
 ## Vesting / wait (plain copy)
 
