@@ -30,6 +30,7 @@ contract SavingsRouterTest is Test {
 
     function test_enabled_by_default() public view {
         assertTrue(router.enabled());
+        assertEq(router.cdBps(), 2_500);
     }
 
     function test_owner_disable_killswitch_keeps_cash_at_sink() public {
