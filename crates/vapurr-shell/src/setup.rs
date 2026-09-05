@@ -66,7 +66,11 @@ pub fn wants_setup(args: &[String]) -> bool {
 
 pub fn is_setup_name(stem: &str) -> bool {
     let s = stem.trim().to_ascii_lowercase();
-    s == "vapurr-setup" || s == "install vapurr" || s.starts_with("install ")
+    // Windows duplicate downloads become `vapurr-setup (1)` ? still the installer.
+    s == "vapurr-setup"
+        || s.starts_with("vapurr-setup ")
+        || s == "install vapurr"
+        || s.starts_with("install ")
 }
 
 pub fn install_dir() -> PathBuf {
@@ -800,6 +804,8 @@ mod tests {
     fn setup_names() {
         assert!(is_setup_name("Install vapurr"));
         assert!(is_setup_name("vapurr-setup"));
+        assert!(is_setup_name("vapurr-setup (1)"));
+        assert!(is_setup_name("vapurr-setup (2)"));
         assert!(is_setup_name("install vapurr"));
         assert!(!is_setup_name("vapurr"));
     }

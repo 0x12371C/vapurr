@@ -135,7 +135,7 @@ impl Client {
         let p2 = self.token_raw(pusd, from);
         let v2 = self.token_raw(vapurr, from);
         if p2 < 40 * DEC && v2 >= 80 * DEC {
-            match self.transact("swapVToPusd(uint256)", 40 * DEC) {
+            match self.swap_v_to_pusd(40 * DEC) {
                 Ok(_) => notes.push("mint".into()),
                 Err(e) => notes.push(format!("mint:{e}")),
             }

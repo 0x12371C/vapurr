@@ -527,6 +527,12 @@ fn main() {
                                 crash::log(&format!("rhc rpc: {e}"));
                                 last_err = std::time::Instant::now();
                             }
+                            // Back off hard on rate limits so quote sims can share the public RPC.
+                            let msg = e.to_string().to_ascii_lowercase();
+                            if msg.contains("too many") || msg.contains("rate") || msg.contains("429") {
+                                std::thread::sleep(std::time::Duration::from_secs(20));
+                                continue;
+                            }
                         }
                     }
                     let ms = if live { 2000 } else { 5000 };

@@ -6,6 +6,7 @@ pub mod euler;
 pub mod house;
 pub mod kelly;
 pub mod swap;
+mod market_abi;
 pub mod ketlist;
 pub mod outbid;
 pub mod treasury;
@@ -198,12 +199,12 @@ impl Client {
             EconCmd::Snap => Ok(self.snapshot()),
             EconCmd::Mint(s) => {
                 let n = parse_amt(&s)?;
-                self.transact("swapVToPusd(uint256)", n)?;
+                self.swap_v_to_pusd(n)?;
                 Ok(self.snapshot())
             }
             EconCmd::Redeem(s) => {
                 let n = parse_amt(&s)?;
-                self.transact("swapPusdToV(uint256)", n)?;
+                self.swap_pusd_to_v(n)?;
                 Ok(self.snapshot())
             }
             EconCmd::Deploy => {
@@ -396,7 +397,7 @@ impl Client {
         }
     }
 
-    fn transact(&mut self, sig: &str, amt: u128) -> Result<String, EconError> {
+    pub(crate) fn transact(&mut self, sig: &str, amt: u128) -> Result<String, EconError> {
         if amt == 0 {
             return Err(EconError::Tiny);
         }

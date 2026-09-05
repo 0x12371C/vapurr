@@ -83,7 +83,7 @@ impl Client {
         let lp_budget = bal / 2;
         let burn = lp_budget / 2;
         let seed_v = lp_budget - burn;
-        self.transact("swapVToPusd(uint256)", burn)?;
+        self.swap_v_to_pusd(burn)?;
         let pusd = self.live_pusd().ok_or(EconError::NotLive)?;
         let pbal = self.token_raw(pusd, from);
         if pbal == 0 || seed_v == 0 {
@@ -252,13 +252,7 @@ impl Client {
 
     fn vapurr_rate(&self) -> Option<u128> {
         let m = self.live_market()?;
-        let data = encode_fn("vapurrRate()");
-        let raw = self
-            .rpc
-            .eth_call(&self.key.address.to_hex(), Some(&m.to_hex()), &hex0x(&data))
-            .ok()?;
-        let bytes = decode_hex_bytes(&raw).ok()?;
-        decode_word_u128(&bytes, 0)
+        self.read_vapurr_rate(m)
     }
 
     fn stock_bals(&self, holder: Address) -> Vec<Value> {

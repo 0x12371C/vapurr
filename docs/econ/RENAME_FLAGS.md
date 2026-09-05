@@ -22,3 +22,8 @@ Scrub applied (symbols + comments + docs):
 Rust ABI strings in `crates/vapurr-econ` updated to match. Desk/ketbook `vapurrRate` wording updated. ROUTING "Olympus layer" -> Fed/Treasury.
 
 Re-scan before ship: search `luna|olympus|\bust\b|terra-fork` excluding `market-math-ref` and RENAME_FLAGS — should be clean of brands (allow "trust"/"dust"/"must").
+
+## Live 46630 note
+
+Gen-4 TESTNET_MARKET still exposes pre-scrub selectors. crates/vapurr-econ/src/market_abi.rs auto-detects: prefer scrubbed vapurrRate()/swapVToPusd, else pin live hex selectors (no banned brand strings in call sites). Redeploy scrubbed bytecode to drop the live pin.
+
