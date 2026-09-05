@@ -1,5 +1,29 @@
 # Codex brain pass (econ hard knots)
 
+## Overnight final
+Date: 2026-09-05 ~03:30 America/New_York. Model: gpt-6-astra (high). Mode: brain-only, no patches.
+Branch: `fix/gv-spusd-guards` @ `da678ad` (BondMarket + P0 wave).
+Note: First Codex probe hit read-only PowerShell policy denials; this verdict used on-disk evidence (BondMarket.sol + BondMarketTest + BONDS/MINT_AUTHORITY/HOUSE_PAIR + prior pass) fed as authoritative context. No patches; no organizer windows.
+
+### MERGE_REC
+**merge-with-caveats** — Land as contracts-progress: BondMarket enforces inventory-only payouts with default-disabled markets; live integration, valuation, migration, and exogenous backing remain gated for mainnet/gen-4.
+
+### Remaining blockers (max 8)
+- [P0] Live gen-4 `0x47Ac...` embedded-V migration open; dual V addresses must not be treated as fungible.
+- [P1] House live Uni v4: pairConfig deploy, Rust ABI/bootstrap wgV, Permit2/PM e2e still open.
+- [P1] Pool-held `$PUSD` Lithe-index rebase settlement/allocation unresolved.
+- [P0] Live bonds: RFV oracles + stock closure/corporate-action required before enable; Fed-set `priceWad` is not a live oracle.
+- [P1] Rebase-ownership polish if bond payout token is live rebasing gV (before enable).
+- [P0] Exogenous USDG (or equivalent) backing unestablished; nominal self-issued PUSD RFV != dollar solvency.
+
+### Contracts-progress vs mainnet/gen-4 gate
+- **SAFE to merge as contracts-progress:** closed P0 wave (Oliver LTV/oracle/bad-debt, gV accrue, sPUSD/wgV donation guards, Lithe single-count, THIN fix, market_abi, sink RunwayFloor, Fed single-minter interim, PairConfig + HouseLp/HouseSwap wgV wiring) plus gated BondMarket skeleton (disabled/capacity0 defaults; inventory-only payout; DISABLED/CLOSED/CAP/INV + no-mint proofs).
+- **MUST stay gated for mainnet/gen-4:** live bond tab enables; gen-4 one-token migration / dual-V fungibility; live House deploy/bootstrap/e2e + pool PUSD rebase; any claim of established external dollar backing.
+
+### Delta vs prior hold @ ef87976+
+`da678ad` lands inventory-only BondMarket with proofs for stated gates — lifts contracts-progress **hold** to **merge-with-caveats**. Does not close live bond readiness, migration, House live path, pool rebase, or exogenous solvency.
+
+---
 ## Re-review timestamp
 Date: 2026-09-05 ~02:55 America/New_York. Model: gpt-6-astra (high). Mode: brain-only, no patches.
 Branch: `fix/gv-spusd-guards` @ `ef87976`+ (bonds skeleton pending commit).
@@ -22,7 +46,7 @@ Note: Codex read-only sandbox blocked independent file probes; verdict based on 
 - PARTIAL -- BondMarket gated skeleton: inventory/capacity/haircut/enabled=false; live enable still blocked on valuation + stock handling.
 
 ### Remaining P0/P1 merge blockers (max 12)
-- [P0] Live one-token migration: replace/migrate gen-4 `0x47Ac...` embedded V and retarget consumers; distinct V addresses cannot be treated as fungible.
+- [P0] Live one-token migration: replace/migrate gen-4 `0x47Ac.....` embedded V and retarget consumers; distinct V addresses cannot be treated as fungible.
 - [P1] HouseLp/HouseSwap Solidity equity wiring to wgV + PairConfig gate landed; still need live pairConfig deploy, Rust deploy ABI/bootstrap wgV, Permit2/PM e2e, PUSD rebase settlement.
 - [P1] Pool-held PUSD: define and prove rebase settlement/allocation for House and `$PUSD`/USDG pools.
 - [P0] Bond execution: `BondMarket` gate landed (disabled/capacity0 default; inventory-only payout). Keep live tabs disabled until reliable RFV valuation + stock closure handling; vesting claim path is inventory transfer only.
@@ -74,7 +98,7 @@ Date: 2026-09-05 (America/New_York). Branch: `fix/gv-spusd-guards` (from `fix/ol
 - [done] `gVAPURR.stake` settles accrued rebase before share mint (fix/gv-spusd-guards). Late-stake / empty-pool emission theft closed. Proofs: `GvRebaseSettleTest`.
 - [done] `SPUSD` + `wgVAPURR` donation-resistant pricing (virtual + dead shares + min deposit/wrap). Proofs: `SpusdDonationGuardsTest`.
 
-- [done-interim] Mint authority: Fed `IVapurrMinter` / zero-or-one `setMinter`; gV sole inflation minter; stream cannot mint; market redeem does not touch Fed supply. Proofs: `MintAuthorityTest`. Full one-token live unify still open (0x47Ac…).
+- [done-interim] Mint authority: Fed `IVapurrMinter` / zero-or-one `setMinter`; gV sole inflation minter; stream cannot mint; market redeem does not touch Fed supply. Proofs: `MintAuthorityTest`. Full one-token live unify still open (0x47Ac...).
 - [done] `gVAPURR.stake` settles via `accrue()` before share mint (see Progress — P0 fix #2).
 - [done] Lithe single-count: burn fee inventory on drip before index expand (P0 fix #3). Remit spends remaining inventory only.
 - [done] `computeSwap` clamps inverted CP spread; redeem/arb no longer false-THIN when inventory present (P0 fix #3).
@@ -103,7 +127,7 @@ Date: 2026-09-05 (America/New_York). Branch: `fix/gv-spusd-guards` (slice also o
 - [done] Lithe fee surplus single-counted (burn inventory on drip). Proofs: `LitheMintP0Test`.
 - [done] `computeSwap` allows inventory redeem after one-sided flow (no false THIN). Proofs: `LitheMintP0Test`.
 - [done] `market_abi` non-sticky fail-open detect + committed bridge module.
-- [done-interim] Fed single-minter pattern + docs; [remaining] live gen-4 market `0x47Ac…` still embedded-V — migration/redeploy required for one-token unify.
+- [done-interim] Fed single-minter pattern + docs; [remaining] live gen-4 market `0x47Ac...` still embedded-V — migration/redeploy required for one-token unify.
 
 ## Progress - Oliver oracle freshness + bad-debt path (P0 fix #4)
 
@@ -185,7 +209,7 @@ Date: 2026-09-05 (America/New_York). Branch: `fix/gv-spusd-guards`.
 - Shared `IVapurrMinter` + Fed `VapurrToken` zero-or-one `setMinter` (revoke via `address(0)`).
 - Intended sole inflation path: hand minter to `gVAPURR`; RebasePolicy triggers rebase; BrowserStream transfers only.
 - Market comments: embedded V distinct until migration; `swapPusdToV` inventory unwrap never mints.
-- Docs: `MINT_AUTHORITY.md` done-vs-gap; live gen-4 `0x47Ac…` still old market book.
+- Docs: `MINT_AUTHORITY.md` done-vs-gap; live gen-4 `0x47Ac...` still old market book.
 - Proofs: `MintAuthorityTest` (only gV mints; stream/browse cannot; market redeem leaves Fed supply unchanged; revoke works).
 
 - [done-interim] Fed-side single-minter enforceable in new code.

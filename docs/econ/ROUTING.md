@@ -18,9 +18,9 @@ What normals open in the app - not plumbing labels:
 
 | Surface | Tokens / assets | One-liner |
 |---------|-----------------|-----------|
-| **Cash** | `$PUSD` · `sPUSD` · **`$PUSD`/USDG** | Spend/mint rail · savings after runway · **tight exogenous depth** (USDG book) |
-| **Equity** | `gV` · stake | Bond claim / stake path; Fed 3.5%/yr to stakers only |
-| **Bonds** | **ETH · USDG · major stocks** | Park asset -> get **gV at a discount** after a wait. Exogenous RFV in. |
+| **Cash** | `$PUSD` Â· `sPUSD` Â· **`$PUSD`/USDG** | Spend/mint rail Â· savings after runway Â· **tight exogenous depth** (USDG book) |
+| **Equity** | `gV` Â· stake | Bond claim / stake path; Fed 3.5%/yr to stakers only |
+| **Bonds** | **ETH Â· USDG Â· major stocks** | Park asset -> get **gV at a discount** after a wait. Exogenous RFV in. |
 | **House** | **wgV / $PUSD** | Equity meets cash. Wrap gV -> wgV before LP. **Not** peg defense. |
 
 Bonds are a **first-class visible surface** (see `BONDS.md` + `vapurr://bonds`). They are not a hidden OMO footnote.
@@ -53,7 +53,7 @@ Cash peg trust is the **`$PUSD` / USDG** book (and other exogenous cash legs) - 
 - House leg: **wgV locked** (wstETH pattern) - see HOUSE_PAIR.md. Do not pair raw rebasing gV in AMM.
 - Fed LOLR policy for Oliver bad debt
 - Bond capacity / when not to bond
-- Full bond contracts (P1) · sPUSD CD tranches (P1)
+- BondMarket gated skeleton + HouseFeeRemit sketch landed (P1 live enable / Uni skim still open) Â· sPUSD CD sketch landed (UI open)
 - `$PUSD`/USDG pool params / fee / tick ranges (P1) - names locked in `PUSD_LIQUIDITY.md`
 
 ## Market V redeem fence (2026-09-05)
