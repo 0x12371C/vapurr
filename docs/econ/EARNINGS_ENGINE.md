@@ -21,7 +21,7 @@ Branch surplus (realized $PUSD only):
   Oliver interest/liq   --/
 
 Equity print (separate pipe):
-  Fed policy -> gV.rebase @ 3.5%/yr  (ONLY V inflation to stakers)
+  Fed policy -> gV.rebase @ dynamic 1-9%/yr from bond util (ONLY V inflation to stakers; mid ~3.5% unbound)
   Browse/earn -> BrowserStream.drip (transfer; never mint)
 ```
 
@@ -37,7 +37,7 @@ Hard split: **cash surplus path != equity rebase path**. Browse never funds from
 | **Lithe** | Mint/redeem spread + market fee inventory | realized `$PUSD` (`yieldReserve`) | `PusdMarket.remitSurplus` -> **FeeAttribution(Lithe)** -> sink |
 | **Oliver** | Realized borrow interest / liq surplus | realized `$PUSD` (`realizedReserve`) | `PusdLoop.remitReserve` -> **FeeAttribution(Oliver)** -> sink |
 | **Bond buyers** | Exogenous asset at haircut | ETH / USDG / stocks | Fed/Treasury RFV; payout = **gV inventory** (not cash yield) |
-| **Fed** | Policy inflation | new `$VAPURR` into gV index | **gV stakers only** (3.5%/yr) |
+| **Fed** | Policy inflation | new `$VAPURR` into gV index | **gV stakers only** (dynamic 1-9%/yr; see `POLICY_RATE.md`) |
 | **Treasury** | Already-minted float migration | `$VAPURR` earmark | **BrowserStream** (global 50k / 3y) |
 
 Savers (`sPUSD` / CD) are paid **only** from sink surplus **above** `RunwayFloor`. They do not receive gV rebase.
@@ -85,7 +85,7 @@ If product copy says "earn V by browsing", the nerds' reading is: **pro-rata / p
 | Lithe `swapPusdToV` | **NO** — inventory unwrap | redeemer (burns `$PUSD`, takes extant V) |
 | Bonds claim | **NO** — inventory transfer | bond claimer (pre-funded gV/wgV) |
 
-The current gV code applies **350 bps annualized per settlement interval** to current supply. Repeated settlements compound (one annual interval: 3.5%; frequent intervals: about 3.562%). `accrue()` is permissionless; `rebase()` is the policy-only alias. This is equity issuance, separate from Oliver leverage and cash earnings.
+gV applies **`policyRateBps()`** (clamp 100–900; mid 350 when bonds unbound) annualized per settlement interval to current supply. Repeated settlements compound slightly. `accrue()` is permissionless; `rebase()` is the policy-only alias. Hot bond util → toward 1%; cold → toward 9%. See `POLICY_RATE.md`. Equity issuance, separate from Oliver leverage and cash earnings.
 
 ---
 
@@ -121,7 +121,7 @@ Do not quote mcap as "backed by." Do not quote sink `$PUSD` alone as USDG peg tr
 
 ## 6. Rebase vs purchasing power
 
-- **Rebase** increases gV **balances** (index up 3.5%/yr). Staker share of *equity supply* is preserved among stakers; unstaked V is diluted relative to staked.
+- **Rebase** increases gV **balances** (index up at the live policy rate, 1–9%/yr). Staker share of *equity supply* is preserved among stakers; unstaked V is diluted relative to staked.
 - **Purchasing power** vs dollars is `balance_gV * price_V_in_USD` (or House wgV/`$PUSD` quote). Rebase does not print USDG, thicken `$PUSD`/USDG, or credit sPUSD.
 - Holding gV through rebase is an **equity index claim**, not a cash-yield coupon. Cash coupon = sPUSD path from branch surplus.
 
@@ -156,7 +156,7 @@ This leverage is **borrow vs collateral** (balance-sheet). It is **not**:
 
 - reward APY on deposits styled as "6x",
 - rebase-as-yield / reward-APY-as-leverage marketing,
-- a claim that Fed 3.5% is levered into cash.
+- a claim that Fed policy-rate rebase is levered into cash.
 
 Oliver realized interest (after repay/liq realization) remits to the sink. Unpaid `pendingReserve` is **not** remittable RFV.
 
@@ -228,7 +228,7 @@ Suggested wire for tagged TVL: `setRemittance(FeeAttribution)` on branches; `Fee
 
 ## STATUS one-liner
 
-Earnings = House + Lithe + Oliver **realized** `$PUSD` -> **FeeAttribution** -> **RemittanceSink** (runway) -> sPUSD/CD; V inflation = gV 3.5% only; BrowserStream 50k/3y **global** treasury transfer; leverage = Oliver ~6x LTV banking; flat-V/no-bond stress forbids mint-to-redeem and circular RFV.
+Earnings = House + Lithe + Oliver **realized** `$PUSD` -> **FeeAttribution** -> **RemittanceSink** (runway) -> sPUSD/CD; V inflation = gV policy rate (1-9%) only; BrowserStream 50k/3y **global** treasury transfer; leverage = Oliver ~6x LTV banking; flat-V/no-bond stress forbids mint-to-redeem and circular RFV.
 
 ## 2026-09-05 source review and savings implementation
 

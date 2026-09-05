@@ -38,7 +38,10 @@ contract GvBoundariesTest is Test {
         v.setMinter(address(gV));
     }
 
-    function test_annualized_rebase_approx_3_5_pct() public {
+    function test_unbound_bonds_default_mid_3_5_pct() public {
+        assertEq(policy.policyRateBps(), 350, "unbound mid default");
+        assertEq(gV.currentRebaseBps(), 350, "gV reads mid");
+
         vm.startPrank(staker);
         v.approve(address(gV), type(uint256).max);
         gV.stake(100_000 ether);
@@ -55,11 +58,68 @@ contract GvBoundariesTest is Test {
         uint256 afterSupply = v.totalSupply();
 
         uint256 expected = (beforeBal * 350) / 10_000;
-        assertEq(minted, expected, "minted != 3.5%");
+        assertEq(minted, expected, "minted != mid 3.5%");
         assertApproxEqRel(afterBal, beforeBal + expected, 1e12, "staker bal ~ +3.5%");
         assertEq(afterSupply, beforeSupply + minted, "V supply rose only by rebase mint");
         uint256 bps = ((afterBal - beforeBal) * 10_000) / beforeBal;
-        assertEq(bps, 350, "annualized bps");
+        assertEq(bps, 350, "annualized bps mid");
+    }
+
+    function test_policy_rate_cold_book_toward_max_9_pct() public {
+        // Cold: capacity posted, zero credited => util 0 => 900 bps
+        MockBondSignal cold = new MockBondSignal(0, true);
+        policy.bindBondMarket(address(cold));
+        assertEq(policy.policyRateBps(), 900, "cold => 9%");
+        assertEq(gV.currentRebaseBps(), 900);
+
+        vm.startPrank(staker);
+        v.approve(address(gV), type(uint256).max);
+        gV.stake(100_000 ether);
+        vm.stopPrank();
+
+        uint256 beforeBal = gV.balanceOf(staker);
+        vm.warp(block.timestamp + YEAR);
+        vm.prank(policy.owner());
+        uint256 minted = policy.rebase();
+
+        uint256 expected = (beforeBal * 900) / 10_000;
+        assertEq(minted, expected, "minted != 9%");
+        assertEq(((gV.balanceOf(staker) - beforeBal) * 10_000) / beforeBal, 900, "annualized 900");
+    }
+
+    function test_policy_rate_hot_offtake_toward_min_1_pct() public {
+        // Hot: full utilization => 100 bps (suppress print)
+        MockBondSignal hot = new MockBondSignal(1e18, true);
+        policy.bindBondMarket(address(hot));
+        assertEq(policy.policyRateBps(), 100, "hot => 1%");
+        assertEq(gV.currentRebaseBps(), 100);
+
+        vm.startPrank(staker);
+        v.approve(address(gV), type(uint256).max);
+        gV.stake(100_000 ether);
+        vm.stopPrank();
+
+        uint256 beforeBal = gV.balanceOf(staker);
+        vm.warp(block.timestamp + YEAR);
+        vm.prank(policy.owner());
+        uint256 minted = policy.rebase();
+
+        uint256 expected = (beforeBal * 100) / 10_000;
+        assertEq(minted, expected, "minted != 1%");
+        assertEq(((gV.balanceOf(staker) - beforeBal) * 10_000) / beforeBal, 100, "annualized 100");
+    }
+
+    function test_policy_rate_half_util_interpolates() public {
+        MockBondSignal midUtil = new MockBondSignal(0.5e18, true);
+        policy.bindBondMarket(address(midUtil));
+        // 900 - 0.5*(900-100) = 500
+        assertEq(policy.policyRateBps(), 500, "half util => 5%");
+    }
+
+    function test_policy_rate_idle_signal_stays_mid() public {
+        MockBondSignal idle = new MockBondSignal(0, false);
+        policy.bindBondMarket(address(idle));
+        assertEq(policy.policyRateBps(), 350, "no signal => mid");
     }
 
     function test_browser_stream_drip_does_not_mint() public {
@@ -131,5 +191,24 @@ contract GvBoundariesTest is Test {
         vm.prank(staker);
         uint256 out = wgV.unwrap(shares);
         assertApproxEqRel(out, (40_000 ether * 10_350) / 10_000, 1e12, "unwrap tracks rebase");
+    }
+}
+
+/// Minimal BondMarket signal stub for policy-rate proofs.
+contract MockBondSignal is IBondMarketSignal {
+    uint256 public util;
+    bool public live;
+
+    constructor(uint256 util_, bool live_) {
+        util = util_;
+        live = live_;
+    }
+
+    function capacityUtilizationWad() external view returns (uint256) {
+        return util;
+    }
+
+    function hasBondBookSignal() external view returns (bool) {
+        return live;
     }
 }

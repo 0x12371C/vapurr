@@ -29,7 +29,9 @@ contract GvRebaseSettleTest is Test {
 
     /// Attack: Bob stakes after a full interval and captures Alice emissions on next rebase.
     /// Post-fix: stake settles first, so Bob shares mint after Alice interval accrues.
+    /// Uses unbound-bond mid default (350 bps).
     function test_late_stake_does_not_capture_prior_interval() public {
+        assertEq(policy.policyRateBps(), 350, "mid default");
         vm.startPrank(alice);
         v.approve(address(gV), type(uint256).max);
         gV.stake(50_000 ether);

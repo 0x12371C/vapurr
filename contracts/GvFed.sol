@@ -4,7 +4,8 @@ pragma solidity ^0.8.24;
 import "./IVapurrMinter.sol";
 
 /// Fed staking slice: V mint policy, gV rebase, wgV wrapper, BrowserStream earmark.
-/// HARD WALL: browse/earn MUST NOT receive or trigger the 3.5%/yr staker mint.
+/// HARD WALL: browse/earn MUST NOT receive or trigger the Fed policy-rate staker mint.
+/// Policy rate is dynamic from BondMarket capacity utilization, clamped [1%, 9%]/yr.
 /// Rebase model: **index** (shares fixed; balanceOf = shares * index / DEC), matching PusdToken.
 
 /// Fed-side $VAPURR with single-minter authority (`IVapurrMinter`).
@@ -102,14 +103,27 @@ interface IVapurrMint {
     function approve(address spender, uint256 amt) external returns (bool);
 }
 
-/// Staked V with flat 3.5%/yr index rebase. Sole V inflation path to stakers.
+/// Annualized rebase rate in bps (100 = 1%/yr). Implemented by RebasePolicy.
+interface IPolicyRate {
+    function policyRateBps() external view returns (uint256);
+}
+
+/// Bond-market signal used by RebasePolicy (capacity utilization / idle).
+interface IBondMarketSignal {
+    function capacityUtilizationWad() external view returns (uint256);
+    function hasBondBookSignal() external view returns (bool);
+}
+
+/// Staked V with dynamic Fed policy-rate index rebase. Sole V inflation path to stakers.
 contract gVAPURR {
     string public constant name = "gVAPURR";
     string public constant symbol = "gVAPURR";
     uint8 public constant decimals = 18;
     uint256 public constant DEC = 1e18;
-    /// 3.5% = 350 bps flat (linear in time; not compounded continuously).
-    uint256 public constant REBASE_BPS = 350;
+    /// Clamp band for annualized policy rate (bps). Mid/default when bonds unbound: 350.
+    uint256 public constant MIN_REBASE_BPS = 100;
+    uint256 public constant MAX_REBASE_BPS = 900;
+    uint256 public constant MID_REBASE_BPS = 350;
     uint256 public constant YEAR = 365 days;
 
     IVapurrMint public immutable vapurr;
@@ -143,6 +157,13 @@ contract gVAPURR {
         require(p != address(0), "TO");
         policy = p;
         emit PolicyUpdated(p);
+    }
+
+    /// Live annualized rate from RebasePolicy, clamped to [1%, 9%].
+    function currentRebaseBps() public view returns (uint256 bps) {
+        bps = IPolicyRate(policy).policyRateBps();
+        if (bps < MIN_REBASE_BPS) return MIN_REBASE_BPS;
+        if (bps > MAX_REBASE_BPS) return MAX_REBASE_BPS;
     }
 
     function totalSupply() public view returns (uint256) {
@@ -180,7 +201,8 @@ contract gVAPURR {
         emit Transfer(msg.sender, address(0), assets);
     }
 
-    /// Permissionless settle: flat 3.5%/yr mint into this contract and lift the index.
+    /// Permissionless settle: policy-rate mint into this contract and lift the index.
+    /// Rate is dynamic from BondMarket via RebasePolicy (clamp [1%, 9%]/yr).
     /// Called before stake/unstake so new shares never capture unpaid intervals.
     function accrue() public returns (uint256 minted) {
         uint256 dt = block.timestamp - lastRebase;
@@ -190,7 +212,7 @@ contract gVAPURR {
             emit Rebase(0, index, block.timestamp);
             return 0;
         }
-        minted = (supply * REBASE_BPS * dt) / 10_000 / YEAR;
+        minted = (supply * currentRebaseBps() * dt) / 10_000 / YEAR;
         if (minted == 0) {
             emit Rebase(0, index, block.timestamp);
             return 0;
@@ -432,12 +454,23 @@ contract BrowserStream {
 }
 
 /// Fed policy holder: sole caller of gV.rebase. Separates mint authority from browse.
+/// Annualized gV rate is a function of BondMarket capacity utilization:
+///   hot offtake / high util -> toward 1%/yr (suppress V print);
+///   cold bond book / low util -> toward 9%/yr;
+///   unbound or empty signal -> ~3.5%/yr mid default.
 contract RebasePolicy {
+    uint256 public constant WAD = 1e18;
+    uint256 public constant MIN_RATE_BPS = 100;
+    uint256 public constant MAX_RATE_BPS = 900;
+    uint256 public constant MID_RATE_BPS = 350;
+
     address public owner;
     gVAPURR public gV;
+    IBondMarketSignal public bondMarket;
 
     event OwnerUpdated(address indexed owner);
     event GVBound(address indexed gV);
+    event BondMarketBound(address indexed bondMarket);
 
     modifier onlyOwner() {
         require(msg.sender == owner, "OWN");
@@ -458,6 +491,25 @@ contract RebasePolicy {
         require(gV_ != address(0), "TO");
         gV = gVAPURR(gV_);
         emit GVBound(gV_);
+    }
+
+    function bindBondMarket(address bondMarket_) external onlyOwner {
+        bondMarket = IBondMarketSignal(bondMarket_);
+        emit BondMarketBound(bondMarket_);
+    }
+
+    /// Dynamic annualized policy rate in bps.
+    /// rate = MAX - util * (MAX - MIN); util=0 => 900, util=1e18 => 100.
+    function policyRateBps() public view returns (uint256) {
+        if (address(bondMarket) == address(0) || !bondMarket.hasBondBookSignal()) {
+            return MID_RATE_BPS;
+        }
+        uint256 util = bondMarket.capacityUtilizationWad();
+        if (util > WAD) util = WAD;
+        uint256 rate = MAX_RATE_BPS - (util * (MAX_RATE_BPS - MIN_RATE_BPS)) / WAD;
+        if (rate < MIN_RATE_BPS) return MIN_RATE_BPS;
+        if (rate > MAX_RATE_BPS) return MAX_RATE_BPS;
+        return rate;
     }
 
     function rebase() external onlyOwner returns (uint256) {

@@ -225,4 +225,25 @@ contract BondMarketTest is Test {
         vm.expectRevert(bytes("DISABLED"));
         bonds.bond(BondAssetTag.ETH, 1 ether);
     }
+
+    function test_capacity_utilization_signal() public {
+        // Fresh capacity, nothing bonded => cold util 0, signal live.
+        assertTrue(bonds.hasBondBookSignal());
+        assertEq(bonds.capacityUtilizationWad(), 0);
+        assertEq(bonds.lifetimeCreditedRfv(), 0);
+
+        uint256 rem0 = bonds.remainingCapacity();
+        assertEq(rem0, 100_000 ether);
+
+        vm.prank(user);
+        bonds.bond(BondAssetTag.USDG, 1_000 ether); // credits 950
+
+        assertEq(bonds.lifetimeCreditedRfv(), 950 ether);
+        uint256 rem1 = bonds.remainingCapacity();
+        assertEq(rem1, rem0 - 950 ether);
+        uint256 util = bonds.capacityUtilizationWad();
+        assertEq(util, (950 ether * 1e18) / (950 ether + rem1));
+        assertGt(util, 0);
+        assertLt(util, 1e18);
+    }
 }

@@ -8,7 +8,7 @@ House AMM / LP quotes **wgVAPURR / $PUSD** only. Raw rebasing **gVAPURR** is nev
 
 ## Wrap path (ops)
 
-1. Stake `$VAPURR` to `gVAPURR` (Fed 3.5%/yr index; policy-only).
+1. Stake `$VAPURR` to `gVAPURR` (Fed dynamic 1–9%/yr index from bond util; policy-only; see `POLICY_RATE.md`).
 2. Wrap `gVAPURR` to `wgVAPURR` before any House seed / LP / swap.
 3. Unwrap `wgVAPURR` to `gVAPURR` (more gV after rebase), then unstake if needed.
 

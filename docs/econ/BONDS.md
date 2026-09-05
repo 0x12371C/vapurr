@@ -56,7 +56,7 @@ Same tab pattern for every v1 asset. Capacity / valuation are Fed policy params 
 - Bonding is **not instant equity**. You wait.
 - Screen copy: **"Wait X · then claim gV at Y% discount."**
 - Early exit is out of scope for v1 UI unless eng ships a break path later.
-- Claimed gV is yours: hold, stake for the Fed **3.5%/yr** rebase, or wrap to **wgV** for House.
+- Claimed gV is yours: hold, stake for the Fed **dynamic 1–9%/yr** rebase (bond-util; see `POLICY_RATE.md`), or wrap to **wgV** for House.
 - Unclaimed reserved inventory does **not** mint; claim is a transfer from the bond book.
 
 ## Where RFV goes
@@ -88,9 +88,20 @@ Pointing rule: Bonds → **Fed/Treasury RFV**. Equity after claim → **gV / wgV
 - **Still open:** reliable RFV valuation oracles; stock market-closure / corporate-action handling; live UI↔BondMarket reads once addresses land.
 - **sPUSD CD:** `SpusdCd.sol` open live (no disabled flag). `SavingsRouter` enabled by default; owner may `setAllocation(false, ...)`.
 
+## Policy rate signal
+
+Bond offtake feeds the Fed gV **policy rate** (not a second printer):
+
+- Higher capacity utilization / hotter offtake → policy rate **down toward 1%/yr**
+- Colder book → **up toward 9%/yr**
+- Unbound / empty signal → ~**3.5%/yr** mid
+
+Formula and clamp: `POLICY_RATE.md`. Contracts: `BondMarket.capacityUtilizationWad` → `RebasePolicy.policyRateBps` → `gVAPURR.accrue`.
+
 ## Related
 
 - `ROUTING.md` — bonds as visible RFV inflow + product map
+- `POLICY_RATE.md` — Fed gV rate from bond utilization
 - `HOUSE_PAIR.md` — gV → wgV → House **wgV/$PUSD**
 - `SPUSD.md` — cash savings (not bond output)
 - `CODEX_BRAIN_PASS.md` — bonds executable progress

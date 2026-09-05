@@ -1,26 +1,27 @@
 # $PUSD liquidity (canon)
 
-Relic lock 2026-09-05. Peg trust needs **tight exogenous books**, not only House vs equity.
+Relic lock 2026-09-05. **`$PUSD` stability = social-proof / forced float** (mint-redeem ~par). USDG books are **exit depth**, not the peg story.
 
 ## Thesis
 
-Forced `$PUSD` float earns trust when it has **depth against outside money**. Inside inventory and House equity flow do not substitute for that.
+Forced `$PUSD` float is trusted when mint/redeem stays near **par** (social proof). **Outside depth** (USDG primary) makes that float usable — it does **not** replace mint-redeem as the peg mechanism. Inside inventory and House equity flow do not substitute for either.
 
 ## Books
 
 | Book | Pair | Job |
 |------|------|-----|
-| **Cash (primary)** | **`$PUSD` / USDG** | Tight peg / spend float vs chain dollar. **Exogenous** depth. Primary peg defense. |
-| **Cash (secondary)** | `$PUSD` / ETH (optional) | Extra outside cash leg when useful - not a substitute for USDG. |
-| **Equity (House)** | **wgV / `$PUSD`** | Equity meets cash (see `HOUSE_PAIR.md`). **Not** the peg book. |
+| **Cash (primary depth)** | **`$PUSD` / USDG** | Exit / spend float vs chain dollar. **Exogenous** depth around the forced float — **not** the peg definition. |
+| **Cash (secondary)** | `$PUSD` / ETH (optional) | Extra outside cash leg when useful - not a substitute for USDG depth. |
+| **Equity (House)** | **wgV / `$PUSD`** | Equity meets cash (see `HOUSE_PAIR.md`). **Not** peg defense. |
 
 ## Hard rules
 
-1. **Exogenous first for peg.** Forced `$PUSD` float must feel deep against **outside** stables/cash (**USDG** primary). Do not fake tightness with recursive protocol inventory alone.
-2. **House is equity, not peg.** wgV/`$PUSD` can be thick and still leave the dollar soft if `$PUSD`/USDG is thin. Quote House as the equity market; defend the dollar on exogenous books.
-3. **Bond inflows thicken RFV.** Bonding ETH / USDG / stocks (`BONDS.md`) grows the Fed/Treasury battery and can seed POL - it does **not** replace a live `$PUSD`/USDG book.
-4. **Forced-float trust = depth vs outside money.** Users judge `$PUSD` by how cheaply they can enter/exit against USDG (and other outside cash), not by how busy House is.
-5. **Names.** Ship vapurr-native only (`$PUSD`, USDG, wgV, House). No external brand copy.
+1. **Peg = mint-redeem ~par / social proof.** Do not narrate USDG depth as what “holds the peg.” Depth supports exit quality around the forced float.
+2. **Exogenous depth still matters.** Forced `$PUSD` should feel deep against **outside** stables/cash (**USDG** primary). Do not fake tightness with recursive protocol inventory alone.
+3. **House is equity, not peg.** wgV/`$PUSD` can be thick and still leave exit soft if `$PUSD`/USDG is thin. Quote House as the equity market; keep dollar **par** via mint-redeem policy.
+4. **Bond inflows thicken RFV.** Bonding ETH / USDG / stocks (`BONDS.md`) grows the Fed/Treasury battery and can seed POL - it does **not** replace mint-redeem ~par or a live `$PUSD`/USDG depth book.
+5. **Forced-float trust.** Users judge `$PUSD` by par mint/redeem **and** how cheaply they can enter/exit against USDG — not by how busy House is.
+6. **Names.** Ship vapurr-native only (`$PUSD`, USDG, wgV, House). No external brand copy.
 
 ## Frontend hint
 
@@ -28,7 +29,7 @@ Cash surfaces show **exogenous depth** (USDG book first). House/equity depth liv
 
 ## Pool params (P1 sketch - 2026-09-05)
 
-Proposed Uni v4 defaults for the **primary peg book** `$PUSD` / USDG. **Not deployed. Not live quotes.** House stays `wgV/$PUSD` at 0.30% / ±20% - different job.
+Proposed Uni v4 defaults for the **primary depth book** `$PUSD` / USDG. **Not deployed. Not live quotes.** House stays `wgV/$PUSD` at 0.30% / ±20% - different job.
 
 | Param | Proposed | Why |
 |-------|----------|-----|
@@ -49,7 +50,7 @@ Still open after this sketch: deploy scripts, pool addresses in `STATUS.md`, and
 
 ## Related
 
-- `ROUTING.md` / Lithe: mint-spread `yieldReserve` can remit surplus above runway to sPUSD (branch cash path), separate from exogenous `$PUSD`/USDG peg books
+- `ROUTING.md` / Lithe: mint-spread `yieldReserve` can remit surplus above runway to sPUSD (branch cash path), separate from exogenous `$PUSD`/USDG depth books
 
 - `ROUTING.md` - Fed/branches map; visible Cash points at exogenous books
 - `HOUSE_PAIR.md` - wgV / `$PUSD` House leg

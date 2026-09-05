@@ -54,6 +54,8 @@ contract BondMarket {
     mapping(BondAssetTag => Market) public markets;
     /// gV/wgV reserved for open vesting positions (not yet claimed).
     uint256 public reservedPayout;
+    /// Lifetime credited RFV across all bonds (capacity-utilization numerator).
+    uint256 public lifetimeCreditedRfv;
     uint256 public nextId = 1;
     mapping(uint256 => Position) public positions;
 
@@ -200,6 +202,7 @@ contract BondMarket {
         unchecked {
             m.capacity -= creditedRfv;
             reservedPayout += payoutAmount;
+            lifetimeCreditedRfv += creditedRfv;
         }
 
         id = nextId++;
@@ -227,6 +230,27 @@ contract BondMarket {
         }
         require(payoutToken.transfer(msg.sender, paid), "PAY");
         emit Claimed(id, msg.sender, paid);
+    }
+
+    /// Sum of remaining credited-RFV capacity across ETH / USDG / STOCKS tabs.
+    function remainingCapacity() public view returns (uint256 sum) {
+        sum = markets[BondAssetTag.ETH].capacity + markets[BondAssetTag.USDG].capacity
+            + markets[BondAssetTag.STOCKS].capacity;
+    }
+
+    /// True when any capacity remains or any RFV has been credited (book is live as a signal).
+    function hasBondBookSignal() public view returns (bool) {
+        return remainingCapacity() + lifetimeCreditedRfv > 0;
+    }
+
+    /// Capacity utilization in wad: credited / (credited + remaining).
+    /// Cold book (nothing credited, capacity open) => 0; fully offtaken => 1e18.
+    function capacityUtilizationWad() public view returns (uint256) {
+        uint256 rem = remainingCapacity();
+        uint256 credited = lifetimeCreditedRfv;
+        uint256 denom = rem + credited;
+        if (denom == 0) return 0;
+        return (credited * WAD) / denom;
     }
 
     function _quote(Market memory m, uint256 assetAmount)
