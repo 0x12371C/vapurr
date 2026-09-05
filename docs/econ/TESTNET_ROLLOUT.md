@@ -16,6 +16,8 @@ Proxy pattern: **UUPS + ERC1967Proxy** (`contracts/proxy/*`, `PusdMarketFedUpgra
 
 USDG is **bond / treasury intake only** (`BondAssetTag`). No USDG AMM / peg-pool.
 
+**Script coverage legend:** `[IN SCRIPT]` = composed by `script/TestnetRollout.s.sol` dry-run / gated live path. `[MANUAL]` / `[FOLLOW-UP]` = still operator or later PR.
+
 ---
 
 ## Ordered deploy checklist
@@ -25,77 +27,79 @@ Execute in order. Record each address in `docs/STATUS.md` only after a successfu
 ### 0. Preconditions
 
 - [ ] Operator wallet funded on **46630**
-- [ ] `CONFIRM_TESTNET_DEPLOY` **unset** for dry-runs
+- [x] `CONFIRM_TESTNET_DEPLOY` **unset** for dry-runs (script default; dry-run simulates stack locally with no broadcast)
 - [ ] Gen-4 market `0x47Aca529…3617` still treated as live until cutover flag
-- [ ] Parallel tracks ready: `LaunchBootstrap`, `DevFundStream`, `ExogenousPairRegistry` (do not thrash those files mid-flight)
+- [x] Parallel tracks composed via existing `LaunchBootstrap` / `DevFundStream` / `ExogenousPairRegistry` (do not thrash those files mid-flight)
 
-### 1. Fed V + gV + RebasePolicy (dynamic 1–9%)
+### 1. Fed V + gV + RebasePolicy (dynamic 1–9%) — [IN SCRIPT]
 
-- [ ] Deploy `VapurrToken` (Fed V)
-- [ ] Deploy `RebasePolicy` (floor **1%/yr**, ceiling **9%/yr**, mid **3.5%** unbound — see `POLICY_RATE.md`)
-- [ ] Deploy `gVAPURR`; `policy.bindGV(gV)`
-- [ ] **Do not** `setMinter(gV)` until genesis mint + DevFund allocation complete
+- [x] Deploy `VapurrToken` (Fed V) — in `TestnetRollout._deployCore`
+- [x] Deploy `RebasePolicy` (floor **1%/yr**, ceiling **9%/yr**, mid **3.5%** unbound — see `POLICY_RATE.md`)
+- [x] Deploy `gVAPURR`; `policy.bindGV(gV)`
+- [x] **Do not** `setMinter(gV)` until genesis mint + DevFund allocation complete (enforced by step order)
 
-### 2. Lithe — `PusdMarketFed` behind upgradeable proxy (vanity)
+### 2. Lithe — `PusdMarketFed` behind upgradeable proxy (vanity) — [IN SCRIPT]
 
-- [ ] Deploy `PusdMarketFedUpgradeable` **implementation** (from a non-vanity key, or CREATE2)
-- [ ] Deploy `ERC1967Proxy(impl, initialize(vapurr, rate, owner))`
-  - **Preferred vanity land (path A):** STATUS deployer **nonce 0** CREATE of the proxy → exact vanity (no salt)
+- [x] Deploy `PusdMarketFedUpgradeable` **implementation**
+- [x] Deploy `ERC1967Proxy(impl, initialize(vapurr, rate, owner))`
+  - **Preferred vanity land (path A):** STATUS deployer **nonce 0** CREATE of the proxy → exact vanity (no salt) — still operator land; dry-run logs MATCH/MISS
   - **CREATE2 (path B):** salt-hunt with fixed `initCodeHash` — `script/VanityCreate2Hunt.s.sol`
-- [ ] Verify proxy `owner`, `vapurr`, `pusd`, `litheVersion()==1`
-- [ ] No Lithe redeem V inventory fund (seigniorage: `swapPusdToV` mints via `marketMinter`; see §8 handoff)
+- [ ] Verify proxy `owner`, `vapurr`, `pusd`, `litheVersion()==1` on live chain after approved broadcast
+- [x] No Lithe redeem V inventory fund (seigniorage: `swapPusdToV` mints via `marketMinter`; see §8 handoff)
 
-### 3. Oliver (`PusdLoop`)
+### 3. Oliver (`PusdLoop`) — [IN SCRIPT]
 
-- [ ] Deploy Oliver against **proxy** market address (not the impl)
-- [ ] `setOwner` to rollout owner
-- [ ] DevFund path later locks V as Oliver collateral only (`DEV_FUND.md`)
+- [x] Deploy Oliver against **proxy** market address (not the impl)
+- [x] `setOwner` to rollout owner (after wiring)
+- [x] DevFund path locks V as Oliver collateral only (`DEV_FUND.md`) via LaunchBootstrap
 
-### 4. BondMarket (USDG bond-only)
+### 4. BondMarket (USDG bond-only) — [IN SCRIPT]
 
-- [ ] Deploy `BondMarket` wired to gV / policy utilization signal
-- [ ] Confirm **USDG `BondAssetTag` only** — no PUSD/USDG pool
-- [ ] Bind policy → bond book for dynamic 1–9% rate
+- [x] Deploy `BondMarket` wired to gV payout + Fed V supply assertion
+- [x] Confirm **USDG `BondAssetTag` only** — ETH/STOCKS tabs unset; no PUSD/USDG pool
+- [x] `policy.bindBondMarket(bonds)` for dynamic 1–9% rate
+- [ ] Live valuation oracle / capacity ops after cutover (params env-tunable: `BOND_USDG_CAPACITY`, `BOND_TREASURY`, `USDG`)
 
-### 5. Remittance + savings
+### 5. Remittance + savings — [IN SCRIPT] + [MANUAL]
 
-- [ ] Deploy / wire `Remittance` sink + runway floor
-- [ ] `market.setRemittance(sink, runway, autoRemit)`
-- [ ] `SavingsRouter` / sPUSD / CD as per `EARNINGS_ENGINE.md` (post-floor split)
-- [ ] Not auto-wired by factory — initiator step
+- [x] Deploy / wire `RemittanceSink` + `RunwayFloor`
+- [x] `market.setRemittance(sink, runway, autoRemit)` + Oliver same sink/floor
+- [ ] `SavingsRouter` / sPUSD / CD as per `EARNINGS_ENGINE.md` (post-floor split) — **[MANUAL]** `sink.setForward(...)`
+- [x] Not auto-wired by CanonicalLitheFactory — now composed in rollout script (forward still initiator)
 
-### 6. DevFund (200k stream → Oliver collateral only)
+### 6. DevFund (200k stream → Oliver collateral only) — [IN SCRIPT]
 
-- [ ] Genesis mint includes **200_000 V** DevFund allocation to initiator (factory path) **before** `setMinter(gV)`
-- [ ] `LaunchBootstrap`: `DevFundStream` fund + `startStream`
-- [ ] Unlock settles **only** into Oliver collateral; recipient draws **$PUSD** only
-- [ ] Distinct from BrowserStream (50k / 3y treasury float)
+- [x] Genesis mint includes **200_000 V** DevFund allocation **before** `setMinter(gV)`
+- [x] `LaunchBootstrap`: `DevFundStream` fund + `startStream`
+- [x] Unlock settles **only** into Oliver collateral; recipient draws **$PUSD** only
+- [ ] Distinct from BrowserStream (50k / 3y treasury float) — not deployed here
 
-### 7. Exogenous pair registry — V/ETH + V/NVDA + V/AMD
+### 7. Exogenous pair registry — V/ETH + V/NVDA + V/AMD — [IN SCRIPT]
 
-- [ ] `ExogenousPairRegistry` via `LaunchBootstrap`
-- [ ] Register genesis books: **V/ETH**, **V/NVDA**, **V/AMD** (trading / POL — not bond purchase)
-- [ ] Ban USDG / PUSD as exogenous pair legs
-- [ ] Optional minimal POL seed (`seedPol_`)
+- [x] `ExogenousPairRegistry` via `LaunchBootstrap`
+- [x] Register genesis books: **V/ETH**, **V/NVDA**, **V/AMD** (trading / POL — not bond purchase)
+- [x] Ban USDG / PUSD as exogenous pair legs (registry constructor)
+- [ ] Optional minimal POL seed (`SEED_POL=1` / `seedPol_`) — off by default in dry-run
 
-### 8. Minter handoff
+### 8. Minter handoff — [IN SCRIPT]
 
-- [ ] Dual-minter handoff (match `CanonicalLitheFactory` / `MINT_AUTHORITY.md`):
-  - Genesis mint complete (converter inventory + bootstrap float + DevFund 200k) **before** policy handoff
+- [x] Dual-minter handoff (match `CanonicalLitheFactory` / `MINT_AUTHORITY.md`):
+  - Genesis mint complete (bootstrap float + DevFund 200k) **before** policy handoff
   - `canonicalV.setMarketMinter(Lithe)` — Lithe seigniorage printer (while deployer still holds policy minter)
   - `canonicalV.setMinter(gV)` — gV policy inflate 1–9%
   - No Lithe redeem inventory fund — redeem mints V via `marketMinter`
-- [ ] Policy owner = rollout owner
-- [ ] Snapshot desk ABI (`snapshot(address)` 12 words) against proxy
+- [x] Policy owner = rollout owner
+- [ ] Snapshot desk ABI (`snapshot(address)` 12 words) against proxy on live chain
+- [ ] Legacy converter / migrator inventory — **[MANUAL]** cutover companion when gen-4 supply known (not in this script; factory path)
 
-### 9. House / wgV follow-up (not in factory)
+### 9. House / wgV follow-up (not in factory) — [FOLLOW-UP]
 
 - [ ] House pairs are **wgV / $PUSD** (`HOUSE_PAIR.md`, `WGV_HOUSE.md`) — not raw gV
 - [ ] Deploy / wire `HousePairConfig` + House Uni path **after** core cutover
 - [ ] Remittance skim / fee attribution as separate PR
 - [ ] Clear gen-4 house/pair_config from local cutover so books do not mix
 
-### 10. Cutover / UI honesty
+### 10. Cutover / UI honesty — [MANUAL]
 
 - [ ] Approved CutoverDeploy only — no silent prod
 - [ ] UI / desk address book updated to gen-5 proxy + Fed V
@@ -109,7 +113,7 @@ Execute in order. Record each address in `docs/STATUS.md` only after a successfu
 From `contracts/`:
 
 ```powershell
-# Plan only (default) — no broadcast
+# Plan + local full-stack simulation (default) — no broadcast
 forge script script/TestnetRollout.s.sol:TestnetRollout -vv
 
 # Optional CREATE2 notes / hunt (still no broadcast)
@@ -119,6 +123,8 @@ forge script script/VanityCreate2Hunt.s.sol:VanityCreate2Hunt -vv
 $env:CONFIRM_TESTNET_DEPLOY = "1"
 # forge script script/TestnetRollout.s.sol:TestnetRollout --rpc-url $TESTNET_RPC --broadcast
 ```
+
+Optional env (dry-run deploys MockUsdg / mock exo legs when unset): `USDG`, `EXO_ETH`, `EXO_NVDA`, `EXO_AMD`, `BOOTSTRAP_V`, `RUNWAY_FLOOR`, `BOND_USDG_CAPACITY`, `BOND_TREASURY`, `DEVFUND_RECIPIENT`, `SEED_POL`, `AUTO_REMIT`, `ROLLOUT_OWNER`, `LITHE_RATE_WAD`.
 
 Proxy upgrade proofs:
 
@@ -145,20 +151,28 @@ forge test --match-contract PusdMarketFedProxyTest -vv
 
 Captured from `forge script script/TestnetRollout.s.sol:TestnetRollout -vv` (CONFIRM unset).
 
-Planned order (script `_plan` / checklist):
+**Now in script (local simulate, no broadcast):**
 
 1. Fed V + RebasePolicy + gV (dynamic 1–9%)
 2. Lithe impl + ERC1967Proxy (UUPS) — prefer vanity `0xC47f…EBD2`
 3. Oliver (`PusdLoop`) behind market proxy
-4. BondMarket (USDG BondAssetTag only)
-5. Remittance / SavingsRouter wiring
-6. LaunchBootstrap: DevFund 200k → Oliver collateral + V/ETH+V/NVDA+V/AMD
-7. Dual-minter handoff: genesis → `setMarketMinter(Lithe)` → `setMinter(gV)` (no Lithe redeem inventory)
-8. House / wgV follow-up (not in factory)
+4. BondMarket (USDG BondAssetTag only) + `policy.bindBondMarket`
+5. RemittanceSink + RunwayFloor + `setRemittance` on Lithe + Oliver
+6. Genesis mint DevFund 200k (+ optional `BOOTSTRAP_V`) **before** `setMinter(gV)`
+7. LaunchBootstrap: DevFundStream start + V/ETH+V/NVDA+V/AMD
+8. Dual-minter: `setMarketMinter(Lithe)` then `setMinter(gV)` (no Lithe redeem inventory)
+
+**Still manual / follow-up:**
+
+- SavingsRouter / sPUSD / CD (`sink.setForward`)
+- House / wgV
+- LegacyVConverter + migrator when cutting over gen-4 supply
+- Vanity land via STATUS deployer nonce-0 (or CREATE2 hunt)
+- Relic-approved CutoverDeploy + UI address book
 
 HONEST: gen-4 remains live on 46630 until Relic-approved CutoverDeploy. Do not invent live gen-5 addresses here.
 
-**Last dry-run (2026-09-05 ET):** `forge script script/TestnetRollout.s.sol:TestnetRollout -vv` from `contracts/` — **exit 0**, `CONFIRM_TESTNET_DEPLOY 0`, no broadcast. Logs: vanity `0xC47f00D61F8379337f9fb42E6DcC695AE2d6EBD2`, dual-minter step 7 (`setMarketMinter(Lithe)` then `setMinter(gV)`), no Lithe redeem inventory fund. Gas used 83993 (plan-only).
+**Last dry-run (2026-09-05 ~1:55pm ET):** `forge script script/TestnetRollout.s.sol:TestnetRollout -vv` from `contracts/` — **exit 0**, `CONFIRM_TESTNET_DEPLOY 0`, no broadcast. Local simulate composed Fed V/gV/policy, Lithe UUPS proxy, Oliver, BondMarket(USDG)+bindBondMarket, RemittanceSink+RunwayFloor+setRemittance, genesis DevFund 200k, LaunchBootstrap (DevFundStream + V/ETH+V/NVDA+V/AMD), dual-minter handoff. Gas used ~33.4M (full local simulate). Vanity MISS expected off STATUS deployer nonce-0 path. No live gen-5 addresses — dry-run only.
 
 ## Related
 
@@ -170,4 +184,4 @@ HONEST: gen-4 remains live on 46630 until Relic-approved CutoverDeploy. Do not i
 - `DEV_FUND.md` — 200k → Oliver collateral
 - `BONDS.md` / `ROUTING.md` — USDG bond-only lock
 - `TESTNET_SHAPE.md` — historical LP shape (gen-4 context)
-- Contracts: `PusdMarketFedUpgradeable`, `proxy/ERC1967Proxy`, `LaunchBootstrap`, `CanonicalLitheFactory`
+- Contracts: `PusdMarketFedUpgradeable`, `proxy/ERC1967Proxy`, `LaunchBootstrap`, `CanonicalLitheFactory`, `BondMarket`, `Remittance`
