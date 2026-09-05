@@ -2,14 +2,19 @@
 <html>
 <head>
   <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Swap</title>
   <link rel="stylesheet" href="/tokens.css"/>
   <link rel="stylesheet" href="/chrome.css"/>
   <link rel="stylesheet" href="/defi-surface.css"/>
   <link rel="stylesheet" href="/route.css"/>
+  <link rel="stylesheet" href="/defi-flow.css"/>
 </head>
-<body>
+<body class="finance-ui" data-desk="swap">
   <div class="globe-layer" aria-hidden="true"><canvas id="globe"></canvas></div>
+  <div class="finance-shell">
+    <div data-finance-nav></div>
+  </div>
   <div class="wrap">
     <div class="hero">
       <div class="mono">SWAP</div>
@@ -19,6 +24,11 @@
         <div class="chip"><span>Refund</span><b id="chip-refund">0.03%</b></div>
         <div class="chip"><span>Sim</span><b id="chip-sim">idle</b></div>
         <div class="chip"><span>Route</span><b id="chip-hops">—</b></div>
+      </div>
+      <div class="route-cross" role="navigation" aria-label="Route desks">
+        <button type="button" data-go="vapurr://swap" aria-current="page">Swap</button>
+        <button type="button" data-go="vapurr://bridge">Bridge</button>
+        <button type="button" data-go="vapurr://defi">DeFi home</button>
       </div>
     </div>
 
@@ -59,6 +69,7 @@
   <script src="/sign.js"></script>
   <script src="/tokens.js"></script>
   <script src="/route.js"></script>
+  <script src="/defi-flow.js"></script>
   <script type="importmap">
   {
     "imports": {

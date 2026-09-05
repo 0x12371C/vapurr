@@ -62,3 +62,37 @@ html[data-theme=light] .finance-brand img{filter:brightness(.55)}
 .finance-ui #e-tick{color:var(--color-muted);font-size:12px;font-weight:400}
 .finance-ui .err:empty{display:none}
 @media(max-width:620px){.finance-ui .journey-action h2 br{display:initial}}
+
+/* Route desks (swap/bridge): shared finance chrome + narrow ticket. */
+.finance-ui[data-desk=swap],
+.finance-ui[data-desk=bridge]{position:relative}
+.finance-ui[data-desk=swap]>.finance-shell,
+.finance-ui[data-desk=bridge]>.finance-shell{position:relative;z-index:2;max-width:1220px;padding:0 40px;margin:0 auto}
+.finance-ui[data-desk=swap]>.finance-shell .finance-nav,
+.finance-ui[data-desk=bridge]>.finance-shell .finance-nav{min-height:72px;margin-bottom:8px}
+.finance-ui[data-desk=swap]>.wrap,
+.finance-ui[data-desk=bridge]>.wrap{max-width:440px;padding:8px 22px 96px;margin:0 auto;position:relative;z-index:1}
+.finance-ui[data-desk=swap] .globe-layer,
+.finance-ui[data-desk=bridge] .globe-layer{z-index:0}
+.finance-back{border:1px solid var(--flow-line);background:none;color:var(--color-snow);border-radius:100px;display:inline-flex;align-items:center;gap:6px;padding:8px 14px 8px 10px;font-size:12px;margin:20px 0 0;min-height:40px}
+.finance-back:hover{border-color:var(--color-muted);color:var(--color-lime)}
+.finance-back .flow-icon{width:16px;height:16px}
+.finance-ui[data-desk=swap] [data-finance-nav],
+.finance-ui[data-desk=bridge] [data-finance-nav]{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.finance-ui[data-desk=swap] [data-finance-nav]>.finance-nav,
+.finance-ui[data-desk=bridge] [data-finance-nav]>.finance-nav{flex:1;min-width:0;margin-bottom:0}
+.route-cross{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.route-cross button{border:1px solid var(--flow-line);background:none;color:var(--color-muted);border-radius:100px;padding:8px 14px;font-size:11px;min-height:40px}
+.route-cross button:hover{color:var(--color-lime);border-color:var(--color-muted)}
+.route-cross button[aria-current=page]{color:var(--color-lime);border-color:var(--color-lime);background:var(--color-forest)}
+@media(max-width:900px){
+  .finance-ui[data-desk=swap]>.finance-shell,
+  .finance-ui[data-desk=bridge]>.finance-shell{padding:0 24px}
+  .finance-ui[data-desk=swap]>.wrap,
+  .finance-ui[data-desk=bridge]>.wrap{padding:4px 22px 96px}
+}
+@media(max-width:620px){
+  .finance-ui[data-desk=swap]>.finance-shell,
+  .finance-ui[data-desk=bridge]>.finance-shell{padding:0 18px}
+  .finance-back span{display:none}
+}

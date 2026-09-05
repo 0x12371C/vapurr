@@ -1,5 +1,12 @@
 # vapurr status
 
+## 2026-09-05 — Swap/bridge finance chrome + back stack
+
+`frontend/swap.html` and `frontend/bridge.html` now share `defi-flow` chrome (nav + Back). Finance nav includes Swap/Bridge on every desk. In-page Back walks a session stack of prior finance desks (Oliver/House tabs preserved) and falls back to `vapurr://defi`. Existing `route.js` quote/sign path is unchanged; offline smoke still cannot invent a quote. Earn/wallet stay on their own surfaces.
+
+Validation: `python scripts/verify-defi-ui.py` now also loads swap/bridge (three widths, both themes, nav + back stack + cross links). Globe/WebGPU console noise is ignored. Pack/SHA follows this commit.
+
+
 ## 2026-09-05 — DeFi visual flows (packed 1.1.9)
 
 `frontend/defi.html` now has an interactive economic route map with icon-led navigation. Lithe mint/redeem, Oliver credit, and House trade use selectable desks in `pusd.html`; savings/bonds use compact horizon cards and deposit → vest → claim steps. Shared `defi-flow.css` / `defi-flow.js` preserve native transaction handlers, show snapshot-driven LTV headroom, support light/dark themes and reduced motion, and keep detailed mechanics expandable. Display balances use two decimals, including negative net positions; transaction amounts retain their original precision.

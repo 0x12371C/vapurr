@@ -13,19 +13,79 @@
     chart:'M4 4v16h16M8 15v-4m5 4V7m5 8v-6',
     wallet:'M20 8V5H4v15h16V8H4m12 3h5v5h-5z',
     arrow:'M4 12h16m-6-6 6 6-6 6',
-    lock:'M7 10V7a5 5 0 0 1 10 0v3M5 10h14v11H5zM12 14v3'
+    lock:'M7 10V7a5 5 0 0 1 10 0v3M5 10h14v11H5zM12 14v3',
+    back:'M15 6 9 12l6 6'
   };
   function icon(name) { return '<svg class="flow-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="'+(icons[name] || icons.exchange)+'"/></svg>'; }
   document.querySelectorAll('[data-icon]').forEach(function(el) { el.innerHTML=icon(el.dataset.icon); });
+
+  var FINANCE_RE = /^vapurr:\/\/(defi|finance|lithe|oliver|euler|loop|house|lp|bonds|routing|markets|swap|bridge|pusd|mint|stake|wallet|portfolio)(\?|#|$)/i;
+  var STACK_KEY = 'vapurr.financeStack';
+
+  function pathToVapurr(path) {
+    var raw = String(path || '');
+    var m = raw.match(/\/([a-z0-9-]+)\.html/i);
+    if (!m) return 'vapurr://defi';
+    var id = m[1].toLowerCase();
+    var rest = raw.slice(raw.indexOf('.html') + 5);
+    if (id === 'pusd' || id === 'stake') {
+      if (/oliver|euler|loop/i.test(rest)) return 'vapurr://oliver';
+      if (/house/i.test(rest)) return 'vapurr://house';
+      return 'vapurr://lithe';
+    }
+    if (id === 'defi') return 'vapurr://defi';
+    return 'vapurr://' + id;
+  }
+
+  function readStack() {
+    try { return JSON.parse(sessionStorage.getItem(STACK_KEY) || '[]'); } catch (e) { return []; }
+  }
+  function writeStack(stack) {
+    try { sessionStorage.setItem(STACK_KEY, JSON.stringify(stack.slice(-24))); } catch (e) {}
+  }
+  function pushHere() {
+    var here = (location.pathname || '') + (location.search || '') + (location.hash || '');
+    var stack = readStack();
+    if (stack[stack.length - 1] !== here) stack.push(here);
+    writeStack(stack);
+  }
+  function financeBack() {
+    var stack = readStack();
+    while (stack.length) {
+      var prev = stack.pop();
+      writeStack(stack);
+      if (!prev) continue;
+      var target = pathToVapurr(prev);
+      var cur = pathToVapurr((location.pathname||'')+(location.search||'')+(location.hash||''));
+      if (target === cur) continue;
+      if (window.vapurr) vapurr.go(target);
+      return;
+    }
+    if (window.vapurr) vapurr.go('vapurr://defi');
+  }
+  function financeGo(target) {
+    if (FINANCE_RE.test(target)) pushHere();
+    if (window.vapurr) vapurr.go(target);
+  }
+
   var nav=document.querySelector('[data-finance-nav]');
   if(nav) {
     var desk=document.body.dataset.desk;
     if(desk==='cash' && /oliver|euler|loop/i.test(location.hash+location.search)) desk='credit';
     if(desk==='cash' && /house/i.test(location.hash+location.search)) desk='house';
-    nav.innerHTML='<nav class="finance-nav" aria-label="DeFi"><button class="finance-brand" data-go="vapurr://defi" aria-label="VAPURR DeFi home"><img src="/cat.svg" alt=""/>VAPURR</button><div class="finance-nav-links">'+[
-      ['overview','Overview','vapurr://defi'],['cash','Lithe','vapurr://lithe'],['credit','Oliver','vapurr://oliver'],['savings','Save & bond','vapurr://bonds'],['house','House','vapurr://house']
+    var routeDesk = desk==='swap' || desk==='bridge';
+    var backBtn = routeDesk
+      ? '<button type="button" class="finance-back" data-finance-back aria-label="Back">'+icon('back')+'<span>Back</span></button>'
+      : '';
+    nav.innerHTML=backBtn+'<nav class="finance-nav" aria-label="DeFi"><button class="finance-brand" data-go="vapurr://defi" aria-label="VAPURR DeFi home"><img src="/cat.svg" alt=""/>VAPURR</button><div class="finance-nav-links">'+[
+      ['overview','Overview','vapurr://defi'],['cash','Lithe','vapurr://lithe'],['credit','Oliver','vapurr://oliver'],['savings','Save & bond','vapurr://bonds'],['house','House','vapurr://house'],['swap','Swap','vapurr://swap'],['bridge','Bridge','vapurr://bridge']
     ].map(function(item){ return '<button data-go="'+item[2]+'"'+(item[0]===desk?' aria-current="page"':'')+'>'+item[1]+'</button>'; }).join('')+'</div><button class="finance-wallet" data-go="vapurr://wallet">'+icon('wallet')+'Wallet</button></nav>';
   }
+
+  document.querySelectorAll('[data-finance-back]').forEach(function(el) {
+    el.addEventListener('click', function(){ financeBack(); });
+  });
+
   document.querySelectorAll('[data-go]').forEach(function(el) {
     if(!el.onclick) el.addEventListener('click',function(){
       var target=el.dataset.go;
@@ -34,6 +94,7 @@
         var panel={lithe:'book',oliver:'euler',house:'house'}[target.split('//')[1]];
         selectDesk(panel, true);
       }
+      else if(FINANCE_RE.test(target)) financeGo(target);
       else if(window.vapurr) vapurr.go(target);
     });
   });
