@@ -414,4 +414,147 @@ html[data-theme="light"] .floor-card.pons .house-word { color: var(--color-snow)
   border: 1px solid color-mix(in srgb, var(--color-snow) 12%, transparent);
   margin-top: 8px !important;
 }
-.vapurr-sign .err { color: #ff8a80; font-size: 13px; margin-top: 10px; }
+.vapurr-sign .err { color: var(--color-danger); font-size: 13px; margin-top: 10px; }
+
+
+/* Shared DeFi / product chrome — complementary to page-local styles.
+   Prefer these tokens so Bonds/PUSD/Swap/House can drop duplicated glass. */
+.glass,
+.panel-glass {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-panel);
+  transition:
+    background var(--dur) var(--ease-out),
+    border-color var(--dur) var(--ease-out),
+    box-shadow var(--dur) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
+}
+.glass-strong {
+  background: var(--glass-bg-strong);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sheet);
+}
+.glass:hover,
+.panel-glass:hover {
+  border-color: var(--glass-border-hover);
+}
+.glass:focus-visible,
+.panel-glass:focus-visible {
+  outline: none;
+  border-color: color-mix(in srgb, var(--color-lime) 45%, transparent);
+  box-shadow: var(--shadow-lime);
+}
+
+.kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-lime);
+}
+
+.wrap-product {
+  max-width: 420px;
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-5) var(--space-8);
+  position: relative;
+  z-index: 1;
+}
+.wrap-product-wide {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-5) 96px;
+  position: relative;
+  z-index: 1;
+}
+
+.hero-product { margin-bottom: var(--space-5); }
+.hero-product .mono,
+.hero-product .kicker { color: var(--color-lime); margin-bottom: 10px; }
+.hero-product h1 {
+  font-size: clamp(42px, 8vw, 64px);
+  font-weight: 600;
+  letter-spacing: -0.05em;
+  line-height: 0.95;
+}
+.lede-product {
+  margin-top: var(--space-3);
+  color: var(--color-muted);
+  font-size: 15px;
+  line-height: 1.45;
+  max-width: 36em;
+}
+.lede-product b { color: var(--color-snow); font-weight: 600; }
+
+.empty-state,
+.state-empty {
+  color: var(--color-muted);
+  font-size: 13px;
+  line-height: 1.45;
+  padding: var(--space-4) 0;
+}
+.empty-state b,
+.state-empty b {
+  display: block;
+  color: var(--color-snow);
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.state-err,
+.err-state {
+  color: var(--color-danger);
+  font-size: 13px;
+  line-height: 1.4;
+  min-height: 16px;
+}
+.state-ok {
+  color: var(--color-ok);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.chip-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  min-width: 88px;
+  border-radius: 14px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(22px) saturate(1.45);
+  -webkit-backdrop-filter: blur(22px) saturate(1.45);
+  border: 1px solid var(--glass-border);
+}
+.chip-meta span {
+  color: var(--color-muted);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+.chip-meta b {
+  font-size: 15px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.example-tag {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 8px;
+  border-radius: var(--radius-pill);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+  background: color-mix(in srgb, var(--color-forest) 55%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-snow) 8%, transparent);
+}

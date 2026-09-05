@@ -34,6 +34,28 @@
   --rail: 64px;
   --top: 84px;
   --space: 4px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+  --radius-panel: 18px;
+  --radius-sheet: 22px;
+  --glass-bg: color-mix(in srgb, var(--color-steel) 50%, transparent);
+  --glass-bg-strong: color-mix(in srgb, var(--color-steel) 78%, var(--color-void));
+  --glass-border: color-mix(in srgb, var(--color-snow) 8%, transparent);
+  --glass-border-hover: color-mix(in srgb, var(--color-snow) 16%, transparent);
+  --glass-blur: blur(24px) saturate(1.5);
+  --shadow-soft: 0 12px 40px color-mix(in srgb, #000 28%, transparent);
+  --shadow-lime: 0 0 0 1px color-mix(in srgb, var(--color-lime) 35%, transparent);
+  --color-danger: #ff8a80;
+  --color-ok: #7dffb3;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-fast: 0.12s;
+  --dur: 0.18s;
   --font: "Sora", ui-sans-serif, system-ui, sans-serif;
   --cursor-arrow: url("/cursors/arrow.svg") 3 1, url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32'><path fill='%23c0f800' stroke='%230e0e0e' stroke-width='1.1' d='M3 2v21l7-6 4.6 10.4 3.2-1.4L13.2 17H22z'/></svg>") 3 1, default;
   --cursor-text: url("/cursors/text.svg") 12 16, url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='32'><path fill='none' stroke='%23c0f800' stroke-width='2' stroke-linecap='round' d='M6 4h12M12 4v24M6 28h12'/></svg>") 12 16, text;
@@ -48,6 +70,9 @@ html[data-theme="light"] {
   --color-steel: #e6ebe0;
   --color-snow: #161816;
   --color-muted: #3f5340;
+  --glass-bg: color-mix(in srgb, var(--color-steel) 84%, transparent);
+  --glass-bg-strong: color-mix(in srgb, var(--color-steel) 92%, var(--color-void));
+  --shadow-soft: 0 12px 32px color-mix(in srgb, #000 8%, transparent);
   color-scheme: light;
 }
 
