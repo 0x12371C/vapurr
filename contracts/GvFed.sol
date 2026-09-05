@@ -8,10 +8,11 @@ import "./IVapurrMinter.sol";
 /// Policy rate is dynamic from BondMarket capacity utilization, clamped [1%, 9%]/yr.
 /// Rebase model: **index** (shares fixed; balanceOf = shares * index / DEC), matching PusdToken.
 
-/// Fed-side $VAPURR with single-minter authority (`IVapurrMinter`).
-/// Exactly zero or one minter: deploy sets msg.sender; hand to gV for rebase; or revoke to address(0).
-/// Market embeds a separate VapurrToken (immutable self-minter) until one-token migration —
-/// do not treat the two addresses as fungible. See docs/econ/MINT_AUTHORITY.md.
+/// Fed-side $VAPURR with dual mint authority (`IVapurrMinter`).
+/// Policy minter (`minter`): gV rebase inflate to stakers (additional printer).
+/// Market minter (`marketMinter`): Lithe seigniorage — mint on PUSD redeem, burn on PUSD expand.
+/// Deploy sets policy minter = msg.sender; factory sets marketMinter = Lithe then hands policy to gV.
+/// See docs/econ/MINT_AUTHORITY.md.
 contract VapurrToken is IVapurrMinter {
     string public constant name = "VAPURR";
     string public constant symbol = "VAPURR";
@@ -20,34 +21,46 @@ contract VapurrToken is IVapurrMinter {
     mapping(address => uint256) public balanceOf;
     mapping(address => mapping(address => uint256)) public allowance;
     address public minter;
+    address public marketMinter;
     event Transfer(address indexed from, address indexed to, uint256 value);
     event Approval(address indexed owner, address indexed spender, uint256 value);
     event MinterUpdated(address indexed minter);
+    event MarketMinterUpdated(address indexed marketMinter);
 
     constructor() {
         minter = msg.sender;
     }
 
-    modifier onlyMinter() {
+    modifier onlyPolicyMinter() {
         require(msg.sender == minter, "MINTER");
         _;
     }
 
-    /// Sole mint-role transfer. `m == address(0)` revokes minting (zero minters).
-    /// Never dual-assign: only the current minter may call; at most one live minter.
-    function setMinter(address m) external onlyMinter {
+    modifier onlyAuthorizedMinter() {
+        require(msg.sender == minter || msg.sender == marketMinter, "MINTER");
+        _;
+    }
+
+    /// Policy mint-role transfer. `m == address(0)` revokes policy minting.
+    function setMinter(address m) external onlyPolicyMinter {
         minter = m;
         emit MinterUpdated(m);
     }
 
-    function mint(address to, uint256 amt) external onlyMinter {
+    /// Lithe seigniorage mint/burn role. Set before handing policy minter to gV.
+    function setMarketMinter(address m) external onlyPolicyMinter {
+        marketMinter = m;
+        emit MarketMinterUpdated(m);
+    }
+
+    function mint(address to, uint256 amt) external onlyAuthorizedMinter {
         require(to != address(0), "TO");
         totalSupply += amt;
         balanceOf[to] += amt;
         emit Transfer(address(0), to, amt);
     }
 
-    function burn(address from, uint256 amt) external onlyMinter {
+    function burn(address from, uint256 amt) external onlyAuthorizedMinter {
         uint256 b = balanceOf[from];
         require(b >= amt, "VAPURR");
         unchecked {
@@ -93,7 +106,7 @@ contract VapurrToken is IVapurrMinter {
 }
 
 /// Transfer + mint surface used by gV / BrowserStream (stream never holds minter).
-/// Authority control is `IVapurrMinter` on the Fed VapurrToken (zero-or-one minter).
+/// Authority: policy minter (gV) + optional marketMinter (Lithe seigniorage).
 interface IVapurrMint {
     function mint(address to, uint256 amt) external;
     function transfer(address to, uint256 amt) external returns (bool);

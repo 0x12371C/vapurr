@@ -85,16 +85,16 @@ contract LitheMintP0Test is Test {
         vapurr.approve(address(market), type(uint256).max);
         pusd.approve(address(market), type(uint256).max);
         (uint256 ask,) = market.swapVToPusd(50_000 ether);
-        uint256 inv = market.vInventory();
-        assertEq(inv, 50_000 ether, "V locked");
+        uint256 supplyAfter = vapurr.totalSupply();
+        assertEq(supplyAfter, 1_000_000 ether - 50_000 ether, "expand burned V");
+        assertEq(market.vInventory(), 0, "no inventory lock");
 
-        // No pool heal ? previously reverted THIN on inverted CP spread.
+        // No pool heal — previously reverted THIN on inverted CP spread.
         (uint256 vOut,) = market.swapPusdToV(ask / 2);
         vm.stopPrank();
 
-        assertGt(vOut, 0, "inventory redeem paid");
-        assertEq(market.vInventory(), inv - vOut, "inventory drew down");
-        assertEq(vapurr.totalSupply(), 1_000_000 ether, "redeem did not mint V");
+        assertGt(vOut, 0, "seigniorage redeem paid");
+        assertEq(vapurr.totalSupply(), supplyAfter + vOut, "redeem minted V");
     }
 
     function test_computeSwap_allows_negative_cp_spread_with_min() public {

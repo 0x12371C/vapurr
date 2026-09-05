@@ -7,7 +7,7 @@ import "../PusdLoop.sol";
 import "../Remittance.sol";
 import "../SPUSD.sol";
 
-/// Routing fences: market V inventory, remittance/runway/sPUSD.
+/// Routing fences: Lithe seigniorage + remittance/runway/sPUSD.
 /// GvFed walls covered by GvBoundaries.t.sol (run together).
 contract RoutingFencesTest is Test {
     PusdMarket internal market;
@@ -41,70 +41,52 @@ contract RoutingFencesTest is Test {
         vapurr.transfer(trader, 100_000 ether);
     }
 
-    function test_market_redeem_does_not_mint_v() public {
+    function test_market_expand_burns_v_redeem_mints_v() public {
         vm.startPrank(trader);
-        vapurr.approve(address(market), type(uint256).max);
-        pusd.approve(address(market), type(uint256).max);
         (uint256 ask,) = market.swapVToPusd(100 ether);
-        vm.stopPrank();
+        uint256 supplyAfterExpand = vapurr.totalSupply();
+        assertEq(supplyAfterExpand, 1_000_000 ether - 100 ether, "expand burns V");
+        assertEq(market.vInventory(), 0, "no inventory lock under seigniorage");
 
-        uint256 supplyAfterMint = vapurr.totalSupply();
-        uint256 inv = market.vInventory();
-        assertEq(inv, 100 ether, "V locked in inventory");
-        assertEq(supplyAfterMint, 1_000_000 ether, "genesis supply unchanged (no burn/mint)");
-
-        // Virtual pool skew blocks same-block reverse; heal delta then redeem from inventory.
+        pusd.approve(address(market), type(uint256).max);
         _healPool();
-        vm.startPrank(trader);
         (uint256 vOut,) = market.swapPusdToV(ask / 2);
         vm.stopPrank();
 
-        assertEq(vapurr.totalSupply(), supplyAfterMint, "HARD FENCE: redeem must not mint V");
-        assertGt(vOut, 0, "received V from inventory");
-        assertEq(market.vInventory(), inv - vOut, "inventory drew down");
+        assertGt(vOut, 0, "redeem minted V");
+        assertEq(vapurr.totalSupply(), supplyAfterExpand + vOut, "redeem mints V");
     }
 
-    function test_market_cannot_unbounded_mint_for_browse_earn() public {
+    function test_seigniorage_redeem_does_not_need_inventory() public {
         vm.startPrank(trader);
-        vapurr.approve(address(market), type(uint256).max);
-        pusd.approve(address(market), type(uint256).max);
         (uint256 ask,) = market.swapVToPusd(100 ether);
+        pusd.approve(address(market), type(uint256).max);
         vm.stopPrank();
 
-        uint256 inv = market.vInventory();
+        // Burn any residual market balance — redeem must still mint.
+        uint256 residual = vapurr.balanceOf(address(market));
+        if (residual > 0) {
+            vm.prank(address(market));
+            vapurr.burn(address(market), residual);
+        }
+        assertEq(market.vInventory(), 0, "inventory empty");
+
+        _healPool();
         uint256 supplyBefore = vapurr.totalSupply();
-        vm.prank(address(market));
-        vapurr.burn(address(market), inv);
-        assertEq(market.vInventory(), 0, "inventory drained");
-
-        _healPool(); // so CP would succeed — fence must still be INV, not mint
         vm.startPrank(trader);
-        vm.expectRevert(bytes("INV"));
-        market.swapPusdToV(ask);
+        (uint256 vOut,) = market.swapPusdToV(ask);
         vm.stopPrank();
 
-        assertEq(vapurr.totalSupply(), supplyBefore - inv, "no V minted on failed redeem");
+        assertGt(vOut, 0, "seigniorage redeem paid");
+        assertEq(vapurr.totalSupply(), supplyBefore + vOut, "minted on redeem");
     }
 
-    function test_fund_inventory_then_redeem_no_mint() public {
+    function test_fund_inventory_still_abi_compatible() public {
         uint256 supply0 = vapurr.totalSupply();
         vapurr.approve(address(market), type(uint256).max);
         market.fundVInventory(50 ether);
         assertEq(market.vInventory(), 50 ether);
         assertEq(vapurr.totalSupply(), supply0, "fund does not mint");
-
-        vm.startPrank(trader);
-        vapurr.approve(address(market), type(uint256).max);
-        pusd.approve(address(market), type(uint256).max);
-        (uint256 ask,) = market.swapVToPusd(10 ether);
-        vm.stopPrank();
-        _healPool();
-        uint256 supply1 = vapurr.totalSupply();
-        vm.prank(trader);
-        (uint256 vOut,) = market.swapPusdToV(ask / 2);
-
-        assertEq(vapurr.totalSupply(), supply1, "redeem still does not mint");
-        assertGt(vOut, 0);
     }
 
     function test_accrue_path_can_call_remittance() public {

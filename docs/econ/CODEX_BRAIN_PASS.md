@@ -17,7 +17,7 @@ Note: First Codex probe hit read-only PowerShell policy denials; this verdict us
 - [P0] Exogenous USDG (or equivalent) backing unestablished; nominal self-issued PUSD RFV != dollar solvency.
 
 ### Contracts-progress vs mainnet/gen-4 gate
-- **SAFE to merge as contracts-progress:** closed P0 wave (Oliver LTV/oracle/bad-debt, gV accrue, sPUSD/wgV donation guards, Lithe single-count, THIN fix, market_abi, sink RunwayFloor, Fed single-minter interim, PairConfig + HouseLp/HouseSwap wgV wiring) plus gated BondMarket skeleton (disabled/capacity0 defaults; inventory-only payout; DISABLED/CLOSED/CAP/INV + no-mint proofs).
+- **SAFE to merge as contracts-progress:** closed P0 wave (Oliver LTV/oracle/bad-debt, gV accrue, sPUSD/wgV donation guards, Lithe single-count, THIN fix, market_abi, sink RunwayFloor, Fed single-minter interim, PairConfig + HouseLp/HouseSwap wgV wiring) plus gated BondMarket skeleton (disabled/capacity0 defaults; seigniorage (except LegacyVConverter cutover inventory) payout; DISABLED/CLOSED/CAP/INV + no-mint proofs).
 - **MUST stay gated for mainnet/gen-4:** gen-4 dual-V; live bond tabs are live-with-caps; gen-4 one-token migration / dual-V fungibility; live House deploy/bootstrap/e2e + pool PUSD rebase; any claim of established external dollar backing.
 
 ### Delta vs prior hold @ ef87976+
@@ -33,8 +33,8 @@ Note: Codex read-only sandbox blocked independent file probes; verdict based on 
 - CLOSED -- Oliver post-action LTV and reserve-remit owner health; reported regression proofs cover both.
 - CLOSED -- gV pre-mint/burn accrual and empty-pool clock prevent prior-interval capture.
 - CLOSED -- sPUSD/wgV donation guards address cited theft paths; full timed-remittance skim resistance remains outside this closure.
-- CLOSED -- Lithe burns fee inventory before drip, removing the identified double claim.
-- CLOSED -- Redeem false-THIN gate removed; inventory constraints remain.
+- CLOSED -- Lithe burns fee cash before drip, removing the identified double claim.
+- CLOSED -- Redeem false-THIN gate removed; seigniorage redeem mints V (no INV).
 - CLOSED -- market_abi wired through mint/redeem/rate with conclusive-only caching; live compatibility remains deployment-dependent.
 - CLOSED -- Oliver freshness, conservative pending valuation and feed-jump clamp implemented.
 - CLOSED -- Oliver bad-debt write-down and failure-isolated optional backstop implemented; funded coverage is not established.
@@ -42,7 +42,7 @@ Note: Codex read-only sandbox blocked independent file probes; verdict based on 
 - CLOSED -- Realized-only Oliver remittance + sink-level RunwayFloor on consolidated RemittanceSink RFV (cross-branch floor). Exogenous USDG backing still open.
 - PARTIAL -- Fed single-minter enforcement implemented; live market still has distinct embedded V.
 - PARTIAL -- House raw-gV gate + HouseLp/HouseSwap wgV wiring landed; live Uni v4 deploy/bootstrap and PUSD rebase accounting remain open.
-- OPEN -- Self-issued PUSD/V inventory does not establish exogenous dollar backing or par redemption.
+- OPEN -- Self-issued PUSD/V seigniorage does not establish exogenous dollar backing or par redemption.
 - PARTIAL -- BondMarket live-with-caps: inventory/capacity/haircut params; valuation oracles + stock handling still open.
 
 ### Remaining P0/P1 merge blockers (max 12)
@@ -100,17 +100,17 @@ Date: 2026-09-05 (America/New_York). Branch: `fix/gv-spusd-guards` (from `fix/ol
 
 - [done-interim] Mint authority: Fed `IVapurrMinter` / zero-or-one `setMinter`; gV sole inflation minter; stream cannot mint; market redeem does not touch Fed supply. Proofs: `MintAuthorityTest`. Full one-token live unify still open (0x47Ac...).
 - [done] `gVAPURR.stake` settles via `accrue()` before share mint (see Progress — P0 fix #2).
-- [done] Lithe single-count: burn fee inventory on drip before index expand (P0 fix #3). Remit spends remaining inventory only.
-- [done] `computeSwap` clamps inverted CP spread; redeem/arb no longer false-THIN when inventory present (P0 fix #3).
+- [done] Lithe single-count: burn fee cash on drip before index expand (P0 fix #3). Remit spends remaining fee cash only.
+- [done] `computeSwap` clamps inverted CP spread; redeem/arb no longer false-THIN (P0 fix #3).
 - [partial] Wrapping gV fixes only the House **equity** leg (PairConfig now rejects raw gV). Naked `$PUSD` still rebases (Lithe index); pool-held PUSD rebase accounting remains **P1** for wgV/PUSD only (`$PUSD`/USDG books banned).
 - [done] `SPUSD` / `wgVAPURR` virtual+dead shares + min deposit/wrap (see Progress — P0 fix #2). Dust remittance skim bounded; CD time-locks still TODO for full skim resistance.
-- [P0-bug] Self-issued PUSD reserves and V inventory do not establish exogenous dollar backing. The minimum 2% V swap spread is not ~par USDG redemption; a nominal PUSD runway floor cannot establish dollar solvency, and Lithe drip can consume the supposedly retained reserve.
+- [P0-bug] Self-issued PUSD reserves and seigniorage V do not establish exogenous dollar backing. The minimum 2% V swap spread is not ~par USDG redemption; a nominal PUSD runway floor cannot establish dollar solvency, and Lithe drip can consume the supposedly retained reserve.
 - [done] Oliver oracle freshness + conservative credit rate + feed jump clamp (P0 fix #4). Stale rate blocks borrow/withdrawV/liq sizing. See Progress - P0 fix #4.
 - [done] Oliver bad-debt absorb + stub Fed backstop (P0 fix #4). gV/wgV collateral still unimplemented / needs redemption-aware valuation (out of slice).
 - [partial] Oliver auto-remit is try/catch isolated (`remitReserveFromAccrue`); sink revert no longer freezes repay/withdraw/liq. `remitReserve` now `_requireLtv(owner)` after exit. Lithe auto-remit isolation still open.
 - [partial] BondMarket skeleton enforces inventory/capacity/haircut/`enabled` gate (proofs: BondMarketTest). Live enable still blocked: reliable valuation + stock market-closure/corporate-action; discounts against manipulable prices can overissue if Fed opens early.
 - [confusion] Keep ETH/USDG/stock bonds visible and printer mechanics hidden; never hide execution availability, vesting, capacity or loss exposure. gV already earns rebases, contradicting "claim gV, then stake"; TVL must exclude recursive double counting, and YOTC must disclose costs and conditional yield assumptions.
-- [done] `market_abi.rs` dual-probe + cache only on conclusive detect; RPC miss fails open / re-probes (P0 fix #3). Inventory fences + mint unify still need deploy-specific verification.
+- [done] `market_abi.rs` dual-probe + cache only on conclusive detect; RPC miss fails open / re-probes (P0 fix #3). Seigniorage Lithe + dual printers landed in source.loy-specific verification.
 - [done] `market_abi.rs` tracked + wired through mint/redeem/rate paths (P0 fix #3). Frontend TVL/YOTC bundle validation still separate.
 
 
@@ -118,14 +118,14 @@ Date: 2026-09-05 (America/New_York). Branch: `fix/gv-spusd-guards` (from `fix/ol
 
 Date: 2026-09-05 (America/New_York). Branch: `fix/gv-spusd-guards` (slice also ok as `fix/lithe-mint-p0`).
 
-- Lithe: `accrue` burns market fee inventory before `pusd.drip`, so holder yield and remittance share one surplus pool (no mint-and-keep + drip double claim).
-- `computeSwap`: removed `baseOffer >= askBaseAmount` THIN gate; inverted CP spread clamps to 0 then MIN_STABILITY_SPREAD. Inventory/`INV` still gates redeem.
+- Lithe: `accrue` burns market fee cash before `pusd.drip`, so holder yield and remittance share one surplus pool (no mint-and-keep + drip double claim).
+- `computeSwap`: removed `baseOffer >= askBaseAmount` THIN gate; inverted CP spread clamps to 0 then MIN_STABILITY_SPREAD. Seigniorage redeem mints V (no INV gate).
 - `market_abi.rs`: dual-probe scrubbed then live hex; cache only conclusive (market, abi) pairs; RPC/dual-miss fails open to Scrubbed and re-probes (no sticky legacy).
 - Mint unify: Fed single-minter enforceable (`IVapurrMinter` + `MintAuthorityTest`); market still embedded-V until live migration; full one-token role split deferred.
 - Tests: `LitheMintP0Test` (forge); `market_abi` unit tests (rust).
 
-- [done] Lithe fee surplus single-counted (burn inventory on drip). Proofs: `LitheMintP0Test`.
-- [done] `computeSwap` allows inventory redeem after one-sided flow (no false THIN). Proofs: `LitheMintP0Test`.
+- [done] Lithe fee surplus single-counted (burn fee cash on drip). Proofs: `LitheMintP0Test`.
+- [done] `computeSwap` allows seigniorage redeem after one-sided flow (no false THIN). Proofs: `LitheMintP0Test`.
 - [done] `market_abi` non-sticky fail-open detect + committed bridge module.
 - [done-interim] Fed single-minter pattern + docs; [remaining] live gen-4 market `0x47Ac...` still embedded-V — migration/redeploy required for one-token unify.
 
@@ -148,7 +148,7 @@ Date: 2026-09-05 (America/New_York). Branch: fix/gv-spusd-guards.
 
 - One shared `RunwayFloor` SoT: Oliver + Lithe wire the same instance (`IRunwayView` / `remittable` alias). Dual per-branch floors rejected.
 - Oliver `remitReserve`: `pendingReserve` on accrue, `realizedReserve` on repay/liq/unwind (interest-first via `_realizeFromRepay`), then shared `runway.surplus`. Unpaid pending cannot remit; sole-owner cash still remittable (no third-party depositor claim).
-- Lithe `remitSurplus`: still inventory-backed `yieldReserve` only, gated by the same floor.
+- Lithe `remitSurplus`: fee-cash `yieldReserve` only, gated by the same floor.
 - INVARIANT documented in `Remittance.sol` + `ROUTING.md`: remittance RFV is realized surplus above floor; never unpaid claims / depositor principal (circular RFV).
 - Tests: `RunwayRfvTest` (`test_oliver_and_lithe_share_same_runway_floor`, `test_cannot_remit_unpaid_interest_from_depositor_cash`, `test_realized_remit_respects_floor_and_user_claims`, `test_lithe_cannot_remit_below_shared_floor`, `test_liq_with_accrued_interest_realizes_reserve`); RoutingFences accrue path realizes via repay before remit.
 
@@ -208,7 +208,7 @@ Date: 2026-09-05 (America/New_York). Branch: `fix/gv-spusd-guards`.
 
 - Shared `IVapurrMinter` + Fed `VapurrToken` zero-or-one `setMinter` (revoke via `address(0)`).
 - Intended sole inflation path: hand minter to `gVAPURR`; RebasePolicy triggers rebase; BrowserStream transfers only.
-- Market comments: embedded V distinct until migration; `swapPusdToV` inventory unwrap never mints.
+- Market comments: embedded V distinct until migration; `swapPusdToV` seigniorage redeem mints V; expand burns V.
 - Docs: `MINT_AUTHORITY.md` done-vs-gap; live gen-4 `0x47Ac...` still old market book.
 - Proofs: `MintAuthorityTest` (only gV mints; stream/browse cannot; market redeem leaves Fed supply unchanged; revoke works).
 

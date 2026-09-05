@@ -9,8 +9,7 @@ import {PusdLoop} from "../PusdLoop.sol";
 import {LegacyVConverter} from "../LegacyVConverter.sol";
 import {LitheCutoverMigrator} from "../LitheCutoverMigrator.sol";
 
-/// End-state cutover proofs: the market and credit vault use the Fed V address,
-/// while V issuance remains exclusively with gV and legacy conversion uses funded inventory.
+/// Cutover proofs: seigniorage Lithe on Fed V; dual printers (gV policy + Lithe market).
 contract CanonicalVMarketTest is Test {
     uint256 internal constant PRICE = 1 ether;
     uint256 internal constant YEAR = 365 days;
@@ -32,51 +31,52 @@ contract CanonicalVMarketTest is Test {
         gV = new gVAPURR(address(canonical), address(policy));
         policy.bindGV(address(gV));
 
-        // One genesis allocation, before handing the sole mint role to gV.
         canonical.mint(address(this), 400_000 ether);
         canonical.mint(trader, 200_000 ether);
         canonical.mint(borrower, 30_000 ether);
-        canonical.setMinter(address(gV));
 
         market = new PusdMarketFed(address(canonical), PRICE, address(this));
         pusd = market.pusd();
-        canonical.approve(address(market), type(uint256).max);
-        market.fundVInventory(100_000 ether);
+        // Dual printers: Lithe seigniorage then gV policy.
+        canonical.setMarketMinter(address(market));
+        canonical.setMinter(address(gV));
+
         loop = new PusdLoop(address(market));
     }
 
-    function test_market_uses_canonical_v_inventory_without_minting() public {
+    function test_seigniorage_burn_on_expand_mint_on_redeem() public {
         uint256 supply0 = canonical.totalSupply();
-        uint256 inventory0 = market.vInventory();
 
         assertEq(address(market.vapurr()), address(canonical), "market uses Fed V");
-        assertEq(inventory0, 100_000 ether, "seeded canonical inventory");
+        assertEq(canonical.marketMinter(), address(market), "Lithe is marketMinter");
 
         vm.startPrank(trader);
-        canonical.approve(address(market), type(uint256).max);
         (uint256 pusdOut,) = market.swapVToPusd(50_000 ether);
+        uint256 supplyAfterExpand = canonical.totalSupply();
+        assertEq(supplyAfterExpand, supply0 - 50_000 ether, "expand burns V");
+
         pusd.approve(address(market), type(uint256).max);
         (uint256 vOut,) = market.swapPusdToV(pusdOut / 2);
         vm.stopPrank();
 
-        assertGt(vOut, 0, "inventory redeem paid V");
-        assertEq(canonical.totalSupply(), supply0, "market swap never mints canonical V");
-        assertEq(market.vInventory(), inventory0 + 50_000 ether - vOut, "inventory accounts for both legs");
+        assertGt(vOut, 0, "redeem minted V");
+        assertEq(canonical.totalSupply(), supplyAfterExpand + vOut, "redeem mints V");
+        assertEq(market.vInventory(), 0, "no inventory float under seigniorage");
 
         PusdMarketFed.Snap memory snap = market.snapshot(trader);
         assertEq(snap.vapurrToken, address(canonical), "snapshot exposes canonical V");
-        assertEq(snap.vapurrSupply, supply0, "snapshot exposes canonical V supply");
+        assertEq(snap.vapurrSupply, canonical.totalSupply(), "snapshot supply matches");
     }
 
     function test_market_keeps_the_desk_snapshot_abi() public view {
         (bool ok, bytes memory raw) = address(market).staticcall(abi.encodeWithSignature("snapshot(address)", trader));
         assertTrue(ok, "snapshot call");
-        // Existing vapurr-econ decodes exactly these 12 static ABI words.
         assertEq(raw.length, 12 * 32, "12-word market snapshot");
     }
 
-    function test_gv_is_sole_v_minter_after_cutover() public {
-        assertEq(canonical.minter(), address(gV), "gV owns the sole mint role");
+    function test_dual_printers_gv_policy_and_lithe_seigniorage() public {
+        assertEq(canonical.minter(), address(gV), "gV is policy minter");
+        assertEq(canonical.marketMinter(), address(market), "Lithe is market minter");
 
         vm.startPrank(trader);
         canonical.approve(address(gV), type(uint256).max);
@@ -87,16 +87,16 @@ contract CanonicalVMarketTest is Test {
         vm.warp(block.timestamp + YEAR);
         uint256 minted = policy.rebase();
         assertGt(minted, 0, "policy-triggered gV rebase mints");
-        assertEq(canonical.totalSupply(), supply0 + minted, "only gV rebase changed supply");
+        assertEq(canonical.totalSupply(), supply0 + minted, "gV rebase changed supply");
 
+        // Stranger cannot mint; stream role is not a minter.
         vm.expectRevert(bytes("MINTER"));
-        vm.prank(address(market));
-        canonical.mint(address(market), 1 ether);
+        vm.prank(trader);
+        canonical.mint(trader, 1 ether);
     }
 
     function test_oliver_retargets_to_canonical_v() public {
         vm.startPrank(trader);
-        canonical.approve(address(market), type(uint256).max);
         market.swapVToPusd(30_000 ether);
         pusd.approve(address(loop), type(uint256).max);
         loop.supply(20_000 ether);
@@ -144,28 +144,27 @@ contract CanonicalVMarketTest is Test {
         converter.convert(201 ether);
     }
 
-    function test_lithe_migrates_legacy_pusd_through_v_inventory() public {
+    function test_lithe_migrates_legacy_pusd_through_seigniorage() public {
         PusdMarket legacyMarket = new PusdMarket(PRICE);
         LegacyV legacyV = legacyMarket.vapurr();
         PusdToken legacyPusd = legacyMarket.pusd();
         LegacyVConverter converter = new LegacyVConverter(address(legacyV), address(canonical));
 
+        // Fund converter from pre-handoff genesis holdings on this contract (no new mint).
         canonical.approve(address(converter), type(uint256).max);
         converter.fund(50_000 ether);
+
         LitheCutoverMigrator migrator =
             new LitheCutoverMigrator(address(legacyMarket), address(market), address(converter));
 
         legacyV.transfer(legacyHolder, 20_000 ether);
         vm.startPrank(legacyHolder);
-        legacyV.approve(address(legacyMarket), type(uint256).max);
         (uint256 legacyPusdIn,) = legacyMarket.swapVToPusd(10_000 ether);
         legacyPusd.approve(address(migrator), type(uint256).max);
         vm.stopPrank();
 
         uint256 legacyPusdSupply0 = legacyPusd.totalSupply();
         uint256 canonicalVSupply0 = canonical.totalSupply();
-        uint256 legacyInventory0 = legacyMarket.vInventory();
-        uint256 canonicalInventory0 = market.vInventory();
 
         vm.prank(legacyHolder);
         uint256 canonicalPusdOut = migrator.migrate(legacyPusdIn);
@@ -173,9 +172,8 @@ contract CanonicalVMarketTest is Test {
         assertGt(canonicalPusdOut, 0, "canonical Lithe minted PUSD");
         assertEq(legacyPusd.balanceOf(legacyHolder), 0, "legacy PUSD was redeemed");
         assertEq(legacyPusd.totalSupply(), legacyPusdSupply0 - legacyPusdIn, "legacy Lithe burned input");
-        assertEq(canonical.totalSupply(), canonicalVSupply0, "neither Lithe path minted V");
-        assertLt(legacyMarket.vInventory(), legacyInventory0, "legacy Lithe released V");
-        assertGt(market.vInventory(), canonicalInventory0, "canonical Lithe locked converted V");
+        // Expand burns the converted canonical V.
+        assertLt(canonical.totalSupply(), canonicalVSupply0, "seigniorage expand burned canonical V");
         assertGt(converter.legacyLocked(), 0, "converter received legacy V");
         assertEq(pusd.balanceOf(legacyHolder), canonicalPusdOut, "holder received new PUSD");
     }

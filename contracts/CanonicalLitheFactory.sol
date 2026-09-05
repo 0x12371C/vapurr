@@ -13,10 +13,11 @@ interface ILegacyVSupply {
 
 /// One-transaction successor deployment for canonical V and canonical Lithe.
 ///
-/// The factory verifies the legacy V supply, pre-funds 1:1 conversion inventory,
-/// creates the Lithe-to-Lithe PUSD route, seeds explicit canonical-Lithe inventory,
-/// allocates genesis DevFund (200k V) to the initiator for LaunchBootstrap, and
-/// hands all configurable roles to the initiating wallet before construction ends.
+/// The factory verifies the legacy V supply, pre-funds 1:1 conversion inventory
+/// (LegacyVConverter only — not Lithe redeem float), creates the Lithe-to-Lithe
+/// PUSD route, allocates genesis DevFund (200k V) to the initiator for LaunchBootstrap,
+/// assigns Lithe as Fed V marketMinter (seigniorage), hands policy minter to gV,
+/// and hands remaining roles to the initiating wallet before construction ends.
 ///
 /// Does NOT auto-deploy ExogenousPairRegistry / DevFundStream / House — use
 /// LaunchBootstrap companion with the DevFund allocation before any further mint.
@@ -75,19 +76,17 @@ contract CanonicalLitheFactory {
         migrator = new LitheCutoverMigrator(legacyMarket_, address(market), address(converter));
         loop = new PusdLoop(address(market));
 
-        // Genesis mint: conversion inventory + Lithe bootstrap + DevFund (before minter handoff).
+        // Genesis mint: conversion inventory + optional bootstrap float + DevFund (before handoff).
+        // bootstrapV_ goes to initiator as liquid float — Lithe redeem no longer needs inventory.
         canonicalV.mint(address(this), legacyVSupply_ + bootstrapV_ + DEV_FUND_AMOUNT);
         require(canonicalV.approve(address(converter), legacyVSupply_), "ALLOW");
         converter.fund(legacyVSupply_);
-        if (bootstrapV_ > 0) {
-            require(canonicalV.approve(address(market), bootstrapV_), "ALLOW");
-            market.fundVInventory(bootstrapV_);
-        }
-        // DevFund allocation to initiator — wire LaunchBootstrap while still liquid; gV is sole minter after.
-        require(canonicalV.transfer(msg.sender, DEV_FUND_AMOUNT), "DEV");
+        // DevFund + optional bootstrap float to initiator.
+        require(canonicalV.transfer(msg.sender, DEV_FUND_AMOUNT + bootstrapV_), "DEV");
 
-        // No factory role survives deployment: gV is the sole V minter and the
-        // initiating wallet controls the policy and successor vault configuration.
+        // Dual printers: Lithe = seigniorage marketMinter; gV = policy minter (staker rebase).
+        // Order matters — setMarketMinter while factory still holds policy minter.
+        canonicalV.setMarketMinter(address(market));
         canonicalV.setMinter(address(gV));
         policy.setOwner(msg.sender);
         loop.setOwner(msg.sender);

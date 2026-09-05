@@ -11,7 +11,7 @@ import {LitheCutoverMigrator} from "../LitheCutoverMigrator.sol";
 import {CanonicalLitheFactory} from "../CanonicalLitheFactory.sol";
 
 /// One transaction must create a fully connected successor book and leave no
-/// temporary factory authority behind.
+/// temporary factory authority behind. Lithe is seigniorage (marketMinter).
 contract CanonicalLitheFactoryTest is Test {
     uint256 internal constant PRICE = 1 ether;
     uint256 internal constant BOOTSTRAP = 100_000 ether;
@@ -47,25 +47,29 @@ contract CanonicalLitheFactoryTest is Test {
 
         assertEq(address(market.vapurr()), address(canonicalV), "canonical Lithe uses Fed V");
         assertEq(address(loop.vapurr()), address(canonicalV), "Oliver uses Fed V");
-        assertEq(canonicalV.minter(), address(gV), "gV is sole V minter");
+        assertEq(canonicalV.minter(), address(gV), "gV is policy minter");
+        assertEq(canonicalV.marketMinter(), address(market), "Lithe is marketMinter");
         assertEq(policy.owner(), address(this), "policy handed to initiator");
         assertEq(market.owner(), address(this), "Lithe owner is initiator");
         assertEq(loop.owner(), address(this), "Oliver owner handed to initiator");
         assertEq(converter.available(), legacyV.totalSupply(), "full legacy V conversion inventory");
-        assertEq(market.vInventory(), BOOTSTRAP, "explicit Lithe bootstrap inventory");
+        assertEq(market.vInventory(), 0, "no Lithe redeem inventory under seigniorage");
         assertEq(
             canonicalV.totalSupply(),
             legacyV.totalSupply() + BOOTSTRAP + factory.devFundAllocation(),
-            "cutover + genesis DevFund allocation"
+            "cutover + bootstrap float + genesis DevFund"
         );
-        assertEq(canonicalV.balanceOf(address(this)), factory.devFundAllocation(), "DevFund to initiator");
+        assertEq(
+            canonicalV.balanceOf(address(this)),
+            factory.devFundAllocation() + BOOTSTRAP,
+            "DevFund + bootstrap float to initiator"
+        );
         assertEq(factory.devFundAllocation(), 200_000 ether, "immutable DevFund amount");
     }
 
     function test_factory_wires_atomic_lithe_pusd_migration() public {
         legacyV.transfer(holder, 20_000 ether);
         vm.startPrank(holder);
-        legacyV.approve(address(legacyMarket), type(uint256).max);
         (uint256 legacyPusdIn,) = legacyMarket.swapVToPusd(10_000 ether);
         legacyPusd.approve(address(migrator), type(uint256).max);
         vm.stopPrank();
@@ -77,7 +81,7 @@ contract CanonicalLitheFactoryTest is Test {
         assertGt(canonicalPusdOut, 0, "canonical Lithe output");
         assertEq(legacyPusd.balanceOf(holder), 0, "old Lithe input burned");
         assertEq(market.pusd().balanceOf(holder), canonicalPusdOut, "new Lithe output paid");
-        assertEq(canonicalV.totalSupply(), supply0, "migration does not mint V");
+        assertLt(canonicalV.totalSupply(), supply0, "expand burned canonical V");
     }
 
     function test_factory_rejects_a_lie_about_legacy_supply() public {

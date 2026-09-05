@@ -33,8 +33,8 @@ Milestone: **pre-v1** — ship bar is [`V1.md`](V1.md). v1.2 money is **testnet 
 
 Source-landed successor book (MarketCfg GEN 5). **Live 46630 remains gen-4** until an approved CutoverDeploy. Do not treat gen-4 addresses as the one-token book.
 
-- PusdMarketFed + CanonicalLitheFactory: Fed V inventory-only Lithe; genesis mint funds converter + Lithe bootstrap, then setMinter(gV). Desk snapshot(address) ABI preserved. Oliver collateral = Fed V.
-- LegacyVConverter / LitheCutoverMigrator: inventory-only; migration swaps inventory V through Lithe to mint PUSD — **does not mint V** / does not grow canonical V supply.
+- PusdMarketFed + CanonicalLitheFactory: Fed V seigniorage Lithe (marketMinter); genesis mint funds converter + initiator float/DevFund; dual printers gV+Lithe; then setMinter(gV). Desk snapshot(address) ABI preserved. Oliver collateral = Fed V.
+- LegacyVConverter / LitheCutoverMigrator: converter keeps cutover inventory; migration redeem→convert→seigniorage expand — **does not mint V** / does not grow canonical V supply.
 - Factory deploys V + gV/policy + Lithe + converter + migrator + Oliver only. **Does not** deploy wgV, HousePairConfig, or House (ROUTING: House = wgV/). Remittance / sPUSD / SavingsRouter are **not** auto-wired — initiator must setRemittance (and related) post-deploy.
 - Proofs: CanonicalVMarket.t.sol + CanonicalLitheFactory.t.sol. Local cutover clears house/pair_config so gen-4 House is not mixed with gen-5 V.
 

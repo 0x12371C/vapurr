@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.24;
 
-/// Fixed 1:1 legacy-V cutover claim. The contract is deliberately inventory-only:
+/// Fixed 1:1 legacy-V cutover claim. Conversion inventory only (not Lithe redeem):
 /// it cannot mint canonical V, release legacy V, or change either token address.
+/// Lithe seigniorage is separate — this book only swaps pre-funded canonical V.
 interface IERC20Cutover {
     function balanceOf(address) external view returns (uint256);
     function transfer(address, uint256) external returns (bool);

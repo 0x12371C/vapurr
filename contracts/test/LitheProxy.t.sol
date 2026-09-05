@@ -10,7 +10,7 @@ import {PusdMarketFedUpgradeable} from "../PusdMarketFedUpgradeable.sol";
 contract LitheProxyTest is Test {
     address constant VANITY = 0xC47f00D61F8379337f9fb42E6DcC695AE2d6EBD2;
 
-    function test_uups_proxy_initializes_and_funds_inventory() public {
+    function test_uups_proxy_initializes_and_seigniorage_swap() public {
         VapurrToken v = new VapurrToken();
         v.mint(address(this), 100_000 ether);
 
@@ -26,10 +26,14 @@ contract LitheProxyTest is Test {
         assertEq(lithe.owner(), address(this));
         assertEq(lithe.vInventory(), 0);
 
-        v.approve(address(lithe), 10_000 ether);
-        lithe.fundVInventory(10_000 ether);
-        assertEq(lithe.vInventory(), 10_000 ether);
-        assertEq(v.totalSupply(), 100_000 ether, "fund does not mint");
+        v.setMarketMinter(address(lithe));
+        uint256 supply0 = v.totalSupply();
+        lithe.swapVToPusd(10_000 ether);
+        assertEq(v.totalSupply(), supply0 - 10_000 ether, "expand burns V");
+        assertEq(lithe.vInventory(), 0, "no inventory under seigniorage");
+
+        vm.expectRevert(bytes("SEIGNIORAGE"));
+        lithe.fundVInventory(1 ether);
     }
 
     function test_create2_predict_matches_deploy() public {
@@ -49,7 +53,6 @@ contract LitheProxyTest is Test {
 
     function test_implementation_initializer_disabled() public {
         PusdMarketFedUpgradeable impl = new PusdMarketFedUpgradeable();
-        // Implementation should reject a second/direct initialize (Initializable guard).
         vm.expectRevert();
         impl.initialize(address(0x1), 1 ether, address(this));
     }

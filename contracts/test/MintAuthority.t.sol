@@ -6,7 +6,7 @@ import "../GvFed.sol";
 import "../IVapurrMinter.sol";
 import "../PusdMarket.sol" as Mkt;
 
-/// Single-minter pattern + interim dual-token fences (Fed V vs market-embedded V).
+/// Dual-printer pattern + interim dual-token fences (Fed V vs market-embedded V).
 contract MintAuthorityTest is Test {
     VapurrToken internal fedV;
     RebasePolicy internal policy;
@@ -30,18 +30,17 @@ contract MintAuthorityTest is Test {
         stream = new BrowserStream(address(fedV));
         stream.setDistributor(browser);
 
-        // Seed while test is minter, then hand sole mint role to gV (Fed end-state).
         fedV.mint(address(this), 1_000_000 ether);
         fedV.mint(staker, 100_000 ether);
         fedV.setMinter(address(gV));
 
         market = new Mkt.PusdMarket(PRICE);
-        // Move some market genesis V to trader for inventory path.
         market.vapurr().transfer(staker, 100_000 ether);
     }
 
-    function test_only_policy_minter_gV_can_mint() public {
-        assertEq(IVapurrMinter(address(fedV)).minter(), address(gV), "sole minter is gV");
+    function test_only_policy_minter_gV_can_mint_policy_path() public {
+        assertEq(IVapurrMinter(address(fedV)).minter(), address(gV), "policy minter is gV");
+        assertEq(fedV.marketMinter(), address(0), "no market minter in this fixture");
 
         uint256 supply0 = fedV.totalSupply();
         vm.startPrank(staker);
@@ -53,7 +52,7 @@ contract MintAuthorityTest is Test {
         vm.prank(policy.owner());
         uint256 minted = policy.rebase();
         assertGt(minted, 0, "rebase minted");
-        assertEq(fedV.totalSupply(), supply0 + minted, "supply rose only via gV mint");
+        assertEq(fedV.totalSupply(), supply0 + minted, "supply rose via gV mint");
 
         vm.prank(stranger);
         vm.expectRevert(bytes("MINTER"));
@@ -67,7 +66,6 @@ contract MintAuthorityTest is Test {
         vm.expectRevert(bytes("MINTER"));
         fedV.mint(address(stream), 1 ether);
 
-        // Policy is not the token minter — gV holds mint rights.
         vm.prank(address(policy));
         vm.expectRevert(bytes("MINTER"));
         fedV.mint(address(policy), 1 ether);
@@ -105,10 +103,10 @@ contract MintAuthorityTest is Test {
         v2.mint(browser, 1);
     }
 
-    function test_setMinter_zero_or_one() public {
+    function test_setMinter_zero_or_one_policy() public {
         vm.prank(address(gV));
         fedV.setMinter(address(0));
-        assertEq(fedV.minter(), address(0), "zero minters");
+        assertEq(fedV.minter(), address(0), "zero policy minters");
 
         vm.prank(address(gV));
         vm.expectRevert(bytes("MINTER"));
@@ -119,7 +117,7 @@ contract MintAuthorityTest is Test {
         fedV.setMinter(stranger);
     }
 
-    function test_market_redeem_does_not_increase_fed_token_supply() public {
+    function test_embedded_market_seigniorage_burns_and_mints_own_v() public {
         uint256 fedSupply0 = fedV.totalSupply();
         Mkt.VapurrToken mktV = market.vapurr();
         Mkt.PusdToken pusd = market.pusd();
@@ -127,39 +125,35 @@ contract MintAuthorityTest is Test {
         assertTrue(address(mktV) != address(fedV), "Fed V != market V (interim)");
 
         vm.startPrank(staker);
-        mktV.approve(address(market), type(uint256).max);
-        pusd.approve(address(market), type(uint256).max);
         (uint256 ask,) = market.swapVToPusd(100 ether);
+        uint256 afterBurn = mktV.totalSupply();
+        assertEq(afterBurn, 1_000_000 ether - 100 ether, "expand burned market V");
+
+        pusd.approve(address(market), type(uint256).max);
+        vm.store(address(market), bytes32(uint256(3)), bytes32(uint256(0)));
+        (uint256 vOut,) = market.swapPusdToV(ask / 2);
         vm.stopPrank();
 
-        uint256 mktSupplyAfter = mktV.totalSupply();
-        // Heal poolDelta (slot 3) so reverse redeem is not CP-blocked.
-        vm.store(address(market), bytes32(uint256(3)), bytes32(uint256(0)));
-
-        vm.prank(staker);
-        (uint256 vOut,) = market.swapPusdToV(ask / 2);
-        assertGt(vOut, 0, "inventory redeem paid V");
-
-        assertEq(mktV.totalSupply(), mktSupplyAfter, "market redeem did not mint market V");
-        assertEq(fedV.totalSupply(), fedSupply0, "market redeem must not touch Fed V supply");
+        assertGt(vOut, 0, "seigniorage redeem minted V");
+        assertEq(mktV.totalSupply(), afterBurn + vOut, "redeem minted market V");
+        assertEq(fedV.totalSupply(), fedSupply0, "embedded path must not touch Fed V");
+        assertEq(mktV.minter(), address(market), "embedded V minter still market");
     }
 
-    function test_market_has_no_mint_call_on_redeem_path() public {
-        Mkt.VapurrToken mktV = market.vapurr();
-        Mkt.PusdToken pusd = market.pusd();
-        uint256 supply0 = mktV.totalSupply();
+    function test_market_minter_role_enables_fed_seigniorage() public {
+        // Fresh Fed V + Lithe-style caller via marketMinter
+        VapurrToken v = new VapurrToken();
+        v.setMarketMinter(address(this));
+        v.setMinter(address(gV)); // hand policy away; we remain marketMinter
 
-        vm.startPrank(staker);
-        mktV.approve(address(market), type(uint256).max);
-        pusd.approve(address(market), type(uint256).max);
-        (uint256 ask,) = market.swapVToPusd(50 ether);
-        vm.stopPrank();
+        uint256 s0 = v.totalSupply();
+        v.mint(staker, 5 ether);
+        assertEq(v.totalSupply(), s0 + 5 ether, "marketMinter can mint");
+        v.burn(staker, 2 ether);
+        assertEq(v.totalSupply(), s0 + 3 ether, "marketMinter can burn");
 
-        vm.store(address(market), bytes32(uint256(3)), bytes32(uint256(0)));
-        vm.prank(staker);
-        market.swapPusdToV(ask / 2);
-
-        assertEq(mktV.totalSupply(), supply0, "inventory unwrap only");
-        assertEq(mktV.minter(), address(market), "embedded V minter still market");
+        vm.prank(stranger);
+        vm.expectRevert(bytes("MINTER"));
+        v.mint(stranger, 1);
     }
 }

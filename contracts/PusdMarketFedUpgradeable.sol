@@ -6,14 +6,15 @@ import "./Remittance.sol";
 import {Initializable} from "./proxy/Initializable.sol";
 import {UUPSUpgradeable} from "./proxy/UUPSUpgradeable.sol";
 
-interface IVapurrInventoryUUPS {
+interface IVapurrSeigniorageUUPS {
     function balanceOf(address) external view returns (uint256);
     function totalSupply() external view returns (uint256);
-    function transfer(address, uint256) external returns (bool);
-    function transferFrom(address, address, uint256) external returns (bool);
+    function mint(address to, uint256 amt) external;
+    function burn(address from, uint256 amt) external;
 }
 
 /// Upgradeable Lithe (PusdMarketFed) — UUPS behind ERC1967Proxy.
+/// Seigniorage: burn V / mint PUSD; burn PUSD / mint V. Requires marketMinter on Fed V.
 /// Storage-compatible economic surface with the non-proxy PusdMarketFed;
 /// owner/vapurr/pusd are storage (not immutable) so they survive upgrades.
 /// Prefer this path for staged rollout at MAINNET_MARKET_VANITY.
@@ -28,7 +29,7 @@ contract PusdMarketFedUpgradeable is Initializable, UUPSUpgradeable {
 
     /// Storage layout v1 — do not reorder; append only before __gap.
     address public owner;
-    IVapurrInventoryUUPS public vapurr;
+    IVapurrSeigniorageUUPS public vapurr;
     PusdToken public pusd;
 
     uint256 public vapurrRate;
@@ -68,7 +69,7 @@ contract PusdMarketFedUpgradeable is Initializable, UUPSUpgradeable {
     function initialize(address vapurr_, uint256 vapurrRate_, address owner_) external initializer {
         require(vapurr_ != address(0) && vapurrRate_ > 0 && owner_ != address(0), "PRICE");
         owner = owner_;
-        vapurr = IVapurrInventoryUUPS(vapurr_);
+        vapurr = IVapurrSeigniorageUUPS(vapurr_);
         pusd = new PusdToken();
         vapurrRate = vapurrRate_;
         pendingRate = vapurrRate_;
@@ -221,16 +222,14 @@ contract PusdMarketFedUpgradeable is Initializable, UUPSUpgradeable {
         if (remitOnAccrue && address(remittance) != address(0) && yieldReserve > 0) _remitSurplus(0);
     }
 
+    /// Residual V on market (should be ~0 under seigniorage).
     function vInventory() public view returns (uint256) {
         return vapurr.balanceOf(address(this));
     }
 
-    function fundVInventory(uint256 amount) external {
-        require(amount > 0, "TINY");
-        uint256 beforeCash = vInventory();
-        require(vapurr.transferFrom(msg.sender, address(this), amount), "PULL");
-        require(vInventory() == beforeCash + amount, "VAPURR");
-        emit VInventoryFunded(msg.sender, amount);
+    /// Deprecated under seigniorage.
+    function fundVInventory(uint256) external pure {
+        revert("SEIGNIORAGE");
     }
 
     function swapVToPusd(uint256 offer) external returns (uint256 ask, uint256 fee) {
@@ -241,9 +240,7 @@ contract PusdMarketFedUpgradeable is Initializable, UUPSUpgradeable {
         ask = ret - fee;
         require(ask > 0, "TINY");
         applySwapToPool(true, offer, ask);
-        uint256 beforeCash = vInventory();
-        require(vapurr.transferFrom(msg.sender, address(this), offer), "PULL");
-        require(vInventory() == beforeCash + offer, "VAPURR");
+        vapurr.burn(msg.sender, offer);
         pusd.mint(msg.sender, ask);
         if (fee > 0) {
             pusd.mint(address(this), fee);
@@ -255,15 +252,13 @@ contract PusdMarketFedUpgradeable is Initializable, UUPSUpgradeable {
     function swapPusdToV(uint256 offer) external returns (uint256 ask, uint256 fee) {
         _spot();
         accrue();
-        uint256 inv = vInventory();
-        require(inv > 0, "INV");
         (uint256 ret, uint256 spread) = computeSwap(offer, false);
         fee = (spread * ret) / DEC;
         ask = ret - fee;
-        require(ask > 0 && inv >= ask, "INV");
+        require(ask > 0, "TINY");
         applySwapToPool(false, offer, ask);
         pusd.burn(msg.sender, offer);
-        require(vapurr.transfer(msg.sender, ask), "VAPURR");
+        vapurr.mint(msg.sender, ask);
         emit Swap(msg.sender, false, offer, ask, fee);
     }
 

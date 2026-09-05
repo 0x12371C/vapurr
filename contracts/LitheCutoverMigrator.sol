@@ -16,14 +16,14 @@ interface ILegacyLitheMarket {
     function swapPusdToV(uint256 offer) external returns (uint256 ask, uint256 fee);
 }
 
-/// Canonical Lithe market: inventory V in -> market-minted PUSD out (no V mint).
+/// Canonical Lithe market: seigniorage expand burns V / mints PUSD.
 interface ICanonicalLitheMarket {
     function vapurr() external view returns (address);
     function pusd() external view returns (address);
     function swapVToPusd(uint256 offer) external returns (uint256 ask, uint256 fee);
 }
 
-/// Inventory-only V conversion shared by direct-V and Lithe-PUSD cutover paths.
+/// Cutover conversion inventory (legacy V -> canonical V). Not Lithe redeem float.
 interface ILegacyVConversion {
     function legacyV() external view returns (address);
     function canonicalV() external view returns (address);
@@ -33,10 +33,11 @@ interface ILegacyVConversion {
 /// Atomic Lithe-to-Lithe migration.
 ///
 /// A holder does not receive a synthetic bridge credit. Their legacy PUSD is
-/// redeemed through the legacy Lithe market, the resulting legacy V is exchanged
-/// from pre-funded converter inventory, and that inventory V is swapped through
-/// canonical Lithe to mint new PUSD. Both Lithe spreads apply; this contract
-/// never receives V or PUSD mint authority, and canonical V supply does not grow.
+/// redeemed through the legacy Lithe market (seigniorage mint of legacy V), the
+/// resulting legacy V is exchanged from pre-funded converter inventory, and that
+/// canonical V is burned through seigniorage expand to mint new PUSD. Both Lithe
+/// spreads apply; this contract never holds mint authority itself. Canonical V
+/// supply falls on the expand leg.
 contract LitheCutoverMigrator {
     ILegacyLitheMarket public immutable legacyMarket;
     ICanonicalLitheMarket public immutable canonicalMarket;
@@ -80,8 +81,8 @@ contract LitheCutoverMigrator {
         canonicalV = IERC20LitheCutover(canonicalV_);
     }
 
-    /// Redeem legacy PUSD through old Lithe, convert the released V from inventory,
-    /// then swap that V through new Lithe to mint canonical PUSD. Rolls back on failure.
+    /// Redeem legacy PUSD through old Lithe, convert V 1:1 from converter inventory,
+    /// then seigniorage-expand through new Lithe (burn V / mint PUSD).
     function migrate(uint256 legacyPusdIn) external returns (uint256 canonicalPusdOut) {
         require(legacyPusdIn > 0, "TINY");
 

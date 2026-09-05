@@ -19,7 +19,7 @@ Unlocked V is **never** paid to a wallet or AMM. It **automatically locks as Oli
 
 Hard walls:
 
-1. DevFund **never** holds the V minter. After cutover, only **gV** mints.
+1. DevFund **never** holds a V minter role. After cutover, **gV** is policy minter and **Lithe** is marketMinter (seigniorage).
 2. **No V transfer** to recipient / open market / AMM. `withdrawV` / `claimV` revert `NoMarketSell`.
 3. `settle()` is the only unlock sink: `depositV` into immutable Oliver.
 4. `drawPusd` borrows against stream-owned collateral and forwards **$PUSD** to soulbound `recipient` (frozen at `startStream`).
@@ -57,7 +57,7 @@ Properties:
 
 ## Cutover wiring
 
-1. `CanonicalLitheFactory` genesis-mints `legacy + bootstrap + 200k`, funds converter + Lithe, **transfers 200k to initiator**, then `setMinter(gV)`.
+1. `CanonicalLitheFactory` genesis-mints `legacy + bootstrap + 200k`, funds converter, transfers DevFund+bootstrap to initiator, `setMarketMinter(Lithe)` then `setMinter(gV)`.
 2. Initiator deploys `LaunchBootstrap(vapurr, oliver, recipient, usdg, pusd, eth, nvda, amd, seedPol)`:
    - registers **V/ETH, V/NVDA, V/AMD** (never V/USDG / PUSD/USDG)
    - funds + starts `DevFundStream` bound to **Oliver** (`factory.loop()` on live cutover)

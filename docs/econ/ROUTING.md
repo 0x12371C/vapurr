@@ -60,12 +60,12 @@ Bonds are a **first-class visible surface** (see `BONDS.md` + `vapurr://bonds`).
 
 ## Market V redeem fence (2026-09-05)
 
-`PusdMarket.swapPusdToV` redeems from **pre-funded / locked inventory only** (no `vapurr.mint`).
-`swapVToPusd` locks V into the market instead of burning. Fed/gV rebase is the sole V printer.
+`PusdMarket` / `PusdMarketFed` are **seigniorage**: `swapVToPusd` **burns** V and mints PUSD; `swapPusdToV` **mints** V and burns PUSD.
+Fed/gV rebase is an **additional** V printer (staker policy inflate 1-9%). Lithe holds `marketMinter` on Fed V.
 
 ## Shared runway + realized remittance (2026-09-05)
 
-One `RemittanceSink` consolidates branch RFV cash; one `RunwayFloor` is enforced **at the sink** on `accountedRfv` (not as dual local pools on Oliver/Lithe). Branches remit **all realized** surplus into that sink; `forwardSurplus` cannot drain below the shared floor. Unpaid accrued interest and depositor principal are **not** exogenous RFV (circular if counted as both RFV and a user claim). Oliver: `pendingReserve`->`realizedReserve` on repay/liq, then remit realized (sole-owner cash OK). Lithe: inventory-backed `yieldReserve` remits in full to the same sink. See `RunwayRfv.t.sol` (`test_two_branches_remit_one_sink_floor`).
+One `RemittanceSink` consolidates branch RFV cash; one `RunwayFloor` is enforced **at the sink** on `accountedRfv` (not as dual local pools on Oliver/Lithe). Branches remit **all realized** surplus into that sink; `forwardSurplus` cannot drain below the shared floor. Unpaid accrued interest and depositor principal are **not** exogenous RFV (circular if counted as both RFV and a user claim). Oliver: `pendingReserve`->`realizedReserve` on repay/liq, then remit realized (sole-owner cash OK). Lithe: fee-cash `yieldReserve` remits in full to the same sink. See `RunwayRfv.t.sol` (`test_two_branches_remit_one_sink_floor`).
 
 
 Tagged remits (UI/TVL "who paid"): wire branches through `FeeAttribution` (House/Lithe/Oliver) before `RemittanceSink`. Direct sink remits remain valid but unattributed. See `EARNINGS_ENGINE.md` + `FeeAttribution.t.sol`.

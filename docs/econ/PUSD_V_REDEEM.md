@@ -1,33 +1,28 @@
-# swapPusdToV - V out semantics (canon)
+# swapPusdToV / swapVToPusd — seigniorage (canon)
 
-Relic lock 2026-09-05. Fence target. Vapurr-native names only.
+Relic lock 2026-09-05 (seigniorage rewrite). Fence target. Vapurr-native names only.
 
-Cross-refs: `ROUTING.md` wall 1, `GvFed.sol` (`gVAPURR.rebase` + `BrowserStream`), `HOUSE_PAIR.md`, `RENAME_FLAGS.md`.
+Cross-refs: `ROUTING.md`, `MINT_AUTHORITY.md`, `GvFed.sol`, `PusdMarketFed.sol`.
 
 ## Decision
 
-**Inventory unwrap - not Fed mint.**
-
-`$PUSD` to `$VAPURR` redeem releases **already-extant V** from market inventory. It must **never** call `vapurr.mint`. Sole V inflation: Fed policy via `gVAPURR.rebase`. Browse/earn: `BrowserStream` transfers only.
-
-## Mechanics
+**Terra-style seigniorage — not seigniorage redeem (mint V).**
 
 | Path | Must do | Must not |
 |------|---------|----------|
-| `swapVToPusd` | Lock trader V into **market inventory**, mint `$PUSD` minus spread to Lithe | Destroy inventory needed for redeem (default: **no burn on this rail**) |
-| `swapPusdToV` | Burn `$PUSD`, **transfer** `ask` V from inventory | Call `vapurr.mint` / Fed rebase / BrowserStream |
-| Inventory empty | Revert | Emergency mint |
-| Seed | Genesis / treasury pre-fund with already-minted V | Seed via on-redeem mint |
-
-Oracle / pool symbols: `vapurrRate`, `poolDelta`, `stablePool` / `vapurrPool` in curve math.
+| `swapVToPusd` (expand) | **Burn** trader V, mint `$PUSD` minus spread to Lithe reserve | Lock V into redeem inventory |
+| `swapPusdToV` (contract) | Burn `$PUSD`, **mint** `ask` V to trader | Pay from pre-funded inventory / INV gate |
+| Lithe on Fed V | Hold `marketMinter` | Steal policy minter from gV |
+| gV rebase | Additional inflate to stakers (1-9% bond dial) | Claim to be policy V printer (Lithe seigniorage also prints on redeem) |
+| BrowserStream | Transfer already-minted float | Mint or setMinter |
 
 ## Tests
 
-1. `swapPusdToV` does not increase `vapurr.totalSupply`.
-2. Round-trip conserves supply (default: no sinks).
-3. Empty inventory reverts.
+1. `swapVToPusd` decreases `vapurr.totalSupply` by offer.
+2. `swapPusdToV` increases `vapurr.totalSupply` by ask.
+3. Empty market balance does **not** block redeem (mints).
 4. `gV.rebase` still increases supply; BrowserStream `drip` does not.
 
 ## STATUS one-liner
 
-`swapPusdToV` = inventory unwrap of extant `$VAPURR`; Fed/`gV.rebase` is the only V print.
+`swapVToPusd` burns `$VAPURR` / mints `$PUSD`; `swapPusdToV` burns `$PUSD` / mints `$VAPURR`. gV policy rebase is an additional printer.

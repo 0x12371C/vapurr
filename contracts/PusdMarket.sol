@@ -8,9 +8,8 @@ import "./Remittance.sol";
 /// Lithe: $PUSD index drips at 9%.
 
 /// INTERIM: market-embedded V (immutable minter = market). Distinct from Fed `GvFed.VapurrToken`
-/// until one-token migration. Product paths after genesis never call `mint` — redeem is inventory
-/// unwrap (`give`). Intended end state: inject shared `IVapurrMinter` with Fed/gV as sole minter
-/// and market limited to inventory ops. See docs/econ/MINT_AUTHORITY.md.
+/// until one-token migration. Lithe seigniorage: burn V to mint PUSD; mint V to redeem PUSD.
+/// Canonical cutover uses Fed V + marketMinter role — see docs/econ/MINT_AUTHORITY.md.
 contract VapurrToken {
     string public constant name = "VAPURR";
     string public constant symbol = "VAPURR";
@@ -103,7 +102,7 @@ contract PusdToken {
         emit Transfer(from, address(0), amt);
     }
 
-    /// Clear all shares for `from` (minter inventory dust after index moves).
+    /// Clear all shares for `from` (minter fee-cash dust after index moves).
     function burnAll(address from) external onlyMinter {
         uint256 s = shares[from];
         if (s == 0) return;
@@ -149,8 +148,9 @@ contract PusdToken {
 }
 
 
-/// Gen-4 live market still ships this embedded-V layout (e.g. 0x47Ac…). Inventory redeem
-/// (`swapPusdToV`) stays non-minting. Fed rebase mint lives on a separate Fed V until unify.
+/// Gen-4 live market still ships this embedded-V layout (e.g. 0x47Ac…). Source uses
+/// Terra-style seigniorage (burn V / mint PUSD; burn PUSD / mint V). Live gen-4 bytecode may
+/// still be inventory until Relic-approved cutover — no silent 46630 broadcast.
 contract PusdMarket {
     uint256 public constant DEC = 1e18;
     /// stability-pool math (internal).
@@ -245,7 +245,7 @@ contract PusdMarket {
 
     /// Push realized yieldReserve (collected mint-spread fees in hand) to the
     /// remittance sink. amount==0 remits all free realized surplus.
-    /// INVARIANT: yieldReserve is inventory-backed fee cash only — never unpaid
+    /// INVARIANT: yieldReserve is fee cash only — never unpaid
     /// claims against depositor principal. Sink-level RunwayFloor retains
     /// consolidated RFV; do not apply a second local floor here.
     function remitSurplus(uint256 amount) public returns (uint256 sent) {
@@ -255,7 +255,7 @@ contract PusdMarket {
 
     function _remitSurplus(uint256 amount) internal returns (uint256 sent) {
         require(address(remittance) != address(0), "REMIT");
-        // Realized fee inventory only; floor retained at RemittanceSink.
+        // Realized fee cash only; floor retained at RemittanceSink.
         uint256 free = yieldReserve;
         sent = amount == 0 ? free : amount;
         if (sent > free) sent = free;
@@ -338,7 +338,7 @@ contract PusdMarket {
         uint256 askPool = offerV ? stablePool : vapurrPool;
         uint256 askBaseAmount = askPool - (cp / (offerPool + baseOffer));
         // One-sided flow can invert CP spread (askBase > baseOffer). Do not THIN
-        // on negative calculated spread ? inventory/INV still gates redeem payout.
+        // on negative calculated spread — seigniorage redeem mints V (no INV gate).
         if (baseOffer > askBaseAmount) {
             spread = ((baseOffer - askBaseAmount) * DEC) / baseOffer;
         } else {
@@ -369,8 +369,8 @@ contract PusdMarket {
         uint256 maxPay = (supply * MAX_APY_BPS * dt) / 10_000 / YEAR;
         uint256 pay = yieldReserve < maxPay ? yieldReserve : maxPay;
         if (pay == 0) return;
-        // Single-count Lithe: fee PUSD lives in inventory for remit OR is consumed by
-        // drip ? never both. Pull ALL fee inventory out of the rebasing supply before
+        // Single-count Lithe: fee PUSD lives as cash for remit OR is consumed by
+        // drip — never both. Pull ALL fee cash out of the rebasing supply before
         // drip so the market does not earn Lithe on its own fees; remint the remainder
         // afterward so yieldReserve stays cash-backed for remittance.
         uint256 cash = pusd.balanceOf(address(this));
@@ -395,21 +395,19 @@ contract PusdMarket {
         }
     }
 
-    /// V inventory held by this market (pre-funded + V locked on PUSD mint).
-    /// ROUTING wall: market redeem MUST NOT mint V — only Fed/gV policy prints V.
+    /// Residual V held by this market (should be ~0 under seigniorage; not redeem float).
     function vInventory() public view returns (uint256) {
         return vapurr.balanceOf(address(this));
     }
 
-    /// Seed / top-up V float for redeem. Does not mint — pulls already-minted V.
+    /// Deprecated: seigniorage redeem mints V — no inventory float required.
+    /// Kept for ABI compatibility; pulls V into market without minting.
     function fundVInventory(uint256 amt) external {
         require(amt > 0, "TINY");
         vapurr.take(msg.sender, amt);
     }
 
-    /// stability-pool math (internal).
-    /// Lock VAPURR into inventory (no burn), mint PUSD at oracle minus spread. Spread -> Lithe reserve.
-    /// Semantics: burn-unwrap float — V stays in market so redeem can return inventory, not mint.
+    /// Seigniorage expand: burn VAPURR, mint PUSD at oracle minus spread. Spread -> Lithe reserve.
     function swapVToPusd(uint256 offer) external returns (uint256 ask, uint256 fee) {
         _spot();
         accrue();
@@ -418,35 +416,29 @@ contract PusdMarket {
         ask = ret - fee;
         require(ask > 0, "TINY");
         applySwapToPool(true, offer, ask);
-        vapurr.take(msg.sender, offer);
-        // V stays on market as redeem inventory (was: vapurr.burn). No V supply change.
+        vapurr.burn(msg.sender, offer);
         pusd.mint(msg.sender, ask);
         if (fee > 0) {
-            // Inventory + yieldReserve claim the SAME fee once. accrue burns inventory
-            // on drip; remitSurplus transfers inventory ? never double-pay.
+            // Fee cash + yieldReserve claim the SAME fee once. accrue burns fee cash
+            // on drip; remitSurplus transfers cash — never double-pay.
             pusd.mint(address(this), fee);
             yieldReserve += fee;
         }
         emit Swap(msg.sender, true, offer, ask, fee);
     }
 
-    /// stability-pool math (internal).
-    /// Burn PUSD, unlock VAPURR from pre-funded inventory at oracle minus spread.
-    /// HARD FENCE: does NOT call vapurr.mint — redeem fails if inventory thin (INV).
-    /// Fed/gV rebase remains the sole V inflation path; browse/earn cannot unbounded-mint via market.
+    /// Seigniorage contract: burn PUSD, mint VAPURR at oracle minus spread.
+    /// Market is V minter on this embedded book. gV policy inflate is a separate printer on Fed V.
     function swapPusdToV(uint256 offer) external returns (uint256 ask, uint256 fee) {
         _spot();
         accrue();
-        uint256 inv = vapurr.balanceOf(address(this));
-        require(inv > 0, "INV"); // empty inventory fails before CP; no mint fallback
         (uint256 ret, uint256 spread) = computeSwap(offer, false);
         fee = (spread * ret) / DEC;
         ask = ret - fee;
         require(ask > 0, "TINY");
-        require(inv >= ask, "INV");
         applySwapToPool(false, offer, ask);
         pusd.burn(msg.sender, offer);
-        vapurr.give(msg.sender, ask);
+        vapurr.mint(msg.sender, ask);
         emit Swap(msg.sender, false, offer, ask, fee);
     }
 

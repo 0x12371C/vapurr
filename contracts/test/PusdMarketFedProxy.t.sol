@@ -40,40 +40,35 @@ contract PusdMarketFedProxyTest is Test {
         proxyAddr = address(new ERC1967Proxy(address(implV1), initData));
         market = PusdMarketFedUpgradeable(proxyAddr);
 
-        canonical.approve(proxyAddr, type(uint256).max);
-        market.fundVInventory(100_000 ether);
+        canonical.setMarketMinter(proxyAddr);
     }
 
-    function test_proxy_initialize_and_swap_inventory_safe() public {
+    function test_proxy_initialize_and_seigniorage_swap() public {
         assertEq(market.litheVersion(), 1);
         assertEq(address(market.vapurr()), address(canonical));
         assertEq(market.owner(), address(this));
-        assertEq(market.vInventory(), 100_000 ether);
+        assertEq(market.vInventory(), 0);
         assertEq(market.vapurrRate(), PRICE);
 
         uint256 supply0 = canonical.totalSupply();
         vm.startPrank(trader);
-        canonical.approve(proxyAddr, type(uint256).max);
         (uint256 pusdOut,) = market.swapVToPusd(10_000 ether);
         vm.stopPrank();
         assertGt(pusdOut, 0);
-        assertEq(canonical.totalSupply(), supply0, "proxy Lithe never mints V");
+        assertEq(canonical.totalSupply(), supply0 - 10_000 ether, "expand burns V");
     }
 
     function test_upgrade_v1_to_v2_preserves_storage() public {
         PusdToken pusd = market.pusd();
-        uint256 inv0 = market.vInventory();
         uint256 rate0 = market.vapurrRate();
         address owner0 = market.owner();
 
-        // Mutate economic state pre-upgrade.
         vm.startPrank(trader);
-        canonical.approve(proxyAddr, type(uint256).max);
         market.swapVToPusd(5_000 ether);
         vm.stopPrank();
-        uint256 inv1 = market.vInventory();
         uint256 yield1 = market.yieldReserve();
-        assertGt(inv1, inv0);
+        uint256 supply1 = canonical.totalSupply();
+        assertGt(yield1, 0);
 
         PusdMarketFedV2Harness implV2 = new PusdMarketFedV2Harness();
         market.upgradeToAndCall(address(implV2), "");
@@ -84,19 +79,18 @@ contract PusdMarketFedProxyTest is Test {
         assertEq(address(v2.vapurr()), address(canonical), "vapurr preserved");
         assertEq(v2.owner(), owner0, "owner preserved");
         assertEq(v2.vapurrRate(), rate0, "rate preserved");
-        assertEq(v2.vInventory(), inv1, "inventory preserved");
         assertEq(v2.yieldReserve(), yield1, "yield reserve preserved");
+        assertEq(canonical.totalSupply(), supply1, "supply unchanged by upgrade");
 
         v2.setExtraKnob(42);
         assertEq(v2.extraKnob(), 42);
 
-        // Still swaps after upgrade.
-        uint256 supply0 = canonical.totalSupply();
+        uint256 supply2 = canonical.totalSupply();
         vm.startPrank(trader);
         (uint256 out,) = v2.swapVToPusd(1_000 ether);
         vm.stopPrank();
         assertGt(out, 0);
-        assertEq(canonical.totalSupply(), supply0);
+        assertEq(canonical.totalSupply(), supply2 - 1_000 ether, "post-upgrade expand burns");
     }
 
     function test_upgrade_reverts_for_non_owner() public {

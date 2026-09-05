@@ -82,7 +82,7 @@ If product copy says "earn V by browsing", the nerds' reading is: **pro-rata / p
 |------|----------|-------------|
 | `gVAPURR.rebase` (Fed `RebasePolicy`) | **YES** — sole inflation | gV stakers via index (`REBASE_BPS = 350` flat / year) |
 | `BrowserStream.drip` | **NO** — transfer only | browse/earn distributor recipients |
-| Lithe `swapPusdToV` | **NO** — inventory unwrap | redeemer (burns `$PUSD`, takes extant V) |
+| Lithe `swapPusdToV` | **NO** — seigniorage redeem (mint V) | redeemer (burns `$PUSD`, takes extant V) |
 | Bonds claim | **NO** — inventory transfer | bond claimer (pre-funded gV/wgV) |
 
 gV applies **`policyRateBps()`** (clamp 100–900; mid 350 when bonds unbound) annualized per settlement interval to current supply. Repeated settlements compound slightly. `accrue()` is permissionless; `rebase()` is the policy-only alias. Hot bond util -> toward 1%; cold -> toward 9%. See `POLICY_RATE.md`. Equity issuance, separate from Oliver leverage and cash earnings.
@@ -98,7 +98,7 @@ Canonical redeem surfaces:
 | Lithe `swapPusdToV` | Extant `$VAPURR` from **market inventory** | Reverts `INV` / empty inventory — **never** Fed mint |
 | Lithe mint/redeem ~par (cash rail) | `$PUSD` <-> inventory / spread path | Spread widens; still no V print |
 | Exit vs outside money | No `$PUSD`/USDG cash market; USDG = **bond/treasury intake only** | Peg = mint-redeem ~par; House = equity exit |
-| sPUSD redeem | Underlying `$PUSD` at vault NAV | NAV can lag; no V mint into shortfall |
+| sPUSD redeem | Underlying `$PUSD` at vault NAV | NAV can lag; seigniorage V mint on redeem into shortfall |
 | V "backing" intuition | **Not** a dollar claim on Fed RFV | Equity token; mcap != RFV |
 
 **Forced float:** social trust is ~par mint/redeem (`PUSD_LIQUIDITY.md`). **USDG** is BondAssetTag / Fed treasury intake only — not a competing cash or peg book. Sink-held nominal `$PUSD` is **not** dollar solvency.

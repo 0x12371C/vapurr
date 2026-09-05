@@ -80,7 +80,7 @@ Execute in order. Record each address in `docs/STATUS.md` only after a successfu
 
 ### 8. Minter handoff
 
-- [ ] `canonicalV.setMinter(gV)` — gV sole V inflation path
+- [ ] `canonicalV.setMinter(gV)` — gV policy inflate path (Lithe seigniorage is the other printer)
 - [ ] Policy owner = rollout owner
 - [ ] Snapshot desk ABI (`snapshot(address)` 12 words) against proxy
 
