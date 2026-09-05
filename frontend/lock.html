@@ -1,95 +1,201 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8"/>
   <meta name="color-scheme" content="dark"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
   <title>Unlock</title>
+  <link rel="preload" href="/mascot.png" as="image" fetchpriority="high"/>
   <link rel="stylesheet" href="/tokens.css"/>
   <link rel="stylesheet" href="/chrome.css"/>
   <style>
     html, body { height: 100%; overflow: hidden; }
     body {
       margin: 0;
-      background: var(--color-void);
+      background: transparent;
       color: var(--color-snow);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
+      display: grid;
+      place-items: center;
       position: relative;
+      -webkit-font-smoothing: antialiased;
+      font-family: var(--font-sans, system-ui, -apple-system, Segoe UI, sans-serif);
     }
 
-    /* Full-screen veil over wallet chrome */
-    .veil {
+    /* Dimmed chrome behind the physical pad — not edge-to-edge lock UI */
+    .dimmer {
       position: fixed;
       inset: 0;
       z-index: 0;
       background:
-        radial-gradient(ellipse 80% 55% at 50% 0%, color-mix(in srgb, var(--color-forest) 55%, transparent), transparent 70%),
-        var(--color-void);
-      pointer-events: none;
+        radial-gradient(ellipse 70% 50% at 50% 38%, color-mix(in srgb, var(--color-forest) 32%, transparent), transparent 72%),
+        color-mix(in srgb, var(--color-void) 74%, transparent);
+      backdrop-filter: blur(12px) saturate(1.15);
+      -webkit-backdrop-filter: blur(12px) saturate(1.15);
     }
 
-    .lock {
+    /* Physical device / phone-sized pad floating over backdrop */
+    .device {
       position: relative;
       z-index: 1;
-      width: min(360px, 92vw);
+      width: min(328px, calc(100vw - 36px));
+      border-radius: 38px;
+      padding: 14px 14px 16px;
+      background:
+        linear-gradient(165deg,
+          color-mix(in srgb, var(--color-steel) 94%, #4a5058) 0%,
+          var(--color-void) 46%,
+          color-mix(in srgb, var(--color-void) 86%, #000) 100%);
+      border: 1px solid color-mix(in srgb, var(--color-snow) 16%, transparent);
+      box-shadow:
+        0 0 0 1px color-mix(in srgb, #000 60%, transparent),
+        0 32px 72px color-mix(in srgb, #000 58%, transparent),
+        0 8px 20px color-mix(in srgb, #000 35%, transparent),
+        inset 0 1px 0 color-mix(in srgb, var(--color-snow) 12%, transparent),
+        inset 0 -2px 0 color-mix(in srgb, #000 45%, transparent);
+      transform: translateY(0);
+      animation: pad-in 0.42s cubic-bezier(0.22, 1.2, 0.36, 1) both;
+    }
+    @keyframes pad-in {
+      from { opacity: 0; transform: translateY(18px) scale(0.96); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .device::before {
+      content: "";
+      display: block;
+      width: 92px;
+      height: 7px;
+      margin: 4px auto 14px;
+      border-radius: 99px;
+      background: color-mix(in srgb, var(--color-snow) 18%, transparent);
+      box-shadow: inset 0 1px 2px color-mix(in srgb, #000 50%, transparent);
+    }
+
+    .screen {
+      border-radius: 28px;
+      padding: 18px 14px 16px;
+      background:
+        linear-gradient(180deg,
+          color-mix(in srgb, var(--color-void) 82%, var(--color-steel)) 0%,
+          color-mix(in srgb, var(--color-void) 94%, #000) 100%);
+      border: 1px solid color-mix(in srgb, var(--color-snow) 9%, transparent);
+      box-shadow:
+        inset 0 0 0 1px color-mix(in srgb, #000 40%, transparent),
+        inset 0 1px 0 color-mix(in srgb, var(--color-snow) 6%, transparent);
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 24px 12px 28px;
     }
 
-    .mark {
-      width: 44px;
-      height: 44px;
-      border-radius: 12px;
-      background: var(--color-lime);
-      color: var(--color-on-lime);
+    .hero {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .mascot-wrap {
+      position: relative;
+      width: 72px;
+      height: 72px;
       display: grid;
       place-items: center;
-      font-weight: 600;
-      font-size: 18px;
-      letter-spacing: -0.04em;
-      margin-bottom: 22px;
+    }
+
+    .mascot {
+      width: 64px;
+      height: 64px;
+      object-fit: contain;
+      display: block;
+      border-radius: 16px;
+      background: #000;
+      box-shadow:
+        0 6px 18px color-mix(in srgb, #000 45%, transparent),
+        0 0 0 1px color-mix(in srgb, var(--color-lime) 22%, transparent);
+      user-select: none;
+      -webkit-user-drag: none;
+      pointer-events: none;
+    }
+
+    .lock-badge {
+      position: absolute;
+      right: -6px;
+      bottom: -4px;
+      width: 26px;
+      height: 26px;
+      border-radius: 9px;
+      background: color-mix(in srgb, var(--color-void) 88%, var(--color-steel));
+      border: 1px solid color-mix(in srgb, var(--color-lime) 45%, transparent);
+      box-shadow:
+        0 4px 10px color-mix(in srgb, #000 40%, transparent),
+        inset 0 1px 0 color-mix(in srgb, var(--color-snow) 10%, transparent);
+      display: grid;
+      place-items: center;
+      color: var(--color-lime);
+    }
+    .lock-badge svg {
+      width: 14px;
+      height: 14px;
+      display: block;
+    }
+
+    .title-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+    .title-row .lock-inline {
+      width: 16px;
+      height: 16px;
+      color: var(--color-lime);
+      flex-shrink: 0;
+      opacity: 0.95;
     }
 
     .mono.kicker {
       color: var(--color-lime);
-      font-size: 12px;
-      letter-spacing: 0.08em;
+      font-size: 11px;
+      letter-spacing: 0.12em;
       text-transform: uppercase;
-      margin-bottom: 8px;
+      margin-bottom: 2px;
+      font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
     }
 
     h1 {
-      font-size: 28px;
+      font-size: 20px;
       font-weight: 600;
-      letter-spacing: -0.04em;
-      line-height: 1.1;
+      letter-spacing: -0.035em;
+      line-height: 1.15;
       text-align: center;
-      margin: 0 0 8px;
+      margin: 0;
     }
 
     .hint {
       color: var(--color-muted);
-      font-size: 13px;
+      font-size: 12px;
       line-height: 1.4;
       text-align: center;
-      min-height: 18px;
-      margin-bottom: 28px;
-      max-width: 26em;
+      min-height: 16px;
+      margin: 6px 0 16px;
+      max-width: 22em;
     }
     .hint.err { color: #ff8a80; }
+    .hint.ok { color: var(--color-lime); }
 
     .dots {
       display: flex;
-      gap: 16px;
-      margin-bottom: 36px;
-      padding: 6px 4px;
+      gap: 14px;
+      margin-bottom: 20px;
+      padding: 4px;
     }
     .dots.shake {
       animation: shake 0.42s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+    }
+    .dots.ok-pulse .dot.on {
+      animation: ok-pop 0.35s cubic-bezier(0.22, 1.4, 0.36, 1) both;
     }
     @keyframes shake {
       10%, 90% { transform: translateX(-1px); }
@@ -97,115 +203,232 @@
       30%, 50%, 70% { transform: translateX(-6px); }
       40%, 60% { transform: translateX(6px); }
     }
+    @keyframes ok-pop {
+      0% { transform: scale(1); }
+      45% { transform: scale(1.22); }
+      100% { transform: scale(1); }
+    }
 
     .dot {
-      width: 14px;
-      height: 14px;
+      width: 12px;
+      height: 12px;
       border-radius: 50%;
       border: 1.5px solid color-mix(in srgb, var(--color-lime) 55%, var(--color-muted));
       background: transparent;
-      transition: background 0.12s ease, border-color 0.12s ease, transform 0.12s ease;
+      box-shadow: inset 0 1px 1px color-mix(in srgb, #000 30%, transparent);
+      transition: background 0.12s ease, border-color 0.12s ease, transform 0.16s cubic-bezier(0.22, 1.4, 0.36, 1), box-shadow 0.12s ease;
     }
     .dot.on {
       background: var(--color-lime);
       border-color: var(--color-lime);
-      transform: scale(1.06);
+      transform: scale(1.08);
+      box-shadow: 0 0 10px color-mix(in srgb, var(--color-lime) 40%, transparent);
     }
     .dot.bad {
       background: #ff8a80;
       border-color: #ff8a80;
+      box-shadow: 0 0 10px color-mix(in srgb, #ff8a80 45%, transparent);
     }
 
     .pad {
       display: grid;
-      grid-template-columns: repeat(3, 76px);
-      gap: 14px 18px;
+      grid-template-columns: repeat(3, 68px);
+      gap: 11px 14px;
       justify-content: center;
       user-select: none;
+      margin-bottom: 2px;
+      perspective: 600px;
     }
 
+    /* Vercel-style physicalized keys: depth, soft shadow, spring press */
     .key {
-      width: 76px;
-      height: 76px;
+      --key-face: color-mix(in srgb, var(--color-steel) 88%, #2a2e34);
+      --key-depth: 5px;
+      position: relative;
+      width: 68px;
+      height: 68px;
       border-radius: 50%;
       border: 0;
-      background: color-mix(in srgb, var(--color-steel) 78%, transparent);
+      padding: 0;
+      background: transparent;
       color: var(--color-snow);
-      font-size: 28px;
+      font-size: 24px;
       font-weight: 600;
       letter-spacing: -0.03em;
+      cursor: default;
+      -webkit-tap-highlight-color: transparent;
+      outline: none;
+      transition: transform 0.18s cubic-bezier(0.22, 1.5, 0.36, 1);
+    }
+    .key::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: color-mix(in srgb, #000 55%, transparent);
+      transform: translateY(var(--key-depth));
+      filter: blur(0.2px);
+      z-index: 0;
+    }
+    .key::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background:
+        linear-gradient(180deg,
+          color-mix(in srgb, var(--color-snow) 10%, var(--key-face)) 0%,
+          var(--key-face) 42%,
+          color-mix(in srgb, var(--key-face) 78%, #000) 100%);
+      box-shadow:
+        inset 0 1px 0 color-mix(in srgb, var(--color-snow) 14%, transparent),
+        inset 0 -1px 0 color-mix(in srgb, #000 35%, transparent),
+        0 1px 0 color-mix(in srgb, var(--color-snow) 4%, transparent);
+      border: 1px solid color-mix(in srgb, var(--color-snow) 8%, transparent);
+      z-index: 1;
+      transition:
+        transform 0.14s cubic-bezier(0.22, 1.5, 0.36, 1),
+        background 0.12s ease,
+        box-shadow 0.14s ease;
+    }
+    .key > span {
+      position: relative;
+      z-index: 2;
       display: grid;
       place-items: center;
-      backdrop-filter: blur(16px) saturate(1.3);
-      -webkit-backdrop-filter: blur(16px) saturate(1.3);
-      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-snow) 6%, transparent);
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
     }
-    .key:hover {
-      background: color-mix(in srgb, var(--color-forest) 70%, var(--color-steel));
+    .key:hover::after {
+      background:
+        linear-gradient(180deg,
+          color-mix(in srgb, var(--color-forest) 55%, var(--key-face)) 0%,
+          color-mix(in srgb, var(--color-steel) 70%, var(--color-forest)) 100%);
     }
-    .key:active {
-      transform: scale(0.94);
-      background: color-mix(in srgb, var(--color-lime) 22%, var(--color-steel));
+    .key:focus-visible::after {
+      box-shadow:
+        inset 0 1px 0 color-mix(in srgb, var(--color-snow) 14%, transparent),
+        0 0 0 2px color-mix(in srgb, var(--color-lime) 55%, transparent);
+    }
+    .key:active,
+    .key.is-press {
+      transform: translateY(2px);
+    }
+    .key:active::after,
+    .key.is-press::after {
+      transform: translateY(var(--key-depth));
+      background:
+        linear-gradient(180deg,
+          color-mix(in srgb, var(--color-lime) 28%, var(--key-face)) 0%,
+          color-mix(in srgb, var(--color-steel) 75%, #000) 100%);
+      box-shadow:
+        inset 0 2px 6px color-mix(in srgb, #000 45%, transparent),
+        inset 0 1px 0 color-mix(in srgb, var(--color-lime) 20%, transparent);
+    }
+    .key:active > span,
+    .key.is-press > span {
       color: var(--color-lime);
+      transform: scale(0.96);
     }
+
     .key.ghost {
-      background: transparent;
-      box-shadow: none;
       color: var(--color-muted);
-      font-size: 13px;
+      font-size: 11px;
       font-weight: 600;
-      letter-spacing: 0.02em;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
     }
-    .key.ghost:hover { color: var(--color-snow); background: transparent; }
-    .key.ghost:active { color: var(--color-lime); transform: scale(0.96); background: transparent; }
+    .key.ghost::before { opacity: 0; }
+    .key.ghost::after {
+      background: transparent;
+      border-color: transparent;
+      box-shadow: none;
+    }
+    .key.ghost:hover { color: var(--color-snow); }
+    .key.ghost:hover::after { background: color-mix(in srgb, var(--color-snow) 6%, transparent); }
+    .key.ghost:active::after,
+    .key.ghost.is-press::after {
+      background: color-mix(in srgb, var(--color-lime) 12%, transparent);
+      transform: translateY(2px);
+      box-shadow: none;
+    }
+    .key.ghost:active,
+    .key.ghost.is-press { transform: scale(0.96); }
     .key:disabled { opacity: 0.35; pointer-events: none; }
 
     .foot {
-      margin-top: 28px;
+      margin-top: 12px;
       color: var(--color-muted);
-      font-size: 11px;
+      font-size: 10px;
       text-align: center;
       line-height: 1.4;
-      max-width: 28em;
+      max-width: 26em;
+      opacity: 0.9;
     }
     .foot b { color: var(--color-snow); font-weight: 600; }
 
+    html[data-theme="light"] .dimmer {
+      background: color-mix(in srgb, var(--color-void) 55%, transparent);
+    }
+    html[data-theme="light"] .device {
+      background: linear-gradient(165deg, #eef1ea, var(--color-steel));
+    }
     html[data-theme="light"] .key {
-      background: color-mix(in srgb, var(--color-steel) 92%, transparent);
+      --key-face: color-mix(in srgb, var(--color-steel) 98%, #fff);
+      color: var(--color-void);
     }
   </style>
 </head>
 <body>
-  <div class="veil" aria-hidden="true"></div>
-  <div class="lock" role="dialog" aria-modal="true" aria-labelledby="lock-title">
-    <div class="mark" aria-hidden="true">v</div>
-    <div class="mono kicker" id="kicker">vapurr</div>
-    <h1 id="lock-title">Enter Passcode</h1>
-    <p class="hint" id="hint">Unlock this wallet</p>
+  <div class="dimmer" aria-hidden="true"></div>
+  <div class="device" role="dialog" aria-modal="true" aria-labelledby="lock-title">
+    <div class="screen">
+      <div class="hero">
+        <div class="mascot-wrap">
+          <img class="mascot" src="/mascot.png" alt="" width="64" height="64" decoding="async"/>
+          <span class="lock-badge" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="5" y="11" width="14" height="10" rx="2.5"/>
+              <path d="M8 11V8a4 4 0 0 1 8 0v3"/>
+            </svg>
+          </span>
+        </div>
+        <div class="mono kicker" id="kicker">vapurr</div>
+        <div class="title-row">
+          <svg class="lock-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="5" y="11" width="14" height="10" rx="2.5"/>
+            <path d="M8 11V8a4 4 0 0 1 8 0v3"/>
+          </svg>
+          <h1 id="lock-title">Enter Passcode</h1>
+        </div>
+      </div>
+      <p class="hint" id="hint">Unlock this wallet</p>
 
-    <div class="dots" id="dots" aria-label="Passcode progress">
-      <span class="dot" data-i="0"></span>
-      <span class="dot" data-i="1"></span>
-      <span class="dot" data-i="2"></span>
-      <span class="dot" data-i="3"></span>
+      <div class="dots" id="dots" aria-label="Passcode progress">
+        <span class="dot" data-i="0"></span>
+        <span class="dot" data-i="1"></span>
+        <span class="dot" data-i="2"></span>
+        <span class="dot" data-i="3"></span>
+      </div>
+
+      <div class="pad" id="pad" aria-label="Number pad">
+        <button class="key" type="button" data-d="1"><span>1</span></button>
+        <button class="key" type="button" data-d="2"><span>2</span></button>
+        <button class="key" type="button" data-d="3"><span>3</span></button>
+        <button class="key" type="button" data-d="4"><span>4</span></button>
+        <button class="key" type="button" data-d="5"><span>5</span></button>
+        <button class="key" type="button" data-d="6"><span>6</span></button>
+        <button class="key" type="button" data-d="7"><span>7</span></button>
+        <button class="key" type="button" data-d="8"><span>8</span></button>
+        <button class="key" type="button" data-d="9"><span>9</span></button>
+        <button class="key ghost" type="button" id="key-emergency" title="Emergency" hidden><span>SOS</span></button>
+        <button class="key" type="button" data-d="0"><span>0</span></button>
+        <button class="key ghost" type="button" id="key-del" aria-label="Delete"><span>Delete</span></button>
+      </div>
+
+      <p class="foot" id="foot">Auto-locks after <b>15 min</b> idle by default.</p>
     </div>
-
-    <div class="pad" id="pad" aria-label="Number pad">
-      <button class="key" type="button" data-d="1">1</button>
-      <button class="key" type="button" data-d="2">2</button>
-      <button class="key" type="button" data-d="3">3</button>
-      <button class="key" type="button" data-d="4">4</button>
-      <button class="key" type="button" data-d="5">5</button>
-      <button class="key" type="button" data-d="6">6</button>
-      <button class="key" type="button" data-d="7">7</button>
-      <button class="key" type="button" data-d="8">8</button>
-      <button class="key" type="button" data-d="9">9</button>
-      <button class="key ghost" type="button" id="key-emergency" title="Emergency" hidden>SOS</button>
-      <button class="key" type="button" data-d="0">0</button>
-      <button class="key ghost" type="button" id="key-del" aria-label="Delete">Delete</button>
-    </div>
-
-    <p class="foot" id="foot">Auto-locks after <b>15 min</b> idle by default. Shell owns storage and the timer.</p>
   </div>
 
   <script src="/ipc.js"></script>
@@ -222,7 +445,22 @@
       var hint = document.getElementById("hint");
       var title = document.getElementById("lock-title");
       var kicker = document.getElementById("kicker");
-      var root = document.querySelector(".lock");
+      var root = document.querySelector(".device");
+      var pad = document.getElementById("pad");
+
+      function haptic(pattern) {
+        try {
+          if (typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
+            navigator.vibrate(pattern);
+          }
+        } catch (e) {}
+      }
+
+      function flashPress(el) {
+        if (!el) return;
+        el.classList.add("is-press");
+        window.setTimeout(function () { el.classList.remove("is-press"); }, 120);
+      }
 
       function paintDots(bad) {
         var nodes = dots.querySelectorAll(".dot");
@@ -235,6 +473,7 @@
       function setHint(text, isErr) {
         hint.textContent = text || "";
         hint.classList.toggle("err", !!isErr);
+        hint.classList.toggle("ok", false);
       }
 
       function clearCode() {
@@ -247,7 +486,8 @@
       }
 
       function shake() {
-        dots.classList.remove("shake");
+        haptic([40, 30, 60]);
+        dots.classList.remove("shake", "ok-pulse");
         void dots.offsetWidth;
         dots.classList.add("shake");
         paintDots(true);
@@ -294,6 +534,7 @@
         var pin = code;
 
         if (mode === "set") {
+          haptic(18);
           pendingSet = pin;
           clearCode();
           mode = "confirm";
@@ -321,6 +562,7 @@
           return;
         }
 
+        haptic(22);
         var ok = callSubmit(pin);
         clearCode();
         pin = "";
@@ -332,6 +574,7 @@
       function pushDigit(d) {
         if (busy || !visible) return;
         if (code.length >= LEN) return;
+        haptic(12);
         code += String(d);
         paintDots(false);
         if (code.length === LEN) {
@@ -342,13 +585,20 @@
       function del() {
         if (busy || !visible) return;
         if (!code.length) return;
+        haptic(8);
         code = code.slice(0, -1);
         paintDots(false);
       }
 
-      document.getElementById("pad").addEventListener("click", function (e) {
+      pad.addEventListener("pointerdown", function (e) {
+        var t = e.target.closest(".key");
+        if (t) flashPress(t);
+      });
+
+      pad.addEventListener("click", function (e) {
         var t = e.target.closest("[data-d], #key-del");
         if (!t) return;
+        flashPress(t);
         if (t.id === "key-del") del();
         else if (t.getAttribute("data-d") != null) pushDigit(t.getAttribute("data-d"));
       });
@@ -357,9 +607,12 @@
         if (busy || !visible) return;
         if (e.key >= "0" && e.key <= "9") {
           e.preventDefault();
+          var btn = pad.querySelector('[data-d="' + e.key + '"]');
+          flashPress(btn);
           pushDigit(e.key);
         } else if (e.key === "Backspace" || e.key === "Delete") {
           e.preventDefault();
+          flashPress(document.getElementById("key-del"));
           del();
         } else if (e.key === "Escape") {
           e.preventDefault();
@@ -388,9 +641,14 @@
 
         unlock: function () {
           busy = false;
+          haptic([20, 40, 35]);
+          dots.classList.remove("shake");
+          dots.classList.add("ok-pulse");
+          hint.classList.remove("err");
+          hint.classList.add("ok");
+          hint.textContent = "Unlocked";
           clearCode();
           clearPending();
-          setHint("Unlocked", false);
           var fn = api.onUnlock || window.onUnlock;
           if (typeof fn === "function") fn();
         },
@@ -429,7 +687,6 @@
         api.lock({ mode: m });
       })();
     })();
-
   </script>
 </body>
 </html>
