@@ -3,6 +3,11 @@ pragma solidity ^0.8.24;
 
 /// Remittance pipe: branch surplus -> runway floor gate -> sPUSD (or hold).
 /// Stub-grade but wired so Oliver/Lithe/House can call later.
+///
+/// INVARIANT (circular RFV): remittance may only move *realized* surplus
+/// (collected interest/fees already in hand) above the shared runway floor.
+/// Unpaid accrued interest and depositor principal are NOT exogenous RFV —
+/// counting the same dollar as RFV and as a user claim is circular.
 
 interface IERC20Remit {
     function balanceOf(address) external view returns (uint256);
@@ -18,12 +23,15 @@ interface IRemittance {
 }
 
 /// Optional runway floor view used by Oliver/Lithe before remitting surplus.
+/// Both branches MUST point at the same RunwayFloor instance (one treasury runway).
 interface IRunwayView {
     function surplus(uint256 balance) external view returns (uint256);
     function floor() external view returns (uint256);
 }
 
-/// RFV runway floor: remittance surplus is only the balance above `floor`.
+/// Shared treasury RFV runway floor — single source of truth for Oliver + Lithe.
+/// Remittance surplus is only the *realized* balance above `floor`.
+/// Do not deploy a separate floor per branch; wire one instance into both.
 contract RunwayFloor {
     address public owner;
     uint256 public floor;
@@ -55,6 +63,11 @@ contract RunwayFloor {
     /// Balance above runway floor (0 if at/under floor).
     function surplus(uint256 balance) public view returns (uint256) {
         return balance > floor ? balance - floor : 0;
+    }
+
+    /// Alias: remittable realized balance above floor (same as surplus).
+    function remittable(uint256 realizedBalance) external view returns (uint256) {
+        return surplus(realizedBalance);
     }
 }
 

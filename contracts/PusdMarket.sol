@@ -236,8 +236,10 @@ contract PusdMarket {
         emit RemittanceSet(sink, runway_, autoRemit);
     }
 
-    /// Push yieldReserve surplus above runway floor to remittance sink (real $PUSD).
-    /// amount==0 means remit all free surplus. Floor may start at 0.
+    /// Push realized yieldReserve (collected mint-spread fees in hand) above the
+    /// shared RunwayFloor to remittance sink. amount==0 remits all free surplus.
+    /// INVARIANT: yieldReserve is inventory-backed fee cash only — never unpaid
+    /// claims against depositor principal. Wire the same RunwayFloor as Oliver.
     function remitSurplus(uint256 amount) public returns (uint256 sent) {
         accrue(); // settle holder drip first (Oliver-style)
         sent = _remitSurplus(amount);
@@ -245,6 +247,7 @@ contract PusdMarket {
 
     function _remitSurplus(uint256 amount) internal returns (uint256 sent) {
         require(address(remittance) != address(0), "REMIT");
+        // Realized fee inventory only; shared treasury floor gates remittance.
         uint256 free = yieldReserve;
         if (address(runway) != address(0)) {
             free = runway.surplus(yieldReserve);
@@ -258,7 +261,7 @@ contract PusdMarket {
         yieldReserve -= sent;
         require(pusd.approve(address(remittance), sent), "ALLOW");
         require(remittance.receiveRemittance(sent), "SINK");
-        // Share rounding can leave 1 wei stranded ? snap reserve to cash, burn dust
+        // Share rounding can leave 1 wei stranded — snap reserve to cash, burn dust
         // on a full surplus sweep so accounting cannot claim a phantom unit.
         uint256 cashLeft = pusd.balanceOf(address(this));
         if (yieldReserve > cashLeft) yieldReserve = cashLeft;

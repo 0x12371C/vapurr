@@ -72,4 +72,18 @@ Date: 2026-09-05 (America/New_York). Branch: fix/gv-spusd-guards.
 - [done] Oliver oracle freshness + conservative pending devaluation + feed jump clamp. Proofs: OliverOracleBadDebtTest.
 - [done] Bounded LOLR hook (IFedBackstop) + socialized write-down via absorbBadDebt. Proofs: OliverOracleBadDebtTest.
 
+
+## Progress - shared RunwayFloor + realized-only remit (P0 fix #5)
+
+Date: 2026-09-05 (America/New_York). Branch: fix/gv-spusd-guards.
+
+- One shared `RunwayFloor` SoT: Oliver + Lithe wire the same instance (`IRunwayView` / `remittable` alias). Dual per-branch floors rejected.
+- Oliver `remitReserve`: `pendingReserve` on accrue, `realizedReserve` on repay (interest-first), then shared `runway.surplus`. Unpaid pending cannot remit; sole-owner cash still remittable (no third-party depositor claim).
+- Lithe `remitSurplus`: still inventory-backed `yieldReserve` only, gated by the same floor.
+- INVARIANT documented in `Remittance.sol` + `ROUTING.md`: remittance RFV is realized surplus above floor; never unpaid claims / depositor principal (circular RFV).
+- Tests: `RunwayRfvTest` (`test_oliver_and_lithe_share_same_runway_floor`, `test_cannot_remit_unpaid_interest_from_depositor_cash`, `test_realized_remit_respects_floor_and_user_claims`, `test_lithe_cannot_remit_below_shared_floor`); RoutingFences accrue path realizes via repay before remit.
+
+- [done] Shared runway floor + realized-only Oliver remit. Proofs: `RunwayRfvTest`.
+- [remaining] Branch-local `surplus(floor)` still applies the same numeric floor to each branch pool independently; sink-level floor is the cleaner single RFV retain. Liq/unwind repay paths do not yet call `_realizeFromRepay` (only `repay`). Cross-branch treasury cash aggregation still open.
+
 MERGE_REC: hold — solvency bugs, split mint authority and incomplete ABI integration block merge.

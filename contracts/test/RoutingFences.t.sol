@@ -120,13 +120,19 @@ contract RoutingFencesTest is Test {
         vapurr.approve(address(loop), type(uint256).max);
         loop.depositV(20_000 ether);
         loop.borrow(5_000 ether);
+        pusd.approve(address(loop), type(uint256).max);
         vm.stopPrank();
 
-        // Auto-remit on accrue; floor 0
+        // Auto-remit on accrue; floor 0. Realized-only: repay after accrue so
+        // collected interest (not unpaid claims) can hit the sink.
         loop.setRemittance(address(sink), address(runway), true);
 
         uint256 sinkBefore = pusd.balanceOf(address(sink));
         vm.warp(block.timestamp + 365 days);
+        loop.accrue();
+        // Realize interest into cash — unpaid accrual alone must not remit.
+        vm.prank(borrower);
+        loop.repay(500 ether);
         loop.accrue();
 
         uint256 sinkAfter = pusd.balanceOf(address(sink));

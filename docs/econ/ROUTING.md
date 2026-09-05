@@ -61,6 +61,10 @@ Cash peg trust is the **`$PUSD` / USDG** book (and other exogenous cash legs) - 
 `PusdMarket.swapPusdToV` redeems from **pre-funded / locked inventory only** (no `vapurr.mint`).
 `swapVToPusd` locks V into the market instead of burning. Fed/gV rebase is the sole V printer.
 
+## Shared runway + realized remittance (2026-09-05)
+
+One `RunwayFloor` instance is the treasury runway SoT — Oliver (`PusdLoop`) and Lithe (`PusdMarket`) must wire the same address. Remittance may only move **realized** surplus (collected interest/fees already in hand) above that floor into the remittance sink / sPUSD path. Unpaid accrued interest and depositor principal are **not** exogenous RFV (circular if counted as both RFV and a user claim). Oliver: `pendingReserve`→`realizedReserve` on repay, then `runway.surplus` (sole-owner cash OK). Lithe: inventory-backed `yieldReserve`, then same floor. See `RunwayRfv.t.sol`.
+
 ## Lithe remittance (2026-09-05)
 
 `PusdMarket` (Lithe) can remit `yieldReserve` surplus above the runway floor to the same `IRemittance` / `RemittanceSink` path as Oliver (`setRemittance` / `remitSurplus`). Holder drip (9% APY cap) still runs on accrue; remittance feeds runway → sPUSD so branch fees can hit the savings path later. See `PUSD_LIQUIDITY.md` for exogenous peg books; remittance does not replace those.

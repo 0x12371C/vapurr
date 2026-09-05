@@ -67,6 +67,10 @@ contract PusdLoop {
     IRunwayView public runway; // optional floor gate before remit
     bool public remitOnAccrue; // when true, _accrue best-effort pushes reserve cash to sink
     IFedBackstop public backstop; // optional bounded LOLR cover
+    /// Unpaid reserve fee assets from accrue (not remittable until collected).
+    uint256 public pendingReserve;
+    /// Collected reserve fee cash eligible for remittance (realized RFV source).
+    uint256 public realizedReserve;
 
     mapping(address => uint256) public supplyShares;
     mapping(address => uint256) public borrowShares;
@@ -123,25 +127,43 @@ contract PusdLoop {
         emit BackstopSet(backstop_);
     }
 
-    /// Push owner reserve supply (RESERVE_BPS share claim) out as $PUSD to remittance sink.
-    /// Runway floor (if set): only remits owner assets above floor. Floor may start at 0.
+    /// Push owner reserve out as $PUSD to remittance sink.
+    /// INVARIANT: only *realized* surplus (collected fee cash in realizedReserve, or
+    /// sole-owner cash when no external depositor claims), then shared RunwayFloor.
+    /// Unpaid pendingReserve interest is not remittable RFV.
     function remitReserve(uint256 assets) public lock returns (uint256 sent) {
         _accrue();
         sent = _remitReserve(assets);
+    }
+
+    /// Remittable realized pool above shared runway floor.
+    function realizedRemittable() public view returns (uint256) {
+        return _realizedPool();
+    }
+
+    function _realizedPool() internal view returns (uint256 realized) {
+        uint256 cash = pusd.balanceOf(address(this));
+        uint256 ownerAssets = _assetsOf(owner);
+        uint256 totalAssets = cash + totalBorrowAssets;
+        uint256 userClaims = totalAssets > ownerAssets ? totalAssets - ownerAssets : 0;
+        // With external depositors: only collected fee cash (realizedReserve).
+        // Sole-owner book: owner cash is not circular against third-party claims.
+        realized = userClaims == 0 ? cash : realizedReserve;
+        if (realized > cash) realized = cash;
+        if (realized > ownerAssets) realized = ownerAssets;
+        if (address(runway) != address(0)) {
+            realized = runway.surplus(realized);
+        }
     }
 
     function _remitReserve(uint256 assets) internal returns (uint256 sent) {
         require(address(remittance) != address(0), "REMIT");
         require(assets > 0, "TINY");
         uint256 ownerAssets = _assetsOf(owner);
-        if (address(runway) != address(0)) {
-            uint256 fl = runway.floor();
-            if (ownerAssets <= fl) return 0;
-            uint256 above = ownerAssets - fl;
-            if (assets > above) assets = above;
-        }
-        if (assets > ownerAssets) assets = ownerAssets;
         uint256 cash = pusd.balanceOf(address(this));
+        uint256 realized = _realizedPool();
+        if (assets > realized) assets = realized;
+        if (assets > ownerAssets) assets = ownerAssets;
         if (assets > cash) assets = cash;
         if (assets == 0) return 0;
         uint256 sh = _supplySharesForAssets(assets);
@@ -154,6 +176,11 @@ contract PusdLoop {
         require(pusd.balanceOf(address(this)) >= assets, "CASH");
         supplyShares[owner] = have - sh;
         totalSupplyShares -= sh;
+        // Burn collected fee cash ledger when remitting from realizedReserve path.
+        if (realizedReserve > 0) {
+            uint256 dec = assets < realizedReserve ? assets : realizedReserve;
+            realizedReserve -= dec;
+        }
         require(pusd.approve(address(remittance), assets), "ALLOW");
         require(remittance.receiveRemittance(assets), "SINK");
         // Owner supply is collateral; remittance must leave owner within LTV.
@@ -227,6 +254,8 @@ contract PusdLoop {
         if (amt > debt) amt = debt;
         uint256 got = _pull(pusd, amt);
         if (got > debt) got = debt;
+        // Interest-first: repay cash realizes pending reserve fees (not depositor principal).
+        _realizeFromRepay(got);
         uint256 sh = _debtSharesForAssets(got);
         uint256 have = borrowShares[msg.sender];
         if (sh > have || got == debt) {
@@ -242,6 +271,14 @@ contract PusdLoop {
         totalBorrowShares -= sh;
         totalBorrowAssets -= got;
         emit Repay(msg.sender, got, sh);
+    }
+
+    /// Move pending (unpaid) reserve fees into realizedReserve as repay cash arrives.
+    function _realizeFromRepay(uint256 got) internal {
+        if (got == 0 || pendingReserve == 0) return;
+        uint256 realize = got < pendingReserve ? got : pendingReserve;
+        pendingReserve -= realize;
+        realizedReserve += realize;
     }
 
     /// Recursive supply/borrow. Tokens never leave; utilization rises.
@@ -517,12 +554,14 @@ contract PusdLoop {
                 if (sh > 0) {
                     supplyShares[owner] += sh;
                     totalSupplyShares += sh;
+                    pendingReserve += fee; // unpaid until repay realizes it
                 }
             }
         }
         emit Accrue(interest, totalBorrowAssets);
-        // Remittance hook: best-effort push reserve cash to sink after owner share mint.
+        // Remittance hook: best-effort push *realized* reserve cash to sink.
         // Isolated so a sink revert cannot freeze repay / withdraw / liquidate / accrue.
+        // Unpaid fee shares alone do not create remittable cash (realizedRemittable).
         if (remitOnAccrue && address(remittance) != address(0) && fee > 0) {
             try this.remitReserveFromAccrue(fee) {} catch {}
         }
