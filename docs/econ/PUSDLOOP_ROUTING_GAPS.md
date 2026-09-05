@@ -3,7 +3,7 @@
 > **Superseded (2026-09-05 seigniorage rewrite):** Lithe redeem is Terra-style `marketMinter` mint (not inventory/`INV`). Dual printers = Lithe seigniorage + gV policy 1â€“9%. See `MINT_AUTHORITY.md`, `PUSD_V_REDEEM.md`, `ROUTING.md` wall #1. Historical inventory-fence notes below are gen-4 / pre-cutover audit context only.
 
 
-First pass by vapurrbothelper, 2026-09-05. Updated 2026-09-05 after trust fences; scrubbed again 2026-09-05 14:02 ET for HouseFeeRemit + SpusdCd landings (inventory V redeem notes below are pre-seigniorage audit context).
+First pass by vapurrbothelper, 2026-09-05. Updated 2026-09-05 after trust fences; scrubbed again 2026-09-05 14:02 ET for HouseFeeRemit + SpusdCd; scrubbed 15:10 ET for Oliver absorbBadDebt / IFedBackstop + oracle heartbeat (inventory V redeem notes below are pre-seigniorage audit context).
 
 Scope: `contracts/PusdLoop.sol` (Oliver), adjacent Lithe/mint paths in `PusdMarket.sol`, House fee surface. Walls checked: browse never taps V mint; remittance can hit sPUSD.
 
@@ -24,12 +24,12 @@ Scope: `contracts/PusdLoop.sol` (Oliver), adjacent Lithe/mint paths in `PusdMark
 ## Landed since first pass (keep audit honest)
 
 - **House fee carve to remit.** `HouseFeeRemit.sol` + `HouseUniSkim.sol` skim authorized fees to RemittanceSink / creditFees. Live Uni v4 hook/swapper e2e + pairConfig deploy still open (`WGV_HOUSE.md`, `HOUSE_PAIR.md`).
+- **Oliver bad-debt / Fed LOLR stub.** `PusdLoop.absorbBadDebt` + optional `IFedBackstop.coverBadDebt` (bounded cover, then socialize uncovered). Oracle freshness/jump clamps block borrow/withdraw/liq sizing on stale feeds; swap does not refresh heartbeat. Proofs: `OliverOracleBadDebt.t.sol` (10/10) + `MintAuthority` market-only V burn. Live Fed LOLR *policy params* / funding still open.
 - **Time-locked sPUSD CD.** `SpusdCd.sol` + `SavingsRouter.sol` (surplus split after runway; proportional underfunding). Proofs in `SpusdCd.t.sol` / `SavingsRouter.t.sol`. UI stub `#spusd-cd` on `bonds.html` stays live CTA; address-book/IPC wire still open.
 
 ## Still open (P1+)
 
 - **Oliver collateral != canon gV/V.** `PusdLoop.depositV` takes raw V only — no gV/wgV collateral type yet.
-- **Oliver bad-debt / Fed LOLR.** No protocol loss socialization or Fed backstop path.
 - **Live savings deploy.** SavingsRouter / SpusdCd not in Rust address book or wallet IPC yet; Bonds/CD surface stays honest-empty until reviewed wiring.
 - **House live Uni v4.** pairConfig into HouseLp/HouseSwap, Rust bootstrap wgV, Permit2/PM e2e (`CODEX_BRAIN_PASS.md`).
 

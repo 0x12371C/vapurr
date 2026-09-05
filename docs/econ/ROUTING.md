@@ -53,9 +53,9 @@ Bonds are a **first-class visible surface** (see `BONDS.md` + `vapurr://bonds`).
 ## Open eng choices
 
 - House leg: **wgV locked** (wstETH pattern) - see HOUSE_PAIR.md + WGV_HOUSE.md. Do not pair raw rebasing gV in AMM.
-- Fed LOLR policy for Oliver bad debt
+- Fed LOLR *policy params* / funding for Oliver bad debt (absorbBadDebt + optional IFedBackstop stub landed; proofs OliverOracleBadDebt 10/10)
 - Bond capacity / when not to bond
-- BondMarket gated skeleton + HouseFeeRemit sketch + FeeAttribution ledger landed (P1 live enable still open; Uni skim adapter HouseUniSkim landed) - sPUSD CD sketch + Bonds `#spusd-cd` UI stub landed; Bonds tab Unavailable/Gated stub landed (GATE map; live wire open); House tab **wgV / $PUSD** visual stub on `pusd.html` (wrap-first gate; live pairConfig deploy still open)
+- BondMarket gated skeleton + HouseFeeRemit sketch + FeeAttribution ledger landed (P1 live enable still open; Uni skim adapter HouseUniSkim landed) - sPUSD CD sketch + Bonds `#spusd-cd` UI stub landed; Bonds live-by-default CTAs + params banner landed (live wire/address book still open); House tab **wgV / $PUSD** visual stub on `pusd.html` (wrap-first gate; live pairConfig deploy still open)
 - **Banned:** `$PUSD`/USDG AMM/pool/peg-depth product (hurts `$PUSD`). USDG stays BondAssetTag only — see `PUSD_LIQUIDITY.md` / `BONDS.md`
 
 ## Market V redeem fence (2026-09-05)

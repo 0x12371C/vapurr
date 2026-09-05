@@ -19,3 +19,12 @@
 - **workers:** KFX / PayId / Bind idle (no organizer windows; Bind `install_id` file present, PID gone). No new grok/powershell organizer spawns.
 - **branch:** `fix/gv-spusd-guards` ahead 1; only untracked smoke/headcheck leftovers
 - **build slice:** honesty-scrub `docs/econ/PUSDLOOP_ROUTING_GAPS.md` — HouseFeeRemit + SpusdCd moved to Landed; Oliver collateral/LOLR + live savings IPC + House Uni v4 remain Still-open. commit `1d5f591`
+
+## 2026-09-05 15:10 ET - hourly watch
+
+- **justin:** online
+- **Programs:** DisplayVersion **1.1.9**; FileVersion **1.1.9** sha A326B9F22518 @ 13:21 ET; **NotSigned** (signing still P0 ship blocker; Relic: unsigned OK for build/test)
+- **dist/channel:** AppData channel manifest **1.1.9** rev 68dfd3; 	hesecretlab.app/vapurr/channel/manifest.json still **404**
+- **workers:** KFX **idle** (21016); PayId **idle** (9228); Bind **idle** (PID gone) — no respawn. Extra grok 18356 = graphify inbox (not watch-spawned). No new organizer procs.
+- **branch:** ix/gv-spusd-guards @ 85b88cd (+ this docs scrub); left dirty TESTNET_ROLLOUT.md binary encoding + untracked smoke/headcheck alone
+- **build slice:** honesty-scrub PUSDLOOP_ROUTING_GAPS.md + ROUTING.md — Oliver bsorbBadDebt / optional IFedBackstop + oracle heartbeat moved to Landed (still-open was stale). Forge OliverOracleBadDebt 10/10. Still open: gV/wgV collateral type, live savings IPC, House Uni v4 e2e, LOLR policy funding.
