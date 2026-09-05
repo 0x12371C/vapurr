@@ -15,6 +15,7 @@ Living owner board. Snapshot: `docs/SNAPSHOT.md`. Flash: `docs/ORG_FLASH.md`.
 | KetPay / zer0ID | PayId | NeedKyc + KYC URL; **idle** since ~10:26 | freeze unless Relic names hole |
 | install_id | Bind+House | code-verified; Bind PID **gone**; **idle** | no respawn; don't reopen setup.rs |
 | Token economy | vapurrbot+Pilot | gen-4 / HouseLp claimed live 46630; Pilot touched pay/wallet/pusd PM | keep STATUS CAs honest; vault live |
+| Token economy / Fed gV | Relic+House | **slice green** — gV 3.5% + wgV + BrowserStream walls tested | wire house AMM to wgV; deploy testnet when Relic opens |
 | Charts / Psy / Tube | PARK | | |
 
 ## Hard media rule (Relic)

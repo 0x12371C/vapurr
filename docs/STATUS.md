@@ -6,6 +6,13 @@ Last audited: **2026-09-04** (House lock: `docs/ORG_FLASH.md`).
 
 Milestone: **pre-v1** â€” ship bar is [`V1.md`](V1.md). v1.2 money is **testnet 46630 only**. If README or ARCHITECTURE disagree with this file, this file plus the code win â€” then those docs get fixed.
 
+
+## 2026-09-05 — Fed gV / BrowserStream trust wall (slice)
+
+- `contracts/GvFed.sol`: `VapurrToken` + **gVAPURR** (index rebase **3.5%/yr**, policy-only) + **wgVAPURR** (wstETH wrapper) + **BrowserStream** (50k/3y earmark, **no mint**) + `RebasePolicy`.
+- Foundry proofs: `contracts/test/GvBoundaries.t.sol` — annualized ~3.5%, stream drip supply-unchanged, browse cannot rebase, wgV tracks gV across rebase.
+- Docs: `docs/econ/HOUSE_PAIR.md` — House pairs **wgV/$PUSD**, not raw gV. `ROUTING.md` open choice locked to wgV.
+
 ## v1.2 (testnet money)
 
 | Gate | State |

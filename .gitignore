@@ -86,3 +86,8 @@ crates/vapurr-wallet/examples/vanity.rs
 # Local slop / ads — not the product zip
 docs/slop/
 frontend/commercial/
+
+# Foundry (GvFed)
+contracts/cache/
+contracts/out-forge/
+contracts/lib/ 
