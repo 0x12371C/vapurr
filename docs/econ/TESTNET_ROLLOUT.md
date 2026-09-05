@@ -30,6 +30,7 @@ Execute in order. Record each address in `docs/STATUS.md` only after a successfu
 - [x] `CONFIRM_TESTNET_DEPLOY` **unset** for dry-runs (script default; dry-run simulates stack locally with no broadcast)
 - [ ] Gen-4 market `0x47Aca529…3617` still treated as live until cutover flag
 - [x] Parallel tracks composed via existing `LaunchBootstrap` / `DevFundStream` / `ExogenousPairRegistry` (do not thrash those files mid-flight)
+- Observed **2026-09-05 ~14:06 ET** (RPC `https://rpc.testnet.chain.robinhood.com`, chainId 46630): STATUS deployer `0x48043E2Cda4D403c10dbB1F4614c4F6ad0f9AeA5` **nonce=0** (Path A CREATE proxy at vanity still open); **balance=0** ETH (unfunded). Vanity `0xC47f00D61F8379337f9fb42E6DcC695AE2d6EBD2` has no code.
 
 ### 1. Fed V + gV + RebasePolicy (dynamic 1–9%) — [IN SCRIPT]
 
