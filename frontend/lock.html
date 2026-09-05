@@ -33,27 +33,68 @@
       -webkit-backdrop-filter: blur(12px) saturate(1.15);
     }
 
-    /* Physical device / phone-sized pad floating over backdrop */
+    /* Anodized titanium device shell — brushed metal chassis */
     .device {
+      --ti-hi: #b8bcc4;
+      --ti-mid: #7a808a;
+      --ti-lo: #3e444c;
+      --ti-void: #1c2026;
       position: relative;
       z-index: 1;
       width: min(328px, calc(100vw - 36px));
       border-radius: 38px;
       padding: 14px 14px 16px;
       background:
-        linear-gradient(165deg,
-          color-mix(in srgb, var(--color-steel) 94%, #4a5058) 0%,
-          var(--color-void) 46%,
-          color-mix(in srgb, var(--color-void) 86%, #000) 100%);
-      border: 1px solid color-mix(in srgb, var(--color-snow) 16%, transparent);
+        /* fine brush grain */
+        repeating-linear-gradient(
+          112deg,
+          transparent 0 1.5px,
+          color-mix(in srgb, var(--color-snow) 4.5%, transparent) 1.5px 2px,
+          transparent 2px 3.5px,
+          color-mix(in srgb, #000 5%, transparent) 3.5px 4px
+        ),
+        /* secondary micro-grain */
+        repeating-linear-gradient(
+          22deg,
+          transparent 0 6px,
+          color-mix(in srgb, var(--color-snow) 2%, transparent) 6px 7px
+        ),
+        /* anodized body */
+        linear-gradient(158deg,
+          var(--ti-hi) 0%,
+          var(--ti-mid) 22%,
+          var(--ti-lo) 48%,
+          var(--ti-void) 78%,
+          #12151a 100%);
+      border: 1px solid color-mix(in srgb, var(--ti-hi) 42%, transparent);
       box-shadow:
-        0 0 0 1px color-mix(in srgb, #000 60%, transparent),
+        0 0 0 1px color-mix(in srgb, #000 55%, transparent),
         0 32px 72px color-mix(in srgb, #000 58%, transparent),
         0 8px 20px color-mix(in srgb, #000 35%, transparent),
-        inset 0 1px 0 color-mix(in srgb, var(--color-snow) 12%, transparent),
-        inset 0 -2px 0 color-mix(in srgb, #000 45%, transparent);
+        inset 0 1.5px 0 color-mix(in srgb, var(--color-snow) 38%, transparent),
+        inset 0 -2px 0 color-mix(in srgb, #000 50%, transparent),
+        inset 1.5px 0 0 color-mix(in srgb, var(--color-snow) 12%, transparent),
+        inset -1.5px 0 0 color-mix(in srgb, #000 28%, transparent),
+        inset 0 0 24px color-mix(in srgb, #000 18%, transparent);
       transform: translateY(0);
       animation: pad-in 0.42s cubic-bezier(0.22, 1.2, 0.36, 1) both;
+      isolation: isolate;
+    }
+    .device::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      pointer-events: none;
+      z-index: 3;
+      background:
+        linear-gradient(115deg,
+          color-mix(in srgb, var(--color-snow) 22%, transparent) 0%,
+          transparent 18%,
+          transparent 62%,
+          color-mix(in srgb, #000 18%, transparent) 100%);
+      mix-blend-mode: soft-light;
+      opacity: 0.85;
     }
     @keyframes pad-in {
       from { opacity: 0; transform: translateY(18px) scale(0.96); }
@@ -67,24 +108,81 @@
       height: 7px;
       margin: 4px auto 14px;
       border-radius: 99px;
-      background: color-mix(in srgb, var(--color-snow) 18%, transparent);
-      box-shadow: inset 0 1px 2px color-mix(in srgb, #000 50%, transparent);
+      background:
+        linear-gradient(180deg,
+          color-mix(in srgb, #000 55%, var(--ti-lo)) 0%,
+          color-mix(in srgb, var(--ti-mid) 40%, #000) 100%);
+      box-shadow:
+        inset 0 1px 2px color-mix(in srgb, #000 60%, transparent),
+        0 1px 0 color-mix(in srgb, var(--color-snow) 18%, transparent);
+      position: relative;
+      z-index: 4;
     }
 
+    /* Frosted glass screen — crypto viz lives underneath */
     .screen {
+      position: relative;
+      overflow: hidden;
       border-radius: 28px;
       padding: 18px 14px 16px;
       background:
-        linear-gradient(180deg,
-          color-mix(in srgb, var(--color-void) 82%, var(--color-steel)) 0%,
-          color-mix(in srgb, var(--color-void) 94%, #000) 100%);
-      border: 1px solid color-mix(in srgb, var(--color-snow) 9%, transparent);
+        linear-gradient(165deg,
+          color-mix(in srgb, var(--color-snow) 7%, transparent) 0%,
+          color-mix(in srgb, var(--color-void) 42%, transparent) 38%,
+          color-mix(in srgb, var(--color-void) 58%, transparent) 100%);
+      border: 1px solid color-mix(in srgb, var(--color-snow) 22%, transparent);
       box-shadow:
-        inset 0 0 0 1px color-mix(in srgb, #000 40%, transparent),
-        inset 0 1px 0 color-mix(in srgb, var(--color-snow) 6%, transparent);
+        inset 0 1px 0 color-mix(in srgb, var(--color-snow) 32%, transparent),
+        inset 0 -1px 0 color-mix(in srgb, #000 45%, transparent),
+        inset 1px 0 0 color-mix(in srgb, var(--color-snow) 10%, transparent),
+        inset -1px 0 0 color-mix(in srgb, #000 25%, transparent),
+        0 0 0 1px color-mix(in srgb, #000 35%, transparent);
+      backdrop-filter: blur(22px) saturate(1.35) brightness(1.05);
+      -webkit-backdrop-filter: blur(22px) saturate(1.35) brightness(1.05);
       display: flex;
       flex-direction: column;
       align-items: center;
+      isolation: isolate;
+    }
+
+    .crypto-viz {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0.55;
+      border-radius: inherit;
+    }
+
+    .glass-sheen {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      border-radius: inherit;
+      background:
+        radial-gradient(ellipse 90% 55% at 18% 8%,
+          color-mix(in srgb, var(--color-snow) 28%, transparent),
+          transparent 55%),
+        radial-gradient(ellipse 70% 40% at 88% 92%,
+          color-mix(in srgb, var(--color-lime) 6%, transparent),
+          transparent 60%),
+        linear-gradient(180deg,
+          color-mix(in srgb, var(--color-snow) 10%, transparent) 0%,
+          transparent 22%,
+          transparent 78%,
+          color-mix(in srgb, #000 22%, transparent) 100%);
+      box-shadow:
+        inset 0 0 0 1px color-mix(in srgb, var(--color-snow) 12%, transparent);
+      mix-blend-mode: screen;
+      opacity: 0.72;
+    }
+
+    .screen > :not(.crypto-viz):not(.glass-sheen) {
+      position: relative;
+      z-index: 2;
     }
 
     .hero {
@@ -372,11 +470,30 @@
       background: color-mix(in srgb, var(--color-void) 55%, transparent);
     }
     html[data-theme="light"] .device {
-      background: linear-gradient(165deg, #eef1ea, var(--color-steel));
+      --ti-hi: #f2f3f5;
+      --ti-mid: #c5c9d0;
+      --ti-lo: #8e949e;
+      --ti-void: #5c636e;
+    }
+    html[data-theme="light"] .screen {
+      background:
+        linear-gradient(165deg,
+          color-mix(in srgb, #fff 55%, transparent) 0%,
+          color-mix(in srgb, var(--color-steel) 70%, transparent) 100%);
+    }
+    html[data-theme="light"] .crypto-viz { opacity: 0.28; }
+    html[data-theme="light"] .glass-sheen {
+      mix-blend-mode: normal;
+      opacity: 0.55;
     }
     html[data-theme="light"] .key {
       --key-face: color-mix(in srgb, var(--color-steel) 98%, #fff);
       color: var(--color-void);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .device { animation: none; }
+      .crypto-viz { display: none; }
     }
   </style>
 </head>
@@ -384,6 +501,8 @@
   <div class="dimmer" aria-hidden="true"></div>
   <div class="device" role="dialog" aria-modal="true" aria-labelledby="lock-title">
     <div class="screen">
+      <canvas class="crypto-viz" id="crypto-viz" aria-hidden="true"></canvas>
+      <div class="glass-sheen" aria-hidden="true"></div>
       <div class="hero">
         <div class="mascot-wrap">
           <img class="mascot" src="/mascot.png" alt="" width="64" height="64" decoding="async"/>
@@ -685,6 +804,161 @@
           if (kv[0] === "mode" && kv[1]) m = decodeURIComponent(kv[1]);
         });
         api.lock({ mode: m });
+      })();
+
+      /* Decorative crypto-in-glass viz — not metrics, just chrome atmosphere */
+      (function cryptoGlass() {
+        var canvas = document.getElementById("crypto-viz");
+        if (!canvas || !canvas.getContext) return;
+        if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+        var ctx = canvas.getContext("2d");
+        var dpr = Math.min(window.devicePixelRatio || 1, 2);
+        var cols = [];
+        var sparks = [];
+        var running = true;
+        var last = 0;
+        var HEX = "0123456789abcdef";
+        var TAGS = ["sha256", "keccak", "hmac", "aes-gcm", "x25519", "secp256k1", "argon2id", "chacha20"];
+
+        function randHex(n) {
+          var s = "";
+          for (var i = 0; i < n; i++) s += HEX[(Math.random() * 16) | 0];
+          return s;
+        }
+
+        function resize() {
+          var screen = canvas.parentElement;
+          if (!screen) return;
+          var w = screen.clientWidth;
+          var h = screen.clientHeight;
+          canvas.width = Math.max(1, Math.floor(w * dpr));
+          canvas.height = Math.max(1, Math.floor(h * dpr));
+          canvas.style.width = w + "px";
+          canvas.style.height = h + "px";
+          ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+          buildCols(w, h);
+        }
+
+        function buildCols(w, h) {
+          var n = Math.max(7, Math.floor(w / 28));
+          cols = [];
+          for (var i = 0; i < n; i++) {
+            cols.push({
+              x: (i + 0.5) * (w / n),
+              y: Math.random() * h,
+              speed: 12 + Math.random() * 28,
+              glyphs: (function () {
+                var g = [];
+                var len = 10 + ((Math.random() * 10) | 0);
+                for (var j = 0; j < len; j++) g.push(randHex(2));
+                return g;
+              })(),
+              accent: Math.random() < 0.12,
+              tag: Math.random() < 0.18 ? TAGS[(Math.random() * TAGS.length) | 0] : null
+            });
+          }
+          sparks = [];
+          for (var k = 0; k < 14; k++) {
+            sparks.push({
+              x: Math.random() * w,
+              y: Math.random() * h,
+              r: 0.6 + Math.random() * 1.4,
+              vx: -6 + Math.random() * 12,
+              vy: -10 + Math.random() * 6,
+              a: 0.15 + Math.random() * 0.35
+            });
+          }
+        }
+
+        function tick(ts) {
+          if (!running) return;
+          var dt = Math.min(0.05, (ts - last) / 1000 || 0.016);
+          last = ts;
+          var w = canvas.clientWidth;
+          var h = canvas.clientHeight;
+          ctx.clearRect(0, 0, w, h);
+
+          /* soft void wash so glass still reads dark */
+          ctx.fillStyle = "rgba(8,10,12,0.55)";
+          ctx.fillRect(0, 0, w, h);
+
+          ctx.font = "10px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
+          ctx.textAlign = "center";
+
+          for (var i = 0; i < cols.length; i++) {
+            var c = cols[i];
+            c.y += c.speed * dt;
+            var step = 13;
+            var total = c.glyphs.length * step;
+            if (c.y - total > h + 20) {
+              c.y = -20 - Math.random() * h * 0.3;
+              c.speed = 12 + Math.random() * 28;
+              c.accent = Math.random() < 0.12;
+              if (Math.random() < 0.25) {
+                for (var r = 0; r < c.glyphs.length; r++) c.glyphs[r] = randHex(2);
+              }
+              c.tag = Math.random() < 0.18 ? TAGS[(Math.random() * TAGS.length) | 0] : null;
+            }
+            for (var j = 0; j < c.glyphs.length; j++) {
+              var gy = c.y - j * step;
+              if (gy < -12 || gy > h + 12) continue;
+              var fade = 1 - j / c.glyphs.length;
+              if (c.accent && j === 0) {
+                ctx.fillStyle = "rgba(192,248,0," + (0.22 * fade).toFixed(3) + ")";
+              } else {
+                ctx.fillStyle = "rgba(170,190,200," + (0.10 + 0.22 * fade).toFixed(3) + ")";
+              }
+              ctx.fillText(c.glyphs[j], c.x, gy);
+            }
+            if (c.tag) {
+              ctx.fillStyle = "rgba(192,248,0,0.14)";
+              ctx.font = "9px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
+              ctx.fillText(c.tag, c.x, c.y + 14);
+              ctx.font = "10px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
+            }
+          }
+
+          for (var s = 0; s < sparks.length; s++) {
+            var p = sparks[s];
+            p.x += p.vx * dt;
+            p.y += p.vy * dt;
+            if (p.x < -4 || p.x > w + 4 || p.y < -4 || p.y > h + 4) {
+              p.x = Math.random() * w;
+              p.y = h + 4;
+              p.vy = -8 - Math.random() * 14;
+              p.vx = -8 + Math.random() * 16;
+            }
+            ctx.beginPath();
+            ctx.fillStyle = "rgba(192,248,0," + p.a.toFixed(3) + ")";
+            ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+            ctx.fill();
+          }
+
+          /* slow hash ribbon (stable string, refresh ~2s) */
+          if (!canvas._ribbon || ts - (canvas._ribbonAt || 0) > 2000) {
+            canvas._ribbon = "0x" + randHex(40);
+            canvas._ribbonAt = ts;
+          }
+          ctx.fillStyle = "rgba(140,160,170,0.09)";
+          ctx.font = "9px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
+          ctx.textAlign = "left";
+          var ribbonY = ((ts * 0.018) % (h + 40)) - 20;
+          ctx.fillText(canvas._ribbon, 10, ribbonY);
+
+          requestAnimationFrame(tick);
+        }
+
+        resize();
+        window.addEventListener("resize", resize);
+        document.addEventListener("visibilitychange", function () {
+          running = document.visibilityState !== "hidden";
+          if (running) {
+            last = performance.now();
+            requestAnimationFrame(tick);
+          }
+        });
+        requestAnimationFrame(tick);
       })();
     })();
   </script>
