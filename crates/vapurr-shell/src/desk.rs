@@ -100,6 +100,9 @@ pub struct Prefs {
     pub boost: bool,
     #[serde(default = "default_theme")]
     pub theme: String,
+    /// Idle auto-lock seconds. Default 900 (15 min). 0 disables.
+    #[serde(default = "default_lock_timeout")]
+    pub lock_timeout_secs: u64,
 }
 
 fn default_zoom() -> f64 {
@@ -113,6 +116,10 @@ fn default_true() -> bool {
 }
 fn default_theme() -> String {
     "dark".into()
+}
+
+fn default_lock_timeout() -> u64 {
+    900
 }
 
 impl Default for Prefs {
@@ -129,6 +136,7 @@ impl Default for Prefs {
             adblock_cosmetic: true,
             boost: false,
             theme: default_theme(),
+            lock_timeout_secs: default_lock_timeout(),
         }
     }
 }
@@ -477,6 +485,16 @@ impl Desk {
             "light".into()
         } else {
             "dark".into()
+        };
+        self.save();
+    }
+
+    pub fn set_lock_timeout_secs(&mut self, secs: u64) {
+        // Clamp to sane set: 0 (off) or 60..=86400
+        self.prefs.lock_timeout_secs = if secs == 0 {
+            0
+        } else {
+            secs.clamp(60, 86_400)
         };
         self.save();
     }
