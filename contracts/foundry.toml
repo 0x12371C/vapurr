@@ -16,6 +16,8 @@ skip = [
   "PnsRegistry.sol",
   "PusdLoop.sol",
   "PusdMarket.sol",
+  "Remittance.sol",
+  "SPUSD.sol",
 ]
 
 [fmt]
