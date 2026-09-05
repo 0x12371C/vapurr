@@ -29,10 +29,10 @@ Date: 2026-09-05 (America/New_York). Branch: `fix/gv-spusd-guards` (from `fix/ol
 - [done] `gVAPURR.stake` settles accrued rebase before share mint (fix/gv-spusd-guards). Late-stake / empty-pool emission theft closed. Proofs: `GvRebaseSettleTest`.
 - [done] `SPUSD` + `wgVAPURR` donation-resistant pricing (virtual + dead shares + min deposit/wrap). Proofs: `SpusdDonationGuardsTest`.
 
-- [P0-bug] Mint authority remains split: market V permanently assigns its minter to `PusdMarket`, while Fed staking requires mint access. That token cannot support Fed rebases; deploying the separate Fed token creates two incompatible V assets.
+- [partial] Mint authority: `docs/econ/MINT_AUTHORITY.md` design + fences; full one-token role unify still open (P0 fix #3).
 - [done] `gVAPURR.stake` settles via `accrue()` before share mint (see Progress — P0 fix #2).
-- [P0-bug] Lithe mints fee PUSD into market inventory, then `accrue` increases PUSD supply through `drip` without burning that inventory. Decreasing `yieldReserve` alone leaves duplicate outstanding claims against unchanged V backing.
-- [P0-bug] `computeSwap` rejects negative calculated spreads through `baseOffer >= askBaseAmount`. After one-sided flow, favorable counterflow can therefore revert `THIN` even with sufficient V inventory, obstructing redemption and arbitrage.
+- [done] Lithe single-count: burn fee inventory on drip before index expand (P0 fix #3). Remit spends remaining inventory only.
+- [done] `computeSwap` clamps inverted CP spread; redeem/arb no longer false-THIN when inventory present (P0 fix #3).
 - [attack] Wrapping gV fixes only one House leg: PUSD itself rebases. Both wgV/PUSD and PUSD/USDG require explicit handling of pool-held PUSD rebases; ordinary swap accounting cannot be assumed to allocate those gains correctly.
 - [done] `SPUSD` / `wgVAPURR` virtual+dead shares + min deposit/wrap (see Progress — P0 fix #2). Dust remittance skim bounded; CD time-locks still TODO for full skim resistance.
 - [P0-bug] Self-issued PUSD reserves and V inventory do not establish exogenous dollar backing. The minimum 2% V swap spread is not ~par USDG redemption; a nominal PUSD runway floor cannot establish dollar solvency, and Lithe drip can consume the supposedly retained reserve.
@@ -41,7 +41,23 @@ Date: 2026-09-05 (America/New_York). Branch: `fix/gv-spusd-guards` (from `fix/ol
 - [partial] Oliver auto-remit is try/catch isolated (`remitReserveFromAccrue`); sink revert no longer freezes repay/withdraw/liq. `remitReserve` now `_requireLtv(owner)` after exit. Lithe auto-remit isolation still open.
 - [merge-blocker] Executable bonds must remain gated until payout inventory, vesting/rebase ownership, per-asset capacity, haircuts and reliable valuation are defined; stocks additionally need market-closure and corporate-action handling. Discounts against manipulable equity prices can overissue gV claims for inadequate RFV.
 - [confusion] Keep ETH/USDG/stock bonds visible and printer mechanics hidden; never hide execution availability, vesting, capacity or loss exposure. gV already earns rebases, contradicting "claim gV, then stake"; TVL must exclude recursive double counting, and YOTC must disclose costs and conditional yield assumptions.
-- [merge-blocker] `market_abi.rs` caches one ABI globally across clients and deployments, permanently interpreting RPC failures as legacy ABI. Selector compatibility also proves neither deployed inventory fences nor unified mint authority; those require deployment-specific verification.
-- [merge-blocker] The ABI bridge is untracked and its integration remains dirty; merging branch commits alone omits it. The empty branch comparison and differing master diffstats do not establish ancestry or conflict safety, and the supplied bundle cannot validate the TVL/YOTC frontend changes.
+- [done] `market_abi.rs` dual-probe + cache only on conclusive detect; RPC miss fails open / re-probes (P0 fix #3). Inventory fences + mint unify still need deploy-specific verification.
+- [done] `market_abi.rs` tracked + wired through mint/redeem/rate paths (P0 fix #3). Frontend TVL/YOTC bundle validation still separate.
+
+
+## Progress ? Lithe single-count + redeem/THIN + market_abi (P0 fix #3)
+
+Date: 2026-09-05 (America/New_York). Branch: `fix/gv-spusd-guards` (slice also ok as `fix/lithe-mint-p0`).
+
+- Lithe: `accrue` burns market fee inventory before `pusd.drip`, so holder yield and remittance share one surplus pool (no mint-and-keep + drip double claim).
+- `computeSwap`: removed `baseOffer >= askBaseAmount` THIN gate; inverted CP spread clamps to 0 then MIN_STABILITY_SPREAD. Inventory/`INV` still gates redeem.
+- `market_abi.rs`: dual-probe scrubbed then live hex; cache only conclusive (market, abi) pairs; RPC/dual-miss fails open to Scrubbed and re-probes (no sticky legacy).
+- Mint unify: design in `docs/econ/MINT_AUTHORITY.md` (interim: keep fences, no silent dual-print; full one-token role split deferred).
+- Tests: `LitheMintP0Test` (forge); `market_abi` unit tests (rust).
+
+- [done] Lithe fee surplus single-counted (burn inventory on drip). Proofs: `LitheMintP0Test`.
+- [done] `computeSwap` allows inventory redeem after one-sided flow (no false THIN). Proofs: `LitheMintP0Test`.
+- [done] `market_abi` non-sticky fail-open detect + committed bridge module.
+- [partial] Mint authority: design doc landed; full Fed+market one-token unify still open.
 
 MERGE_REC: hold — solvency bugs, split mint authority and incomplete ABI integration block merge.

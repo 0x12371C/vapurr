@@ -98,6 +98,18 @@ contract PusdToken {
         emit Transfer(from, address(0), amt);
     }
 
+    /// Clear all shares for `from` (minter inventory dust after index moves).
+    function burnAll(address from) external onlyMinter {
+        uint256 s = shares[from];
+        if (s == 0) return;
+        uint256 bal = (s * index) / DEC;
+        unchecked {
+            shares[from] = 0;
+            totalShares -= s;
+        }
+        emit Transfer(from, address(0), bal);
+    }
+
     function drip(uint256 pay) external onlyMinter {
         uint256 supply = totalSupply();
         if (pay == 0 || supply == 0) return;
@@ -222,6 +234,14 @@ contract PusdMarket {
         yieldReserve -= sent;
         require(pusd.approve(address(remittance), sent), "ALLOW");
         require(remittance.receiveRemittance(sent), "SINK");
+        // Share rounding can leave 1 wei stranded ? snap reserve to cash, burn dust
+        // on a full surplus sweep so accounting cannot claim a phantom unit.
+        uint256 cashLeft = pusd.balanceOf(address(this));
+        if (yieldReserve > cashLeft) yieldReserve = cashLeft;
+        if (amount == 0 && cashLeft > 0 && cashLeft < 1e3) {
+            pusd.burnAll(address(this));
+            yieldReserve = 0;
+        }
         emit Remitted(address(remittance), sent);
     }
 
@@ -284,8 +304,13 @@ contract PusdMarket {
         uint256 offerPool = offerV ? vapurrPool : stablePool;
         uint256 askPool = offerV ? stablePool : vapurrPool;
         uint256 askBaseAmount = askPool - (cp / (offerPool + baseOffer));
-        require(baseOffer >= askBaseAmount, "THIN");
-        spread = ((baseOffer - askBaseAmount) * DEC) / baseOffer;
+        // One-sided flow can invert CP spread (askBase > baseOffer). Do not THIN
+        // on negative calculated spread ? inventory/INV still gates redeem payout.
+        if (baseOffer > askBaseAmount) {
+            spread = ((baseOffer - askBaseAmount) * DEC) / baseOffer;
+        } else {
+            spread = 0;
+        }
         if (spread < MIN_STABILITY_SPREAD) spread = MIN_STABILITY_SPREAD;
     }
 
@@ -311,8 +336,25 @@ contract PusdMarket {
         uint256 maxPay = (supply * MAX_APY_BPS * dt) / 10_000 / YEAR;
         uint256 pay = yieldReserve < maxPay ? yieldReserve : maxPay;
         if (pay == 0) return;
+        // Single-count Lithe: fee PUSD lives in inventory for remit OR is consumed by
+        // drip ? never both. Pull ALL fee inventory out of the rebasing supply before
+        // drip so the market does not earn Lithe on its own fees; remint the remainder
+        // afterward so yieldReserve stays cash-backed for remittance.
+        uint256 cash = pusd.balanceOf(address(this));
+        if (cash > 0) {
+            // Prefer burning the tracked reserve; if cash drifted, burn all cash.
+            uint256 pull = cash < yieldReserve ? cash : yieldReserve;
+            if (cash > yieldReserve) pull = cash; // sweep dust with the reserve pull
+            if (pull > 0) pusd.burn(address(this), pull);
+            if (yieldReserve > cash) yieldReserve = cash;
+        }
+        if (pay > yieldReserve) pay = yieldReserve;
+        if (pay == 0) return;
         pusd.drip(pay);
         yieldReserve -= pay;
+        if (yieldReserve > 0) {
+            pusd.mint(address(this), yieldReserve);
+        }
         emit Accrue(pay, pusd.index());
         // Remittance hook: best-effort push remaining surplus above runway to sink.
         if (remitOnAccrue && address(remittance) != address(0) && yieldReserve > 0) {
@@ -347,6 +389,8 @@ contract PusdMarket {
         // V stays on market as redeem inventory (was: vapurr.burn). No V supply change.
         pusd.mint(msg.sender, ask);
         if (fee > 0) {
+            // Inventory + yieldReserve claim the SAME fee once. accrue burns inventory
+            // on drip; remitSurplus transfers inventory ? never double-pay.
             pusd.mint(address(this), fee);
             yieldReserve += fee;
         }

@@ -161,12 +161,16 @@ contract RoutingFencesTest is Test {
 
         pusd.approve(address(spusd), type(uint256).max);
         uint256 shares = spusd.deposit(5_000 ether, address(this));
-        assertEq(shares, 5_000 ether, "1:1 genesis deposit");
-        assertEq(spusd.convertToAssets(shares), 5_000 ether, "NAV 1");
+        // Dead shares locked on first deposit (donation guards / virtual offset).
+        assertEq(shares, 5_000 ether - spusd.DEAD_SHARES(), "genesis minus dead shares");
+        assertEq(spusd.totalSupply(), 5_000 ether, "totalSupply includes dead");
+        assertEq(spusd.balanceOf(address(this)), shares, "receiver got live shares");
 
         spusd.receiveRemittance(1_000 ether);
-        assertEq(spusd.convertToAssets(shares), 6_000 ether, "yield credited into NAV");
-        assertEq(spusd.totalSupply(), shares, "shares unchanged on yield credit");
+        uint256 nav = spusd.convertToAssets(shares);
+        assertGt(nav, shares, "yield credited into NAV");
+        assertApproxEqRel(nav, (6_000 ether * shares) / 5_000 ether, 1e14, "NAV tracks remittance");
+        assertEq(spusd.totalSupply(), 5_000 ether, "shares unchanged on yield credit");
     }
 
     function test_remit_respects_runway_floor_on_vault() public {
