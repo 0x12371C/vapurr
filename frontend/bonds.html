@@ -287,6 +287,115 @@
     .flow .node b { display: block; margin-top: 4px; font-size: 14px; }
     .flow .node span { display: block; margin-top: 4px; color: var(--color-muted); font-size: 11px; line-height: 1.35; }
 
+
+    /* TVL + effective YOTC strip */
+    .strip {
+      display: grid;
+      grid-template-columns: auto 1fr 1fr 1.2fr;
+      gap: 10px;
+      margin: 0 0 22px;
+      padding: 14px 16px;
+      border-radius: 16px;
+      background: color-mix(in srgb, var(--color-steel) 60%, transparent);
+      backdrop-filter: blur(24px) saturate(1.5);
+      -webkit-backdrop-filter: blur(24px) saturate(1.5);
+      border: 1px solid color-mix(in srgb, var(--color-lime) 26%, transparent);
+      align-items: center;
+    }
+    @media (max-width: 720px) {
+      .strip { grid-template-columns: 1fr 1fr; }
+      .strip .ex-tag { grid-column: 1 / -1; }
+    }
+    .strip .ex-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      height: 28px;
+      padding: 0 10px;
+      border-radius: 999px;
+      border: 1px dashed color-mix(in srgb, var(--color-lime) 45%, transparent);
+      color: var(--color-lime);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      white-space: nowrap;
+      background: color-mix(in srgb, var(--color-void) 35%, transparent);
+    }
+    .strip .metric .mono { color: var(--color-muted); font-size: 11px; }
+    .strip .metric .val {
+      margin-top: 2px;
+      font-size: 26px;
+      font-weight: 600;
+      letter-spacing: -0.04em;
+      font-variant-numeric: tabular-nums;
+      line-height: 1.1;
+    }
+    .strip .metric .val em {
+      font-style: normal;
+      font-size: 13px;
+      color: var(--color-muted);
+      font-weight: 600;
+      margin-left: 3px;
+    }
+    .strip .metric .sub {
+      margin-top: 3px;
+      color: var(--color-muted);
+      font-size: 11px;
+      line-height: 1.35;
+    }
+    .strip .blend {
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: color-mix(in srgb, var(--color-void) 40%, transparent);
+      border: 1px solid color-mix(in srgb, var(--color-snow) 8%, transparent);
+    }
+    .strip .blend .mono { color: var(--color-lime); }
+    .strip .bars { display: flex; gap: 4px; margin-top: 8px; height: 8px; border-radius: 999px; overflow: hidden; }
+    .strip .bars span { display: block; height: 100%; }
+    .strip .bars .cash { background: var(--color-lime); flex: 4.2; }
+    .strip .bars .bonds { background: color-mix(in srgb, var(--color-lime) 55%, var(--color-forest)); flex: 3.1; }
+    .strip .bars .house { background: color-mix(in srgb, var(--color-lime) 30%, var(--color-forest)); flex: 2.8; }
+    .strip .bars .equity { background: var(--color-forest); flex: 2.3; }
+    .strip .legend {
+      margin-top: 6px;
+      display: flex; flex-wrap: wrap; gap: 8px 10px;
+      color: var(--color-muted); font-size: 10px;
+    }
+    .strip .legend b { color: var(--color-snow); font-weight: 600; }
+    html[data-theme="light"] .strip {
+      background: color-mix(in srgb, var(--color-steel) 90%, transparent);
+    }
+
+    .lane .mini {
+      margin-top: 12px;
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      padding-top: 10px;
+      border-top: 1px solid color-mix(in srgb, var(--color-snow) 8%, transparent);
+    }
+    .lane .mini .k { color: var(--color-muted); font-size: 11px; }
+    .lane .mini .v {
+      font-size: 13px;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -0.02em;
+    }
+    .example-pill {
+      display: inline-block;
+      margin-left: 8px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px dashed color-mix(in srgb, var(--color-lime) 40%, transparent);
+      color: var(--color-lime);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      vertical-align: middle;
+    }
+
     html[data-theme="light"] .lane,
     html[data-theme="light"] .panel {
       background: color-mix(in srgb, var(--color-steel) 88%, transparent);
@@ -302,6 +411,32 @@
       <p class="lede">Four doors normals actually use. <b>Bonds</b> turn outside assets into protocol RFV — you get <b>gV at a discount</b> after a wait.</p>
     </div>
 
+    <div class="strip" id="capital-strip" aria-label="TVL and effective YOTC example">
+      <div class="ex-tag" title="Not live chain reads">Example data</div>
+      <div class="metric">
+        <div class="mono">TVL</div>
+        <div class="val" id="m-tvl">$12.4<em>M</em></div>
+        <div class="sub">Total capital across Cash · Bonds · House · Equity</div>
+      </div>
+      <div class="metric">
+        <div class="mono">effective YOTC</div>
+        <div class="val" id="m-yotc">6.2<em>%</em></div>
+        <div class="sub">Yield on total capital · blended, not a promise</div>
+      </div>
+      <div class="blend">
+        <div class="mono">capital mix · example</div>
+        <div class="bars" aria-hidden="true">
+          <span class="cash"></span><span class="bonds"></span><span class="house"></span><span class="equity"></span>
+        </div>
+        <div class="legend">
+          <span><b>Cash</b> 34%</span>
+          <span><b>Bonds RFV</b> 25%</span>
+          <span><b>House</b> 22%</span>
+          <span><b>Equity</b> 19%</span>
+        </div>
+      </div>
+    </div>
+
     <div class="mono map-label">product map</div>
     <div class="map" role="navigation" aria-label="Product map">
       <button class="lane" type="button" data-go="vapurr://pusd" data-lane="cash">
@@ -313,6 +448,7 @@
           <span class="chip on">USDG</span>
           <span class="chip">sPUSD</span>
         </div>
+        <div class="mini"><span class="k">exog. depth · example</span><span class="v">$4.2M</span></div>
       </button>
       <button class="lane" type="button" data-go="vapurr://stake" data-lane="equity">
         <span class="mono">02 · Equity</span>
@@ -323,6 +459,7 @@
           <span class="chip">stake</span>
           <span class="chip">wgV</span>
         </div>
+        <div class="mini"><span class="k">rebase · live policy</span><span class="v">3.5%/yr</span></div>
       </button>
       <button class="lane focus" type="button" data-go="#bonds" data-lane="bonds">
         <span class="mono">03 · Bonds</span>
@@ -333,6 +470,7 @@
           <span class="chip on">USDG</span>
           <span class="chip on">stocks</span>
         </div>
+        <div class="mini"><span class="k">RFV in · example</span><span class="v">$3.1M</span></div>
       </button>
       <button class="lane" type="button" data-go="vapurr://house" data-lane="house">
         <span class="mono">04 · House</span>
@@ -342,6 +480,7 @@
           <span class="chip on">wgV</span>
           <span class="chip on">$PUSD</span>
         </div>
+        <div class="mini"><span class="k">desk TVL · example</span><span class="v">$2.8M</span></div>
       </button>
     </div>
 
@@ -359,7 +498,7 @@
       </div>
     </div>
     <div class="panel" id="bonds">
-      <div class="mono">bonds · v1 assets</div>
+      <div class="mono">bonds · v1 assets <span class="example-pill">Example quotes</span></div>
       <h2>Bond in. Wait. Claim gV.</h2>
       <p class="lede">Pick an asset. See discount and wait up front. Bonded value goes to <b>Fed / Treasury RFV</b>. You get equity later — not a second dollar.</p>
 
@@ -412,7 +551,7 @@
         <button class="btn-ghost" type="button" data-go="vapurr://stake">Equity desk</button>
         <button class="btn-ghost" type="button" data-go="vapurr://pusd">Cash / $PUSD</button>
       </div>
-      <p class="note">Stub UI — live bond contracts are P1. Quotes above are presentation placeholders so the surface is clear. RFV lands in Fed/Treasury; House quotes <b>wgV/$PUSD</b>.</p>
+      <p class="note"><b>Example data</b> — TVL, YOTC, lane depths, and bond quotes are labeled placeholders (not live chain reads). Bond contracts are P1. RFV lands in Fed/Treasury; House quotes <b>wgV/$PUSD</b>. Cash peg depth is exogenous <b>$PUSD/USDG</b>.</p>
     </div>
 
     <div class="flow" aria-label="RFV flow">
@@ -443,6 +582,14 @@
   <script>
     if (window.startShader) startShader(document.getElementById("shader"));
 
+    // EXAMPLE capital strip — not live
+    var EXAMPLE_CAPITAL = {
+      tvlUsd: 12.4e6,
+      yotcBps: 620,
+      mix: { cash: 0.34, bonds: 0.25, house: 0.22, equity: 0.19 }
+    };
+
+    // EXAMPLE DATA ONLY — replace with live reads later
     var DEMO = {
       ETH:  { discount: "8%",  wait: "5d" },
       USDG: { discount: "5%",  wait: "3d" },
