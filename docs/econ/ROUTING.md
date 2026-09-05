@@ -32,7 +32,7 @@ Cash peg trust is the **`$PUSD` / USDG** book (and other exogenous cash legs) - 
 1. **Only Fed prints V** - flat **3.5%/yr rebase to gV stakers**. Browse never funded by this mint.
 2. **BrowserStream** - **50k $VAPURR / 3y** from **already-minted treasury** (float migration). No USD cap (intentional convexity). Claim: install_id + KYC.
 3. **$PUSD** - forced product float; mint/redeem ~**par** for social trust. Not an equity lottery. Depth against **outside** money (USDG primary).
-4. **Branch remittance** - Lithe/House/Oliver surplus -> runway floor first -> **sPUSD** (not into gV rebase).
+4. **Branch remittance** - Lithe/House/Oliver realized surplus -> one RemittanceSink (sink-level runway floor) -> **sPUSD** (not into gV rebase).
 5. **404 != payments** - pay is HTTP 402 / x402.
 
 ## Inflows -> RFV battery
@@ -63,8 +63,8 @@ Cash peg trust is the **`$PUSD` / USDG** book (and other exogenous cash legs) - 
 
 ## Shared runway + realized remittance (2026-09-05)
 
-One `RunwayFloor` instance is the treasury runway SoT — Oliver (`PusdLoop`) and Lithe (`PusdMarket`) must wire the same address. Remittance may only move **realized** surplus (collected interest/fees already in hand) above that floor into the remittance sink / sPUSD path. Unpaid accrued interest and depositor principal are **not** exogenous RFV (circular if counted as both RFV and a user claim). Oliver: `pendingReserve`→`realizedReserve` on repay, then `runway.surplus` (sole-owner cash OK). Lithe: inventory-backed `yieldReserve`, then same floor. See `RunwayRfv.t.sol`.
+One `RemittanceSink` consolidates branch RFV cash; one `RunwayFloor` is enforced **at the sink** on `accountedRfv` (not as dual local pools on Oliver/Lithe). Branches remit **all realized** surplus into that sink; `forwardSurplus` cannot drain below the shared floor. Unpaid accrued interest and depositor principal are **not** exogenous RFV (circular if counted as both RFV and a user claim). Oliver: `pendingReserve`->`realizedReserve` on repay/liq, then remit realized (sole-owner cash OK). Lithe: inventory-backed `yieldReserve` remits in full to the same sink. See `RunwayRfv.t.sol` (`test_two_branches_remit_one_sink_floor`).
 
 ## Lithe remittance (2026-09-05)
 
-`PusdMarket` (Lithe) can remit `yieldReserve` surplus above the runway floor to the same `IRemittance` / `RemittanceSink` path as Oliver (`setRemittance` / `remitSurplus`). Holder drip (9% APY cap) still runs on accrue; remittance feeds runway → sPUSD so branch fees can hit the savings path later. See `PUSD_LIQUIDITY.md` for exogenous peg books; remittance does not replace those.
+`PusdMarket` (Lithe) remits realized `yieldReserve` to the same `IRemittance` / `RemittanceSink` path as Oliver (`setRemittance` / `remitSurplus`). Floor retain is sink-level (`ITreasuryRfv`); branches do not hold a second local floor. Holder drip (9% APY cap) still runs on accrue; remittance feeds sink -> sPUSD so branch fees can hit the savings path later. See `PUSD_LIQUIDITY.md` for exogenous peg books; remittance does not replace those. **Gap:** sink-held nominal $PUSD is still not exogenous USDG backing.

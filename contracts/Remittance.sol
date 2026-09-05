@@ -1,13 +1,18 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.24;
 
-/// Remittance pipe: branch surplus -> runway floor gate -> sPUSD (or hold).
-/// Stub-grade but wired so Oliver/Lithe/House can call later.
+/// Remittance pipe: branch realized surplus -> RemittanceSink (treasury RFV) ->
+/// sink-level runway floor -> sPUSD (or hold).
 ///
 /// INVARIANT (circular RFV): remittance may only move *realized* surplus
-/// (collected interest/fees already in hand) above the shared runway floor.
-/// Unpaid accrued interest and depositor principal are NOT exogenous RFV —
-/// counting the same dollar as RFV and as a user claim is circular.
+/// (collected interest/fees already in hand). Unpaid accrued interest and
+/// depositor principal are NOT exogenous RFV — counting the same dollar as
+/// RFV and as a user claim is circular.
+///
+/// INVARIANT (sink-level floor): the runway floor is enforced once on the
+/// consolidated sink balance (accounted RFV cash), not as dual local pools on
+/// Oliver/Lithe. Branches remit realized surplus into one RemittanceSink;
+/// forward/drain above floor happens at the sink.
 
 interface IERC20Remit {
     function balanceOf(address) external view returns (uint256);
@@ -22,16 +27,16 @@ interface IRemittance {
     function receiveRemittance(uint256 amount) external returns (bool);
 }
 
-/// Optional runway floor view used by Oliver/Lithe before remitting surplus.
-/// Both branches MUST point at the same RunwayFloor instance (one treasury runway).
+/// Optional runway floor view. Sink holds the SoT; branches may wire the same
+/// address for observability but must not apply a second local floor on remit.
 interface IRunwayView {
     function surplus(uint256 balance) external view returns (uint256);
     function floor() external view returns (uint256);
 }
 
-/// Shared treasury RFV runway floor — single source of truth for Oliver + Lithe.
-/// Remittance surplus is only the *realized* balance above `floor`.
-/// Do not deploy a separate floor per branch; wire one instance into both.
+/// Shared treasury RFV runway floor — single source of truth.
+/// Wire one instance into RemittanceSink (and optionally both branches for views).
+/// Do not deploy a separate floor per branch.
 contract RunwayFloor {
     address public owner;
     uint256 public floor;
@@ -65,14 +70,24 @@ contract RunwayFloor {
         return balance > floor ? balance - floor : 0;
     }
 
-    /// Alias: remittable realized balance above floor (same as surplus).
+    /// Alias: remittable / forwardable realized balance above floor.
     function remittable(uint256 realizedBalance) external view returns (uint256) {
         return surplus(realizedBalance);
     }
 }
 
+/// Thin treasury RFV view over consolidated remittance cash + shared floor.
+/// RemittanceSink implements this; keep as a named surface for ROUTING/docs.
+interface ITreasuryRfv {
+    function accountedRfv() external view returns (uint256);
+    function retainedFloor() external view returns (uint256);
+    function surplus() external view returns (uint256);
+    function runway() external view returns (RunwayFloor);
+}
+
 /// Holds remitted $PUSD for runway / later sPUSD forward. Implements IRemittance.
-contract RemittanceSink is IRemittance {
+/// Floor is enforced here on consolidated cash — not on each branch pool.
+contract RemittanceSink is IRemittance, ITreasuryRfv {
     IERC20Remit public immutable asset;
     RunwayFloor public immutable runway;
     address public owner;
@@ -106,6 +121,8 @@ contract RemittanceSink is IRemittance {
         emit ForwardUpdated(f);
     }
 
+    /// Consolidate branch realized surplus. Floor is NOT applied on intake —
+    /// retained runway lives in this sink once cash arrives.
     function receiveRemittance(uint256 amount) external returns (bool) {
         require(amount > 0, "TINY");
         require(asset.transferFrom(msg.sender, address(this), amount), "PULL");
@@ -113,11 +130,25 @@ contract RemittanceSink is IRemittance {
         return true;
     }
 
+    /// Consolidated RFV cash held by the sink (nominal $PUSD inventory).
+    function accountedRfv() public view returns (uint256) {
+        return asset.balanceOf(address(this));
+    }
+
+    /// Cash retained for runway (min of balance and floor).
+    function retainedFloor() public view returns (uint256) {
+        uint256 bal = accountedRfv();
+        uint256 f = runway.floor();
+        return bal < f ? bal : f;
+    }
+
+    /// Forwardable surplus above sink-level runway floor.
     function surplus() public view returns (uint256) {
-        return runway.surplus(asset.balanceOf(address(this)));
+        return runway.surplus(accountedRfv());
     }
 
     /// Forward only surplus above runway floor to configured sPUSD/receiver.
+    /// Cannot drain consolidated RFV below the shared floor.
     function forwardSurplus(uint256 amount) external onlyOwner returns (uint256 sent) {
         require(forward != address(0), "FWD");
         uint256 free = surplus();

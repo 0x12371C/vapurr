@@ -1,5 +1,37 @@
 # Codex brain pass (econ hard knots)
 
+## Re-review timestamp
+Date: 2026-09-05 ~02:55 America/New_York. Model: gpt-6-astra (high). Mode: brain-only, no patches.
+Branch: `fix/gv-spusd-guards` @ `b3f0fed`.
+Note: Codex read-only sandbox blocked independent file probes; verdict based on progress contracts below + prior closed proofs as reported.
+
+### Prior P0 status (closed vs open/partial)
+- CLOSED -- Oliver post-action LTV and reserve-remit owner health; reported regression proofs cover both.
+- CLOSED -- gV pre-mint/burn accrual and empty-pool clock prevent prior-interval capture.
+- CLOSED -- sPUSD/wgV donation guards address cited theft paths; full timed-remittance skim resistance remains outside this closure.
+- CLOSED -- Lithe burns fee inventory before drip, removing the identified double claim.
+- CLOSED -- Redeem false-THIN gate removed; inventory constraints remain.
+- CLOSED -- market_abi wired through mint/redeem/rate with conclusive-only caching; live compatibility remains deployment-dependent.
+- CLOSED -- Oliver freshness, conservative pending valuation and feed-jump clamp implemented.
+- CLOSED -- Oliver bad-debt write-down and failure-isolated optional backstop implemented; funded coverage is not established.
+- PARTIAL -- Auto-remit isolation closes Oliver failure propagation; Lithe isolation remains unconfirmed.
+- CLOSED -- Realized-only Oliver remittance + sink-level RunwayFloor on consolidated RemittanceSink RFV (cross-branch floor). Exogenous USDG backing still open.
+- PARTIAL -- Fed single-minter enforcement implemented; live market still has distinct embedded V.
+- PARTIAL -- House raw-gV gate implemented; live wiring and PUSD rebase accounting remain open.
+- OPEN -- Self-issued PUSD/V inventory does not establish exogenous dollar backing or par redemption.
+- OPEN -- Executable bonds lack completed inventory, vesting, capacity and valuation prerequisites.
+
+### Remaining P0/P1 merge blockers (max 12)
+- [P0] Live one-token migration: replace/migrate gen-4 `0x47Ac...` embedded V and retarget consumers; distinct V addresses cannot be treated as fungible.
+- [P1] HouseLp rewire: use wgV, enforce PairConfig before actual initialization, complete Permit2/PositionManager integration and live-v4 fork proofs.
+- [P1] Pool-held PUSD: define and prove rebase settlement/allocation for House and `$PUSD`/USDG pools.
+- [P0] Bond execution: keep disabled until payout inventory, vesting/rebase ownership, per-asset capacity, haircuts and reliable RFV valuation are enforced.
+- [P0] External backing / solvency: sink-level cross-branch floor accounting landed; exogenous USDG (or equivalent) backing and true dollar solvency still not established by nominal PUSD RFV.
+
+### MERGE_REC
+**hold** -- Local fixes substantially close prior defects, but live token unification and consolidated backing remain unresolved, and bond execution must stay gated.
+
+---
 Date: 2026-09-05 (America/New_York). Model: gpt-6-astra, high effort. Mode: brain-only, no patches.
 Branches in scope: `feat/bonds-ux-map`, `fix/pusdloop-routing-gaps`.
 
@@ -84,7 +116,21 @@ Date: 2026-09-05 (America/New_York). Branch: fix/gv-spusd-guards.
 - Tests: `RunwayRfvTest` (`test_oliver_and_lithe_share_same_runway_floor`, `test_cannot_remit_unpaid_interest_from_depositor_cash`, `test_realized_remit_respects_floor_and_user_claims`, `test_lithe_cannot_remit_below_shared_floor`, `test_liq_with_accrued_interest_realizes_reserve`); RoutingFences accrue path realizes via repay before remit.
 
 - [done] Shared runway floor + realized-only Oliver remit. Proofs: `RunwayRfvTest`.
-- [done] Liq / unwind / `_burnDebt` (incl. backstop cover) call `_realizeFromRepay` same as `repay`; interest collected on liq becomes remittable surplus. Proof: `test_liq_with_accrued_interest_realizes_reserve`. [remaining] Branch-local `surplus(floor)` still per-pool; sink-level floor cleaner. Cross-branch treasury cash aggregation still open.
+- [done] Liq / unwind / `_burnDebt` (incl. backstop cover) call `_realizeFromRepay` same as `repay`; interest collected on liq becomes remittable surplus. Proof: `test_liq_with_accrued_interest_realizes_reserve`.
+
+## Progress - sink-level RFV / cross-branch floor (P0)
+
+Date: 2026-09-05 (America/New_York). Branch: fix/gv-spusd-guards.
+
+- `RemittanceSink` is consolidated RFV SoT (`ITreasuryRfv`: `accountedRfv` / `retainedFloor` / `surplus`). Floor enforced on sink balance via `forwardSurplus` (cannot drain below floor).
+- Oliver + Lithe remit **all realized** surplus into one sink; no second local `runway.surplus` gate on branch pools.
+- Realized-only Oliver invariant kept (`pendingReserve` not remittable; user claims stay backed).
+- Proofs: `RunwayRfvTest` (`test_two_branches_remit_one_sink_floor`, `test_realized_remit_respects_floor_and_user_claims`, `test_lithe_cannot_remit_below_shared_floor`, unpaid-interest + liq realize); RoutingFences floor tests retargeted to sink forward.
+- Docs: `ROUTING.md` sink-level retain; hard wall #4 updated.
+
+- [done] Sink-level cross-branch floor on consolidated remittance cash. Proofs: `RunwayRfvTest` + RoutingFences.
+- [remaining / honest gap] Exogenous USDG (or equivalent) external backing still not in this slice — nominal $PUSD in the sink is not dollar solvency.
+
 
 
 

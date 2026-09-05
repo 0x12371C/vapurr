@@ -185,8 +185,8 @@ contract PusdMarket {
     uint256 public lastAccrue;
 
     IRemittance public remittance; // surplus sink (RemittanceSink / sPUSD)
-    IRunwayView public runway; // optional floor gate before remit
-    bool public remitOnAccrue; // when true, accrue best-effort pushes surplus above floor to sink
+    IRunwayView public runway; // optional shared floor view (sink enforces)
+    bool public remitOnAccrue; // when true, accrue best-effort pushes realized surplus to sink
 
     event Swap(address indexed trader, bool offerV, uint256 offer, uint256 ask, uint256 fee);
     event Feed(uint256 rate);
@@ -243,10 +243,11 @@ contract PusdMarket {
         emit RemittanceSet(sink, runway_, autoRemit);
     }
 
-    /// Push realized yieldReserve (collected mint-spread fees in hand) above the
-    /// shared RunwayFloor to remittance sink. amount==0 remits all free surplus.
+    /// Push realized yieldReserve (collected mint-spread fees in hand) to the
+    /// remittance sink. amount==0 remits all free realized surplus.
     /// INVARIANT: yieldReserve is inventory-backed fee cash only — never unpaid
-    /// claims against depositor principal. Wire the same RunwayFloor as Oliver.
+    /// claims against depositor principal. Sink-level RunwayFloor retains
+    /// consolidated RFV; do not apply a second local floor here.
     function remitSurplus(uint256 amount) public returns (uint256 sent) {
         accrue(); // settle holder drip first (Oliver-style)
         sent = _remitSurplus(amount);
@@ -254,11 +255,8 @@ contract PusdMarket {
 
     function _remitSurplus(uint256 amount) internal returns (uint256 sent) {
         require(address(remittance) != address(0), "REMIT");
-        // Realized fee inventory only; shared treasury floor gates remittance.
+        // Realized fee inventory only; floor retained at RemittanceSink.
         uint256 free = yieldReserve;
-        if (address(runway) != address(0)) {
-            free = runway.surplus(yieldReserve);
-        }
         sent = amount == 0 ? free : amount;
         if (sent > free) sent = free;
         if (sent > yieldReserve) sent = yieldReserve;

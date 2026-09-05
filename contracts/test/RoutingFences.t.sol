@@ -158,6 +158,8 @@ contract RoutingFencesTest is Test {
         (uint256 ask,) = market.swapVToPusd(200 ether);
         pusd.approve(address(s), type(uint256).max);
         s.receiveRemittance(ask);
+        assertEq(s.accountedRfv(), ask, "accounted RFV");
+        assertEq(s.retainedFloor(), 40 ether, "retained floor");
         assertEq(s.surplus(), ask - 40 ether, "sink surplus above floor");
     }
 
@@ -192,16 +194,27 @@ contract RoutingFencesTest is Test {
         vapurr.approve(address(loop), type(uint256).max);
         loop.depositV(10_000 ether);
         loop.borrow(2_000 ether);
+        pusd.approve(address(loop), type(uint256).max);
         vm.stopPrank();
 
-        runway.setFloor(type(uint256).max); // block remits: owner assets always <= floor
         loop.setRemittance(address(sink), address(runway), false);
 
         vm.warp(block.timestamp + 365 days);
         loop.accrue();
-        uint256 sent = loop.remitReserve(100 ether);
-        assertEq(sent, 0, "floor blocks remit");
-        assertEq(pusd.balanceOf(address(sink)), 0, "sink empty under floor");
+        // Realize interest so branch has remittable cash.
+        vm.prank(borrower);
+        loop.repay(500 ether);
+        uint256 free = loop.realizedRemittable();
+        assertGt(free, 0, "realized after repay");
+
+        // High floor does not block branch remit into sink (sink-level retain).
+        runway.setFloor(type(uint256).max);
+        uint256 sent = loop.remitReserve(type(uint256).max / 4);
+        assertEq(sent, free, "branch remits full realized into sink");
+        assertEq(sink.accountedRfv(), sent, "sink holds consolidated RFV");
+        assertEq(sink.surplus(), 0, "max floor => nothing forwardable");
+        vm.expectRevert(bytes("FLOOR"));
+        sink.forwardSurplus(0);
     }
 
     function test_lithe_remit_surplus_to_sink() public {
@@ -231,20 +244,22 @@ contract RoutingFencesTest is Test {
 
         uint256 reserve = market.yieldReserve();
         require(reserve > 1 ether, "need reserve");
-        runway.setFloor(reserve); // at floor: no surplus
+        runway.setFloor(reserve); // sink retains floor after intake
         market.setRemittance(address(sink), address(runway), false);
 
         uint256 sent = market.remitSurplus(0);
-        assertEq(sent, 0, "floor blocks Lithe remit");
-        assertEq(pusd.balanceOf(address(sink)), 0, "sink empty under floor");
-        assertEq(market.yieldReserve(), reserve, "reserve untouched");
+        assertEq(sent, reserve, "Lithe remits full realized into sink");
+        assertEq(market.yieldReserve(), 0, "no local floor retain");
+        assertEq(sink.accountedRfv(), reserve, "sink holds RFV");
+        assertEq(sink.surplus(), 0, "at floor nothing forwardable");
+        vm.expectRevert(bytes("FLOOR"));
+        sink.forwardSurplus(0);
 
-        // Raise headroom: floor half -> remit half
+        // Raise headroom: floor half -> forward half from sink
         runway.setFloor(reserve / 2);
-        sent = market.remitSurplus(0);
-        assertEq(sent, reserve - reserve / 2, "surplus above floor");
-        assertEq(market.yieldReserve(), reserve / 2, "floor retained in reserve");
-        assertEq(pusd.balanceOf(address(sink)), sent, "sink got surplus only");
+        uint256 fwd = sink.forwardSurplus(0);
+        assertEq(fwd, reserve - reserve / 2, "surplus above sink floor");
+        assertEq(sink.accountedRfv(), reserve / 2, "floor retained in sink");
     }
 
     function test_lithe_accrue_path_can_call_remittance() public {

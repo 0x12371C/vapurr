@@ -64,7 +64,7 @@ contract PusdLoop {
     uint256 public badDebtSocialized;
 
     IRemittance public remittance; // surplus sink (RemittanceSink / sPUSD)
-    IRunwayView public runway; // optional floor gate before remit
+    IRunwayView public runway; // optional shared floor view (sink enforces)
     bool public remitOnAccrue; // when true, _accrue best-effort pushes reserve cash to sink
     IFedBackstop public backstop; // optional bounded LOLR cover
     /// Unpaid reserve fee assets from accrue (not remittable until collected).
@@ -127,16 +127,17 @@ contract PusdLoop {
         emit BackstopSet(backstop_);
     }
 
-    /// Push owner reserve out as $PUSD to remittance sink.
+    /// Push owner reserve out as $PUSD to remittance sink (consolidated RFV).
     /// INVARIANT: only *realized* surplus (collected fee cash in realizedReserve, or
-    /// sole-owner cash when no external depositor claims), then shared RunwayFloor.
+    /// sole-owner cash when no external depositor claims). Sink-level RunwayFloor
+    /// retains consolidated cash; branches do not apply a second local floor.
     /// Unpaid pendingReserve interest is not remittable RFV.
     function remitReserve(uint256 assets) public lock returns (uint256 sent) {
         _accrue();
         sent = _remitReserve(assets);
     }
 
-    /// Remittable realized pool above shared runway floor.
+    /// Realized remittable pool (to sink). Floor is enforced at RemittanceSink.
     function realizedRemittable() public view returns (uint256) {
         return _realizedPool();
     }
@@ -148,12 +149,10 @@ contract PusdLoop {
         uint256 userClaims = totalAssets > ownerAssets ? totalAssets - ownerAssets : 0;
         // With external depositors: only collected fee cash (realizedReserve).
         // Sole-owner book: owner cash is not circular against third-party claims.
+        // No branch-local runway.surplus — sink consolidates RFV and retains floor.
         realized = userClaims == 0 ? cash : realizedReserve;
         if (realized > cash) realized = cash;
         if (realized > ownerAssets) realized = ownerAssets;
-        if (address(runway) != address(0)) {
-            realized = runway.surplus(realized);
-        }
     }
 
     function _remitReserve(uint256 assets) internal returns (uint256 sent) {
