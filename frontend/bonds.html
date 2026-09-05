@@ -289,7 +289,7 @@
     .flow .node span { display: block; margin-top: 4px; color: var(--color-muted); font-size: 11px; line-height: 1.35; }
 
 
-    /* TVL + effective YOTC strip */
+    /* capital strip (empty / not configured; no fabricated metrics) */
     .strip {
       display: grid;
       grid-template-columns: auto 1fr 1fr 1.2fr;
@@ -384,18 +384,6 @@
       font-variant-numeric: tabular-nums;
       letter-spacing: -0.02em;
     }
-    .example-pill {
-      display: inline-block;
-      margin-left: 8px;
-      padding: 2px 8px;
-      border-radius: 999px;
-      border: 1px dashed color-mix(in srgb, var(--color-lime) 40%, transparent);
-      color: var(--color-lime);
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 0.05em;
-      vertical-align: middle;
-    }
 
     html[data-theme="light"] .lane,
     html[data-theme="light"] .panel {
@@ -487,11 +475,6 @@
       border-radius: 14px;
       border: 1px solid color-mix(in srgb, var(--color-snow) 12%, transparent);
     }
-    .example-pill {
-      opacity: 1;
-      visibility: visible;
-      background: color-mix(in srgb, var(--color-void) 40%, transparent);
-    }
     .strip .ex-tag {
       opacity: 1;
       visibility: visible;
@@ -540,30 +523,10 @@
       <p class="lede">Four doors normals actually use. <b>Bonds</b> turn outside assets into protocol RFV — you get <b>gV at a discount</b> after a wait.</p>
     </div>
 
-    <div class="strip" id="capital-strip" aria-label="TVL and effective YOTC example">
-      <div class="ex-tag" title="Not live chain reads">Example data</div>
-      <div class="metric">
-        <div class="mono">TVL</div>
-        <div class="val" id="m-tvl">$12.4<em>M</em></div>
-        <div class="sub">Total capital across Cash · Bonds · House · Equity</div>
-      </div>
-      <div class="metric">
-        <div class="mono">effective YOTC</div>
-        <div class="val" id="m-yotc">6.2<em>%</em></div>
-        <div class="sub">Yield on total capital · blended, not a promise</div>
-      </div>
-      <div class="blend">
-        <div class="mono">capital mix · example</div>
-        <div class="bars" aria-hidden="true">
-          <span class="cash"></span><span class="bonds"></span><span class="house"></span><span class="equity"></span>
-        </div>
-        <div class="legend">
-          <span><b>Cash</b> 34%</span>
-          <span><b>Bonds RFV</b> 25%</span>
-          <span><b>House</b> 22%</span>
-          <span><b>Equity</b> 19%</span>
-        </div>
-      </div>
+    <div class="defi-empty" id="capital-strip" aria-label="Capital metrics">
+      <div class="mono">capital</div>
+      <b>Not configured</b>
+      <span>TVL, effective YOTC, and capital mix appear only from live chain reads. Address book / RPC not wired for these surfaces yet.</span>
     </div>
 
     <div class="mono map-label">product map</div>
@@ -577,7 +540,7 @@
           <span class="chip on">USDG</span>
           <span class="chip on">sPUSD</span>
         </div>
-        <div class="mini"><span class="k">exog. depth - example</span><span class="v">$4.2M</span></div>
+        <div class="mini"><span class="k">exog. depth</span><span class="v">—</span></div>
       </button>
       <button class="lane" type="button" data-go="vapurr://stake" data-lane="equity">
         <span class="mono">02 · Equity</span>
@@ -588,7 +551,7 @@
           <span class="chip">stake</span>
           <span class="chip">wgV</span>
         </div>
-        <div class="mini"><span class="k">rebase · live policy</span><span class="v">3.5%/yr</span></div>
+        <div class="mini"><span class="k">rebase</span><span class="v">—</span></div>
       </button>
       <button class="lane focus" type="button" data-go="#bonds" data-lane="bonds">
         <span class="mono">03 · Bonds</span>
@@ -599,7 +562,7 @@
           <span class="chip on">USDG</span>
           <span class="chip on">stocks</span>
         </div>
-        <div class="mini"><span class="k">RFV in · example</span><span class="v">$3.1M</span></div>
+        <div class="mini"><span class="k">RFV in</span><span class="v">—</span></div>
       </button>
       <button class="lane" type="button" data-go="vapurr://house" data-lane="house">
         <span class="mono">04 · House</span>
@@ -609,7 +572,7 @@
           <span class="chip on">wgV</span>
           <span class="chip on">$PUSD</span>
         </div>
-        <div class="mini"><span class="k">desk TVL · example</span><span class="v">$2.8M</span></div>
+        <div class="mini"><span class="k">desk depth</span><span class="v">—</span></div>
       </button>
     </div>
 
@@ -627,7 +590,7 @@
       </div>
     </div>
     <div class="panel" id="spusd-cd" aria-label="sPUSD CD">
-      <div class="mono">cash · sPUSD CD <span class="example-pill">Example rates</span></div>
+      <div class="mono">cash · sPUSD CD</div>
       <h2>Save liquid. Lock a CD.</h2>
       <p class="lede">Same surplus pool after the runway floor. <b>Liquid sPUSD</b> exits on demand. <b>CDs</b> lock for a term with a target coupon funded by surplus. Early exit pays the <b>break fee</b> agreed when you deposit. No V inflation into savings.</p>
       <div class="cd-grid">
@@ -639,18 +602,18 @@
           <div class="row"><span class="k">source</span><span class="v">surplus only</span></div>
         </div>
         <div class="cd-card">
-          <div class="mono">30d CD · example</div>
+          <div class="mono">30d CD</div>
           <b>Lock 30d</b>
           <p>Target for the full term. Your principal stays in cash; coupon payouts depend on shared surplus.</p>
-          <div class="row"><span class="k">target / term</span><span class="v">4.0%</span></div>
-          <div class="row"><span class="k">break fee</span><span class="v">1.0%</span></div>
+          <div class="row"><span class="k">target / term</span><span class="v">—</span></div>
+          <div class="row"><span class="k">break fee</span><span class="v">—</span></div>
         </div>
         <div class="cd-card">
-          <div class="mono">90d CD · example</div>
+          <div class="mono">90d CD</div>
           <b>Lock 90d</b>
           <p>Target for the full term. If surplus is short, open coupon targets share the available funds proportionally.</p>
-          <div class="row"><span class="k">target / term</span><span class="v">6.5%</span></div>
-          <div class="row"><span class="k">break fee</span><span class="v">2.0%</span></div>
+          <div class="row"><span class="k">target / term</span><span class="v">—</span></div>
+          <div class="row"><span class="k">break fee</span><span class="v">—</span></div>
         </div>
       </div>
       <div class="actions" style="margin-top:14px; flex-wrap:wrap; gap:10px; align-items:center">
@@ -660,11 +623,11 @@
         <button class="btn-ghost" type="button" data-go="#bonds">Bonds desk</button>
       </div>
       <div id="cd-err" role="alert" style="display:none;margin-top:10px;padding:10px 12px;border-radius:10px;border:1px solid color-mix(in srgb,#f87171 45%,transparent);color:#fecaca;font-size:13px;line-height:1.4"></div>
-      <p class="note"><b>Example rates</b> — coupon targets and break fees above are labeled placeholders until chain reads land. Open CD is live-by-default; capacity and haircuts show as params, not a hidden button.</p>
+      <p class="note"><b>Rates</b> — coupon targets and break fees show only from live chain reads. Until SpusdCd is in the address book they stay as <b>—</b> (not quotes). Open CD is live-by-default; capacity and haircuts show as params, not a hidden button.</p>
     </div>
 
     <div class="panel" id="bonds">
-      <div class="mono">bonds · v1 assets <span class="example-pill">Example quotes</span></div>
+      <div class="mono">bonds · v1 assets</div>
       <h2>Bond in. Wait. Claim gV.</h2>
       <p class="lede">Pick an asset. See discount and wait up front. Bonded value goes to <b>Fed / Treasury RFV</b>. You get equity later — not a second dollar.</p>
 
@@ -679,7 +642,7 @@
       </div>
 
       <div class="gate-banner on" id="gate-banner" role="status" aria-live="polite">
-        <div class="mono">market · live params <span class="example-pill">Example</span></div>
+        <div class="mono">market · params</div>
         <b>Open</b> — capacity, oracle, and haircut are params on this tab (not a hide-the-button gate).
         <span id="gate-why"></span>
       </div>
@@ -691,11 +654,11 @@
         </div>
         <div class="stat">
           <div class="mono">discount</div>
-          <div class="val" id="q-discount">8<em>%</em></div>
+          <div class="val" id="q-discount">—</div>
         </div>
         <div class="stat">
           <div class="mono">wait</div>
-          <div class="val" id="q-wait">5<em>d</em></div>
+          <div class="val" id="q-wait">—</div>
         </div>
       </div>
 
@@ -725,7 +688,7 @@
         <button class="btn-ghost" type="button" data-go="vapurr://pusd">Cash / $PUSD</button>
       </div>
       <div id="bond-err" role="alert" style="display:none;margin-top:10px;padding:10px 12px;border-radius:10px;border:1px solid color-mix(in srgb,#f87171 45%,transparent);color:#fecaca;font-size:13px;line-height:1.4"></div>
-      <p class="note"><b>Example data</b> — TVL, YOTC, lane depths, and bond quotes are labeled placeholders where chain reads are not wired yet. Product CTAs are <b>live-by-default</b> (Bond / Open CD). Capacity, oracle, and haircut show as params — not Unavailable/Gated. RFV lands in Fed/Treasury; House quotes <b>wgV/$PUSD</b>. Cash peg depth is exogenous <b>$PUSD/USDG</b>.</p>
+      <p class="note"><b>On-chain only</b> — discount, wait, capacity, and haircut show when BondMarket is wired. Until then values stay as <b>—</b> / not configured — never placeholder quotes. Product CTAs are <b>live-by-default</b> (Bond / Open CD). RFV lands in Fed/Treasury; House quotes <b>wgV/$PUSD</b>. Cash peg depth is exogenous <b>$PUSD/USDG</b>.</p>
     </div>
 
     <div class="flow" aria-label="RFV flow">
@@ -756,34 +719,16 @@
   <script>
     if (window.startShader) startShader(document.getElementById("shader"));
 
-    // EXAMPLE capital strip — not live
-    var EXAMPLE_CAPITAL = {
-      tvlUsd: 12.4e6,
-      yotcBps: 620,
-      mix: { cash: 0.34, bonds: 0.25, house: 0.22, equity: 0.19 }
-    };
-
-    // EXAMPLE DATA ONLY — replace with live reads later
-    var DEMO = {
-      ETH:  { discount: "8%",  wait: "5d" },
-      USDG: { discount: "5%",  wait: "3d" },
-      AMZN: { discount: "7%",  wait: "7d" },
-      TSLA: { discount: "9%",  wait: "7d" },
-      AMD:  { discount: "8%",  wait: "7d" },
-      NFLX: { discount: "7%",  wait: "7d" },
-      PLTR: { discount: "10%", wait: "7d" }
-    };
-
-    // Live-by-default markets. Capacity / oracle / haircut are params (example until chain reads).
+    // Live-by-default markets. Quotes/capacity/haircut stay "—" until chain reads land.
     // Relic: nothing product-critical stays gated — do not hide Bond/CD behind Unavailable.
     var MARKET = {
-      ETH:  { enabled: true, capacity: "2.5M", oracle: "ETH/USD", haircut: "5%", tag: "ETH" },
-      USDG: { enabled: true, capacity: "4.0M", oracle: "USDG", haircut: "0%", tag: "USDG" },
-      AMZN: { enabled: true, capacity: "1.0M", oracle: "AMZN", haircut: "12%", tag: "STOCKS" },
-      TSLA: { enabled: true, capacity: "1.0M", oracle: "TSLA", haircut: "15%", tag: "STOCKS" },
-      AMD:  { enabled: true, capacity: "0.8M", oracle: "AMD", haircut: "12%", tag: "STOCKS" },
-      NFLX: { enabled: true, capacity: "0.8M", oracle: "NFLX", haircut: "12%", tag: "STOCKS" },
-      PLTR: { enabled: true, capacity: "0.6M", oracle: "PLTR", haircut: "18%", tag: "STOCKS" }
+      ETH:  { enabled: true, capacity: "—", oracle: "ETH/USD", haircut: "—", tag: "ETH" },
+      USDG: { enabled: true, capacity: "—", oracle: "USDG", haircut: "—", tag: "USDG" },
+      AMZN: { enabled: true, capacity: "—", oracle: "AMZN", haircut: "—", tag: "STOCKS" },
+      TSLA: { enabled: true, capacity: "—", oracle: "TSLA", haircut: "—", tag: "STOCKS" },
+      AMD:  { enabled: true, capacity: "—", oracle: "AMD", haircut: "—", tag: "STOCKS" },
+      NFLX: { enabled: true, capacity: "—", oracle: "NFLX", haircut: "—", tag: "STOCKS" },
+      PLTR: { enabled: true, capacity: "—", oracle: "PLTR", haircut: "—", tag: "STOCKS" }
     };
 
     function marketFor(asset) {
@@ -791,13 +736,12 @@
     }
 
     function paintAsset(asset) {
-      var row = DEMO[asset] || DEMO.ETH;
       var m = marketFor(asset);
 
       document.getElementById("q-asset").textContent = asset;
-      document.getElementById("q-discount").innerHTML = row.discount.replace("%", "<em>%</em>");
-      var w = row.wait;
-      document.getElementById("q-wait").innerHTML = w.replace(/d$/, "<em>d</em>");
+      // Honest empty until BondMarket chain reads exist — never fabricate discount/wait.
+      document.getElementById("q-discount").textContent = "—";
+      document.getElementById("q-wait").textContent = "—";
 
       var quote = document.getElementById("bond-quote");
       if (quote) quote.classList.remove("gated");
