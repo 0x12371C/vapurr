@@ -70,18 +70,22 @@ pub fn api_authorized(req: &wry::http::Request<Vec<u8>>) -> bool {
 }
 
 /// Native approval cannot be satisfied by clicking or scripting the HTML confirmation sheet.
+#[cfg(windows)]
+#[path = "confirm_win.rs"]
+mod confirm_win;
+
 pub fn confirm(description: &str) -> bool {
     static PROMPT: Mutex<()> = Mutex::new(());
     let Ok(_guard) = PROMPT.try_lock() else { return false };
     #[cfg(windows)]
-    unsafe {
-        use windows::Win32::UI::WindowsAndMessaging::{MessageBoxW, IDYES, MB_YESNO, MB_ICONWARNING, MB_DEFBUTTON2, MB_TOPMOST};
-        use windows::core::HSTRING;
-        MessageBoxW(None, &HSTRING::from(description), &HSTRING::from("VAPURR — authorize"),
-            MB_YESNO | MB_ICONWARNING | MB_DEFBUTTON2 | MB_TOPMOST) == IDYES
+    {
+        confirm_win::show(description)
     }
     #[cfg(not(windows))]
-    { let _ = description; false }
+    {
+        let _ = description;
+        false
+    }
 }
 
 #[cfg(test)]
