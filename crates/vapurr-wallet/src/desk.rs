@@ -30,6 +30,14 @@ pub enum WalletCmd {
         secret: String,
     },
     Logout,
+    LockSession,
+    PasscodeUnlock {
+        code: String,
+    },
+    PasscodeSet {
+        a: String,
+        b: String,
+    },
     SetNet(String),
     RevealSeed,
     ExportKey,
@@ -234,6 +242,17 @@ impl Desk {
                 Ok(self.snap())
             }
             WalletCmd::Logout => Ok(crate::session::logout()),
+            WalletCmd::LockSession => Ok(crate::session::lock_session()),
+            WalletCmd::PasscodeUnlock { code } => {
+                crate::session::unlock_with_pin(&code)?;
+                self.reload_key();
+                Ok(self.snap())
+            }
+            WalletCmd::PasscodeSet { a, b } => {
+                crate::session::set_passcode(&a, &b)?;
+                self.reload_key();
+                Ok(self.snap())
+            }
             WalletCmd::SetNet(net) => {
                 write_net(&net)?;
                 self.reload_net();
@@ -269,6 +288,8 @@ impl Desk {
     pub fn snap(&self) -> Value {
         let logged_in = crate::session::is_logged_in();
         let has_key = crate::session::has_key();
+        let has_pin = crate::session::has_pin();
+        let needs_pin = crate::session::needs_passcode_setup();
         if has_key && DeviceKey::load_result().ok().flatten().is_none() {
             return json!({"ok":false,"has_key":true,"logged_in":false,"assets":[],"address":"","error":"Wallet storage could not be opened. Restore access to the encrypted wallet; no new key was created."});
         }
@@ -278,6 +299,8 @@ impl Desk {
                 "live": false,
                 "logged_in": false,
                 "has_key": false,
+                "has_pin": false,
+                "needs_pin": false,
                 "error": "",
                 "address": "",
                 "chain_id": self.chain_id,
@@ -472,6 +495,8 @@ impl Desk {
             "live": err.is_empty(),
             "logged_in": logged_in,
             "has_key": has_key,
+            "has_pin": has_pin,
+            "needs_pin": needs_pin,
             "error": err,
             "address": address,
             "chain_id": self.chain_id,

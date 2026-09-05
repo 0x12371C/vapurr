@@ -14,11 +14,12 @@ use vapurr_rhc::{self as rhc, USDG};
 pub mod desk;
 mod import;
 mod session;
+mod passcode;
 mod keystore;
 pub mod transactions;
 pub mod tx;
 pub use desk::{parse_units, Desk as WalletDesk, WalletCmd};
-pub use session::{require_unlocked, has_key, is_logged_in, logout, peek_address, status as login_status};
+pub use session::{require_unlocked, has_key, is_logged_in, logout, peek_address, status as login_status, lock_session, unlock_with_pin, set_passcode, has_pin, needs_passcode_setup};
 pub use tx::{
     abi_addr, abi_u256, decode_abi_string, decode_dyn_string, decode_hex_bytes, decode_word_addr,
     decode_word_u128, encode_fn, encode_fn_addr, encode_fn_addr_addr, encode_fn_addr_u256,

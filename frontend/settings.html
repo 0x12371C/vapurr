@@ -129,6 +129,34 @@
       </div>
     </div>
 
+
+    <div class="sec">
+      <h2>Wallet lock</h2>
+      <div class="steel">
+        <div class="row">
+          <div style="flex:1">
+            <b>Auto-lock</b>
+            <div class="hint">Locks the wallet after idle time. Default 15 minutes. Passcode required to unlock. Signing still uses the native authorize gate.</div>
+            <select class="field" id="lock-timeout" style="margin-top:10px;height:40px">
+              <option value="60">1 minute (test)</option>
+              <option value="300">5 minutes</option>
+              <option value="900" selected>15 minutes</option>
+              <option value="1800">30 minutes</option>
+              <option value="3600">1 hour</option>
+              <option value="0">Never</option>
+            </select>
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <b>Lock now</b>
+            <div class="hint">Require passcode again for this session.</div>
+          </div>
+          <button class="btn-ghost" id="lock-now" type="button">Lock</button>
+        </div>
+      </div>
+    </div>
+
     <div class="sec">
       <h2>Boost</h2>
       <div class="steel">
@@ -304,6 +332,12 @@
       on(document.getElementById("ctrl-scroll"), prefs.ctrl_scroll_zoom !== false);
       on(document.getElementById("restore"), !!prefs.restore_last);
       on(document.getElementById("boost"), !!prefs.boost);
+      var lt = document.getElementById("lock-timeout");
+      if (lt) {
+        var secs = prefs.lock_timeout_secs;
+        if (typeof secs !== "number") secs = 900;
+        lt.value = String(secs);
+      }
       on(document.getElementById("earn"), !!s.opt_in);
       var sh = s.shield || {};
       on(document.getElementById("adblock"), sh.enabled !== false);
@@ -350,6 +384,12 @@
     };
     document.getElementById("restore").onclick = function () {
       vapurr.send({ cmd: "pref", key: "restore_last", value: !this.classList.contains("on") });
+    };
+    document.getElementById("lock-timeout").onchange = function () {
+      vapurr.send({ cmd: "pref", key: "lock_timeout_secs", value: Number(this.value) });
+    };
+    document.getElementById("lock-now").onclick = function () {
+      vapurr.send({ cmd: "lock-session" });
     };
     document.getElementById("boost").onclick = function () {
       vapurr.send({ cmd: "boost" });

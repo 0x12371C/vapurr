@@ -131,6 +131,15 @@ pub(crate) enum Msg {
         secret: String,
     },
     Logout,
+    LockSession,
+    PasscodeUnlock {
+        code: String,
+    },
+    PasscodeSet {
+        a: String,
+        b: String,
+    },
+    Activity,
     PatchApply,
     WalletSnap(serde_json::Value),
     WalletErr(String),
@@ -161,6 +170,8 @@ pub(crate) fn authorized_ipc(source: &str, body: &str) -> Option<Msg> {
         Msg::WalletSend { .. } => matches!(path.as_str(), "/wallet.html" | "/pay.html"),
         Msg::WalletExec { .. } => matches!(path.as_str(), "/swap.html" | "/bridge.html"),
         Msg::LoginCreate | Msg::LoginContinue | Msg::LoginRestore { .. } => path == "/login.html",
+        Msg::PasscodeUnlock { .. } | Msg::PasscodeSet { .. } => path == "/lock.html",
+        Msg::LockSession | Msg::Activity => true,
         Msg::WalletImport { .. } => matches!(path.as_str(), "/wallet.html" | "/settings.html" | "/login.html"),
         Msg::EconMint(_) | Msg::EconRedeem(_) | Msg::EconDeploy | Msg::EconSeed { .. } |
         Msg::LoopDeploy | Msg::LoopOp { .. } | Msg::HouseDeploy | Msg::HouseSeed { .. } |
@@ -207,7 +218,18 @@ pub(crate) fn confirmation(msg: &Msg) -> Option<String> {
 }
 
 pub(crate) fn needs_unlock(msg: &Msg) -> bool {
-    confirmation(msg).is_some() && !matches!(msg, Msg::LoginContinue | Msg::LoginCreate | Msg::LoginRestore { .. } | Msg::WalletImport { .. })
+    confirmation(msg).is_some()
+        && !matches!(
+            msg,
+            Msg::LoginContinue
+                | Msg::LoginCreate
+                | Msg::LoginRestore { .. }
+                | Msg::WalletImport { .. }
+                | Msg::PasscodeUnlock { .. }
+                | Msg::PasscodeSet { .. }
+                | Msg::LockSession
+                | Msg::Activity
+        )
 }
 
 pub(crate) fn parse_ipc(body: &str) -> Option<Msg> {
@@ -316,6 +338,15 @@ pub(crate) fn parse_ipc(body: &str) -> Option<Msg> {
                 .unwrap_or("")
                 .into(),
         }),
+        "passcode-submit" | "passcode-unlock" => Some(Msg::PasscodeUnlock {
+            code: v.get("code").or_else(|| v.get("pin")).and_then(|x| x.as_str())?.to_string(),
+        }),
+        "passcode-set" => Some(Msg::PasscodeSet {
+            a: v.get("a").and_then(|x| x.as_str())?.to_string(),
+            b: v.get("b").and_then(|x| x.as_str())?.to_string(),
+        }),
+        "lock-session" | "passcode-lock" => Some(Msg::LockSession),
+        "activity" | "touch" => Some(Msg::Activity),
         "logout" => Some(Msg::Logout),
         "patch-apply" => Some(Msg::PatchApply),
         "zzzmail-send" => Some(Msg::ZzzmailSend {

@@ -163,6 +163,10 @@
     function goIn() {
       vapurr.send({ cmd: "pane", id: next() });
     }
+    function goSetPin() {
+      // pane_url gates to lock.html?mode=set&next=… when needs_pin
+      vapurr.send({ cmd: "pane", id: next() });
+    }
     function shortAddr(a) {
       if (!a || a.length < 12) return a || "—";
       return a.slice(0, 6) + "…" + a.slice(-4);
@@ -188,7 +192,12 @@
       if (!s) return;
       if (s.seed) backup = String(s.seed);
       if (s.logged_in && !backup) {
-        goIn();
+        if (s.needs_pin) goSetPin();
+        else goIn();
+        return;
+      }
+      if (s.has_key && s.has_pin && !s.logged_in) {
+        vapurr.send({ cmd: "pane", id: next() });
         return;
       }
       if (typeof s.has_key !== "boolean" && typeof s.logged_in !== "boolean") return;
@@ -232,7 +241,7 @@
     };
     document.getElementById("got-seed").onclick = function () {
       backup = "";
-      goIn();
+      goSetPin();
     };
     document.getElementById("restore").onclick = function () {
       if (busy) return;
