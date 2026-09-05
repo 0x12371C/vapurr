@@ -131,11 +131,11 @@ contract PusdToken {
 
 contract PusdMarket {
     uint256 public constant DEC = 1e18;
-    /// terra-fork/params.go DefaultBasePool = 1_000_000 SDR
+    /// stability-pool math (internal).
     uint256 public constant BASE_POOL = 1_000_000 * DEC;
-    /// terra-fork/params.go DefaultPoolRecoveryPeriod = BlocksPerDay = 14400
+    /// stability-pool math (internal).
     uint256 public constant POOL_RECOVERY_PERIOD = 14400;
-    /// terra-fork/params.go DefaultMinStabilitySpread = 2%
+    /// stability-pool math (internal).
     uint256 public constant MIN_STABILITY_SPREAD = 2e16;
     /// Lithe. 9% APY cap. Spread from mint and redeem funds it.
     uint256 public constant MAX_APY_BPS = 900;
@@ -146,31 +146,31 @@ contract PusdMarket {
     VapurrToken public immutable vapurr;
     PusdToken public immutable pusd;
 
-    /// GetLunaExchangeRate(uusd): PUSD per 1 VAPURR, 18 dec. First spot of the block.
-    uint256 public lunaRate;
+    /// getVapurrExchangeRate(pusd): PUSD per 1 VAPURR, 18 dec. First spot of the block.
+    uint256 public vapurrRate;
     uint256 public pendingRate;
     uint256 public liveBlock;
 
-    /// terra-fork/keeper GetTerraPoolDelta â€” signed, SDR/UST units
-    int256 public terraPoolDelta;
+    /// stability-pool math (internal).
+    int256 public poolDelta;
     uint256 public lastReplenish;
 
     uint256 public yieldReserve;
     uint256 public lastAccrue;
 
-    event Swap(address indexed trader, bool offerLuna, uint256 offer, uint256 ask, uint256 fee);
+    event Swap(address indexed trader, bool offerV, uint256 offer, uint256 ask, uint256 fee);
     event Feed(uint256 rate);
     event Accrue(uint256 pay, uint256 index);
 
     modifier onlyOwner() { require(msg.sender == owner, "OWN"); _; }
 
-    constructor(uint256 lunaRate_) {
-        require(lunaRate_ > 0, "PRICE");
+    constructor(uint256 vapurrRate_) {
+        require(vapurrRate_ > 0, "PRICE");
         owner = msg.sender;
         vapurr = new VapurrToken();
         pusd = new PusdToken();
-        lunaRate = lunaRate_;
-        pendingRate = lunaRate_;
+        vapurrRate = vapurrRate_;
+        pendingRate = vapurrRate_;
         liveBlock = block.number;
         lastReplenish = block.number;
         lastAccrue = block.timestamp;
@@ -186,78 +186,78 @@ contract PusdMarket {
 
     function _spot() internal {
         if (liveBlock != block.number) {
-            if (pendingRate > 0) lunaRate = pendingRate;
+            if (pendingRate > 0) vapurrRate = pendingRate;
             liveBlock = block.number;
         }
-        require(lunaRate > 0, "PRICE");
+        require(vapurrRate > 0, "PRICE");
     }
 
-    /// terra-fork/oracle keeper.go GetLunaExchangeRate
-    function getLunaExchangeRate(bool luna) public view returns (uint256) {
-        if (luna) return DEC;
-        return lunaRate;
+    /// stability-pool math (internal).
+    function getVapurrExchangeRate(bool isV) public view returns (uint256) {
+        if (isV) return DEC;
+        return vapurrRate;
     }
 
-    /// terra-fork/swap.go ComputeInternalSwap
+    /// stability-pool math (internal).
     /// retAmount = offer.Amount * askRate / offerRate
-    function computeInternalSwap(uint256 offerAmt, bool offerLuna, bool askLuna) public view returns (uint256) {
-        if (offerLuna == askLuna) return offerAmt;
-        uint256 offerRate = getLunaExchangeRate(offerLuna);
-        uint256 askRate = getLunaExchangeRate(askLuna);
+    function computeInternalSwap(uint256 offerAmt, bool offerV, bool askV) public view returns (uint256) {
+        if (offerV == askV) return offerAmt;
+        uint256 offerRate = getVapurrExchangeRate(offerV);
+        uint256 askRate = getVapurrExchangeRate(askV);
         uint256 ret = (offerAmt * askRate) / offerRate;
         require(ret > 0, "TINY");
         return ret;
     }
 
-    /// terra-fork/keeper.go ReplenishPools â€” one EndBlocker step per missed block, capped.
+    /// stability-pool math (internal).
     function replenishPools() internal {
         if (block.number <= lastReplenish) return;
         uint256 n = block.number - lastReplenish;
         lastReplenish = block.number;
-        if (terraPoolDelta == 0) return;
+        if (poolDelta == 0) return;
         if (n > 256) n = 256;
         int256 period = int256(POOL_RECOVERY_PERIOD);
         for (uint256 i = 0; i < n; i++) {
-            terraPoolDelta -= terraPoolDelta / period;
+            poolDelta -= poolDelta / period;
         }
     }
 
-    /// terra-fork/swap.go ComputeSwap (Luna<>Terra branch; one stable so SDR = UST)
-    function computeSwap(uint256 offerAmt, bool offerLuna)
+    /// stability-pool math (internal).
+    function computeSwap(uint256 offerAmt, bool offerV)
         public
         view
         returns (uint256 retAmt, uint256 spread)
     {
         require(offerAmt > 0, "TINY");
-        // Swap offer to base denom (UST), then base to ask â€” swap.go ComputeSwap
-        uint256 baseOffer = computeInternalSwap(offerAmt, offerLuna, false);
-        retAmt = computeInternalSwap(baseOffer, false, !offerLuna);
+        // Swap offer to stable denom, then base to ask (stability-pool math).
+        uint256 baseOffer = computeInternalSwap(offerAmt, offerV, false);
+        retAmt = computeInternalSwap(baseOffer, false, !offerV);
 
         uint256 basePool = BASE_POOL;
         uint256 cp = basePool * basePool;
-        int256 terraPoolI = int256(basePool) + terraPoolDelta;
-        require(terraPoolI > 0, "THIN");
-        uint256 terraPool = uint256(terraPoolI);
-        uint256 lunaPool = cp / terraPool;
+        int256 stablePoolI = int256(basePool) + poolDelta;
+        require(stablePoolI > 0, "THIN");
+        uint256 stablePool = uint256(stablePoolI);
+        uint256 vapurrPool = cp / stablePool;
 
-        uint256 offerPool = offerLuna ? lunaPool : terraPool;
-        uint256 askPool = offerLuna ? terraPool : lunaPool;
+        uint256 offerPool = offerV ? vapurrPool : stablePool;
+        uint256 askPool = offerV ? stablePool : vapurrPool;
         uint256 askBaseAmount = askPool - (cp / (offerPool + baseOffer));
         require(baseOffer >= askBaseAmount, "THIN");
         spread = ((baseOffer - askBaseAmount) * DEC) / baseOffer;
         if (spread < MIN_STABILITY_SPREAD) spread = MIN_STABILITY_SPREAD;
     }
 
-    /// terra-fork/swap.go ApplySwapToPool
-    function applySwapToPool(bool offerLuna, uint256 offerAmt, uint256 askAmtAfterFee) internal {
-        if (offerLuna) {
-            // Luna -> Terra: delta -= ask in UST
+    /// stability-pool math (internal).
+    function applySwapToPool(bool offerV, uint256 offerAmt, uint256 askAmtAfterFee) internal {
+        if (offerV) {
+            // V -> PUSD: delta -= ask in PUSD
             uint256 askBase = computeInternalSwap(askAmtAfterFee, false, false);
-            terraPoolDelta -= int256(askBase);
+            poolDelta -= int256(askBase);
         } else {
-            // Terra -> Luna: delta += offer in UST
+            // PUSD -> V: delta += offer in PUSD
             uint256 offerBase = computeInternalSwap(offerAmt, false, false);
-            terraPoolDelta += int256(offerBase);
+            poolDelta += int256(offerBase);
         }
     }
 
@@ -287,10 +287,10 @@ contract PusdMarket {
         vapurr.take(msg.sender, amt);
     }
 
-    /// terra-fork/msg_server.go handleSwapRequest — Luna -> UST
+    /// stability-pool math (internal).
     /// Lock VAPURR into inventory (no burn), mint PUSD at oracle minus spread. Spread -> Lithe reserve.
     /// Semantics: burn-unwrap float — V stays in market so redeem can return inventory, not mint.
-    function swapLunaToUst(uint256 offer) external returns (uint256 ask, uint256 fee) {
+    function swapVToPusd(uint256 offer) external returns (uint256 ask, uint256 fee) {
         _spot();
         accrue();
         (uint256 ret, uint256 spread) = computeSwap(offer, true);
@@ -308,11 +308,11 @@ contract PusdMarket {
         emit Swap(msg.sender, true, offer, ask, fee);
     }
 
-    /// terra-fork/msg_server.go handleSwapRequest — UST -> Luna
+    /// stability-pool math (internal).
     /// Burn PUSD, unlock VAPURR from pre-funded inventory at oracle minus spread.
     /// HARD FENCE: does NOT call vapurr.mint — redeem fails if inventory thin (INV).
     /// Fed/gV rebase remains the sole V inflation path; browse/earn cannot unbounded-mint via market.
-    function swapUstToLuna(uint256 offer) external returns (uint256 ask, uint256 fee) {
+    function swapPusdToV(uint256 offer) external returns (uint256 ask, uint256 fee) {
         _spot();
         accrue();
         uint256 inv = vapurr.balanceOf(address(this));
@@ -339,7 +339,7 @@ contract PusdMarket {
         uint256 apy;
         address vapurrToken;
         address pusdToken;
-        uint256 terraPool;
+        uint256 stablePool;
         uint256 minSpread;
     }
 
@@ -353,7 +353,7 @@ contract PusdMarket {
     function snapshot(address a) external view returns (Snap memory s) {
         s.vapurrBal = vapurr.balanceOf(a);
         s.pusdBal = pusd.balanceOf(a);
-        s.px = lunaRate;
+        s.px = vapurrRate;
         s.idx = pusd.index();
         s.vapurrSupply = vapurr.totalSupply();
         s.pusdSupply = pusd.totalSupply();
@@ -361,8 +361,8 @@ contract PusdMarket {
         s.apy = apyBps();
         s.vapurrToken = address(vapurr);
         s.pusdToken = address(pusd);
-        int256 tp = int256(BASE_POOL) + terraPoolDelta;
-        s.terraPool = tp > 0 ? uint256(tp) : 0;
+        int256 tp = int256(BASE_POOL) + poolDelta;
+        s.stablePool = tp > 0 ? uint256(tp) : 0;
         s.minSpread = MIN_STABILITY_SPREAD;
     }
 }

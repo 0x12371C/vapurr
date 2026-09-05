@@ -6,7 +6,7 @@ Scope: `contracts/PusdLoop.sol` (Oliver), adjacent Lithe/mint paths in `PusdMark
 
 ## Fixed
 
-- **V mint authority fenced on market redeem.** `PusdMarket.swapUstToLuna` no longer calls `vapurr.mint`. Semantics: **burn-unwrap / inventory** — `swapLunaToUst` locks V into market inventory (no burn); redeem returns V via `give` and reverts `INV` if inventory thin. `fundVInventory` seeds already-minted float. Sole V inflation remains Fed/gV rebase (`GvFed.sol`). Tests: `RoutingFences.t.sol` (`test_market_redeem_does_not_mint_v`, `test_market_cannot_unbounded_mint_for_browse_earn`).
+- **V mint authority fenced on market redeem.** `PusdMarket.swapPusdToV` no longer calls `vapurr.mint`. Semantics: **burn-unwrap / inventory** — `swapVToPusd` locks V into market inventory (no burn); redeem returns V via `give` and reverts `INV` if inventory thin. `fundVInventory` seeds already-minted float. Sole V inflation remains Fed/gV rebase (`GvFed.sol`). Tests: `RoutingFences.t.sol` (`test_market_redeem_does_not_mint_v`, `test_market_cannot_unbounded_mint_for_browse_earn`).
 
 - **Remittance pipe.** `IRemittance` / `RemittanceSink` + `RunwayFloor` in `contracts/Remittance.sol`. Oliver (`PusdLoop`) wires `setRemittance` / `remitReserve`; `remitOnAccrue` best-effort pushes RESERVE_BPS owner-share cash to sink on `_accrue`. Test: `test_accrue_path_can_call_remittance`.
 

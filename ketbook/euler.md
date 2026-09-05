@@ -13,7 +13,7 @@ Live on testnet 46630 at `0x89E17eefa58B99d025145970c0FBAe7768a14521`. Mainnet i
 | Silo | Role |
 |---|---|
 | `$PUSD` | Only credit asset. Supply shares. Debt shares. Cash in the vault earns **Lithe** because `$PUSD` is shares × index. |
-| `$VAPURR` | Collateral only. Not borrowable. Priced at the market oracle (`lunaRate`, `$PUSD` per 1 `$VAPURR`). |
+| `$VAPURR` | Collateral only. Not borrowable. Priced at the market oracle (`vapurrRate`, `$PUSD` per 1 `$VAPURR`). |
 
 No USDG vault. No ETH vault. No WETH vault. You cannot dump V or P into Robinhood’s dollar from this desk.
 

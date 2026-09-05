@@ -14,7 +14,7 @@ interface IERC20 {
 interface IMarket {
     function vapurr() external view returns (address);
     function pusd() external view returns (address);
-    function lunaRate() external view returns (uint256);
+    function vapurrRate() external view returns (uint256);
 }
 
 interface IPermit2 {
@@ -173,7 +173,7 @@ contract HouseLp {
         s.liquidity_ = liquidity;
         s.vapurrBal = vapurr.balanceOf(owner);
         s.pusdBal = pusd.balanceOf(owner);
-        s.px = market.lunaRate();
+        s.px = market.vapurrRate();
         s.vapurrToken = address(vapurr);
         s.pusdToken = address(pusd);
         s.posm_ = address(posm);

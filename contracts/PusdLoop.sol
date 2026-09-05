@@ -17,7 +17,7 @@ interface IERC20 {
 interface IMarket {
     function vapurr() external view returns (address);
     function pusd() external view returns (address);
-    function lunaRate() external view returns (uint256);
+    function vapurrRate() external view returns (uint256);
 }
 
 interface IRemittanceHook {
@@ -395,7 +395,7 @@ contract PusdLoop {
             : (rate * s.util / DEC) * (10_000 - RESERVE_BPS) / 10_000 * 10_000 / DEC;
         s.ltvBps = LTV_BPS;
         s.lltvBps = LLTV_BPS;
-        s.px = market.lunaRate();
+        s.px = market.vapurrRate();
         s.supplied = _assetsOfPreview(a, cash, borrows);
         s.collatV_ = collatV[a];
         s.debt = _debtOfPreview(a, borrows);
@@ -474,7 +474,7 @@ contract PusdLoop {
     }
 
     function _px() internal view returns (uint256) {
-        return market.lunaRate();
+        return market.vapurrRate();
     }
 
     function _mintSupply(address u, uint256 assets, bool alreadyIn) internal returns (uint256 sh) {

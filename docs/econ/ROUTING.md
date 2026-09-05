@@ -38,5 +38,5 @@ Relic lock 2026-09-05. Living truth for Fed/branches split.
 
 ## Market V redeem fence (2026-09-05)
 
-`PusdMarket.swapUstToLuna` redeems from **pre-funded / locked inventory only** (no `vapurr.mint`).
-`swapLunaToUst` locks V into the market instead of burning. Fed/gV rebase is the sole V printer.
+`PusdMarket.swapPusdToV` redeems from **pre-funded / locked inventory only** (no `vapurr.mint`).
+`swapVToPusd` locks V into the market instead of burning. Fed/gV rebase is the sole V printer.

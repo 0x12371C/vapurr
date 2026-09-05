@@ -23,7 +23,7 @@ contract RoutingFencesTest is Test {
 
     uint256 internal constant PRICE = 1e18; // 1 PUSD per V
 
-    /// terraPoolDelta is storage slot 3 (after lunaRate, pendingRate, liveBlock).
+    /// poolDelta is storage slot 3 (after vapurrRate, pendingRate, liveBlock).
     function _healPool() internal {
         vm.store(address(market), bytes32(uint256(3)), bytes32(uint256(0)));
     }
@@ -45,7 +45,7 @@ contract RoutingFencesTest is Test {
         vm.startPrank(trader);
         vapurr.approve(address(market), type(uint256).max);
         pusd.approve(address(market), type(uint256).max);
-        (uint256 ask,) = market.swapLunaToUst(100 ether);
+        (uint256 ask,) = market.swapVToPusd(100 ether);
         vm.stopPrank();
 
         uint256 supplyAfterMint = vapurr.totalSupply();
@@ -56,7 +56,7 @@ contract RoutingFencesTest is Test {
         // Virtual pool skew blocks same-block reverse; heal delta then redeem from inventory.
         _healPool();
         vm.startPrank(trader);
-        (uint256 vOut,) = market.swapUstToLuna(ask / 2);
+        (uint256 vOut,) = market.swapPusdToV(ask / 2);
         vm.stopPrank();
 
         assertEq(vapurr.totalSupply(), supplyAfterMint, "HARD FENCE: redeem must not mint V");
@@ -68,7 +68,7 @@ contract RoutingFencesTest is Test {
         vm.startPrank(trader);
         vapurr.approve(address(market), type(uint256).max);
         pusd.approve(address(market), type(uint256).max);
-        (uint256 ask,) = market.swapLunaToUst(100 ether);
+        (uint256 ask,) = market.swapVToPusd(100 ether);
         vm.stopPrank();
 
         uint256 inv = market.vInventory();
@@ -80,7 +80,7 @@ contract RoutingFencesTest is Test {
         _healPool(); // so CP would succeed — fence must still be INV, not mint
         vm.startPrank(trader);
         vm.expectRevert(bytes("INV"));
-        market.swapUstToLuna(ask);
+        market.swapPusdToV(ask);
         vm.stopPrank();
 
         assertEq(vapurr.totalSupply(), supplyBefore - inv, "no V minted on failed redeem");
@@ -96,12 +96,12 @@ contract RoutingFencesTest is Test {
         vm.startPrank(trader);
         vapurr.approve(address(market), type(uint256).max);
         pusd.approve(address(market), type(uint256).max);
-        (uint256 ask,) = market.swapLunaToUst(10 ether);
+        (uint256 ask,) = market.swapVToPusd(10 ether);
         vm.stopPrank();
         _healPool();
         uint256 supply1 = vapurr.totalSupply();
         vm.prank(trader);
-        (uint256 vOut,) = market.swapUstToLuna(ask / 2);
+        (uint256 vOut,) = market.swapPusdToV(ask / 2);
 
         assertEq(vapurr.totalSupply(), supply1, "redeem still does not mint");
         assertGt(vOut, 0);
@@ -110,7 +110,7 @@ contract RoutingFencesTest is Test {
     function test_accrue_path_can_call_remittance() public {
         vm.startPrank(trader);
         vapurr.approve(address(market), type(uint256).max);
-        (uint256 ask,) = market.swapLunaToUst(50_000 ether);
+        (uint256 ask,) = market.swapVToPusd(50_000 ether);
         pusd.approve(address(loop), type(uint256).max);
         loop.supply(ask);
         vm.stopPrank();
@@ -149,7 +149,7 @@ contract RoutingFencesTest is Test {
 
         RemittanceSink s = new RemittanceSink(address(pusd), address(f));
         vapurr.approve(address(market), type(uint256).max);
-        (uint256 ask,) = market.swapLunaToUst(200 ether);
+        (uint256 ask,) = market.swapVToPusd(200 ether);
         pusd.approve(address(s), type(uint256).max);
         s.receiveRemittance(ask);
         assertEq(s.surplus(), ask - 40 ether, "sink surplus above floor");
@@ -157,7 +157,7 @@ contract RoutingFencesTest is Test {
 
     function test_spusd_deposit_and_yield_credit() public {
         vapurr.approve(address(market), type(uint256).max);
-        market.swapLunaToUst(10_000 ether);
+        market.swapVToPusd(10_000 ether);
 
         pusd.approve(address(spusd), type(uint256).max);
         uint256 shares = spusd.deposit(5_000 ether, address(this));
@@ -172,7 +172,7 @@ contract RoutingFencesTest is Test {
     function test_remit_respects_runway_floor_on_vault() public {
         vm.startPrank(trader);
         vapurr.approve(address(market), type(uint256).max);
-        (uint256 ask,) = market.swapLunaToUst(20_000 ether);
+        (uint256 ask,) = market.swapVToPusd(20_000 ether);
         pusd.approve(address(loop), type(uint256).max);
         loop.supply(ask);
         vm.stopPrank();

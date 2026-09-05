@@ -198,12 +198,12 @@ impl Client {
             EconCmd::Snap => Ok(self.snapshot()),
             EconCmd::Mint(s) => {
                 let n = parse_amt(&s)?;
-                self.transact("swapLunaToUst(uint256)", n)?;
+                self.transact("swapVToPusd(uint256)", n)?;
                 Ok(self.snapshot())
             }
             EconCmd::Redeem(s) => {
                 let n = parse_amt(&s)?;
-                self.transact("swapUstToLuna(uint256)", n)?;
+                self.transact("swapPusdToV(uint256)", n)?;
                 Ok(self.snapshot())
             }
             EconCmd::Deploy => {
@@ -517,7 +517,7 @@ impl Client {
             return Err(EconError::NeedGas);
         }
         let mut bytecode = market_bytecode()?;
-        // constructor(uint256 lunaRate_) â€” $1 per V at genesis, first-spot oracle
+        // constructor(uint256 vapurrRate_) â€” $1 per V at genesis, first-spot oracle
         bytecode.extend_from_slice(&vapurr_wallet::tx::abi_u256(DEC));
         let hash = self.send(None, &bytecode)?;
         let receipt = self.wait(&hash)?;
