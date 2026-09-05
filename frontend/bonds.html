@@ -429,7 +429,19 @@
     .flow { margin-top: 26px; gap: 10px; }
     .hero { margin-bottom: 26px; }
 
-  </style>
+  
+    .routing-visual {
+      display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 10px;
+      margin: 10px 0 18px; padding: 10px 12px;
+      border: 1px solid color-mix(in srgb, var(--color-ink) 12%, transparent);
+      border-radius: 14px;
+      background: color-mix(in srgb, var(--color-panel, #12141a) 80%, transparent);
+    }
+    .routing-visual .rv-lane { display: flex; flex-direction: column; gap: 2px; min-width: 4.5rem; }
+    .routing-visual .rv-lane b { font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; }
+    .routing-visual .rv-lane em { font-style: normal; font-size: 11px; opacity: 0.72; }
+    .routing-visual .rv-lane.is-here b { color: var(--color-accent, #9fefb0); }
+    .routing-visual .rv-sep { opacity: 0.35; font-size: 12px; }</style>
   <link rel="stylesheet" href="/defi-flow.css"/>
 </head>
 <body class="finance-ui" data-desk="savings">
@@ -437,9 +449,18 @@
     <div data-finance-nav></div>
     <header class="flow-heading savings-intro"><div><p class="eyebrow">TIME, ON YOUR TERMS</p><h1>Save cash.<br/><em>Build equity.</em></h1></div><p>Choose liquidity or a longer horizon.</p></header>
     <div class="capital-status" id="capital-strip" role="status"><span class="tiny-dot"></span>Market terms awaiting connection</div>
+    <nav class="routing-visual" id="routing-visual" aria-label="Product map">
+      <span class="rv-lane" data-lane="cash"><b>Cash</b><em>$PUSD / sPUSD</em></span>
+      <span class="rv-sep" aria-hidden="true">/</span>
+      <span class="rv-lane" data-lane="equity"><b>Equity</b><em>gV / wgV</em></span>
+      <span class="rv-sep" aria-hidden="true">/</span>
+      <span class="rv-lane is-here" data-lane="bonds"><b>Bonds</b><em>ETH / USDG / stocks</em></span>
+      <span class="rv-sep" aria-hidden="true">/</span>
+      <span class="rv-lane" data-lane="house"><b>House</b><em>wgV / $PUSD</em></span>
+    </nav>
     <div class="savings-layout">
     <div class="panel" id="spusd-cd" aria-label="sPUSD CD">
-      <div class="mono">cash · sPUSD CD</div>
+      <div class="mono">cash / sPUSD CD</div>
       <h2>Choose your horizon.</h2>
       <p class="lede">PUSD savings. Yield comes from available surplus.</p>
       <div class="cd-grid">
@@ -454,15 +475,15 @@
           <div class="mono">30d CD</div>
           <b>30 days</b>
           <p>A fixed term. A variable, surplus-funded coupon.</p>
-          <div class="row"><span class="k">target / term</span><span class="v">—</span></div>
-          <div class="row"><span class="k">break fee</span><span class="v">—</span></div>
+          <div class="row"><span class="k">target / term</span><span class="v">-</span></div>
+          <div class="row"><span class="k">break fee</span><span class="v">-</span></div>
         </div>
         <div class="cd-card"><span data-icon="lock"></span>
           <div class="mono">90d CD</div>
           <b>90 days</b>
           <p>A longer term. Coupon depends on shared surplus.</p>
-          <div class="row"><span class="k">target / term</span><span class="v">—</span></div>
-          <div class="row"><span class="k">break fee</span><span class="v">—</span></div>
+          <div class="row"><span class="k">target / term</span><span class="v">-</span></div>
+          <div class="row"><span class="k">break fee</span><span class="v">-</span></div>
         </div>
       </div>
       <div class="actions" style="margin-top:14px; flex-wrap:wrap; gap:10px; align-items:center">
@@ -474,7 +495,7 @@
     </div>
 
     <div class="panel" id="bonds">
-      <div class="mono">bonds · v1 assets</div>
+      <div class="mono">bonds / v1 assets</div>
       <h2>Turn assets into equity.</h2>
       <p class="lede">Deposit an asset. Claim gV after vesting.</p>
 
@@ -498,12 +519,12 @@
         </div>
         <div class="stat">
           <div class="mono">discount</div>
-          <div class="val" id="q-discount">—</div>
+          <div class="val" id="q-discount">-</div>
           <div class="sub" style="color:var(--color-muted);font-size:11px;margin-top:4px">Awaiting terms</div>
         </div>
         <div class="stat">
           <div class="mono">wait</div>
-          <div class="val" id="q-wait">—</div>
+          <div class="val" id="q-wait">-</div>
           <div class="sub" style="color:var(--color-muted);font-size:11px;margin-top:4px">Awaiting terms</div>
         </div>
       </div>
@@ -512,7 +533,7 @@
         <div class="step">
           <span data-icon="wallet"></span><div class="mono">01</div>
           <b>Deposit</b>
-          <p>Asset → treasury</p>
+          <p>Asset to treasury</p>
         </div>
         <div class="step">
           <span data-icon="clock"></span><div class="mono">02</div>
@@ -541,29 +562,29 @@
   <script>
 
 
-    // Live-by-default markets. Quotes/capacity/haircut stay "—" until chain reads land.
-    // Relic: nothing product-critical stays gated — do not hide Bond/CD behind Unavailable.
+    // Live-by-default markets. Quotes/capacity/haircut stay "-" until chain reads land.
+    // Relic: nothing product-critical stays gated - do not hide Bond/CD behind Unavailable.
     var MARKET = {
-      ETH:  { enabled: true, capacity: "—", oracle: "ETH/USD", haircut: "—", tag: "ETH" },
-      USDG: { enabled: true, capacity: "—", oracle: "USDG", haircut: "—", tag: "USDG" },
-      AMZN: { enabled: true, capacity: "—", oracle: "AMZN", haircut: "—", tag: "STOCKS" },
-      TSLA: { enabled: true, capacity: "—", oracle: "TSLA", haircut: "—", tag: "STOCKS" },
-      AMD:  { enabled: true, capacity: "—", oracle: "AMD", haircut: "—", tag: "STOCKS" },
-      NFLX: { enabled: true, capacity: "—", oracle: "NFLX", haircut: "—", tag: "STOCKS" },
-      PLTR: { enabled: true, capacity: "—", oracle: "PLTR", haircut: "—", tag: "STOCKS" }
+      ETH:  { enabled: true, capacity: "-", oracle: "ETH/USD", haircut: "-", tag: "ETH" },
+      USDG: { enabled: true, capacity: "-", oracle: "USDG", haircut: "-", tag: "USDG" },
+      AMZN: { enabled: true, capacity: "-", oracle: "AMZN", haircut: "-", tag: "STOCKS" },
+      TSLA: { enabled: true, capacity: "-", oracle: "TSLA", haircut: "-", tag: "STOCKS" },
+      AMD:  { enabled: true, capacity: "-", oracle: "AMD", haircut: "-", tag: "STOCKS" },
+      NFLX: { enabled: true, capacity: "-", oracle: "NFLX", haircut: "-", tag: "STOCKS" },
+      PLTR: { enabled: true, capacity: "-", oracle: "PLTR", haircut: "-", tag: "STOCKS" }
     };
 
     function marketFor(asset) {
-      return MARKET[asset] || { enabled: true, capacity: "—", oracle: asset, haircut: "—", tag: asset };
+      return MARKET[asset] || { enabled: true, capacity: "-", oracle: asset, haircut: "-", tag: asset };
     }
 
     function paintAsset(asset) {
       var m = marketFor(asset);
 
       document.getElementById("q-asset").textContent = asset;
-      // Honest empty until BondMarket chain reads exist — never fabricate discount/wait.
-      document.getElementById("q-discount").textContent = "—";
-      document.getElementById("q-wait").textContent = "—";
+      // Honest empty until BondMarket chain reads exist - never fabricate discount/wait.
+      document.getElementById("q-discount").textContent = "-";
+      document.getElementById("q-wait").textContent = "-";
 
       var quote = document.getElementById("bond-quote");
       if (quote) quote.classList.remove("gated");
@@ -584,7 +605,7 @@
         cta.removeAttribute("aria-disabled");
         currentAsset = asset;
         cta.textContent = "Open Bond";
-        cta.title = "Open Bond · " + asset + " — capacity " + m.capacity + ", haircut " + m.haircut;
+        cta.title = "Open Bond / " + asset + " - capacity " + m.capacity + ", haircut " + m.haircut;
         showErr("bond-err", null);
       }
 
@@ -647,7 +668,7 @@
       if (window.vapurr && typeof vapurr.send === "function") {
         vapurr.send({ cmd: "econ-bond", asset: currentAsset, amt: amt });
       }
-      // Address book wire still open — keep CTA live; surface clear on-tx error (not a gray gate).
+      // Address book wire still open - keep CTA live; surface clear on-tx error (not a gray gate).
       surfaceTxErr(
         "bond-err",
         "Bond tx not configured",
