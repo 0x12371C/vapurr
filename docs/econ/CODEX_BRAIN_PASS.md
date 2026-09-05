@@ -218,3 +218,24 @@ Date: 2026-09-05 (America/New_York). Branch: `fix/gv-spusd-guards`.
 - [remaining-live] One-token migrate live market + retarget House/Oliver/frontend; do not treat dual V addresses as fungible until cutover.
 
 MERGE_REC: hold — solvency bugs, split mint authority and incomplete ABI integration block merge.
+
+---
+## Pre-CutoverDeploy brain pass (FAILED — Codex CLI)
+Date: 2026-09-05 ~15:31 America/New_York. Attempted: `codex review -c model="gpt-5.5" -c model_reasoning_effort="high" --commit f5d89a1`.
+Branch: `fix/gv-spusd-guards` @ `f5d89a1` (`f5d89a1e762f0d5da08a4bfd2a16f557ebdd17b6`). Tip message: lock 1.2M genesis mint; carve cutover from 800k treasury.
+Genesis on tip: `GENESIS_ALLOCATION.md` + `TestnetRollout` / GenesisTreasury 1.2M path present (not re-audited by Codex).
+
+### MERGE_REC
+**hold** — Codex brain pass did not run.
+
+### CutoverDeploy GO-NO-GO
+**NO-GO** — `codex review` exited 2: `the argument '--commit <SHA>' cannot be used with '[PROMPT]'` (CLI clap conflict; usage text contradicts). No retry per Relic steer. No patches; no broadcast; no CONFIRM_TESTNET_DEPLOY.
+
+### P0 list
+- [process] Codex non-interactive review unavailable with this CLI flag combo — CutoverDeploy gated until a successful brain pass lands.
+
+### Top findings
+1. Tip `f5d89a1` has 1.2M genesis lock commit on branch.
+2. Codex review once-failed; no adversarial verdict produced.
+3. Standing locks unchanged (USDG bond-only; no silent 46630).
+
