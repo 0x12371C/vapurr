@@ -99,12 +99,54 @@ Execute in order. Record each address in `docs/STATUS.md` only after a successfu
 - [ ] Snapshot desk ABI (`snapshot(address)` 12 words) against proxy on live chain
 - [ ] Migrator fork verify against real gen-4 before CutoverDeploy — **[MANUAL]**
 
-### 9. House / wgV follow-up (not in factory) — [FOLLOW-UP] / manual next
+### 9. House / wgV follow-up (not in factory) — [FOLLOW-UP] scripted dry-run
 
-- [ ] House pairs are **wgV / $PUSD** (`HOUSE_PAIR.md`, `WGV_HOUSE.md`) — not raw gV
-- [ ] Deploy / wire `HousePairConfig` + House Uni path **after** core cutover
-- [ ] Remittance skim / fee attribution as separate PR
-- [ ] Clear gen-4 house/pair_config from local cutover so books do not mix
+**Gate:** run **after** core `TestnetRollout` / CutoverDeploy lands gen-5 Lithe proxy + Fed V + gV + $PUSD. Core cutover is **not** blocked on this section.
+
+Script: `contracts/script/TestnetHouseFollowup.s.sol` (`TestnetHouseFollowup`).
+- Default = local dry-run (no broadcast). Composes a local Lithe+gV stack when env addrs unset.
+- Live broadcast only with `CONFIRM_HOUSE_FOLLOWUP=1` **or** `CONFIRM_TESTNET_DEPLOY=1`, and real post-cutover `GV` + (`PUSD` and/or `LITHE_PROXY`). Never invents addresses.
+- Does **not** fund vanity deployer / move ETH. Does **not** deploy HouseLp/HouseSwap (Uni v4 POSM/PM/Permit2 still open).
+
+**Ordered steps (post-core):**
+
+1. [ ] Record gen-5 addresses from STATUS / approved rollout log: `LITHE_PROXY` (prefer vanity `0xC47f…EBD2`), Fed V, `GV`, `$PUSD` (= `market.pusd()`)
+2. [ ] Dry-run: `forge script script/TestnetHouseFollowup.s.sol:TestnetHouseFollowup -vv` (CONFIRM unset)
+3. [ ] Live (Relic-approved only): set env below + `CONFIRM_HOUSE_FOLLOWUP=1` + `PRIVATE_KEY`; broadcast against 46630
+4. [ ] Deploy `wgVAPURR(gV)` — House equity SoT (wrap path; never pool raw gV)
+5. [ ] Deploy `HousePairConfig(wgV, pusd, gV)` + `HousePairFactory`; `validateAndMark(wgV, pusd)`
+6. [ ] Record wgV + pairConfig in STATUS; clear gen-4 house/pair_config from local cutover book
+7. [ ] **[STILL OPEN / MANUAL]** HouseLp + HouseSwap when Uni v4 PositionManager + Permit2 + PoolManager exist; seed **wgV** inventory (stake V→gV→wrap), not raw V/gV
+8. [ ] **[STILL OPEN]** HouseFeeRemit / HouseUniSkim + Rust `house_deploy` / `swap_deploy` ABI (`pairConfig` first)
+9. [ ] Remittance skim / fee attribution e2e as separate PR after Uni path
+
+**Env vars (House follow-up):**
+
+| Var | Required when | Meaning |
+|-----|---------------|---------|
+| `GV` | live broadcast | gen-5 `gVAPURR` |
+| `PUSD` | live (or Lithe) | gen-5 `$PUSD` cash leg |
+| `LITHE_PROXY` | live (or PUSD) | gen-5 Lithe proxy; script reads `pusd()` / checks `litheVersion()==1` |
+| `HOUSE_LITHE_PROXY` | optional alias | same as `LITHE_PROXY` if unset |
+| `CONFIRM_HOUSE_FOLLOWUP` | live | `1` to allow House follow-up broadcast |
+| `CONFIRM_TESTNET_DEPLOY` | alt live gate | `1` also unlocks (same as core) — prefer House-specific flag |
+| `PRIVATE_KEY` | live | deployer key (not STATUS vanity fund step) |
+| `ROLLOUT_OWNER` | optional | owner for dry-run local Lithe compose |
+| `LITHE_RATE_WAD` | dry-run local only | rate when composing local Lithe (default 1e18) |
+
+```powershell
+# From contracts/ — dry-run (default)
+forge script script/TestnetHouseFollowup.s.sol:TestnetHouseFollowup -vv
+
+# LIVE after core cutover — Relic gate only (example)
+# $env:CONFIRM_HOUSE_FOLLOWUP = "1"
+# $env:GV = "0x..."
+# $env:LITHE_PROXY = "0xC47f00D61F8379337f9fb42E6DcC695AE2d6EBD2"  # or real landed proxy
+# $env:PUSD = "0x..."   # optional if LITHE_PROXY set
+# forge script script/TestnetHouseFollowup.s.sol:TestnetHouseFollowup --rpc-url $TESTNET_RPC --broadcast
+```
+
+Canon: `HOUSE_PAIR.md`, `WGV_HOUSE.md`.
 
 ### 10. Cutover / UI honesty — [MANUAL]
 
@@ -130,9 +172,14 @@ forge script script/VanityCreate2Hunt.s.sol:VanityCreate2Hunt -vv
 $env:CONFIRM_TESTNET_DEPLOY = "1"
 # Also set LEGACY_MARKET / LEGACY_V / LEGACY_V_SUPPLY for cutover inventory (else skipped)
 # forge script script/TestnetRollout.s.sol:TestnetRollout --rpc-url $TESTNET_RPC --broadcast
+
+# House / wgV follow-up (AFTER core) — dry-run default; see §9
+forge script script/TestnetHouseFollowup.s.sol:TestnetHouseFollowup -vv
 ```
 
 Optional env (dry-run deploys MockUsdg / mock exo legs when unset): `USDG`, `EXO_ETH`, `EXO_NVDA`, `EXO_AMD`, `BOOTSTRAP_V`, `RUNWAY_FLOOR`, `BOND_USDG_CAPACITY`, `BOND_TREASURY`, `DEVFUND_RECIPIENT`, `SEED_POL`, `AUTO_REMIT`, `ROLLOUT_OWNER`, `LITHE_RATE_WAD`, `CD_COUPON_BPS`, `CD_BREAK_FEE_BPS`, `CD_TERM`, `LEGACY_MARKET`, `LEGACY_V`, `LEGACY_V_SUPPLY`.
+
+House follow-up env: `GV`, `PUSD`, `LITHE_PROXY` / `HOUSE_LITHE_PROXY`, `CONFIRM_HOUSE_FOLLOWUP` (see §9).
 
 Proxy upgrade proofs:
 
@@ -175,14 +222,16 @@ Captured from `forge script script/TestnetRollout.s.sol:TestnetRollout -vv` (CON
 **Still manual / follow-up:**
 
 - Enable SavingsRouter + seed liquid vault (or all-CD) before first `forwardSurplus`
-- House / wgV (**manual next** — not factory)
+- House / wgV — **scripted follow-up** `TestnetHouseFollowup.s.sol` (dry-run ready; live after core; Uni Lp/Swap still open) — see §9
 - Live `LEGACY_*` env for real gen-4 cutover inventory (no invented addresses)
-- Vanity land via STATUS deployer nonce-0 (or CREATE2 hunt)
+- Vanity land via STATUS deployer nonce-0 (or CREATE2 hunt) — **Relic funds deployer; do not move ETH from bots**
 - Relic-approved CutoverDeploy + UI address book + migrator fork verify
 
 HONEST: gen-4 remains live on 46630 until Relic-approved CutoverDeploy. Do not invent live gen-5 addresses here.
 
 **Last dry-run (2026-09-05 ~2:05pm ET):** `forge script script/TestnetRollout.s.sol:TestnetRollout -vv` from `contracts/` — **exit 0**, `CONFIRM_TESTNET_DEPLOY 0`, no broadcast. Local simulate composed prior stack + SPUSD/SpusdCd/SavingsRouter (`sink.setForward`, **savings enabled 0 / cdBps 0**), + LegacyVConverter+LitheCutoverMigrator (dry-run mock legacy, inventory 1e6 V). Gas used ~44.7M. Vanity MISS expected off STATUS deployer nonce-0 path. No live gen-5 addresses — dry-run only.
+
+**House follow-up dry-run (2026-09-05 ~2:15pm ET):** `forge script script/TestnetHouseFollowup.s.sol:TestnetHouseFollowup -vv` — **exit 0**, both CONFIRM flags unset, no broadcast. Local compose Fed V + gV + Lithe proxy → `wgVAPURR` + `HousePairConfig` + factory `validateAndMark(wgV,pusd)`. HouseLp/HouseSwap not deployed (Uni still open). No ETH moved.
 
 ## Related
 
@@ -195,4 +244,4 @@ HONEST: gen-4 remains live on 46630 until Relic-approved CutoverDeploy. Do not i
 - `BONDS.md` / `ROUTING.md` — USDG bond-only lock
 - `SPUSD.md` / `EARNINGS_ENGINE.md` — savings forward + post-floor split
 - `TESTNET_SHAPE.md` — historical LP shape (gen-4 context)
-- Contracts: `PusdMarketFedUpgradeable`, `proxy/ERC1967Proxy`, `LaunchBootstrap`, `CanonicalLitheFactory`, `BondMarket`, `Remittance`, `SavingsRouter`, `SPUSD`, `SpusdCd`, `LegacyVConverter`, `LitheCutoverMigrator`
+- Contracts: `PusdMarketFedUpgradeable`, `proxy/ERC1967Proxy`, `LaunchBootstrap`, `CanonicalLitheFactory`, `BondMarket`, `Remittance`, `SavingsRouter`, `SPUSD`, `SpusdCd`, `LegacyVConverter`, `LitheCutoverMigrator`, `wgVAPURR`, `HousePairConfig` / `script/TestnetHouseFollowup.s.sol`

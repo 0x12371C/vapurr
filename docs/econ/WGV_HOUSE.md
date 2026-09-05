@@ -35,6 +35,7 @@ Revert class: `RawGvNotHouseEquity` if either Uni currency is raw gV.
 
 **Open (needs Relic go):**
 
+- Post-cutover follow-up script (dry-run ready): `contracts/script/TestnetHouseFollowup.s.sol` — deploys `wgVAPURR` + `HousePairConfig` against gen-5 Lithe/`gV` (see `TESTNET_ROLLOUT.md` §9). Core cutover not blocked on this.
 - Live Uni v4 deploy: HousePairConfig address into HouseLp/HouseSwap; Rust `house_deploy` / `swap_deploy` ABI encodes `pairConfig` first
 - PositionManager + Permit2 approvals for wgV; PoolManager unlock/settle e2e
 - Full Uni v4 `IHooks` / swapper integration beyond HouseUniSkim inventory bridge

@@ -260,7 +260,7 @@ contract TestnetRolloutDeploy {
 /// SAFETY: does NOT broadcast unless CONFIRM_TESTNET_DEPLOY=1 is set in the env.
 /// Default path simulates the full ordered stack locally (no chain write).
 ///
-/// House / wgV remain documented follow-ups (not factory).
+/// House / wgV: follow-up script TestnetHouseFollowup.s.sol (not this factory).
 contract TestnetRollout is Script {
     address constant VANITY = 0xC47f00D61F8379337f9fb42E6DcC695AE2d6EBD2;
     address constant STATUS_DEPLOYER = 0x48043E2Cda4D403c10dbB1F4614c4F6ad0f9AeA5;
@@ -350,7 +350,7 @@ contract TestnetRollout is Script {
         console2.log("  7 [IN SCRIPT] LaunchBootstrap: DevFundStream start + V/ETH+V/NVDA+V/AMD");
         console2.log("  8 [IN SCRIPT] Dual-minter: setMarketMinter(Lithe) then setMinter(gV)");
         console2.log("     (no Lithe redeem inventory fund; seigniorage mint on swapPusdToV)");
-        console2.log("  9 [FOLLOW-UP] House / wgV (not in factory / not this script) - manual next");
+        console2.log("  9 [FOLLOW-UP] House / wgV -> script/TestnetHouseFollowup.s.sol after core");
         console2.log(" 10 [MANUAL]   CutoverDeploy gate + UI address book + migrator fork verify");
         console2.log("HONEST: gen-4 remains live on 46630 until approved cutover.");
     }
@@ -387,7 +387,7 @@ contract TestnetRollout is Script {
         } else {
             console2.log("cutover SKIPPED (set LEGACY_MARKET/LEGACY_V/LEGACY_V_SUPPLY for live)");
         }
-        console2.log("FOLLOW-UP not deployed: House / wgV (manual next)");
+        console2.log("FOLLOW-UP not deployed: House / wgV (see TestnetHouseFollowup.s.sol)");
         if (h.litheProxy() == VANITY) {
             console2.log("vanity MATCH");
         } else {
