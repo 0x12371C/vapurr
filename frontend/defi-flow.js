@@ -77,7 +77,7 @@
     var backBtn = routeDesk
       ? '<button type="button" class="finance-back" data-finance-back aria-label="Back">'+icon('back')+'<span>Back</span></button>'
       : '';
-    nav.innerHTML=backBtn+'<nav class="finance-nav" aria-label="DeFi"><button class="finance-brand" data-go="vapurr://defi" aria-label="VAPURR DeFi home"><img src="/cat.svg" alt=""/>VAPURR</button><div class="finance-nav-links">'+[
+    nav.innerHTML=backBtn+'<nav class="finance-nav" aria-label="DeFi"><button class="finance-brand" data-go="vapurr://defi" aria-label="VAPURR DeFi home"><img src="/mascot.png" alt=""/>VAPURR</button><div class="finance-nav-links">'+[
       ['overview','Overview','vapurr://defi'],['cash','Lithe','vapurr://lithe'],['credit','Oliver','vapurr://oliver'],['savings','Save & bond','vapurr://bonds'],['house','House','vapurr://house'],['swap','Swap','vapurr://swap'],['bridge','Bridge','vapurr://bridge']
     ].map(function(item){ return '<button data-go="'+item[2]+'"'+(item[0]===desk?' aria-current="page"':'')+'>'+item[1]+'</button>'; }).join('')+'</div><button class="finance-wallet" data-go="vapurr://wallet">'+icon('wallet')+'Wallet</button></nav>';
   }
