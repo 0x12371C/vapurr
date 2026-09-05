@@ -11,12 +11,22 @@ interface IERC20 {
     function balanceOf(address) external view returns (uint256);
     function transfer(address, uint256) external returns (bool);
     function transferFrom(address, address, uint256) external returns (bool);
+    function approve(address, uint256) external returns (bool);
 }
 
 interface IMarket {
     function vapurr() external view returns (address);
     function pusd() external view returns (address);
     function lunaRate() external view returns (uint256);
+}
+
+interface IRemittanceHook {
+    function receiveRemittance(uint256 amount) external returns (bool);
+}
+
+interface IRunwayView {
+    function surplus(uint256 balance) external view returns (uint256);
+    function floor() external view returns (uint256);
 }
 
 contract PusdLoop {
@@ -49,6 +59,10 @@ contract PusdLoop {
     uint256 public lastAccrue;
     uint256 private _locked = 1;
 
+    IRemittanceHook public remittance; // surplus sink (RemittanceSink / sPUSD)
+    IRunwayView public runway; // optional floor gate before remit
+    bool public remitOnAccrue; // when true, _accrue best-effort pushes reserve cash to sink
+
     mapping(address => uint256) public supplyShares;
     mapping(address => uint256) public borrowShares;
     mapping(address => uint256) public collatV;
@@ -63,6 +77,8 @@ contract PusdLoop {
     event Unwind(address indexed user, uint256 steps, uint256 repaid);
     event Liquidate(address indexed user, address indexed keeper, uint256 repay, uint256 vOut, uint256 pOut);
     event Accrue(uint256 interest, uint256 borrows);
+    event RemittanceSet(address indexed sink, address indexed runway_, bool autoRemit);
+    event Remitted(address indexed sink, uint256 assets, uint256 shares);
 
     modifier lock() {
         require(_locked == 1, "LOCK");
@@ -83,7 +99,52 @@ contract PusdLoop {
         lastAccrue = block.timestamp;
     }
 
-    function accrue() external { _accrue(); }
+    function accrue() external lock { _accrue(); }
+
+    function setRemittance(address sink, address runway_, bool autoRemit) external {
+        require(msg.sender == owner, "OWN");
+        remittance = IRemittanceHook(sink);
+        runway = IRunwayView(runway_);
+        remitOnAccrue = autoRemit;
+        emit RemittanceSet(sink, runway_, autoRemit);
+    }
+
+    /// Push owner reserve supply (RESERVE_BPS share claim) out as $PUSD to remittance sink.
+    /// Runway floor (if set): only remits owner assets above floor. Floor may start at 0.
+    function remitReserve(uint256 assets) public lock returns (uint256 sent) {
+        _accrue();
+        sent = _remitReserve(assets);
+    }
+
+    function _remitReserve(uint256 assets) internal returns (uint256 sent) {
+        require(address(remittance) != address(0), "REMIT");
+        require(assets > 0, "TINY");
+        uint256 ownerAssets = _assetsOf(owner);
+        if (address(runway) != address(0)) {
+            uint256 fl = runway.floor();
+            if (ownerAssets <= fl) return 0;
+            uint256 above = ownerAssets - fl;
+            if (assets > above) assets = above;
+        }
+        if (assets > ownerAssets) assets = ownerAssets;
+        uint256 cash = pusd.balanceOf(address(this));
+        if (assets > cash) assets = cash;
+        if (assets == 0) return 0;
+        uint256 sh = _supplySharesForAssets(assets);
+        uint256 have = supplyShares[owner];
+        if (sh > have) {
+            sh = have;
+            assets = _assetsFromSupplyShares(sh);
+        }
+        require(sh > 0 && assets > 0, "TINY");
+        require(pusd.balanceOf(address(this)) >= assets, "CASH");
+        supplyShares[owner] = have - sh;
+        totalSupplyShares -= sh;
+        require(pusd.approve(address(remittance), assets), "ALLOW");
+        require(remittance.receiveRemittance(assets), "SINK");
+        emit Remitted(address(remittance), assets, sh);
+        return assets;
+    }
 
     function supply(uint256 amt) external lock {
         _accrue();
@@ -377,6 +438,10 @@ contract PusdLoop {
             }
         }
         emit Accrue(interest, totalBorrowAssets);
+        // Remittance hook: best-effort push reserve cash to sink after owner share mint.
+        if (remitOnAccrue && address(remittance) != address(0) && fee > 0) {
+            _remitReserve(fee);
+        }
     }
 
     function _flow(uint256 cash) internal pure returns (uint256) {

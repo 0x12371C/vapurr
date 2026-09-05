@@ -151,7 +151,7 @@ contract PusdMarket {
     uint256 public pendingRate;
     uint256 public liveBlock;
 
-    /// terra-fork/keeper GetTerraPoolDelta — signed, SDR/UST units
+    /// terra-fork/keeper GetTerraPoolDelta â€” signed, SDR/UST units
     int256 public terraPoolDelta;
     uint256 public lastReplenish;
 
@@ -209,7 +209,7 @@ contract PusdMarket {
         return ret;
     }
 
-    /// terra-fork/keeper.go ReplenishPools — one EndBlocker step per missed block, capped.
+    /// terra-fork/keeper.go ReplenishPools â€” one EndBlocker step per missed block, capped.
     function replenishPools() internal {
         if (block.number <= lastReplenish) return;
         uint256 n = block.number - lastReplenish;
@@ -229,7 +229,7 @@ contract PusdMarket {
         returns (uint256 retAmt, uint256 spread)
     {
         require(offerAmt > 0, "TINY");
-        // Swap offer to base denom (UST), then base to ask — swap.go ComputeSwap
+        // Swap offer to base denom (UST), then base to ask â€” swap.go ComputeSwap
         uint256 baseOffer = computeInternalSwap(offerAmt, offerLuna, false);
         retAmt = computeInternalSwap(baseOffer, false, !offerLuna);
 
@@ -275,8 +275,21 @@ contract PusdMarket {
         emit Accrue(pay, pusd.index());
     }
 
+    /// V inventory held by this market (pre-funded + V locked on PUSD mint).
+    /// ROUTING wall: market redeem MUST NOT mint V — only Fed/gV policy prints V.
+    function vInventory() public view returns (uint256) {
+        return vapurr.balanceOf(address(this));
+    }
+
+    /// Seed / top-up V float for redeem. Does not mint — pulls already-minted V.
+    function fundVInventory(uint256 amt) external {
+        require(amt > 0, "TINY");
+        vapurr.take(msg.sender, amt);
+    }
+
     /// terra-fork/msg_server.go handleSwapRequest — Luna -> UST
-    /// Burn VAPURR, mint PUSD at oracle minus spread. Spread -> Lithe reserve.
+    /// Lock VAPURR into inventory (no burn), mint PUSD at oracle minus spread. Spread -> Lithe reserve.
+    /// Semantics: burn-unwrap float — V stays in market so redeem can return inventory, not mint.
     function swapLunaToUst(uint256 offer) external returns (uint256 ask, uint256 fee) {
         _spot();
         accrue();
@@ -286,7 +299,7 @@ contract PusdMarket {
         require(ask > 0, "TINY");
         applySwapToPool(true, offer, ask);
         vapurr.take(msg.sender, offer);
-        vapurr.burn(address(this), offer);
+        // V stays on market as redeem inventory (was: vapurr.burn). No V supply change.
         pusd.mint(msg.sender, ask);
         if (fee > 0) {
             pusd.mint(address(this), fee);
@@ -296,17 +309,22 @@ contract PusdMarket {
     }
 
     /// terra-fork/msg_server.go handleSwapRequest — UST -> Luna
-    /// Burn PUSD, mint VAPURR at oracle minus spread. V fee is not minted (burned).
+    /// Burn PUSD, unlock VAPURR from pre-funded inventory at oracle minus spread.
+    /// HARD FENCE: does NOT call vapurr.mint — redeem fails if inventory thin (INV).
+    /// Fed/gV rebase remains the sole V inflation path; browse/earn cannot unbounded-mint via market.
     function swapUstToLuna(uint256 offer) external returns (uint256 ask, uint256 fee) {
         _spot();
         accrue();
+        uint256 inv = vapurr.balanceOf(address(this));
+        require(inv > 0, "INV"); // empty inventory fails before CP; no mint fallback
         (uint256 ret, uint256 spread) = computeSwap(offer, false);
         fee = (spread * ret) / DEC;
         ask = ret - fee;
         require(ask > 0, "TINY");
+        require(inv >= ask, "INV");
         applySwapToPool(false, offer, ask);
         pusd.burn(msg.sender, offer);
-        vapurr.mint(msg.sender, ask);
+        vapurr.give(msg.sender, ask);
         emit Swap(msg.sender, false, offer, ask, fee);
     }
 
