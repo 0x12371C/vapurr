@@ -114,7 +114,15 @@ fn pool_meta(pool: &str) -> Option<Value> {
 }
 
 fn fetch_trades(pool: &str) -> Value {
-    let rpc = Rpc::at_timeout(crate::RPC_HTTP, 10);
+    let house = super::house::is_house_pool(pool);
+    let rpc = Rpc::at_timeout(
+        if house {
+            crate::TESTNET_RPC_HTTP
+        } else {
+            crate::RPC_HTTP
+        },
+        10,
+    );
     let head = match rpc.call("eth_blockNumber", json!([])) {
         Ok(v) => hex_u64(&v),
         Err(_) => {
@@ -151,6 +159,18 @@ fn fetch_trades(pool: &str) -> Value {
         .and_then(|x| x.as_f64())
         .unwrap_or(0.0);
     let from = head.saturating_sub(6_000).max(1);
+    if house {
+        // House Uni v4: Swap logs live on HouseSwap, priced from amountIn/Out (pool), never Lithe feed.
+        let trades = super::house::fetch_house_trades(&rpc, from, head);
+        return json!({
+            "ok": true,
+            "loading": false,
+            "source": "rhc-rpc",
+            "pool": pool,
+            "head": head,
+            "trades": trades,
+        });
+    }
     let topic = if v3 { SWAP_V3 } else { SWAP_V2 };
     let logs = match get_logs(&rpc, pool, topic, from, head) {
         Ok(v) => v,
@@ -279,6 +299,9 @@ pub(crate) fn map_pair(p: &Value) -> Option<Value> {
                 .and_then(|s| s.parse().ok())
         })
         .unwrap_or(0.0);
+    let pool_mid = p.get("pool_mid").and_then(|x| x.as_f64());
+    let mid_ok = p.get("mid_ok").and_then(|x| x.as_bool()).unwrap_or(false);
+    let px = pool_mid.unwrap_or(px);
     Some(json!({
         "pool": pool,
         "token": token,
@@ -289,6 +312,8 @@ pub(crate) fn map_pair(p: &Value) -> Option<Value> {
         "dex": p.get("dex").and_then(|x| x.as_str()).unwrap_or(""),
         "fee": p.get("fee").and_then(|x| x.as_str()).unwrap_or(""),
         "px": px,
+        "pool_mid": pool_mid,
+        "mid_ok": mid_ok,
         "chg": chg,
         "vol": p.get("vol24_usd").and_then(|x| x.as_f64()).unwrap_or(0.0),
         "vol1": p.get("vol1_usd").and_then(|x| x.as_f64()).unwrap_or(0.0),

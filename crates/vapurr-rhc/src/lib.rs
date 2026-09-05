@@ -183,6 +183,7 @@ pub fn format_usd_units(minor: u128, decimals: u8) -> String {
 
 pub mod index;
 pub mod liq;
+pub use liq::house_v_usd_mid;
 pub mod rpc;
 pub mod route;
 pub mod scan;

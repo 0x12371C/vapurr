@@ -144,6 +144,16 @@
     for (i = 0; i < rows.length; i++) if (rows[i].pool === pool) return rows[i];
     return null;
   }
+  function isHousePair(p) {
+    if (!p) return false;
+    if (String(p.dex || "").toLowerCase().indexOf("house") >= 0) return true;
+    return String(p.pool || "").toLowerCase() === "0x667bfcaf9d3ee809336788bf52511d35ae9c1bf7";
+  }
+  function preferHouse(rows) {
+    var i;
+    for (i = 0; i < (rows || []).length; i++) if (isHousePair(rows[i])) return rows[i];
+    return null;
+  }
   function ensureSelected() {
     var rows = tabRows();
     var hit = selected ? poolInRows(selected.pool, rows) : null;
@@ -152,7 +162,7 @@
       hit = poolInRows(lastPool, rows);
       if (hit) { selected = hit; return selected; }
     }
-    selected = rows[0] || null;
+    selected = preferHouse(rows) || rows[0] || null;
     return selected;
   }
   function paintRail() {
@@ -504,7 +514,7 @@
       name: p.name || (sym + (qsym ? " / " + qsym : "")),
       dex: p.dex || "",
       fee: p.fee || "",
-      px: n(p.px != null ? p.px : base.price_usd),
+      px: n(p.pool_mid != null ? p.pool_mid : (p.px != null ? p.px : base.price_usd)),
       chg: n(p.chg),
       vol: n(p.vol != null ? p.vol : p.vol24_usd),
       vol1: n(p.vol1),
@@ -1012,10 +1022,12 @@
     var rows = tab === "majors" ? MAJORS.map(majorRow) : visible();
     var picked = false;
     if (rows.length && (!selected || !poolInRows(selected.pool, rows))) {
-      var pick = rows[0];
+      var pick = preferHouse(rows) || rows[0];
       var i;
-      for (i = 0; i < rows.length; i++) {
-        if (n(rows[i].px) > 0 || rows[i].source === "binance") { pick = rows[i]; break; }
+      if (!isHousePair(pick)) {
+        for (i = 0; i < rows.length; i++) {
+          if (n(rows[i].px) > 0 || rows[i].source === "binance") { pick = rows[i]; break; }
+        }
       }
       selected = pick;
       picked = true;
@@ -1722,21 +1734,10 @@
   }
 
   function ensureBars(bars, spec) {
+    // Honesty: real on-chain only. Never invent flat series from oracle/mark.
     var list = bars || [];
     if (list.length >= 2) return list;
-    if (list.length === 1) {
-      var b = list[0];
-      var step = (spec && spec.ms) || 36e5;
-      return [{
-        time: b.time - step,
-        open: b.open,
-        high: b.high,
-        low: b.low,
-        close: b.open,
-        volume: 0
-      }, b];
-    }
-    return stubBars(markPrice() || (selected && selected.px), spec);
+    return list.length === 1 ? list : [];
   }
 
   function stubBars(px, spec) {
@@ -1936,11 +1937,9 @@
     function finish(res) {
       if (!res.bars || res.bars.length < 2) {
         if (!res.bars) res.bars = [];
-        if (!res.bars.length) {
-          var stub = stubBars(px, spec);
-          res.bars = stub;
-          res.source = stub.length ? "print" : "empty";
-        }
+        // No stubBars — empty stays empty (pool mid / prints only).
+        if (!res.bars.length) res.source = "empty";
+        else if (res.bars.length < 2) res.source = res.source || "prints";
       } else if (nid !== "trades" && spec.id !== nid && spec.ms > nspec.ms) {
         barCache[nkey] = { bars: res.bars, source: res.source, at: Date.now() };
         res = { bars: aggregateBars(res.bars, spec.ms), source: res.source };
@@ -1991,7 +1990,7 @@
         if (bars.length >= 2) return finish({ bars: bars, source: "prints" });
         return loadRhcBars(pool, "1", 1000).then(function (one) {
           if (realBars(one)) return finish({ bars: one.bars, source: one.source });
-          return finish({ bars: stubBars(px, spec), source: "print" });
+          return finish({ bars: [], source: "empty" });
         });
       });
     } else {
@@ -2010,7 +2009,7 @@
         if (got) return finish(got);
         return barsFrom(order[1]).then(function (got2) {
           if (got2) return finish(got2);
-          return finish({ bars: stubBars(px, spec), source: "print" });
+          return finish({ bars: [], source: "empty" });
         });
       });
     }
@@ -2057,12 +2056,11 @@
           }
           return bars;
         }).catch(function () {
-          var stub = stubBars((selected && selected.px) || lastClose, specOf(tf));
-          lastBars = stub;
-          lastTape = stub.length ? "print" : "empty";
+          lastBars = [];
+          lastTape = "empty";
           paintHud();
-          setLive(false, "print", true);
-          return clipBars(stub, opts);
+          setLive(false, "rhc", true);
+          return [];
         });
       },
       listSymbols: function () {

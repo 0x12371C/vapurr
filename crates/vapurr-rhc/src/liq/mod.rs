@@ -32,9 +32,11 @@ mod price;
 mod swaps;
 mod graph;
 mod tape;
+mod house;
 
 pub use snapshot::{warm, snapshot, snapshot_json, cached_ok, stats_if_ready, token_hit, pools_for, token_list};
 pub use tape::{tape_json, trades_json};
+pub use house::house_v_usd_mid;
 pub(crate) use price::sane_eth_px;
 use crawl::*;
 use price::*;

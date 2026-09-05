@@ -183,6 +183,21 @@ pub(crate) fn price_pools(rpc: &Rpc, rows: &[PoolRow]) -> Vec<Value> {
         let bv = b.get("reserve_usd").and_then(|x| x.as_f64()).unwrap_or(0.0);
         bv.partial_cmp(&av).unwrap_or(std::cmp::Ordering::Equal)
     });
+    // House Uni v4: chart pool mid (V USD), never Lithe oracle feed().
+    super::house::apply_house_mid(&mut out);
+    out.sort_by(|a, b| {
+        let ah = a.get("dex").and_then(|x| x.as_str()).unwrap_or("").contains("house");
+        let bh = b.get("dex").and_then(|x| x.as_str()).unwrap_or("").contains("house");
+        match (ah, bh) {
+            (true, false) => std::cmp::Ordering::Less,
+            (false, true) => std::cmp::Ordering::Greater,
+            _ => {
+                let av = a.get("reserve_usd").and_then(|x| x.as_f64()).unwrap_or(0.0);
+                let bv = b.get("reserve_usd").and_then(|x| x.as_f64()).unwrap_or(0.0);
+                bv.partial_cmp(&av).unwrap_or(std::cmp::Ordering::Equal)
+            }
+        }
+    });
     out
 }
 

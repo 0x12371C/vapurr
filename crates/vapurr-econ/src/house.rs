@@ -178,6 +178,12 @@ impl Client {
             .map_err(crate::econ_rpc)?;
         let bytes = decode_hex_bytes(&raw).map_err(|_| EconError::Rpc("house snapshot".into()))?;
         let s = decode_house_snap(&bytes)?;
+        // Uni v4 pool mid for charts/House HUD — never Lithe feed()/vapurrRate.
+        let pool_mid = rhc::house_v_usd_mid();
+        let px_mid = pool_mid
+            .map(|m| format!("{:.4}", m))
+            .unwrap_or_else(|| "0.0000".into());
+        let px_source = if pool_mid.is_some() { "pool_mid" } else { "none" };
         Ok(json!({
             "live": s.token_id > 0,
             "need_deploy": false,
@@ -196,7 +202,9 @@ impl Client {
             "band": "±20%",
             "vapurr": fmt_tok(v_bal),
             "pusd": fmt_tok(p_bal),
-            "px": fmt_price(s.px),
+            "px": px_mid,
+            "px_oracle": fmt_price(s.px),
+            "px_source": px_source,
             // Snap.wgVToken — JSON key kept as vapurr_token for UI compat until frontend rename.
             "vapurr_token": s.vapurr_token,
             "pusd_token": s.pusd_token,
