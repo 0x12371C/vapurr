@@ -111,7 +111,9 @@
     });
     if(focus) {
       history.replaceState(null,'','#'+deskName);
-      document.getElementById('jump').scrollIntoView({block:'start'});
+      var chrome=document.querySelector('[data-finance-nav]');
+      if(chrome) chrome.scrollIntoView({block:'start'});
+      else window.scrollTo(0,0);
     }
   }
   if(document.body.dataset.desk==='cash') {
