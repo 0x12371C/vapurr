@@ -1,12 +1,12 @@
-﻿# Tracks
+# Tracks
 
 Living owner board. Snapshot: `docs/SNAPSHOT.md`. Flash: `docs/ORG_FLASH.md`.
 
 | Track | Owner | Status | Next |
 |-------|-------|--------|------|
 | Org board | vapurrbot | live â€” Bot is primary (CLI credits dry) | KEEP House+Pilot; ACTIVE KFX/PayId/Bind only; **no new grok procs** |
-| Code signing | Relic + House | **P0 SHIP BLOCKER** — public `vapurr-setup.exe` Defender `Wacatac.C!ml` (unsigned). Independent verify clean. | Buy OV or Microsoft Artifact Signing; `pack.ps1` must sign; MSFT FP submit; `docs/SIGNING.md` |
-| Build / pack | House | **1.1.9** on TSL (sha 50075F06); Programs still **1.1.7**; Defender quarantines local dist copies | Signed 1.1.10 pack → TSL; then Programs hot-patch/reinstall |
+| Code signing | Relic + House | **P0 SHIP BLOCKER** - unsigned Defender hit. Wallet IPC hardening **in-tree** (Codex); Relic hostile-page retest open — `docs/RELEASE_REVIEW_2026-09-04.md`. | OV/Artifact Signing; `pack.ps1` must sign; MSFT FP; Relic security retest before public ship |
+| Build / pack | House | **1.1.9** on TSL; Programs **1.1.7**; Defender quarantines local dist. Codex wallet hardening compiled+retested (shell/wallet green) — hold pack until signed + Relic security bar. | Signed 1.1.10 pack to TSL after Relic retest; then Programs hot-patch/reinstall |
 | Media hosting | vapurrbot + TSL | Ketflix `TRAILER_BASE` â†’ thesecretlab.app; CDN 404 until upload | sync `frontend/ketflix/trailers/*.mp4`; see HOSTING.md |
 | Ketflix UI | KFX | posters+hero 1080p landscape; **idle** since ~13:07 | review only; no new proc |
 | Ketflix trailers | KFX | **12/12** local; last ~13:07 | host on TSL; do not pack |

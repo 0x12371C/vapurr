@@ -1,81 +1,86 @@
-# Release review — 2026-09-04
+﻿# Release review — 2026-09-04
 
-**Recommendation: hold the public release.** The current browser exposes native wallet authority to untrusted web content. This also affects browsing privacy, independently of whether product payments are limited to testnet.
+**Recommendation: hold the public release** until (1) code signing lands and (2) Relic re-reviews the security bar on a signed build. Wallet IPC trust hardening is **in-tree** and package tests for `vapurr-shell` + `vapurr-wallet` are green; that does not replace an independent hostile-page retest or a signed installer.
 
-Reviewed the working tree at `5bb5616`, workspace version `1.1.9`, including the existing uncommitted changes. This was a source review with targeted offline reproductions and Rust tests. Application source was not changed.
+## Timeline
 
-## Findings
+1. **Source review (Codex):** Working tree around `5bb5616` / workspace `1.1.9`. Found P0/P1 wallet IPC and chrome-trust bugs. Original write-up below under **Original findings (pre-fix)**.
+2. **Hardening (Codex):** Applied native trust boundary fixes (`security.rs` / `security.js`, `ipc.rs`, `main.rs`, `keystore.rs`, `session.rs`, `transactions.rs`, host routes). Said fixes compile; usage limit hit mid regression + release-note update.
+3. **Finish pass (Relic / Grok Bot, same day):** Module wiring verified; `cargo +stable-x86_64-pc-windows-gnu test -p vapurr-shell -p vapurr-wallet -- --test-threads=1` with isolated `%TEMP%\vapurr-hardening-finish-*` LOCALAPPDATA/APPDATA and MinGW on PATH — **98 passed, 0 failed, 1 ignored** (`desk::tests::live_testnet_snap`). Docs updated; graphify refreshed. No real wallet profile used.
+
+## What landed (in-tree)
+
+| Area | Fix |
+|------|-----|
+| Chrome URL trust | Exact parsed origin (`http` + host `vapurr.localhost` + port 80); substring/`contains` checks retired for trust |
+| IPC / replies | Document binding + guarded `evaluate_script`; native `MessageBox` confirm for signing/export (not HTML sheet alone) |
+| Chrome HTTP API | `x-vapurr-client` capability token + origin / `sec-fetch-site` checks (`api_authorized`) |
+| Key material | DPAPI `wallet.vault` (`keystore.rs`); migrate off plaintext `device.sk` / `seed.phrase` |
+| Payment UX | Receipt-gated confirmation (`transactions.rs` — only successful receipts confirm payment) |
+| Stale test | `ketbook_is_chrome` now passes (Oliver naming) |
+
+Modules wired: `vapurr-wallet` `lib.rs` has `mod keystore` + `pub mod transactions`; `vapurr-shell` `main.rs` has `mod security`.
+
+## Still hold — remaining bar
+
+- **Code signing** remains P0 ship blocker (Defender / unsigned `vapurr-setup.exe`). See `docs/TRACKS.md` + `docs/SIGNING.md`.
+- **Relic security retest** required: hostile page vs IPC, chrome impersonation URLs, private API cross-origin, unlock/export confirm, vault migration on a real profile copy (not only temp).
+- Async protocol / quote UI-thread blocking (original P1 #4) — not claimed fixed here; verify before calling Swap “ready.”
+- No clean-machine install, signed pack, or full workspace `--locked` gate claimed in this finish pass (shell+wallet packages only).
+- Ignored live tx tests stayed ignored.
+
+## Validation (finish pass)
+
+```
+cargo +stable-x86_64-pc-windows-gnu test -p vapurr-shell -p vapurr-wallet -- --test-threads=1
+```
+
+Isolated profile under `%TEMP%\vapurr-hardening-finish-*`. PATH included `C:\Users\jfren\winlibs\mingw64\bin`. Result: **shell lib 22**, **shell bin 50**, **wallet 26 + 1 ignored** — all green.
+
+Security unit coverage that ran: `security::tests::chrome_origin_is_exact`, `security::tests::private_api_requires_capability_and_rejects_external_origin`, keystore migration/corrupt-vault tests, `transactions::tests::only_successful_receipts_confirm_payment`.
+
+## Original findings (pre-fix)
+
+Codex’s initial review (application source not yet changed at that moment). Kept for audit trail; treat as **addressed or partially addressed** per table above, not as current open bugs without retest.
 
 ### 1. P0 — Ordinary websites can invoke wallet commands and receive private keys
 
-**Locations:** `crates/vapurr-shell/src/main.rs:244`, `:326`, `:949`, `:973`, `:1011`; `crates/vapurr-wallet/src/desk.rs:198`; `crates/vapurr-wallet/src/session.rs:104`.
+**Locations (then):** `crates/vapurr-shell/src/main.rs`; wallet desk/session export paths.
 
-The same IPC handler is installed on the browsing webview and chrome webviews. It parses the message body without checking the sender URI. The locally installed wry 0.47.2 implementation injects `window.ipc` into documents and supplies WebView2's message-source URL in the request URI; that provenance is discarded here.
+Same IPC handler on browsing + chrome webviews; sender URI discarded; export via `window.__setWallet` without origin binding.
 
-A website can request key/seed export or submit a wallet transaction without going through the confirmation sheet. Wallet dispatch does not require an authenticated session. Export results are evaluated through `window.__setWallet` in the currently open page, with no origin or request binding. The frontend confirmation sheet is therefore bypassable. Testnet restrictions on selected assets do not protect the private key or ETH on supported networks.
+**Required fix (then):** exact trusted origins + command permissions at native ingress; native authorization for signing/export; bind replies to requesting trusted document.
 
-**Verified:** an isolated harness used the actual IPC parser and compiled wallet crate with a synthetic key in a temporary profile. Key export succeeded while logged out. No real key was read and no transaction was sent. The browser-to-handler connection was verified against local wry source, not by running an attack in the user's browser.
-
-**Required fix:** enforce exact trusted origins and command permissions at native ingress; require native authorization for signing/export; bind replies to the requesting trusted document and discard them after navigation. Checking the sender alone leaves the asynchronous reply/navigation leak open.
+**Status:** Hardening in-tree; Relic hostile-page retest still required before ship.
 
 ### 2. P0 — External URLs can impersonate chrome and receive private browsing data
 
-**Locations:** `crates/vapurr-shell/src/host/wv.rs:14`; `crates/vapurr-shell/src/main.rs:1178`, `:1205`; `crates/vapurr-shell/src/cookies.rs:9`, `:35`, `:158`.
+**Then:** `url.contains("vapurr.localhost")` accepted query-string / subdomain tricks; cookie/mail injection followed.
 
-Trust checks use `url.contains("vapurr.localhost")`. An external URL such as `https://example.invalid/cookies.html?vapurr.localhost` passes. On navigation, the shell injects desk data and, for a URL containing `cookies.html`, the cookie snapshot into the external document. Cookie enumeration covers the shared profile, including HttpOnly cookies; values are included, truncated to 72 characters. The same navigation branch can supply mail data when its URL contains the mail filename.
+**Status:** Exact `is_chrome_url` in `security.rs` with rejection tests; retest injection paths on navigation.
 
-**Verified:** the exact `is_chrome_url` function accepted both an external query-string example and `https://vapurr.localhost.example.invalid/` in an offline test. The injection and cookie-enumeration paths were traced in application and wry source. This remains a separate leak after fixing IPC ingress.
+### 3. P1 — Chrome HTTP API had no caller authorization
 
-**Required fix:** use one parsed, exact origin check throughout navigation, injection, tabs, and Shield exemptions. Select chrome surfaces from parsed paths only after establishing trust; bind private-data injection to the intended document.
+**Then:** Wildcard CORS; mail/PNS without Origin checks.
 
-### 3. P1 — The chrome HTTP API has no caller authorization
-
-**Locations:** `crates/vapurr-shell/src/host/routes.rs:14`; `crates/vapurr-shell/src/host/zzzmail_api.rs:21`, `:78`; `crates/vapurr-shell/src/host/pns.rs:220`.
-
-The host dispatches mail/PNS requests without checking Origin or other caller authorization. Responses explicitly allow every origin and GET/POST/OPTIONS. Sensitive operations include reading the inbox, signing postage, changing PNS addresses, and deploying the registry. PNS mutations do not require POST; the OPTIONS special case is the only method guard.
-
-This creates an independent path around an IPC fix for untrusted content that can reach the chrome host. Browser network restrictions can affect a particular cross-origin reproduction; no end-to-end cross-origin browser test was performed, but the native API itself has no protection.
-
-**Required fix:** authorize callers before dispatch, restrict allowed methods, remove wildcard CORS from private APIs, and require explicit authorization for transactions. Add rejection tests for external origins and GET mutations.
+**Status:** `api_authorized` + worker rejection tests in-tree; Relic retest still required.
 
 ### 4. P1 — Swap/bridge quotes block the native browser event loop
 
-**Locations:** `crates/vapurr-shell/src/main.rs:324`; `crates/vapurr-shell/src/host/routes.rs:125`; `crates/vapurr-rhc/src/route.rs:46`, `:350`.
+Synchronous custom-protocol `quote_json`. **Not claimed fixed** in the Codex hardening set.
 
-The shell uses a synchronous custom-protocol callback. A quote request runs `quote_json` directly in that callback. It waits for remote quote requests and RPC simulations; its scoped worker threads are joined before returning. Consequently, slow routers or RPC timeouts block the native UI thread, affecting the window, tabs, and toolbar. Aborting the frontend fetch does not cancel these synchronous Rust operations.
+### 5. P1 — Unconfirmed transaction displayed as “Paid”
 
-**Required fix:** use asynchronous protocol responses backed by bounded workers, deadlines, and stale-request cancellation. Verify native UI responsiveness with delayed/unavailable RPC responses.
+**Status:** Receipt-gated path added (`transactions` tests green); end-to-end KetPay sheet retest still needed.
 
-### 5. P1 — An unconfirmed transaction can be displayed as “Paid”
+### 6. P1 — Wallet keys / recovery stored as plaintext
 
-**Locations:** `crates/vapurr-wallet/src/desk.rs:641`, `:660`, `:700`, `:711`; `frontend/pay.html:146`.
+**Status:** DPAPI vault + migration tests green on isolated profile.
 
-After 80 unsuccessful receipt polls, `broadcast` returns `Ok(hash)` anyway. `exec_route` similarly falls through and sets `ok: true`. KetPay treats a new transaction hash as success and completes the sheet titled “Paid.” A transaction still pending, dropped, or later reverted can therefore be presented as settled. Receipt RPC errors take this path too.
+### 7. P2 — Workspace test gate / `ketbook_is_chrome`
 
-**Required fix:** represent submitted, pending, confirmed, and reverted separately. Complete the payment sheet only after a successful receipt; preserve pending hashes for later reconciliation. Test timeout/error cases using a mock RPC.
+**Status:** Package tests for shell+wallet pass; Oliver expectation aligned.
 
-### 6. P1 — Wallet keys and recovery phrases are stored as plaintext
+## Bottom line
 
-**Locations:** `crates/vapurr-wallet/src/lib.rs:88`; `crates/vapurr-wallet/src/session.rs:66`, `:70`, `:117`.
-
-`device.sk` contains raw secret bytes and `seed.phrase` contains the recovery words, written with ordinary filesystem writes. Logout only changes session JSON. A readable profile copy or backup exposes the wallet without unlocking it. The existing zeroization of in-memory key types does not protect these files.
-
-**Required fix:** use an encrypted keystore with an explicit unlock policy and a migration that preserves existing keys. Protect recovery material as well as the signing key; handle persistence failures explicitly.
-
-### 7. P2 — The documented workspace test gate currently fails
-
-**Location:** `crates/vapurr-shell/src/main.rs:1315`.
-
-`tests::ketbook_is_chrome` expects `pusd.html?tab=euler` for the Euler/loop aliases, while `nav.rs` returns `pusd.html?tab=oliver`. The frontend accepts both spellings, so this appears to be a stale test expectation rather than a broken page. Nevertheless, `cargo test --workspace` exits with code 101 and stops before later packages run.
-
-**Required fix:** reconcile the test and route documentation with the intended Oliver naming, then rerun the complete workspace gate.
-
-## Validation and limits
-
-- Ran `cargo +stable-x86_64-pc-windows-gnu test --workspace --locked` with temporary LOCALAPPDATA/APPDATA. It compiled and stopped at the shell test failure above.
-- Separately ran the remaining Shield, UI, wallet, and zmail package tests with `--no-fail-fast`. Across both runs: **265 passed, 1 failed, 4 ignored**. The ignored tests include live transaction operations and were not enabled. The suite also contains optional live read tests; their passing status is not proof of deployment health.
-- The temporary boundary harness passed its two reproduction checks and six existing IPC tests. Here “passed” means the vulnerable behavior was reproduced, not that the boundary is safe.
-- Recompiled `PusdLoop.sol` in memory with the installed solc 0.8.24 and the compile helper's settings. Compilation succeeded and the result exactly matches the current `loop.hex` (14,021 bytes). This does not validate contract economics or prove the deployed vault matches; STATUS explicitly records a required redeployment for the cash-cap change.
-- No installer was launched, no existing application process was stopped, and no real wallet was used. No clean-machine install, full browser UI exercise, deployed-contract audit, or security dependency audit was performed. Remaining workspace doctests after Cargo's early failure were not all run.
-
-The immediate release gate is fixing findings 1–3 and testing hostile-page isolation. Payment confirmation and UI responsiveness need verification before presenting the wallet/payment flows as ready to ship.
+Do **not** ship a public unsigned build. Hardening is committed in-tree pending Relic retest + signed pack. 404 remains load-fail chrome only; KetPay remains 402/x402/$PUSD — never fuse.

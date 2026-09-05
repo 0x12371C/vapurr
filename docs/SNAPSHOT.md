@@ -17,6 +17,11 @@ Living board for agents. Prefer this + `TRACKS.md` over old overnight kick lore.
 - **1.1.2:** Swap hard-crash — `score_of() -> i128` into `serde_json::json!` panicked `number out of range`. Scores stringified.
 - **1.1.3:** House `$VAPURR`/`$PUSD` kickback **0.03%** (`HOUSE_REFUND_BPS=3`) with real `refund.display` amount in Swap UI. LiFi/non-house stays **0.05%** (`ROUTE_REFUND_BPS=5`).
 
+
+## Security / release hold (2026-09-04 evening)
+- Codex wallet IPC hardening is **in-tree** (security.rs, DPAPI keystore, receipt-gated pay, API capability token).
+- Finish pass: `cargo +stable-x86_64-pc-windows-gnu test -p vapurr-shell -p vapurr-wallet` green (98 pass / 1 ignored) on isolated TEMP profile.
+- **Hold public ship** until signed pack + Relic hostile-page retest. Details: `docs/RELEASE_REVIEW_2026-09-04.md`.
 ## Org
 | Role | Status |
 |------|--------|
