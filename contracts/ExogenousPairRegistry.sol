@@ -192,6 +192,14 @@ contract ExogenousSeedMarket {
         emit Seeded(amountV, amountExo);
     }
 
+    /// Genesis POL V earmark (80k/25k/25k). Exo leg may land later. No mint.
+    function fundV(uint256 amountV) external onlyOwner {
+        if (amountV == 0) revert Tiny();
+        require(IERC20Seed(token0).transferFrom(msg.sender, address(this), amountV), "PULL0");
+        reserve0 += amountV;
+        emit Seeded(amountV, 0);
+    }
+
     function reserves() external view returns (uint256, uint256) {
         return (reserve0, reserve1);
     }

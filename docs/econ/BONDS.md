@@ -122,7 +122,7 @@ At genesis/cutover, stand up **V paired with each bondable exogenous asset** as 
 | **V/AMD** | POL / trading depth for AMD stock wrapper (genesis) |
 | (+ configured stock tags) | Same pattern via ExogenousPairRegistry.registerPair |
 
-**Locked bootstrap seed (fatter):** V/ETH **80k** · V/NVDA **25k** · V/AMD **25k** of `bootstrapV=200_000` — full split in `GENESIS_ALLOCATION.md`.
+**Locked genesis POL seed (of the 1M launch):** V/ETH **80k** · V/NVDA **25k** · V/AMD **25k**. Full 1.2M table in `GENESIS_ALLOCATION.md`.
 
 These are **distinct from Open Bond** (exogenous in → gV out). Bond purchase still uses BondMarket / BondAssetTag.
 

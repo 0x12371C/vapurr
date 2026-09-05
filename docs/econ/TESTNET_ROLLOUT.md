@@ -74,22 +74,22 @@ Execute in order. Record each address in `docs/STATUS.md` only after a successfu
 
 ### 6. DevFund (200k stream → Oliver collateral only) — [IN SCRIPT]
 
-- [x] Genesis mint includes **200_000 V** DevFund allocation **before** `setMinter(gV)`
+- [x] Genesis mint is **1.2M** (1M launch + **200_000 V** DevFund) **before** `setMinter(gV)`
 - [x] `LaunchBootstrap`: `DevFundStream` fund + `startStream`
 - [x] Unlock settles **only** into Oliver collateral; recipient draws **$PUSD** only
-- [ ] Distinct from BrowserStream (50k / 3y treasury float) — not deployed here
+- [x] Distinct from BrowserStream (50k / 3y) — `LaunchBootstrap` funds BrowserStream from the 1M launch
 
 ### 7. Exogenous pair registry — V/ETH + V/NVDA + V/AMD — [IN SCRIPT]
 
 - [x] `ExogenousPairRegistry` via `LaunchBootstrap`
 - [x] Register genesis books: **V/ETH**, **V/NVDA**, **V/AMD** (trading / POL — not bond purchase)
 - [x] Ban USDG / PUSD as exogenous pair legs (registry constructor)
-- [ ] Optional minimal POL seed (`SEED_POL=1` / `seedPol_`) — off by default in dry-run
+- [x] POL V earmarks: V/ETH **80k** · V/NVDA **25k** · V/AMD **25k** (`fundV`); exo leg optional (`SEED_POL`)
 
 ### 8. Minter handoff + cutover inventory — [IN SCRIPT]
 
 - [x] Dual-minter handoff (match `CanonicalLitheFactory` / `MINT_AUTHORITY.md`):
-  - Genesis mint complete (bootstrap float + DevFund 200k + optional cutover inventory) **before** policy handoff
+  - Genesis mint complete (**1.2M**; cutover inventory carved from 800k treasury remainder) **before** policy handoff
   - `canonicalV.setMarketMinter(Lithe)` — Lithe seigniorage printer (while deployer still holds policy minter)
   - `canonicalV.setMinter(gV)` — gV policy inflate 1–9%
   - No Lithe redeem inventory fund — redeem mints V via `marketMinter`
@@ -218,7 +218,7 @@ Captured from `forge script script/TestnetRollout.s.sol:TestnetRollout -vv` (CON
 6. **SavingsRouter + SPUSD + SpusdCd** + `sink.setForward` — **starts DISABLED**
 7. Genesis mint DevFund 200k (+ `BOOTSTRAP_V` default **200_000 ether**) + cutover converter inventory **before** `setMinter(gV)`
 8. **LegacyVConverter + LitheCutoverMigrator** (factory-shaped; dry-run mocks if `LEGACY_*` unset)
-9. LaunchBootstrap: DevFundStream start + V/ETH+V/NVDA+V/AMD
+9. LaunchBootstrap: DevFund 200k + Browser 50k + POL 80/25/25 + House 20k + `GenesisTreasury` (gV then Oliver)
 10. Dual-minter: `setMarketMinter(Lithe)` then `setMinter(gV)` (no Lithe redeem inventory)
 
 **Still manual / follow-up:**
@@ -231,7 +231,7 @@ Captured from `forge script script/TestnetRollout.s.sol:TestnetRollout -vv` (CON
 
 HONEST: gen-4 remains live on 46630 until Relic-approved CutoverDeploy. Do not invent live gen-5 addresses here.
 
-**Last dry-run (2026-09-05 ~2:05pm ET):** `forge script script/TestnetRollout.s.sol:TestnetRollout -vv` from `contracts/` — **exit 0**, `CONFIRM_TESTNET_DEPLOY 0`, no broadcast. Local simulate composed prior stack + SPUSD/SpusdCd/SavingsRouter (`sink.setForward`, **savings enabled 0 / cdBps 0**), + LegacyVConverter+LitheCutoverMigrator (dry-run mock legacy, inventory 1e6 V). Gas used ~44.7M. Vanity MISS expected off STATUS deployer nonce-0 path. No live gen-5 addresses — dry-run only.
+**Last dry-run (2026-09-05 ~2:05pm ET):** `forge script script/TestnetRollout.s.sol:TestnetRollout -vv` from `contracts/` — **exit 0**, `CONFIRM_TESTNET_DEPLOY 0`, no broadcast. Local simulate composed prior stack + SPUSD/SpusdCd/SavingsRouter (`sink.setForward`, **savings enabled 0 / cdBps 0**), + LegacyVConverter+LitheCutoverMigrator (dry-run mock legacy, inventory 288k V (carved from 800k)). Gas used ~44.7M. Vanity MISS expected off STATUS deployer nonce-0 path. No live gen-5 addresses — dry-run only.
 
 **House follow-up dry-run (2026-09-05 ~2:15pm ET):** `forge script script/TestnetHouseFollowup.s.sol:TestnetHouseFollowup -vv` — **exit 0**, both CONFIRM flags unset, no broadcast. Local compose Fed V + gV + Lithe proxy → `wgVAPURR` + `HousePairConfig` + factory `validateAndMark(wgV,pusd)`. HouseLp/HouseSwap not deployed (Uni still open). No ETH moved.
 
@@ -243,6 +243,7 @@ HONEST: gen-4 remains live on 46630 until Relic-approved CutoverDeploy. Do not i
 - `STATUS.md` — live gen-4 addresses + vanity line
 - `POLICY_RATE.md` — 1–9% bond-utilization policy
 - `GENESIS_ALLOCATION.md` — locked bootstrapV 200k split + launch markets
+- `GENESIS_ALLOCATION.md` — 1.2M mint lock
 - `DEV_FUND.md` — 200k → Oliver collateral
 - `BONDS.md` / `ROUTING.md` — USDG bond-only lock
 - `SPUSD.md` / `EARNINGS_ENGINE.md` — savings forward + post-floor split

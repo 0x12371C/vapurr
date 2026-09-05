@@ -43,7 +43,7 @@ No Luna / UST / Olympus product names in UI or docs. No silent 46630 broadcast.
 
 `setMinter` / `setMarketMinter` are callable only by the current **policy** minter.
 `burn` is **marketMinter-only** (Lithe seigniorage); policy minter cannot incinerate holders.
-Factory order: genesis mint → fund converter → `setMarketMinter(Lithe)` → `setMinter(gV)`.
+Factory order: genesis mint **1.2M** (legacy carved from 800k remainder) → fund converter → `setMarketMinter(Lithe)` → `setMinter(gV)`.
 
 ## Embedded gen-4 book (`PusdMarket`)
 
@@ -53,8 +53,9 @@ Live gen-4 bytecode may still be inventory until Relic-approved cutover. Do not 
 ## Hard fences (still Relic locks)
 
 - USDG = bond treasury intake only (no V/USDG cash books).
-- DevFund 200k → Oliver collateral → PUSD draw only; NoMarketSell.
-- BrowserStream = already-minted float drip only.
+- DevFund 200k extra → Oliver collateral → PUSD draw only; NoMarketSell.
+- BrowserStream = already-minted 50k / 3y drip only.
+- Treasury remainder (800k − cutover carve) → `GenesisTreasury` gV stake + Oliver; NoMarketSell.
 - Launch pairs: V/ETH, V/NVDA, V/AMD.
 - Lithe fee surplus single-counted (drip burn xor remit).
 - UI honesty: only real on-chain addresses.

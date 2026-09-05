@@ -57,23 +57,21 @@ Properties:
 
 ## Cutover wiring
 
-1. `CanonicalLitheFactory` genesis-mints `legacy + bootstrap + 200k`, funds converter, transfers DevFund+bootstrap to initiator, `setMarketMinter(Lithe)` then `setMinter(gV)`.
-2. Initiator deploys `LaunchBootstrap(vapurr, oliver, recipient, usdg, pusd, eth, nvda, amd, seedPol)`:
-   - registers **V/ETH, V/NVDA, V/AMD** (never V/USDG / PUSD/USDG)
-   - funds + starts `DevFundStream` bound to **Oliver** (`factory.loop()` on live cutover)
+1. `CanonicalLitheFactory` genesis-mints **exactly 1.2M** (1M launch + 200k DevFund). Legacy converter is carved from the 800k treasury remainder (not minted on top). Then `setMarketMinter(Lithe)` → `setMinter(gV)`.
+2. `LaunchBootstrap` allocates the 1M launch (BrowserStream 50k / POL 80+25+25 / House 20k / treasury remainder → `GenesisTreasury` gV+Oliver) and funds DevFund 200k into Oliver.
 
 ## Status
 
 - **Source-landed:** `DevFundStream.sol`, `LaunchBootstrap.sol`, proofs in `DevFundStream.t.sol` / `LaunchBootstrap.t.sol`.
 - **Not live** on 46630 until approved CutoverDeploy. UI honest-empty until addresses exist.
 
-## Bootstrap float (distinct)
+## Distinct from the 1M launch pile
 
-DevFund **200k** is **not** the liquid `bootstrapV` float. Working locked default: **bootstrapV = 200_000 ether** (fatter) split BrowserStream 50k / V/ETH 80k / V/NVDA 25k / V/AMD 25k / House 20k -- see `GENESIS_ALLOCATION.md`. Env `BOOTSTRAP_V` default **200000 ether** in `TestnetRollout`.
+DevFund **200k is extra** — not taken from the 1M launch float. The 1M is BrowserStream 50k / V/ETH 80k / V/NVDA 25k / V/AMD 25k / House 20k / treasury 800k (gV + Oliver, not AMM dump). Canon: `GENESIS_ALLOCATION.md`.
 
 ## Related
 
-- `GENESIS_ALLOCATION.md` -- locked bootstrapV + launch markets
+- `GENESIS_ALLOCATION.md` — 1.2M mint (1M launch + 200k DevFund)
 - `ROUTING.md` ? Fed outflows / BrowserStream wall
 - `BONDS.md` ? exogenous bond intake vs POL trading books
 - `EARNINGS_ENGINE.md` ? BrowserStream global 50k budget

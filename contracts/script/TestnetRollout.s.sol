@@ -16,6 +16,7 @@ import {SpusdCd} from "../SpusdCd.sol";
 import {SavingsRouter} from "../SavingsRouter.sol";
 import {LegacyVConverter} from "../LegacyVConverter.sol";
 import {ILegacyLitheMarket, LitheCutoverMigrator} from "../LitheCutoverMigrator.sol";
+import {GenesisAllocation} from "../GenesisAllocation.sol";
 
 interface ILegacyVSupply {
     function totalSupply() external view returns (uint256);
@@ -74,9 +75,8 @@ contract RolloutMockLegacyMarket {
 
 /// Non-script executor so custody can use address(this) (forge forbids that on Script).
 /// Composes CanonicalLitheFactory order + LaunchBootstrap companion + savings forward + cutover inventory.
-contract TestnetRolloutDeploy {
-    uint256 public constant DEV_FUND_AMOUNT = 200_000 ether;
-    uint256 public constant DRY_RUN_LEGACY_SUPPLY = 1_000_000 ether;
+contract TestnetRolloutDeploy is GenesisAllocation {
+    uint256 public constant DRY_RUN_LEGACY_SUPPLY = 288_000 ether;
 
     VapurrToken public v;
     RebasePolicy public policy;
@@ -216,8 +216,15 @@ contract TestnetRolloutDeploy {
     }
 
     function _genesisBootstrapHandoff(address owner_, uint256 bootstrapV, Env calldata env) internal {
+        // bootstrapV env is ignored; launch is locked at LAUNCH_V (1M).
+        bootstrapV;
         uint256 cutoverInv = cutoverWired ? legacyVSupply : 0;
-        v.mint(address(this), DEV_FUND_AMOUNT + bootstrapV + cutoverInv);
+        require(cutoverInv <= TREASURY_GROSS, "TREASURY");
+        uint256 treasuryNet_ = TREASURY_GROSS - cutoverInv;
+
+        // Exactly 1.2M. Converter inventory carved from the 800k remainder.
+        v.mint(address(this), GENESIS_MINT);
+        require(v.totalSupply() == GENESIS_MINT, "MINT");
 
         if (cutoverWired && cutoverInv > 0) {
             require(v.approve(address(converter), cutoverInv), "ALLOW");
@@ -234,13 +241,20 @@ contract TestnetRolloutDeploy {
         address recipient = env.recipient == address(0) ? owner_ : env.recipient;
         address pusd = address(market.pusd());
         boot = new LaunchBootstrap(
-            address(v), address(oliver), recipient, usdg, pusd, exoEth, exoNvda, exoAmd, env.seedPol
+            address(v),
+            address(oliver),
+            address(gV),
+            recipient,
+            usdg,
+            pusd,
+            exoEth,
+            exoNvda,
+            exoAmd,
+            treasuryNet_,
+            env.seedPol
         );
-        require(v.approve(address(boot), DEV_FUND_AMOUNT), "ALLOW");
+        require(v.approve(address(boot), boot.pullAmount()), "ALLOW");
         boot.fundAndStart();
-        if (bootstrapV > 0) {
-            require(v.transfer(owner_, bootstrapV), "BOOT");
-        }
 
         v.setMarketMinter(litheProxy);
         v.setMinter(address(gV));
@@ -269,7 +283,7 @@ contract TestnetRollout is Script {
         bool confirm = vm.envOr("CONFIRM_TESTNET_DEPLOY", uint256(0)) == 1;
         uint256 rate = vm.envOr("LITHE_RATE_WAD", uint256(1 ether));
         address owner_ = vm.envOr("ROLLOUT_OWNER", address(0));
-        uint256 bootstrapV = vm.envOr("BOOTSTRAP_V", uint256(200_000 ether));
+        uint256 bootstrapV = vm.envOr("BOOTSTRAP_V", uint256(1_000_000 ether));
 
         console2.log("chain planned: 46630 (testnet)");
         console2.log("CONFIRM_TESTNET_DEPLOY", confirm ? uint256(1) : uint256(0));
@@ -329,7 +343,9 @@ contract TestnetRollout is Script {
     {
         console2.log("plan owner:", owner_);
         console2.log("plan lithe rate wad:", rate);
-        console2.log("plan bootstrap V:", bootstrapV);
+        console2.log("plan launch V (locked 1M):", uint256(1_000_000 ether));
+        console2.log("plan genesis mint (1.2M):", uint256(1_200_000 ether));
+        console2.log("plan BOOTSTRAP_V env (ignored if != 1M):", bootstrapV);
         console2.log("plan runway floor:", env.runwayFloor);
         console2.log("plan USDG bond capacity:", env.bondCapacity);
         console2.log("plan seedPol:", env.seedPol ? uint256(1) : uint256(0));
@@ -344,10 +360,11 @@ contract TestnetRollout is Script {
         console2.log("  4 [IN SCRIPT] BondMarket(gV,V) + USDG BondAssetTag only + policy.bindBondMarket");
         console2.log("  5 [IN SCRIPT] RunwayFloor + RemittanceSink + market/oliver.setRemittance");
         console2.log("     [IN SCRIPT] SavingsRouter + SPUSD + SpusdCd; sink.setForward; starts DISABLED");
-        console2.log("  6 [IN SCRIPT] Genesis mint bootstrap + DevFund 200k BEFORE setMinter(gV)");
-        console2.log("     [IN SCRIPT] Cutover inventory: LegacyVConverter.fund + LitheCutoverMigrator");
-        console2.log("                 dry-run mock if LEGACY_* unset; live requires LEGACY_* (no invented addrs)");
-        console2.log("  7 [IN SCRIPT] LaunchBootstrap: DevFundStream start + V/ETH+V/NVDA+V/AMD");
+        console2.log("  6 [IN SCRIPT] Genesis mint 1.2M (1M launch + 200k DevFund) BEFORE setMinter(gV)");
+        console2.log("     [IN SCRIPT] Cutover inventory CARVED from 800k treasury remainder (not minted on top)");
+        console2.log("                 dry-run mock 288k if LEGACY_* unset; live requires LEGACY_* (no invented addrs)");
+        console2.log("  7 [IN SCRIPT] LaunchBootstrap: DevFund 200k + Browser 50k + POL 80/25/25 + House 20k");
+        console2.log("                 + treasury remainder staked gV then Oliver collateral (NoMarketSell)");
         console2.log("  8 [IN SCRIPT] Dual-minter: setMarketMinter(Lithe) then setMinter(gV)");
         console2.log("     (no Lithe redeem inventory fund; seigniorage mint on swapPusdToV)");
         console2.log("  9 [FOLLOW-UP] House / wgV -> script/TestnetHouseFollowup.s.sol after core");
@@ -372,6 +389,10 @@ contract TestnetRollout is Script {
         console2.log("savings cdBps", h.savingsRouter().cdBps());
         console2.log("deployed launch bootstrap", address(h.boot()));
         console2.log("deployed DevFundStream", address(h.boot().devFund()));
+        console2.log("deployed BrowserStream", address(h.boot().browserStream()));
+        console2.log("deployed GenesisTreasury", address(h.boot().treasury()));
+        console2.log("treasury remainder", h.boot().treasuryRemainder());
+        console2.log("house seed held", h.boot().houseSeedHeld());
         console2.log("deployed exo registry", address(h.boot().registry()));
         console2.log("USDG (bond-only)", h.usdg());
         console2.log("EXO ETH", h.exoEth());

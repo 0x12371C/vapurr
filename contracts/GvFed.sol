@@ -419,6 +419,11 @@ contract BrowserStream {
         owner = msg.sender;
     }
 
+    function setOwner(address o) external onlyOwner {
+        require(o != address(0), "TO");
+        owner = o;
+    }
+
     function setDistributor(address d) external onlyOwner {
         distributor = d;
         emit DistributorUpdated(d);
