@@ -5,6 +5,7 @@
   <title>Wallet</title>
   <link rel="stylesheet" href="/tokens.css"/>
   <link rel="stylesheet" href="/chrome.css"/>
+  <link rel="stylesheet" href="/defi-surface.css"/>
   <style>
     html, body { height: 100%; }
     body { overflow: hidden; background: var(--color-void); }
@@ -316,6 +317,42 @@
     html[data-theme="light"] .panel {
       background: color-mix(in srgb, var(--color-steel) 90%, transparent);
     }
+  
+    /* defi-surface appendix — glass/CTA/empty polish only */
+    .glass {
+      background: var(--glass-bg, color-mix(in srgb, var(--color-steel) 50%, transparent));
+      backdrop-filter: var(--glass-blur, blur(24px) saturate(1.5));
+      -webkit-backdrop-filter: var(--glass-blur, blur(24px) saturate(1.5));
+      box-shadow: 0 14px 40px color-mix(in srgb, #000 16%, transparent);
+      transition: border-color 0.18s ease, box-shadow 0.2s ease;
+    }
+    .empty {
+      padding: 32px 20px;
+      border-radius: 0;
+      letter-spacing: 0.01em;
+    }
+    #act-empty::before,
+    #list > .empty::before {
+      content: "";
+      display: block;
+      width: 36px;
+      height: 36px;
+      margin: 0 auto 12px;
+      border-radius: 50%;
+      border: 1px dashed color-mix(in srgb, var(--color-lime) 40%, transparent);
+      background: color-mix(in srgb, var(--color-lime) 8%, transparent);
+      box-shadow: 0 0 0 6px color-mix(in srgb, var(--color-lime) 6%, transparent);
+    }
+    .panel .btn {
+      letter-spacing: 0.02em;
+      box-shadow: 0 10px 28px color-mix(in srgb, var(--color-lime) 16%, transparent);
+    }
+    .panel .btn.ghost,
+    .panel .ghost {
+      box-shadow: none;
+      border: 1px solid color-mix(in srgb, var(--color-snow) 12%, transparent);
+    }
+
   </style>
 </head>
 <body>

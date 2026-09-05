@@ -5,6 +5,7 @@
   <title>$PUSD</title>
   <link rel="stylesheet" href="/tokens.css"/>
   <link rel="stylesheet" href="/chrome.css"/>
+  <link rel="stylesheet" href="/defi-surface.css"/>
   <style>
     html, body { height: 100%; }
     body {
@@ -507,6 +508,56 @@
       font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
     }
     .jump button:hover { border-color: var(--color-lime); color: var(--color-lime); }
+  
+    /* defi-surface appendix — glass/CTA/empty only; no business JS */
+    #euler.card,
+    #house.card {
+      background: var(--glass-bg, color-mix(in srgb, var(--color-steel) 50%, transparent));
+      box-shadow: 0 16px 44px color-mix(in srgb, #000 18%, transparent);
+      border-color: color-mix(in srgb, var(--color-snow) 10%, transparent);
+      transition:
+        border-color 0.18s ease,
+        transform 0.2s var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1)),
+        box-shadow 0.2s ease;
+    }
+    #euler.card:hover,
+    #house.card:hover {
+      border-color: color-mix(in srgb, var(--color-lime) 28%, transparent);
+    }
+    #euler .btn,
+    #house .btn,
+    .card .btn {
+      min-width: 120px;
+      letter-spacing: 0.02em;
+      box-shadow: 0 10px 28px color-mix(in srgb, var(--color-lime) 16%, transparent);
+    }
+    #euler .btn-ghost,
+    #house .btn-ghost,
+    .two .btn-ghost {
+      height: 50px;
+      border: 1px solid color-mix(in srgb, var(--color-snow) 12%, transparent);
+      border-radius: 14px;
+    }
+    #euler-boot .note,
+    #house-swap:empty,
+    .card .defi-empty {
+      padding: 18px 14px;
+      border-radius: 14px;
+      border: 1px dashed color-mix(in srgb, var(--color-snow) 14%, transparent);
+      background: color-mix(in srgb, var(--color-void) 32%, transparent);
+    }
+    #euler .chip,
+    #house .chip {
+      backdrop-filter: blur(18px) saturate(1.4);
+      -webkit-backdrop-filter: blur(18px) saturate(1.4);
+      transition: border-color 0.18s ease, transform 0.18s ease;
+    }
+    #euler .chip:hover,
+    #house .chip:hover {
+      border-color: color-mix(in srgb, var(--color-lime) 30%, transparent);
+      transform: translateY(-1px);
+    }
+
   </style>
 </head>
 <body>
