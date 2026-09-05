@@ -29,7 +29,7 @@ Date: 2026-09-05 (America/New_York). Branch: `fix/gv-spusd-guards` (from `fix/ol
 - [done] `gVAPURR.stake` settles accrued rebase before share mint (fix/gv-spusd-guards). Late-stake / empty-pool emission theft closed. Proofs: `GvRebaseSettleTest`.
 - [done] `SPUSD` + `wgVAPURR` donation-resistant pricing (virtual + dead shares + min deposit/wrap). Proofs: `SpusdDonationGuardsTest`.
 
-- [partial] Mint authority: `docs/econ/MINT_AUTHORITY.md` design + fences; full one-token role unify still open (P0 fix #3).
+- [done-interim] Mint authority: Fed `IVapurrMinter` / zero-or-one `setMinter`; gV sole inflation minter; stream cannot mint; market redeem does not touch Fed supply. Proofs: `MintAuthorityTest`. Full one-token live unify still open (0x47Ac…).
 - [done] `gVAPURR.stake` settles via `accrue()` before share mint (see Progress — P0 fix #2).
 - [done] Lithe single-count: burn fee inventory on drip before index expand (P0 fix #3). Remit spends remaining inventory only.
 - [done] `computeSwap` clamps inverted CP spread; redeem/arb no longer false-THIN when inventory present (P0 fix #3).
@@ -52,13 +52,13 @@ Date: 2026-09-05 (America/New_York). Branch: `fix/gv-spusd-guards` (slice also o
 - Lithe: `accrue` burns market fee inventory before `pusd.drip`, so holder yield and remittance share one surplus pool (no mint-and-keep + drip double claim).
 - `computeSwap`: removed `baseOffer >= askBaseAmount` THIN gate; inverted CP spread clamps to 0 then MIN_STABILITY_SPREAD. Inventory/`INV` still gates redeem.
 - `market_abi.rs`: dual-probe scrubbed then live hex; cache only conclusive (market, abi) pairs; RPC/dual-miss fails open to Scrubbed and re-probes (no sticky legacy).
-- Mint unify: design in `docs/econ/MINT_AUTHORITY.md` (interim: keep fences, no silent dual-print; full one-token role split deferred).
+- Mint unify: Fed single-minter enforceable (`IVapurrMinter` + `MintAuthorityTest`); market still embedded-V until live migration; full one-token role split deferred.
 - Tests: `LitheMintP0Test` (forge); `market_abi` unit tests (rust).
 
 - [done] Lithe fee surplus single-counted (burn inventory on drip). Proofs: `LitheMintP0Test`.
 - [done] `computeSwap` allows inventory redeem after one-sided flow (no false THIN). Proofs: `LitheMintP0Test`.
 - [done] `market_abi` non-sticky fail-open detect + committed bridge module.
-- [partial] Mint authority: design doc landed; full Fed+market one-token unify still open.
+- [done-interim] Fed single-minter pattern + docs; [remaining] live gen-4 market `0x47Ac…` still embedded-V — migration/redeploy required for one-token unify.
 
 ## Progress - Oliver oracle freshness + bad-debt path (P0 fix #4)
 
@@ -102,5 +102,20 @@ Date: 2026-09-05 (America/New_York). Branch: `fix/gv-spusd-guards`.
 - [P1] Pool-held `$PUSD` Lithe-index rebase accounting (House + `$PUSD`/USDG books). Ordinary Uni v4 reserves do not allocate drip gains to LPs.
 - [blocked-live-v4] Full House rewire: equity currency = wgV address (not market.vapurr); call PairConfig before initializePool/seed; PositionManager/Permit2 wiring for wgV; hook or settle path for rebasing PUSD; end-to-end fork tests against live Uni v4 PM.
 
+
+
+
+## Progress - mint authority unify interim (P0)
+
+Date: 2026-09-05 (America/New_York). Branch: `fix/gv-spusd-guards`.
+
+- Shared `IVapurrMinter` + Fed `VapurrToken` zero-or-one `setMinter` (revoke via `address(0)`).
+- Intended sole inflation path: hand minter to `gVAPURR`; RebasePolicy triggers rebase; BrowserStream transfers only.
+- Market comments: embedded V distinct until migration; `swapPusdToV` inventory unwrap never mints.
+- Docs: `MINT_AUTHORITY.md` done-vs-gap; live gen-4 `0x47Ac…` still old market book.
+- Proofs: `MintAuthorityTest` (only gV mints; stream/browse cannot; market redeem leaves Fed supply unchanged; revoke works).
+
+- [done-interim] Fed-side single-minter enforceable in new code.
+- [remaining-live] One-token migrate live market + retarget House/Oliver/frontend; do not treat dual V addresses as fungible until cutover.
 
 MERGE_REC: hold — solvency bugs, split mint authority and incomplete ABI integration block merge.

@@ -7,6 +7,10 @@ import "./Remittance.sol";
 /// Burn offer, mint ask. No USDG in the swap.
 /// Lithe: $PUSD index drips at 9%.
 
+/// INTERIM: market-embedded V (immutable minter = market). Distinct from Fed `GvFed.VapurrToken`
+/// until one-token migration. Product paths after genesis never call `mint` — redeem is inventory
+/// unwrap (`give`). Intended end state: inject shared `IVapurrMinter` with Fed/gV as sole minter
+/// and market limited to inventory ops. See docs/econ/MINT_AUTHORITY.md.
 contract VapurrToken {
     string public constant name = "VAPURR";
     string public constant symbol = "VAPURR";
@@ -14,6 +18,7 @@ contract VapurrToken {
     uint256 public totalSupply;
     mapping(address => uint256) public balanceOf;
     mapping(address => mapping(address => uint256)) public allowance;
+    /// Immutable self-minter (market). Cannot adopt Fed `setMinter` without redeploy/migration.
     address public immutable minter;
     event Transfer(address indexed from, address indexed to, uint256 value);
     event Approval(address indexed owner, address indexed spender, uint256 value);
@@ -144,6 +149,8 @@ contract PusdToken {
 }
 
 
+/// Gen-4 live market still ships this embedded-V layout (e.g. 0x47Ac…). Inventory redeem
+/// (`swapPusdToV`) stays non-minting. Fed rebase mint lives on a separate Fed V until unify.
 contract PusdMarket {
     uint256 public constant DEC = 1e18;
     /// stability-pool math (internal).

@@ -1,12 +1,17 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.24;
 
+import "./IVapurrMinter.sol";
+
 /// Fed staking slice: V mint policy, gV rebase, wgV wrapper, BrowserStream earmark.
 /// HARD WALL: browse/earn MUST NOT receive or trigger the 3.5%/yr staker mint.
 /// Rebase model: **index** (shares fixed; balanceOf = shares * index / DEC), matching PusdToken.
 
-/// Standalone mintable $VAPURR for Fed modules / tests (market embeds its own copy).
-contract VapurrToken {
+/// Fed-side $VAPURR with single-minter authority (`IVapurrMinter`).
+/// Exactly zero or one minter: deploy sets msg.sender; hand to gV for rebase; or revoke to address(0).
+/// Market embeds a separate VapurrToken (immutable self-minter) until one-token migration —
+/// do not treat the two addresses as fungible. See docs/econ/MINT_AUTHORITY.md.
+contract VapurrToken is IVapurrMinter {
     string public constant name = "VAPURR";
     string public constant symbol = "VAPURR";
     uint8 public constant decimals = 18;
@@ -27,8 +32,9 @@ contract VapurrToken {
         _;
     }
 
+    /// Sole mint-role transfer. `m == address(0)` revokes minting (zero minters).
+    /// Never dual-assign: only the current minter may call; at most one live minter.
     function setMinter(address m) external onlyMinter {
-        require(m != address(0), "TO");
         minter = m;
         emit MinterUpdated(m);
     }
@@ -85,6 +91,8 @@ contract VapurrToken {
     }
 }
 
+/// Transfer + mint surface used by gV / BrowserStream (stream never holds minter).
+/// Authority control is `IVapurrMinter` on the Fed VapurrToken (zero-or-one minter).
 interface IVapurrMint {
     function mint(address to, uint256 amt) external;
     function transfer(address to, uint256 amt) external returns (bool);
