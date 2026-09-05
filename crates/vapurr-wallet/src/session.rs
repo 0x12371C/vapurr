@@ -42,6 +42,9 @@ pub fn unlock_with_pin(pin: &str) -> Result<Value, WalletError> {
 }
 pub fn set_passcode(a: &str, b: &str) -> Result<Value, WalletError> {
     DeviceKey::load_result()?.ok_or_else(|| WalletError::Fail("No wallet on this PC".into()))?;
+    if has_pin() && !is_logged_in() {
+        return Err(WalletError::Fail("Unlock first to change passcode".into()));
+    }
     crate::passcode::set_pin(a, b)?;
     UNLOCKED.store(true, Ordering::Release);
     Ok(status())
