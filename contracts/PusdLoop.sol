@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.24;
 
+import "./Remittance.sol";
+
 /// Isolated $PUSD credit vault. Euler-shaped, not an Euler fork.
 /// Credit asset is $PUSD only. Collateral is $VAPURR plus supplied $PUSD.
 /// Supply P, borrow P, loop under LTV. Utilization IRM. Liquidations.
@@ -18,15 +20,6 @@ interface IMarket {
     function vapurr() external view returns (address);
     function pusd() external view returns (address);
     function vapurrRate() external view returns (uint256);
-}
-
-interface IRemittanceHook {
-    function receiveRemittance(uint256 amount) external returns (bool);
-}
-
-interface IRunwayView {
-    function surplus(uint256 balance) external view returns (uint256);
-    function floor() external view returns (uint256);
 }
 
 contract PusdLoop {
@@ -59,7 +52,7 @@ contract PusdLoop {
     uint256 public lastAccrue;
     uint256 private _locked = 1;
 
-    IRemittanceHook public remittance; // surplus sink (RemittanceSink / sPUSD)
+    IRemittance public remittance; // surplus sink (RemittanceSink / sPUSD)
     IRunwayView public runway; // optional floor gate before remit
     bool public remitOnAccrue; // when true, _accrue best-effort pushes reserve cash to sink
 
@@ -103,7 +96,7 @@ contract PusdLoop {
 
     function setRemittance(address sink, address runway_, bool autoRemit) external {
         require(msg.sender == owner, "OWN");
-        remittance = IRemittanceHook(sink);
+        remittance = IRemittance(sink);
         runway = IRunwayView(runway_);
         remitOnAccrue = autoRemit;
         emit RemittanceSet(sink, runway_, autoRemit);

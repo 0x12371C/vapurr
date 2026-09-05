@@ -16,6 +16,8 @@ Scope: `contracts/PusdLoop.sol` (Oliver), adjacent Lithe/mint paths in `PusdMark
 
 - **BrowserStream / gV walls.** Already in `GvFed.sol` + `GvBoundaries.t.sol` (drip does not mint; browse cannot rebase). Still green alongside new fences.
 
+- **Lithe remittance.** `PusdMarket.setRemittance` / `remitSurplus`; surplus of `yieldReserve` above runway floor goes to `IRemittance` sink (same RemittanceSink pattern as Oliver). Accrue still drips holder yield (9% cap); `remitOnAccrue` best-effort remits remaining surplus. Tests: `test_lithe_remit_surplus_to_sink`, `test_lithe_remit_respects_runway_floor`, `test_lithe_accrue_path_can_call_remittance`.
+
 ## Still open (P1+)
 
 - **House fee carve to remit.** `HouseSwap` / Uni v4 pool fee stays in LP path; no surplus skim to runway/sPUSD. (Do not expand unless trivial.)
@@ -23,8 +25,6 @@ Scope: `contracts/PusdLoop.sol` (Oliver), adjacent Lithe/mint paths in `PusdMark
 - **Oliver collateral != canon gV/V.** `PusdLoop.depositV` takes raw V only — no gV/wgV collateral type yet.
 
 - **Oliver bad-debt / Fed LOLR.** No protocol loss socialization or Fed backstop path.
-
-- **Lithe surplus != remittance.** `PusdMarket.yieldReserve` still drips into global PUSD index (holder yield), not runway→sPUSD. Remittance hook exists for Oliver; Lithe path not yet pointed at sink.
 
 - **Time-locked sPUSD CD tranches.** Doc-only TODO.
 

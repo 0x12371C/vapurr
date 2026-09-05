@@ -34,6 +34,8 @@ Cash surfaces show **exogenous depth** (USDG book first). House/equity depth liv
 
 ## Related
 
+- `ROUTING.md` / Lithe: mint-spread `yieldReserve` can remit surplus above runway to sPUSD (branch cash path), separate from exogenous `$PUSD`/USDG peg books
+
 - `ROUTING.md` - Fed/branches map; visible Cash points at exogenous books
 - `HOUSE_PAIR.md` - wgV / `$PUSD` House leg
 - `BONDS.md` - exogenous RFV in

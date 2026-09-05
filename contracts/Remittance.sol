@@ -17,6 +17,12 @@ interface IRemittance {
     function receiveRemittance(uint256 amount) external returns (bool);
 }
 
+/// Optional runway floor view used by Oliver/Lithe before remitting surplus.
+interface IRunwayView {
+    function surplus(uint256 balance) external view returns (uint256);
+    function floor() external view returns (uint256);
+}
+
 /// RFV runway floor: remittance surplus is only the balance above `floor`.
 contract RunwayFloor {
     address public owner;

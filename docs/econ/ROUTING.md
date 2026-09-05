@@ -60,3 +60,7 @@ Cash peg trust is the **`$PUSD` / USDG** book (and other exogenous cash legs) - 
 
 `PusdMarket.swapPusdToV` redeems from **pre-funded / locked inventory only** (no `vapurr.mint`).
 `swapVToPusd` locks V into the market instead of burning. Fed/gV rebase is the sole V printer.
+
+## Lithe remittance (2026-09-05)
+
+`PusdMarket` (Lithe) can remit `yieldReserve` surplus above the runway floor to the same `IRemittance` / `RemittanceSink` path as Oliver (`setRemittance` / `remitSurplus`). Holder drip (9% APY cap) still runs on accrue; remittance feeds runway → sPUSD so branch fees can hit the savings path later. See `PUSD_LIQUIDITY.md` for exogenous peg books; remittance does not replace those.

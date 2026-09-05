@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.24;
 
+import "./Remittance.sol";
+
 /// $VAPURR / $PUSD market on Robinhood Chain.
 /// Burn offer, mint ask. No USDG in the swap.
 /// Lithe: $PUSD index drips at 9%.
@@ -129,6 +131,7 @@ contract PusdToken {
     }
 }
 
+
 contract PusdMarket {
     uint256 public constant DEC = 1e18;
     /// stability-pool math (internal).
@@ -158,9 +161,15 @@ contract PusdMarket {
     uint256 public yieldReserve;
     uint256 public lastAccrue;
 
+    IRemittance public remittance; // surplus sink (RemittanceSink / sPUSD)
+    IRunwayView public runway; // optional floor gate before remit
+    bool public remitOnAccrue; // when true, accrue best-effort pushes surplus above floor to sink
+
     event Swap(address indexed trader, bool offerV, uint256 offer, uint256 ask, uint256 fee);
     event Feed(uint256 rate);
     event Accrue(uint256 pay, uint256 index);
+    event RemittanceSet(address indexed sink, address indexed runway_, bool autoRemit);
+    event Remitted(address indexed sink, uint256 assets);
 
     modifier onlyOwner() { require(msg.sender == owner, "OWN"); _; }
 
@@ -182,6 +191,38 @@ contract PusdMarket {
         require(rate > 0, "PRICE");
         pendingRate = rate;
         emit Feed(rate);
+    }
+
+    function setRemittance(address sink, address runway_, bool autoRemit) external onlyOwner {
+        remittance = IRemittance(sink);
+        runway = IRunwayView(runway_);
+        remitOnAccrue = autoRemit;
+        emit RemittanceSet(sink, runway_, autoRemit);
+    }
+
+    /// Push yieldReserve surplus above runway floor to remittance sink (real $PUSD).
+    /// amount==0 means remit all free surplus. Floor may start at 0.
+    function remitSurplus(uint256 amount) public returns (uint256 sent) {
+        accrue(); // settle holder drip first (Oliver-style)
+        sent = _remitSurplus(amount);
+    }
+
+    function _remitSurplus(uint256 amount) internal returns (uint256 sent) {
+        require(address(remittance) != address(0), "REMIT");
+        uint256 free = yieldReserve;
+        if (address(runway) != address(0)) {
+            free = runway.surplus(yieldReserve);
+        }
+        sent = amount == 0 ? free : amount;
+        if (sent > free) sent = free;
+        if (sent > yieldReserve) sent = yieldReserve;
+        uint256 cash = pusd.balanceOf(address(this));
+        if (sent > cash) sent = cash;
+        if (sent == 0) return 0;
+        yieldReserve -= sent;
+        require(pusd.approve(address(remittance), sent), "ALLOW");
+        require(remittance.receiveRemittance(sent), "SINK");
+        emit Remitted(address(remittance), sent);
     }
 
     function _spot() internal {
@@ -273,6 +314,10 @@ contract PusdMarket {
         pusd.drip(pay);
         yieldReserve -= pay;
         emit Accrue(pay, pusd.index());
+        // Remittance hook: best-effort push remaining surplus above runway to sink.
+        if (remitOnAccrue && address(remittance) != address(0) && yieldReserve > 0) {
+            _remitSurplus(0);
+        }
     }
 
     /// V inventory held by this market (pre-funded + V locked on PUSD mint).
