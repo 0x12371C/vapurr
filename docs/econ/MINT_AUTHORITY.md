@@ -35,7 +35,7 @@ Gen-5 cutover source is landed (CanonicalLitheFactory, PusdMarketFed, converter,
 
 1. Run / approve **one** factory deploy of canonical $VAPURR + gV/policy + Lithe + converter + migrator + Oliver (genesis float for converter inventory + Lithe bootstrap, then sole minter = gV).
 2. Roles after handoff:
-   - **Fed / gV policy** — sole ongoing mint (3.5%/yr staker rebase).
+   - **Fed / gV policy** — sole ongoing mint (dynamic 1-9%/yr staker rebase; mid ~3.5% unbound).
    - **Lithe (PusdMarketFed)** — inventory 	ake/give only; PUSD market-minted; **no** V inflation on redeem.
 3. **Required follow-ups the factory does not do:**
    - Deploy **wgV**, **HousePairConfig**, and **House** (ROUTING: House pairs wgV/ — not raw gV or raw V). Clearing local house/pair_config on cutover is intentional honesty.

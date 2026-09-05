@@ -23,7 +23,7 @@ Code SoT: `contracts/HousePairConfig.sol` (+ thin `HousePairFactory`). Proofs: `
 ## Do not pair
 
 - Raw **gVAPURR** in Uni v4 / CPMM Ã¢â‚¬â€ index rebase soft-taxes the pool (balance drift without swaps).
-- Raw **$VAPURR** as the house equity leg once staking is live Ã¢â‚¬â€ stakers receive the 3.5%/yr; house should quote claim-wrapped gV.
+- Raw **$VAPURR** as the house equity leg once staking is live Ã¢â‚¬â€ stakers receive the dynamic 1-9%/yr policy rebase (mid ~3.5% unbound); house should quote claim-wrapped gV.
 
 ## Wrap path
 
