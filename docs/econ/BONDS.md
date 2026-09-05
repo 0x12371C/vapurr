@@ -110,3 +110,21 @@ Formula and clamp: `POLICY_RATE.md`. Contracts: `BondMarket.capacityUtilizationW
 - `SPUSD.md` — cash savings (not bond output)
 - `CODEX_BRAIN_PASS.md` — bonds executable progress
 - Frontend: `vapurr://bonds` — Cash / Equity / Bonds / House product map
+
+## Trading / POL books (not bond purchase)
+
+At genesis/cutover, stand up ** paired with each bondable exogenous asset** as **trading/POL books**:
+
+| Pair | Role |
+|------|------|
+| **V/ETH** | POL / trading depth for ETH leg |
+| **V/NVDA** | POL / trading depth for NVDA stock wrapper |
+| **V/AMD** | POL / trading depth for AMD stock wrapper |
+| (+ configured stock tags) | Same pattern via ExogenousPairRegistry.registerPair |
+
+These are **distinct from Open Bond** (exogenous in → gV out). Bond purchase still uses BondMarket / BondAssetTag.
+
+**Banned as pairs:** V/USDG, PUSD/USDG. USDG remains **bond intake only**.
+
+Contracts: ExogenousPairRegistry.sol (+ optional ExogenousSeedMarket stub). Wire: LaunchBootstrap. Proofs: ExogenousPairRegistry.t.sol. Live Uni v4 pool addresses remain empty until deploy — UI honest-empty.
+

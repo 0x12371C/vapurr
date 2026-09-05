@@ -53,7 +53,13 @@ contract CanonicalLitheFactoryTest is Test {
         assertEq(loop.owner(), address(this), "Oliver owner handed to initiator");
         assertEq(converter.available(), legacyV.totalSupply(), "full legacy V conversion inventory");
         assertEq(market.vInventory(), BOOTSTRAP, "explicit Lithe bootstrap inventory");
-        assertEq(canonicalV.totalSupply(), legacyV.totalSupply() + BOOTSTRAP, "declared cutover allocation only");
+        assertEq(
+            canonicalV.totalSupply(),
+            legacyV.totalSupply() + BOOTSTRAP + factory.devFundAllocation(),
+            "cutover + genesis DevFund allocation"
+        );
+        assertEq(canonicalV.balanceOf(address(this)), factory.devFundAllocation(), "DevFund to initiator");
+        assertEq(factory.devFundAllocation(), 200_000 ether, "immutable DevFund amount");
     }
 
     function test_factory_wires_atomic_lithe_pusd_migration() public {

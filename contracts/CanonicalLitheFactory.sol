@@ -15,8 +15,17 @@ interface ILegacyVSupply {
 ///
 /// The factory verifies the legacy V supply, pre-funds 1:1 conversion inventory,
 /// creates the Lithe-to-Lithe PUSD route, seeds explicit canonical-Lithe inventory,
-/// and hands all configurable roles to the initiating wallet before construction ends.
+/// allocates genesis DevFund (200k V) to the initiator for LaunchBootstrap, and
+/// hands all configurable roles to the initiating wallet before construction ends.
+///
+/// Does NOT auto-deploy ExogenousPairRegistry / DevFundStream / House — use
+/// LaunchBootstrap companion with the DevFund allocation before any further mint.
+/// Remittance / sPUSD wiring remains post-deploy (initiator).
 contract CanonicalLitheFactory {
+    /// Genesis developer fund allocation (minted once, then setMinter(gV)).
+    /// Initiator wires LaunchBootstrap / DevFundStream — see docs/econ/DEV_FUND.md.
+    uint256 public constant DEV_FUND_AMOUNT = 200_000 ether;
+
     VapurrToken public immutable canonicalV;
     RebasePolicy public immutable policy;
     gVAPURR public immutable gV;
@@ -28,6 +37,7 @@ contract CanonicalLitheFactory {
     address public immutable legacyV;
     uint256 public immutable legacyVSupply;
     uint256 public immutable bootstrapV;
+    uint256 public immutable devFundAllocation;
 
     event Deployed(
         address indexed initiator,
@@ -40,7 +50,8 @@ contract CanonicalLitheFactory {
         address policy,
         address gV,
         uint256 legacyVSupply,
-        uint256 bootstrapV
+        uint256 bootstrapV,
+        uint256 devFundAllocation
     );
 
     constructor(address legacyMarket_, address legacyV_, uint256 legacyVSupply_, uint256 bootstrapV_, uint256 rate_) {
@@ -52,6 +63,7 @@ contract CanonicalLitheFactory {
         legacyV = legacyV_;
         legacyVSupply = legacyVSupply_;
         bootstrapV = bootstrapV_;
+        devFundAllocation = DEV_FUND_AMOUNT;
 
         canonicalV = new VapurrToken();
         policy = new RebasePolicy();
@@ -63,13 +75,16 @@ contract CanonicalLitheFactory {
         migrator = new LitheCutoverMigrator(legacyMarket_, address(market), address(converter));
         loop = new PusdLoop(address(market));
 
-        canonicalV.mint(address(this), legacyVSupply_ + bootstrapV_);
+        // Genesis mint: conversion inventory + Lithe bootstrap + DevFund (before minter handoff).
+        canonicalV.mint(address(this), legacyVSupply_ + bootstrapV_ + DEV_FUND_AMOUNT);
         require(canonicalV.approve(address(converter), legacyVSupply_), "ALLOW");
         converter.fund(legacyVSupply_);
         if (bootstrapV_ > 0) {
             require(canonicalV.approve(address(market), bootstrapV_), "ALLOW");
             market.fundVInventory(bootstrapV_);
         }
+        // DevFund allocation to initiator — wire LaunchBootstrap while still liquid; gV is sole minter after.
+        require(canonicalV.transfer(msg.sender, DEV_FUND_AMOUNT), "DEV");
 
         // No factory role survives deployment: gV is the sole V minter and the
         // initiating wallet controls the policy and successor vault configuration.
@@ -88,7 +103,8 @@ contract CanonicalLitheFactory {
             address(policy),
             address(gV),
             legacyVSupply_,
-            bootstrapV_
+            bootstrapV_,
+            DEV_FUND_AMOUNT
         );
     }
 }

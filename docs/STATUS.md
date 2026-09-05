@@ -7,6 +7,20 @@ Last audited: **2026-09-04** (House lock: `docs/ORG_FLASH.md`).
 Milestone: **pre-v1** — ship bar is [`V1.md`](V1.md). v1.2 money is **testnet 46630 only**. If README or ARCHITECTURE disagree with this file, this file plus the code win — then those docs get fixed.
 
 
+## 2026-09-05 — Testnet rollout prep (UUPS Lithe / vanity)
+
+- Prep-only: `docs/econ/TESTNET_ROLLOUT.md` ordered gen-5 checklist for **46630** (Fed V, gV, RebasePolicy 1-9%, Lithe behind UUPS ERC1967 at vanity target, Oliver, BondMarket USDG-only, remittance, DevFund 200k->Oliver collateral, V/ETH+V/NVDA+V/AMD, House/wgV follow-up).
+- Contracts: `PusdMarketFedUpgradeable` + `proxy/ERC1967Proxy` (UUPS). `script/TestnetRollout.s.sol` dry-run by default; live broadcast gated on `CONFIRM_TESTNET_DEPLOY=1`.
+- Vanity `MAINNET_MARKET_VANITY` `0xC47f00D61F8379337f9fb42E6DcC695AE2d6EBD2` verified = CREATE(STATUS deployer `0x48043E2C...AeA5`, nonce 0). Prefer nonce-0 CREATE of proxy; CREATE2 salt hunt is secondary (`VanityCreate2Hunt.s.sol`).
+- **Honest:** gen-4 remains live until approved CutoverDeploy. No silent 46630 broadcast in this prep.
+
+## 2026-09-05 — Launch POL books + DevFundStream (source)
+
+- ExogenousPairRegistry + ExogenousSeedMarket: genesis **V/ETH, V/NVDA, V/AMD** trading/POL books (not bond purchase). Bans USDG / PUSD as exogenous pair legs.
+- DevFundStream: genesis **200_000 ** / 4y Sablier-style lockup; unlock slows when 	otalSupply > startSupply. Formula: docs/econ/DEV_FUND.md. Distinct from BrowserStream (50k/3y treasury float).
+- CanonicalLitheFactory mints DevFund allocation to initiator before setMinter(gV); LaunchBootstrap registers pairs + funds stream.
+- **Source-landed / forge-proven.** Live 46630 unchanged (no silent deploy). UI honest-empty until addresses.
+
 ## 2026-09-05 — Fed gV / BrowserStream trust wall (slice)
 
 - **USDG lock:** USDG is **Fed treasury bond intake only** (`BondAssetTag`). `$PUSD` peg = social-proof mint-redeem ~par. Retract d1f04a0-era `$PUSD`/USDG pool / peg-depth / cash-depth sketches — they hurt `$PUSD` (see `docs/econ/PUSD_LIQUIDITY.md`, `ROUTING.md`, `BONDS.md`). Helper stripped cash-depth UI stub.

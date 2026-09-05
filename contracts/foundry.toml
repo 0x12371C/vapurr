@@ -7,6 +7,7 @@ optimizer = true
 optimizer_runs = 200
 evm_version = "paris"
 test = "test"
+script = "script"
 skip = [
   "HouseLp.sol",
   "HouseSwap.sol",

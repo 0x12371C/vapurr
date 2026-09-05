@@ -8,7 +8,7 @@ Relic lock 2026-09-05. Living truth for Fed/branches split.
 
 | Layer | Role | Surfaces |
 |-------|------|----------|
-| **Fed / Treasury** | Macro reserves, POL, policy inflation | RFV, **bonds** (visible: ETH / USDG / stocks), gV **dynamic 1–9%/yr** rebase (bond-util; mid ~3.5% unbound), BrowserStream earmark, runway floor |
+| **Fed / Treasury** | Macro reserves, POL, policy inflation | RFV, **bonds** (visible: ETH / USDG / stocks), **exogenous POL books** (V/ETH, V/NVDA, V/AMD), gV **dynamic 1–9%/yr** rebase (bond-util; mid ~3.5% unbound), BrowserStream earmark, **DevFundStream** 200k/4y genesis, runway floor |
 | **Mint / branches** | Working cash + credit | Lithe + mint-spread ($PUSD), Oliver (secured $PUSD vs gV/V) |
 | **Interbank market** | Equity meets cash | House: **wgV / $PUSD** (locked - see HOUSE_PAIR.md; not raw rebasing gV) |
 | **Savings** | Slow-growth cash claim | **sPUSD**: liquid base yield; time locks earn more (CD-shaped, break fee) |
@@ -32,6 +32,7 @@ Bonds are a **first-class visible surface** (see `BONDS.md` + `vapurr://bonds`).
 
 1. **Only Fed prints V** - **dynamic 1–9%/yr** rebase to gV stakers from bond-market utilization (mid ~3.5% when unbound). Browse never funded by this mint. See `POLICY_RATE.md`.
 2. **BrowserStream** - **50k $VAPURR / 3y** from **already-minted treasury** (float migration). No USD cap (intentional convexity). Claim: install_id + KYC.
+2b. **DevFundStream** - **200k $VAPURR / 4y** genesis mint; unlocked V auto-locks as Oliver collateral; $PUSD-only draw; expansion-aware. See `DEV_FUND.md`.
 3. **$PUSD** - forced product float; mint/redeem ~**par** for social trust (**this** is the peg story). Not an equity lottery. USDG is **bond-in RFV only** - never a `$PUSD`/USDG depth/peg pool.
 4. **Branch remittance** - Lithe/House/Oliver realized surplus -> one RemittanceSink (sink-level runway floor) -> **sPUSD** (not into gV rebase).
 5. **404 != payments** - pay is HTTP 402 / x402.
@@ -44,6 +45,7 @@ Bonds are a **first-class visible surface** (see `BONDS.md` + `vapurr://bonds`).
 ## Outflows
 
 - BrowserStream (treasury V earmark)
+- DevFundStream (genesis 200k lockup; expansion-aware)
 - Post-stream $PUSD browse only from **surplus** above runway (later)
 - gV rebase (policy mint to stakers only)
 - sPUSD yield (cash surplus to savers)
