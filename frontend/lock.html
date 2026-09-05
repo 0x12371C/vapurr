@@ -1,0 +1,362 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="color-scheme" content="dark"/>
+  <title>Unlock</title>
+  <link rel="stylesheet" href="/tokens.css"/>
+  <link rel="stylesheet" href="/chrome.css"/>
+  <style>
+    html, body { height: 100%; overflow: hidden; }
+    body {
+      margin: 0;
+      background: var(--color-void);
+      color: var(--color-snow);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    /* Full-screen veil over wallet chrome */
+    .veil {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background:
+        radial-gradient(ellipse 80% 55% at 50% 0%, color-mix(in srgb, var(--color-forest) 55%, transparent), transparent 70%),
+        var(--color-void);
+      pointer-events: none;
+    }
+
+    .lock {
+      position: relative;
+      z-index: 1;
+      width: min(360px, 92vw);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 12px 28px;
+    }
+
+    .mark {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: var(--color-lime);
+      color: var(--color-on-lime);
+      display: grid;
+      place-items: center;
+      font-weight: 600;
+      font-size: 18px;
+      letter-spacing: -0.04em;
+      margin-bottom: 22px;
+    }
+
+    .mono.kicker {
+      color: var(--color-lime);
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    h1 {
+      font-size: 28px;
+      font-weight: 600;
+      letter-spacing: -0.04em;
+      line-height: 1.1;
+      text-align: center;
+      margin: 0 0 8px;
+    }
+
+    .hint {
+      color: var(--color-muted);
+      font-size: 13px;
+      line-height: 1.4;
+      text-align: center;
+      min-height: 18px;
+      margin-bottom: 28px;
+      max-width: 26em;
+    }
+    .hint.err { color: #ff8a80; }
+
+    .dots {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 36px;
+      padding: 6px 4px;
+    }
+    .dots.shake {
+      animation: shake 0.42s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+    }
+    @keyframes shake {
+      10%, 90% { transform: translateX(-1px); }
+      20%, 80% { transform: translateX(2px); }
+      30%, 50%, 70% { transform: translateX(-6px); }
+      40%, 60% { transform: translateX(6px); }
+    }
+
+    .dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      border: 1.5px solid color-mix(in srgb, var(--color-lime) 55%, var(--color-muted));
+      background: transparent;
+      transition: background 0.12s ease, border-color 0.12s ease, transform 0.12s ease;
+    }
+    .dot.on {
+      background: var(--color-lime);
+      border-color: var(--color-lime);
+      transform: scale(1.06);
+    }
+    .dot.bad {
+      background: #ff8a80;
+      border-color: #ff8a80;
+    }
+
+    .pad {
+      display: grid;
+      grid-template-columns: repeat(3, 76px);
+      gap: 14px 18px;
+      justify-content: center;
+      user-select: none;
+    }
+
+    .key {
+      width: 76px;
+      height: 76px;
+      border-radius: 50%;
+      border: 0;
+      background: color-mix(in srgb, var(--color-steel) 78%, transparent);
+      color: var(--color-snow);
+      font-size: 28px;
+      font-weight: 600;
+      letter-spacing: -0.03em;
+      display: grid;
+      place-items: center;
+      backdrop-filter: blur(16px) saturate(1.3);
+      -webkit-backdrop-filter: blur(16px) saturate(1.3);
+      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-snow) 6%, transparent);
+    }
+    .key:hover {
+      background: color-mix(in srgb, var(--color-forest) 70%, var(--color-steel));
+    }
+    .key:active {
+      transform: scale(0.94);
+      background: color-mix(in srgb, var(--color-lime) 22%, var(--color-steel));
+      color: var(--color-lime);
+    }
+    .key.ghost {
+      background: transparent;
+      box-shadow: none;
+      color: var(--color-muted);
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+    .key.ghost:hover { color: var(--color-snow); background: transparent; }
+    .key.ghost:active { color: var(--color-lime); transform: scale(0.96); background: transparent; }
+    .key:disabled { opacity: 0.35; pointer-events: none; }
+
+    .foot {
+      margin-top: 28px;
+      color: var(--color-muted);
+      font-size: 11px;
+      text-align: center;
+      line-height: 1.4;
+      max-width: 28em;
+    }
+    .foot b { color: var(--color-snow); font-weight: 600; }
+
+    html[data-theme="light"] .key {
+      background: color-mix(in srgb, var(--color-steel) 92%, transparent);
+    }
+  </style>
+</head>
+<body>
+  <div class="veil" aria-hidden="true"></div>
+  <div class="lock" role="dialog" aria-modal="true" aria-labelledby="lock-title">
+    <div class="mark" aria-hidden="true">v</div>
+    <div class="mono kicker" id="kicker">vapurr</div>
+    <h1 id="lock-title">Enter Passcode</h1>
+    <p class="hint" id="hint">Unlock this wallet</p>
+
+    <div class="dots" id="dots" aria-label="Passcode progress">
+      <span class="dot" data-i="0"></span>
+      <span class="dot" data-i="1"></span>
+      <span class="dot" data-i="2"></span>
+      <span class="dot" data-i="3"></span>
+    </div>
+
+    <div class="pad" id="pad" aria-label="Number pad">
+      <button class="key" type="button" data-d="1">1</button>
+      <button class="key" type="button" data-d="2">2</button>
+      <button class="key" type="button" data-d="3">3</button>
+      <button class="key" type="button" data-d="4">4</button>
+      <button class="key" type="button" data-d="5">5</button>
+      <button class="key" type="button" data-d="6">6</button>
+      <button class="key" type="button" data-d="7">7</button>
+      <button class="key" type="button" data-d="8">8</button>
+      <button class="key" type="button" data-d="9">9</button>
+      <button class="key ghost" type="button" id="key-emergency" title="Emergency" hidden>SOS</button>
+      <button class="key" type="button" data-d="0">0</button>
+      <button class="key ghost" type="button" id="key-del" aria-label="Delete">Delete</button>
+    </div>
+
+    <p class="foot" id="foot">Auto-locks after <b>15 min</b> idle by default. Shell owns storage and the timer.</p>
+  </div>
+
+  <script src="/ipc.js"></script>
+  <script>
+    (function () {
+      var LEN = 4;
+      var code = "";
+      var busy = false;
+      var mode = "unlock"; // unlock | set | confirm
+
+      var dots = document.getElementById("dots");
+      var hint = document.getElementById("hint");
+      var title = document.getElementById("lock-title");
+      var kicker = document.getElementById("kicker");
+
+      function paintDots(bad) {
+        var nodes = dots.querySelectorAll(".dot");
+        for (var i = 0; i < nodes.length; i++) {
+          nodes[i].classList.toggle("on", i < code.length);
+          nodes[i].classList.toggle("bad", !!bad && i < LEN);
+        }
+      }
+
+      function setHint(text, isErr) {
+        hint.textContent = text || "";
+        hint.classList.toggle("err", !!isErr);
+      }
+
+      function clearCode() {
+        code = "";
+        paintDots(false);
+      }
+
+      function shake() {
+        dots.classList.remove("shake");
+        void dots.offsetWidth;
+        dots.classList.add("shake");
+        paintDots(true);
+        window.setTimeout(function () {
+          dots.classList.remove("shake");
+          clearCode();
+          busy = false;
+        }, 420);
+      }
+
+      function submit() {
+        if (busy || code.length !== LEN) return;
+        busy = true;
+        var payload = { cmd: "passcode-submit", code: code, mode: mode };
+        if (window.vapurr && vapurr.send) {
+          vapurr.send(payload);
+        } else if (typeof window.__passcodeSubmit === "function") {
+          window.__passcodeSubmit(payload);
+        } else {
+          // Dev fallback: treat any 4 digits as fail so shake is visible in browser.
+          window.__passcodeFail("Wire passcode-submit in shell");
+        }
+      }
+
+      function pushDigit(d) {
+        if (busy) return;
+        if (code.length >= LEN) return;
+        code += String(d);
+        paintDots(false);
+        setHint(mode === "set" ? "Enter a new passcode" : (mode === "confirm" ? "Confirm passcode" : "Unlock this wallet"), false);
+        if (code.length === LEN) {
+          window.setTimeout(submit, 80);
+        }
+      }
+
+      function del() {
+        if (busy) return;
+        if (!code.length) return;
+        code = code.slice(0, -1);
+        paintDots(false);
+      }
+
+      document.getElementById("pad").addEventListener("click", function (e) {
+        var t = e.target.closest("[data-d], #key-del");
+        if (!t) return;
+        if (t.id === "key-del") del();
+        else if (t.getAttribute("data-d") != null) pushDigit(t.getAttribute("data-d"));
+      });
+
+      window.addEventListener("keydown", function (e) {
+        if (busy) return;
+        if (e.key >= "0" && e.key <= "9") {
+          e.preventDefault();
+          pushDigit(e.key);
+        } else if (e.key === "Backspace" || e.key === "Delete") {
+          e.preventDefault();
+          del();
+        } else if (e.key === "Escape") {
+          e.preventDefault();
+          clearCode();
+        }
+      });
+
+      // --- Shell hooks -------------------------------------------------
+      // mode: unlock | set | confirm
+      window.__passcodePaint = function (s) {
+        s = s || {};
+        if (s.mode) mode = String(s.mode);
+        if (mode === "set") {
+          title.textContent = "Set Passcode";
+          kicker.textContent = "secure wallet";
+          setHint(s.hint || "Choose a 4-digit passcode", false);
+        } else if (mode === "confirm") {
+          title.textContent = "Confirm Passcode";
+          kicker.textContent = "secure wallet";
+          setHint(s.hint || "Enter the same passcode again", false);
+        } else {
+          mode = "unlock";
+          title.textContent = "Enter Passcode";
+          kicker.textContent = "vapurr";
+          setHint(s.hint || "Unlock this wallet", false);
+        }
+        if (s.kicker) kicker.textContent = s.kicker;
+        if (s.title) title.textContent = s.title;
+        busy = false;
+        clearCode();
+      };
+
+      window.__passcodeFail = function (msg) {
+        busy = true;
+        setHint(msg || "Wrong passcode. Try again.", true);
+        shake();
+      };
+
+      window.__passcodeOk = function () {
+        busy = false;
+        clearCode();
+        setHint("Unlocked", false);
+      };
+
+      window.__passcodeReset = function () {
+        busy = false;
+        clearCode();
+      };
+
+      // Optional: shell can force a mode via ?mode=set
+      (function boot() {
+        var q = (location.search || "").replace(/^\?/, "");
+        var m = "unlock";
+        q.split("&").forEach(function (p) {
+          var kv = p.split("=");
+          if (kv[0] === "mode" && kv[1]) m = decodeURIComponent(kv[1]);
+        });
+        window.__passcodePaint({ mode: m });
+      })();
+    })();
+  </script>
+</body>
+</html>
