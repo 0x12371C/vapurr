@@ -429,6 +429,31 @@
     .cd-card .row .k { color: var(--color-muted); }
     .cd-card .row .v { font-weight: 600; font-variant-numeric: tabular-nums; }
 
+    .gate-banner {
+      display: none;
+      margin: 0 0 14px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid color-mix(in srgb, var(--color-lime) 35%, transparent);
+      background: color-mix(in srgb, var(--color-void) 45%, transparent);
+      color: var(--color-snow);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .gate-banner.on { display: block; }
+    .gate-banner .mono { color: var(--color-lime); margin-bottom: 4px; }
+    .gate-banner b { font-weight: 600; }
+    .quote.gated .val { color: var(--color-muted); opacity: 0.55; }
+    .tab.gated {
+      opacity: 0.72;
+      border-style: dashed;
+    }
+    .tab.gated.on {
+      color: var(--color-on-lime);
+      background: color-mix(in srgb, var(--color-lime) 70%, var(--color-forest));
+      border-style: solid;
+    }
+
   </style>
 </head>
 <body>
@@ -576,7 +601,13 @@
         <button class="tab" type="button" data-asset="PLTR" role="tab" aria-selected="false">PLTR</button>
       </div>
 
-      <div class="quote" aria-live="polite">
+      <div class="gate-banner on" id="gate-banner" role="status" aria-live="polite">
+        <div class="mono">market · gated</div>
+        <b>Unavailable</b> — this tab is offline until Fed enables it with inventory and capacity.
+        <span id="gate-why"></span>
+      </div>
+
+      <div class="quote" aria-live="polite" id="bond-quote">
         <div class="stat">
           <div class="mono">asset</div>
           <div class="val" id="q-asset">ETH</div>
@@ -610,12 +641,12 @@
       </div>
 
       <div class="actions">
-        <button class="btn" type="button" id="bond-cta" disabled title="Contracts P1">Bond <span id="cta-asset">ETH</span></button>
+        <button class="btn" type="button" id="bond-cta" disabled title="Market gated" aria-disabled="true">Unavailable</button>
         <button class="btn-ghost" type="button" data-go="vapurr://house">Open House</button>
         <button class="btn-ghost" type="button" data-go="vapurr://stake">Equity desk</button>
         <button class="btn-ghost" type="button" data-go="vapurr://pusd">Cash / $PUSD</button>
       </div>
-      <p class="note"><b>Example data</b> — TVL, YOTC, lane depths, and bond quotes are labeled placeholders (not live chain reads). Bond contracts are P1. RFV lands in Fed/Treasury; House quotes <b>wgV/$PUSD</b>. Cash peg depth is exogenous <b>$PUSD/USDG</b>.</p>
+      <p class="note"><b>Example data</b> — TVL, YOTC, lane depths, and bond quotes are labeled placeholders (not live chain reads). Tabs default <b>gated</b> (enabled=false / capacity=0) mirroring BondMarket — UI will not pretend a market is open. Live wire still open. RFV lands in Fed/Treasury; House quotes <b>wgV/$PUSD</b>. Cash peg depth is exogenous <b>$PUSD/USDG</b>.</p>
     </div>
 
     <div class="flow" aria-label="RFV flow">
@@ -664,17 +695,76 @@
       PLTR: { discount: "10%", wait: "7d" }
     };
 
+    // Stub gate map mirroring BondMarket defaults: enabled=false, capacity=0.
+    // Live chain reads replace this later — do not fake an open market.
+    var GATE = {
+      ETH:  { enabled: false, capacity: 0, tag: "ETH" },
+      USDG: { enabled: false, capacity: 0, tag: "USDG" },
+      AMZN: { enabled: false, capacity: 0, tag: "STOCKS" },
+      TSLA: { enabled: false, capacity: 0, tag: "STOCKS" },
+      AMD:  { enabled: false, capacity: 0, tag: "STOCKS" },
+      NFLX: { enabled: false, capacity: 0, tag: "STOCKS" },
+      PLTR: { enabled: false, capacity: 0, tag: "STOCKS" }
+    };
+
+    function gateFor(asset) {
+      return GATE[asset] || { enabled: false, capacity: 0, tag: asset };
+    }
+
+    function isGated(g) {
+      return !g.enabled || !(g.capacity > 0);
+    }
+
     function paintAsset(asset) {
       var row = DEMO[asset] || DEMO.ETH;
+      var g = gateFor(asset);
+      var gated = isGated(g);
+      var reasons = [];
+      if (!g.enabled) reasons.push("enabled=false");
+      if (!(g.capacity > 0)) reasons.push("capacity=0");
+
       document.getElementById("q-asset").textContent = asset;
       document.getElementById("q-discount").innerHTML = row.discount.replace("%", "<em>%</em>");
       var w = row.wait;
       document.getElementById("q-wait").innerHTML = w.replace(/d$/, "<em>d</em>");
-      document.getElementById("cta-asset").textContent = asset;
+
+      var quote = document.getElementById("bond-quote");
+      if (quote) quote.classList.toggle("gated", gated);
+
+      var banner = document.getElementById("gate-banner");
+      var why = document.getElementById("gate-why");
+      if (banner) {
+        banner.classList.toggle("on", gated);
+        banner.setAttribute("aria-hidden", gated ? "false" : "true");
+      }
+      if (why) {
+        why.textContent = gated
+          ? (" Reason: " + reasons.join(" and ") + " (tag " + g.tag + ").")
+          : "";
+      }
+
+      var cta = document.getElementById("bond-cta");
+      if (cta) {
+        cta.disabled = true;
+        cta.setAttribute("aria-disabled", "true");
+        if (gated) {
+          cta.textContent = "Unavailable / Gated";
+          cta.title = "Tab offline: " + reasons.join(", ");
+        } else {
+          cta.textContent = "Bond " + asset + " (wire open)";
+          cta.title = "Live bond wire still open";
+        }
+      }
+
       document.querySelectorAll(".tab").forEach(function (t) {
-        var on = t.getAttribute("data-asset") === asset;
+        var a = t.getAttribute("data-asset");
+        var on = a === asset;
+        var tg = isGated(gateFor(a));
         t.classList.toggle("on", on);
+        t.classList.toggle("gated", tg);
         t.setAttribute("aria-selected", on ? "true" : "false");
+        t.setAttribute("aria-disabled", tg ? "true" : "false");
+        t.title = tg ? "Unavailable — gated until Fed enables with capacity" : "";
       });
     }
 

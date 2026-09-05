@@ -84,7 +84,8 @@ Pointing rule: Bonds -> **Fed/Treasury RFV**. Equity after claim -> **gV / wgV**
 ## Status
 
 - **Skeleton (this branch):** `BondMarket` â€” quote + gated `bond`/`claim`, inventory fund, capacity, haircut, `enabled` default false / capacity 0.
-- **Still open before live enable:** reliable RFV valuation oracles; stock market-closure / corporate-action handling; rebase-ownership polish if payout token is live rebasing gV; UI unavailable states.
+- **UI unavailable / gated states:** landed stub in `frontend/bonds.html` (GATE map mirrors BondMarket defaults: `enabled=false` / `capacity=0`; banner + CTA say Unavailable/Gated — does not fake an open market). Live chain wire still open.
+- **Still open before live enable:** reliable RFV valuation oracles; stock market-closure / corporate-action handling; rebase-ownership polish if payout token is live rebasing gV; live UI↔BondMarket reads.
 - **sPUSD CD time-locks** â€” sketch landed (`SpusdCd.sol` + `SPUSD.md`); liquid sPUSD + CD coupon/break-fee proofs green. Live UI still open.
 
 ## Related
