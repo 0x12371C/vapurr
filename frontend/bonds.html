@@ -115,6 +115,59 @@
       color: var(--color-lime);
     }
 
+
+    .depth {
+      margin: 0 0 28px;
+      padding: 18px 18px 16px;
+      border-radius: 18px;
+      background: color-mix(in srgb, var(--color-steel) 55%, transparent);
+      backdrop-filter: blur(24px) saturate(1.5);
+      -webkit-backdrop-filter: blur(24px) saturate(1.5);
+      border: 1px solid color-mix(in srgb, var(--color-lime) 22%, transparent);
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 14px;
+      align-items: center;
+    }
+    @media (max-width: 640px) {
+      .depth { grid-template-columns: 1fr; }
+    }
+    .depth .mono { color: var(--color-lime); }
+    .depth h2 {
+      margin: 6px 0 8px;
+      font-size: 22px;
+      font-weight: 600;
+      letter-spacing: -0.03em;
+    }
+    .depth p {
+      color: var(--color-muted);
+      font-size: 13px;
+      line-height: 1.45;
+      max-width: 34em;
+    }
+    .depth p b { color: var(--color-snow); font-weight: 600; }
+    .depth .pair {
+      padding: 14px 14px 12px;
+      border-radius: 14px;
+      background: color-mix(in srgb, var(--color-void) 40%, transparent);
+      border: 1px solid color-mix(in srgb, var(--color-lime) 20%, transparent);
+      text-align: center;
+    }
+    .depth .pair .book {
+      margin-top: 6px;
+      font-size: 20px;
+      font-weight: 600;
+      letter-spacing: -0.03em;
+    }
+    .depth .pair .sub {
+      margin-top: 4px;
+      color: var(--color-muted);
+      font-size: 11px;
+      line-height: 1.35;
+    }
+    html[data-theme="light"] .depth {
+      background: color-mix(in srgb, var(--color-steel) 88%, transparent);
+    }
     .panel {
       margin-top: 8px;
       padding: 20px 20px 18px;
@@ -254,9 +307,10 @@
       <button class="lane" type="button" data-go="vapurr://pusd" data-lane="cash">
         <span class="mono">01 · Cash</span>
         <b class="title">Cash</b>
-        <span class="hint">Spend and save. <b>$PUSD</b> is the dollar rail. <b>sPUSD</b> is slow-growth savings after runway.</span>
+        <span class="hint">Spend and save. <b>$PUSD</b> is the dollar rail. Tight float sits on <b>$PUSD/USDG</b>. <b>sPUSD</b> is savings after runway.</span>
         <div class="chips">
           <span class="chip on">$PUSD</span>
+          <span class="chip on">USDG</span>
           <span class="chip">sPUSD</span>
         </div>
       </button>
@@ -283,7 +337,7 @@
       <button class="lane" type="button" data-go="vapurr://house" data-lane="house">
         <span class="mono">04 · House</span>
         <b class="title">House</b>
-        <span class="hint">Interbank desk. Equity meets cash as <b>wgV / $PUSD</b> — not raw rebasing gV.</span>
+        <span class="hint">Interbank desk. Equity meets cash as <b>wgV / $PUSD</b> — equity market, not peg defense.</span>
         <div class="chips">
           <span class="chip on">wgV</span>
           <span class="chip on">$PUSD</span>
@@ -291,6 +345,19 @@
       </button>
     </div>
 
+
+    <div class="depth" id="cash-depth" aria-label="Cash depth">
+      <div>
+        <div class="mono">cash · exogenous depth</div>
+        <h2>$PUSD stays tight vs USDG</h2>
+        <p>The dollar rail is deep against <b>outside</b> money — primary book <b>$PUSD / USDG</b>. House <b>wgV/$PUSD</b> is the equity desk, not peg defense. Bond inflows thicken RFV; float trust is exit depth.</p>
+      </div>
+      <div class="pair">
+        <div class="mono">primary book</div>
+        <div class="book">$PUSD / USDG</div>
+        <div class="sub">Tight spend float · exogenous</div>
+      </div>
+    </div>
     <div class="panel" id="bonds">
       <div class="mono">bonds · v1 assets</div>
       <h2>Bond in. Wait. Claim gV.</h2>
