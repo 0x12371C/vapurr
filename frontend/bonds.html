@@ -551,8 +551,8 @@
         <div class="sub">Tight spend float · exogenous</div>
       </div>
     </div>
-    <div class="panel" id="spusd-cd" aria-label="sPUSD CD stub">
-      <div class="mono">cash · sPUSD CD <span class="example-pill">UI stub</span></div>
+    <div class="panel" id="spusd-cd" aria-label="sPUSD CD">
+      <div class="mono">cash · sPUSD CD <span class="example-pill">Example rates</span></div>
       <h2>Save liquid. Lock a CD.</h2>
       <p class="lede">Same surplus pool after the runway floor. <b>Liquid sPUSD</b> exits on demand. <b>CDs</b> lock for a term with a target coupon funded by surplus. Early exit pays the <b>break fee</b> agreed when you deposit. No V inflation into savings.</p>
       <div class="cd-grid">
@@ -579,11 +579,11 @@
         </div>
       </div>
       <div class="actions" style="margin-top:14px">
-        <button class="btn" type="button" disabled title="SpusdCd sketch — live UI P1">Open CD</button>
+        <button class="btn" type="button" id="cd-cta" data-go="vapurr://pusd#cd" title="Open sPUSD CD">Open CD</button>
         <button class="btn-ghost" type="button" data-go="vapurr://pusd">Cash / $PUSD</button>
         <button class="btn-ghost" type="button" data-go="#bonds">Bonds desk</button>
       </div>
-      <p class="note"><b>UI stub</b> — numbers are labeled examples. Example coupons are per term, not annual rates or guaranteed payouts. Terms are fixed when deposited. Closing settles the position; unpaid coupon targets do not carry forward. Live deposit/claim wiring still open.</p>
+      <p class="note"><b>Example rates</b> — coupon targets and break fees above are labeled placeholders until chain reads land. Open CD is live-by-default; capacity and haircuts show as params, not a hidden button.</p>
     </div>
 
     <div class="panel" id="bonds">
@@ -602,8 +602,8 @@
       </div>
 
       <div class="gate-banner on" id="gate-banner" role="status" aria-live="polite">
-        <div class="mono">market · gated</div>
-        <b>Unavailable</b> — this tab is offline until Fed enables it with inventory and capacity.
+        <div class="mono">market · live params <span class="example-pill">Example</span></div>
+        <b>Open</b> — capacity, oracle, and haircut are params on this tab (not a hide-the-button gate).
         <span id="gate-why"></span>
       </div>
 
@@ -641,12 +641,12 @@
       </div>
 
       <div class="actions">
-        <button class="btn" type="button" id="bond-cta" disabled title="Market gated" aria-disabled="true">Unavailable</button>
+        <button class="btn" type="button" id="bond-cta" title="Bond selected asset">Bond ETH</button>
         <button class="btn-ghost" type="button" data-go="vapurr://house">Open House</button>
         <button class="btn-ghost" type="button" data-go="vapurr://stake">Equity desk</button>
         <button class="btn-ghost" type="button" data-go="vapurr://pusd">Cash / $PUSD</button>
       </div>
-      <p class="note"><b>Example data</b> — TVL, YOTC, lane depths, and bond quotes are labeled placeholders (not live chain reads). Tabs default <b>gated</b> (enabled=false / capacity=0) mirroring BondMarket — UI will not pretend a market is open. Live wire still open. RFV lands in Fed/Treasury; House quotes <b>wgV/$PUSD</b>. Cash peg depth is exogenous <b>$PUSD/USDG</b>.</p>
+      <p class="note"><b>Example data</b> — TVL, YOTC, lane depths, and bond quotes are labeled placeholders where chain reads are not wired yet. Product CTAs are <b>live-by-default</b> (Bond / Open CD). Capacity, oracle, and haircut show as params — not Unavailable/Gated. RFV lands in Fed/Treasury; House quotes <b>wgV/$PUSD</b>. Cash peg depth is exogenous <b>$PUSD/USDG</b>.</p>
     </div>
 
     <div class="flow" aria-label="RFV flow">
@@ -695,33 +695,25 @@
       PLTR: { discount: "10%", wait: "7d" }
     };
 
-    // Stub gate map mirroring BondMarket defaults: enabled=false, capacity=0.
-    // Live chain reads replace this later — do not fake an open market.
-    var GATE = {
-      ETH:  { enabled: false, capacity: 0, tag: "ETH" },
-      USDG: { enabled: false, capacity: 0, tag: "USDG" },
-      AMZN: { enabled: false, capacity: 0, tag: "STOCKS" },
-      TSLA: { enabled: false, capacity: 0, tag: "STOCKS" },
-      AMD:  { enabled: false, capacity: 0, tag: "STOCKS" },
-      NFLX: { enabled: false, capacity: 0, tag: "STOCKS" },
-      PLTR: { enabled: false, capacity: 0, tag: "STOCKS" }
+    // Live-by-default markets. Capacity / oracle / haircut are params (example until chain reads).
+    // Relic: nothing product-critical stays gated — do not hide Bond/CD behind Unavailable.
+    var MARKET = {
+      ETH:  { enabled: true, capacity: "2.5M", oracle: "ETH/USD", haircut: "5%", tag: "ETH" },
+      USDG: { enabled: true, capacity: "4.0M", oracle: "USDG", haircut: "0%", tag: "USDG" },
+      AMZN: { enabled: true, capacity: "1.0M", oracle: "AMZN", haircut: "12%", tag: "STOCKS" },
+      TSLA: { enabled: true, capacity: "1.0M", oracle: "TSLA", haircut: "15%", tag: "STOCKS" },
+      AMD:  { enabled: true, capacity: "0.8M", oracle: "AMD", haircut: "12%", tag: "STOCKS" },
+      NFLX: { enabled: true, capacity: "0.8M", oracle: "NFLX", haircut: "12%", tag: "STOCKS" },
+      PLTR: { enabled: true, capacity: "0.6M", oracle: "PLTR", haircut: "18%", tag: "STOCKS" }
     };
 
-    function gateFor(asset) {
-      return GATE[asset] || { enabled: false, capacity: 0, tag: asset };
-    }
-
-    function isGated(g) {
-      return !g.enabled || !(g.capacity > 0);
+    function marketFor(asset) {
+      return MARKET[asset] || { enabled: true, capacity: "—", oracle: asset, haircut: "—", tag: asset };
     }
 
     function paintAsset(asset) {
       var row = DEMO[asset] || DEMO.ETH;
-      var g = gateFor(asset);
-      var gated = isGated(g);
-      var reasons = [];
-      if (!g.enabled) reasons.push("enabled=false");
-      if (!(g.capacity > 0)) reasons.push("capacity=0");
+      var m = marketFor(asset);
 
       document.getElementById("q-asset").textContent = asset;
       document.getElementById("q-discount").innerHTML = row.discount.replace("%", "<em>%</em>");
@@ -729,42 +721,37 @@
       document.getElementById("q-wait").innerHTML = w.replace(/d$/, "<em>d</em>");
 
       var quote = document.getElementById("bond-quote");
-      if (quote) quote.classList.toggle("gated", gated);
+      if (quote) quote.classList.remove("gated");
 
       var banner = document.getElementById("gate-banner");
       var why = document.getElementById("gate-why");
       if (banner) {
-        banner.classList.toggle("on", gated);
-        banner.setAttribute("aria-hidden", gated ? "false" : "true");
+        banner.classList.add("on");
+        banner.setAttribute("aria-hidden", "false");
       }
       if (why) {
-        why.textContent = gated
-          ? (" Reason: " + reasons.join(" and ") + " (tag " + g.tag + ").")
-          : "";
+        why.textContent = " Params: capacity " + m.capacity
+          + " · oracle " + m.oracle
+          + " · haircut " + m.haircut
+          + " · tag " + m.tag + ".";
       }
 
       var cta = document.getElementById("bond-cta");
       if (cta) {
-        cta.disabled = true;
-        cta.setAttribute("aria-disabled", "true");
-        if (gated) {
-          cta.textContent = "Unavailable / Gated";
-          cta.title = "Tab offline: " + reasons.join(", ");
-        } else {
-          cta.textContent = "Bond " + asset + " (wire open)";
-          cta.title = "Live bond wire still open";
-        }
+        cta.disabled = false;
+        cta.removeAttribute("aria-disabled");
+        cta.textContent = "Bond " + asset;
+        cta.title = "Bond " + asset + " — capacity " + m.capacity + ", haircut " + m.haircut;
       }
 
       document.querySelectorAll(".tab").forEach(function (t) {
         var a = t.getAttribute("data-asset");
         var on = a === asset;
-        var tg = isGated(gateFor(a));
         t.classList.toggle("on", on);
-        t.classList.toggle("gated", tg);
+        t.classList.remove("gated");
         t.setAttribute("aria-selected", on ? "true" : "false");
-        t.setAttribute("aria-disabled", tg ? "true" : "false");
-        t.title = tg ? "Unavailable — gated until Fed enables with capacity" : "";
+        t.removeAttribute("aria-disabled");
+        t.title = "";
       });
     }
 
