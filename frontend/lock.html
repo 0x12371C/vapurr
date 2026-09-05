@@ -213,13 +213,16 @@
     (function () {
       var LEN = 4;
       var code = "";
+      var pendingSet = "";
       var busy = false;
-      var mode = "unlock"; // unlock | set | confirm
+      var mode = "unlock";
+      var visible = true;
 
       var dots = document.getElementById("dots");
       var hint = document.getElementById("hint");
       var title = document.getElementById("lock-title");
       var kicker = document.getElementById("kicker");
+      var root = document.querySelector(".lock");
 
       function paintDots(bad) {
         var nodes = dots.querySelectorAll(".dot");
@@ -239,6 +242,10 @@
         paintDots(false);
       }
 
+      function clearPending() {
+        pendingSet = "";
+      }
+
       function shake() {
         dots.classList.remove("shake");
         void dots.offsetWidth;
@@ -251,33 +258,89 @@
         }, 420);
       }
 
-      function submit() {
+      function paintMode() {
+        if (mode === "set") {
+          title.textContent = "Set Passcode";
+          kicker.textContent = "secure wallet";
+          setHint("Choose a 4-digit passcode", false);
+        } else if (mode === "confirm") {
+          title.textContent = "Confirm Passcode";
+          kicker.textContent = "secure wallet";
+          setHint("Enter the same passcode again", false);
+        } else {
+          mode = "unlock";
+          title.textContent = "Enter Passcode";
+          kicker.textContent = "vapurr";
+          setHint("Unlock this wallet", false);
+        }
+      }
+
+      function callSubmit(pin) {
+        var fn = api.onSubmit || window.onSubmit;
+        if (typeof fn === "function") {
+          fn(pin);
+          return true;
+        }
+        if (window.vapurr && vapurr.send) {
+          vapurr.send({ cmd: "passcode-submit", code: pin, mode: mode });
+          return true;
+        }
+        return false;
+      }
+
+      function finishFour() {
         if (busy || code.length !== LEN) return;
         busy = true;
-        var payload = { cmd: "passcode-submit", code: code, mode: mode };
-        if (window.vapurr && vapurr.send) {
-          vapurr.send(payload);
-        } else if (typeof window.__passcodeSubmit === "function") {
-          window.__passcodeSubmit(payload);
-        } else {
-          // Dev fallback: treat any 4 digits as fail so shake is visible in browser.
-          window.__passcodeFail("Wire passcode-submit in shell");
+        var pin = code;
+
+        if (mode === "set") {
+          pendingSet = pin;
+          clearCode();
+          mode = "confirm";
+          paintMode();
+          busy = false;
+          return;
+        }
+
+        if (mode === "confirm") {
+          var a = pendingSet;
+          var b = pin;
+          clearCode();
+          clearPending();
+          var setFn = api.onSetPin || window.onSetPin;
+          if (typeof setFn === "function") {
+            setFn(a, b);
+          } else if (window.vapurr && vapurr.send) {
+            vapurr.send({ cmd: "passcode-set", a: a, b: b });
+          } else {
+            callSubmit(b);
+          }
+          a = "";
+          b = "";
+          busy = false;
+          return;
+        }
+
+        var ok = callSubmit(pin);
+        clearCode();
+        pin = "";
+        if (!ok) {
+          api.fail("Wire onSubmit(pin) in shell");
         }
       }
 
       function pushDigit(d) {
-        if (busy) return;
+        if (busy || !visible) return;
         if (code.length >= LEN) return;
         code += String(d);
         paintDots(false);
-        setHint(mode === "set" ? "Enter a new passcode" : (mode === "confirm" ? "Confirm passcode" : "Unlock this wallet"), false);
         if (code.length === LEN) {
-          window.setTimeout(submit, 80);
+          window.setTimeout(finishFour, 80);
         }
       }
 
       function del() {
-        if (busy) return;
+        if (busy || !visible) return;
         if (!code.length) return;
         code = code.slice(0, -1);
         paintDots(false);
@@ -291,7 +354,7 @@
       });
 
       window.addEventListener("keydown", function (e) {
-        if (busy) return;
+        if (busy || !visible) return;
         if (e.key >= "0" && e.key <= "9") {
           e.preventDefault();
           pushDigit(e.key);
@@ -304,49 +367,58 @@
         }
       });
 
-      // --- Shell hooks -------------------------------------------------
-      // mode: unlock | set | confirm
+      var api = {
+        onSubmit: null,
+        onUnlock: null,
+        onSetPin: null,
+
+        lock: function (opts) {
+          opts = opts || {};
+          visible = true;
+          busy = false;
+          clearCode();
+          clearPending();
+          mode = opts.mode || "unlock";
+          paintMode();
+          if (opts.title) title.textContent = opts.title;
+          if (opts.hint) setHint(opts.hint, false);
+          if (opts.kicker) kicker.textContent = opts.kicker;
+          if (root) root.style.display = "";
+        },
+
+        unlock: function () {
+          busy = false;
+          clearCode();
+          clearPending();
+          setHint("Unlocked", false);
+          var fn = api.onUnlock || window.onUnlock;
+          if (typeof fn === "function") fn();
+        },
+
+        fail: function (msg) {
+          busy = true;
+          setHint(msg || "Wrong passcode. Try again.", true);
+          shake();
+        },
+
+        setMode: function (m) {
+          mode = m || "unlock";
+          clearCode();
+          if (mode !== "confirm") clearPending();
+          paintMode();
+        }
+      };
+
+      window.VapurrLock = api;
+      window.lock = function (opts) { return api.lock(opts); };
+      window.__passcodeFail = function (msg) { api.fail(msg); };
+      window.__passcodeOk = function () { api.unlock(); };
       window.__passcodePaint = function (s) {
         s = s || {};
-        if (s.mode) mode = String(s.mode);
-        if (mode === "set") {
-          title.textContent = "Set Passcode";
-          kicker.textContent = "secure wallet";
-          setHint(s.hint || "Choose a 4-digit passcode", false);
-        } else if (mode === "confirm") {
-          title.textContent = "Confirm Passcode";
-          kicker.textContent = "secure wallet";
-          setHint(s.hint || "Enter the same passcode again", false);
-        } else {
-          mode = "unlock";
-          title.textContent = "Enter Passcode";
-          kicker.textContent = "vapurr";
-          setHint(s.hint || "Unlock this wallet", false);
-        }
-        if (s.kicker) kicker.textContent = s.kicker;
-        if (s.title) title.textContent = s.title;
-        busy = false;
-        clearCode();
+        api.lock({ mode: s.mode, title: s.title, hint: s.hint, kicker: s.kicker });
       };
+      window.__passcodeReset = function () { clearCode(); busy = false; };
 
-      window.__passcodeFail = function (msg) {
-        busy = true;
-        setHint(msg || "Wrong passcode. Try again.", true);
-        shake();
-      };
-
-      window.__passcodeOk = function () {
-        busy = false;
-        clearCode();
-        setHint("Unlocked", false);
-      };
-
-      window.__passcodeReset = function () {
-        busy = false;
-        clearCode();
-      };
-
-      // Optional: shell can force a mode via ?mode=set
       (function boot() {
         var q = (location.search || "").replace(/^\?/, "");
         var m = "unlock";
@@ -354,9 +426,10 @@
           var kv = p.split("=");
           if (kv[0] === "mode" && kv[1]) m = decodeURIComponent(kv[1]);
         });
-        window.__passcodePaint({ mode: m });
+        api.lock({ mode: m });
       })();
     })();
+
   </script>
 </body>
 </html>
