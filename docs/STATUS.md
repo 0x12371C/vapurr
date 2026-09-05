@@ -1,10 +1,16 @@
 # vapurr status
 
-## 2026-09-05 — DeFi visual flows (source)
+## 2026-09-05 — DeFi visual flows (packed 1.1.9)
 
 `frontend/defi.html` now has an interactive economic route map with icon-led navigation. Lithe mint/redeem, Oliver credit, and House trade use selectable desks in `pusd.html`; savings/bonds use compact horizon cards and deposit → vest → claim steps. Shared `defi-flow.css` / `defi-flow.js` preserve native transaction handlers, show snapshot-driven LTV headroom, support light/dark themes and reduced motion, and keep detailed mechanics expandable. Display balances use two decimals, including negative net positions; transaction amounts retain their original precision.
 
-Validation: `python scripts/verify-defi-ui.py` runs offline in headless Edge with mocked IPC and snapshots, checking three widths, both themes, navigation, form modes, review/rejection, and the credit meter. Screenshots are in ignored `dist/defi-preview/`. Savings/bond terms still require engine/address-book integration; this UI update does not deploy contracts or package a release.
+Validation: `python scripts/verify-defi-ui.py` runs offline in headless Edge with mocked IPC and snapshots, checking three widths, both themes, navigation, form modes, review/rejection, and the credit meter. Screenshots are in ignored `dist/defi-preview/`. Savings/bond terms still require engine/address-book integration; no contracts were deployed.
+
+Packed with `pack.ps1` at **2026-09-05 20:04:58 UTC**, version **1.1.9**. Verified all five current DeFi HTML/CSS/JS files are embedded byte-for-byte in `dist/vapurr-setup.exe`; the ZIP passes CRC validation and contains the matching installer. Installer SHA-256: `687b6c6da7c3f6e84e4ce1be355c9894032f035af9232d3d74f99ae29fcc6695`. Signing certificate is unset, so this local package is unsigned.
+
+## 2026-09-05 — Graphify refresh (local)
+
+Code graph rebuilt after genesis 1.2M / seigniorage / glass lock pad / DeFi visual-flow wave: **2944 nodes / 8226 edges / 116 communities** (94% EXTRACTED, token cost 0) at HEAD `76b0a99`. Commands: `python -m graphify update .` then `python scripts/brand_graph.py`. Pointers: [GRAPHIFY.md](GRAPHIFY.md) (gitignored local map) · `graphify-out/` (also gitignored). `EconError` is now a god node (62). No release pack.
 
 Afternoon board: [SNAPSHOT.md](SNAPSHOT.md) · tracks: [TRACKS.md](TRACKS.md) · graph: [GRAPHIFY.md](GRAPHIFY.md)
 
