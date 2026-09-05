@@ -1,4 +1,4 @@
-# Build the downloadable tree. Same flags as a user-facing release â€” not target-cpu=native.
+# Build the downloadable tree. Same flags as a user-facing release - not target-cpu=native.
 $ErrorActionPreference = "Stop"
 
 function Find-SignTool {
@@ -19,7 +19,7 @@ function Find-SignTool {
   return $null
 }
 
-# Authenticode hook — see docs/SIGNING.md
+# Authenticode hook - see docs/SIGNING.md
 # Env:
 #   VAPURR_SIGN_CERT     = cert thumbprint (CurrentUser\My or LocalMachine\My)
 #   VAPURR_SIGN_TIMESTAMP = TSA URL (default DigiCert)
@@ -32,7 +32,7 @@ function Invoke-VapurrSign {
 
   $thumb = ($env:VAPURR_SIGN_CERT -as [string]).Trim()
   if (-not $thumb) {
-    Write-Warning "UNSIGNED — VAPURR_SIGN_CERT not set. Public downloads will trip Defender Wacatac.C!ml. See docs/SIGNING.md"
+    Write-Warning "UNSIGNED - VAPURR_SIGN_CERT not set. Public downloads will trip Defender Wacatac.C!ml. See docs/SIGNING.md"
     if ($env:VAPURR_REQUIRE_SIGN -eq '1' -and $env:VAPURR_ALLOW_UNSIGNED -ne '1') {
       throw "pack: VAPURR_REQUIRE_SIGN=1 but VAPURR_SIGN_CERT is empty (set VAPURR_ALLOW_UNSIGNED=1 to override)"
     }
@@ -52,7 +52,7 @@ function Invoke-VapurrSign {
     if ($LASTEXITCODE -ne 0) { throw "pack: signtool failed on $p (exit $LASTEXITCODE)" }
     $sig = Get-AuthenticodeSignature -LiteralPath $p
     if ($sig.Status -ne 'Valid') {
-      throw "pack: signature not Valid on $p — Status=$($sig.Status) $($sig.StatusMessage)"
+      throw ("pack: signature not Valid on {0} - Status={1} {2}" -f $p, $sig.Status, $sig.StatusMessage)
     }
     Write-Output ("signed {0} subject={1}" -f $p, $sig.SignerCertificate.Subject)
   }
@@ -151,7 +151,7 @@ Copy-Item $exe (Join-Path $stage "vapurr.exe") -Force
 Copy-Item $exe (Join-Path $stage "Install vapurr.exe") -Force
 Copy-Item $exe (Join-Path $distRoot "vapurr-setup.exe") -Force
 Copy-Item $loader.FullName (Join-Path $stage "WebView2Loader.dll") -Force
-# Never ship a sibling vapurr.exe â€” that makes â€œrun without installingâ€ the real app.
+# Never ship a sibling vapurr.exe --- that makes ---run without installing--- the real app.
 $stray = Join-Path $stage "vapurr.exe"
 if (Test-Path $stray) { Remove-Item $stray -Force }
 # Zip timestamps cannot be before 1980. The loader DLL from mingw is dated 1973.

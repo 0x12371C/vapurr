@@ -578,11 +578,13 @@
           <div class="row"><span class="k">break fee</span><span class="v">2.0%</span></div>
         </div>
       </div>
-      <div class="actions" style="margin-top:14px">
-        <button class="btn" type="button" id="cd-cta" data-go="vapurr://pusd#cd" title="Open sPUSD CD">Open CD</button>
+      <div class="actions" style="margin-top:14px; flex-wrap:wrap; gap:10px; align-items:center">
+        <input id="cd-amt" type="text" inputmode="decimal" placeholder="Amount $PUSD" aria-label="CD principal" style="flex:1 1 140px;min-width:120px;max-width:220px;padding:12px 14px;border-radius:12px;border:1px solid color-mix(in srgb, var(--color-snow) 12%, transparent);background:color-mix(in srgb, var(--color-void) 55%, transparent);color:var(--color-snow);font-size:15px"/>
+        <button class="btn" type="button" id="cd-cta" title="Open SpusdCd position">Open CD</button>
         <button class="btn-ghost" type="button" data-go="vapurr://pusd">Cash / $PUSD</button>
         <button class="btn-ghost" type="button" data-go="#bonds">Bonds desk</button>
       </div>
+      <div id="cd-err" role="alert" style="display:none;margin-top:10px;padding:10px 12px;border-radius:10px;border:1px solid color-mix(in srgb,#f87171 45%,transparent);color:#fecaca;font-size:13px;line-height:1.4"></div>
       <p class="note"><b>Example rates</b> — coupon targets and break fees above are labeled placeholders until chain reads land. Open CD is live-by-default; capacity and haircuts show as params, not a hidden button.</p>
     </div>
 
@@ -640,12 +642,14 @@
         </div>
       </div>
 
-      <div class="actions">
-        <button class="btn" type="button" id="bond-cta" title="Bond selected asset">Bond ETH</button>
+      <div class="actions" style="flex-wrap:wrap;gap:10px;align-items:center">
+        <input id="bond-amt" type="text" inputmode="decimal" placeholder="Amount" aria-label="Bond asset amount" style="flex:1 1 140px;min-width:120px;max-width:220px;padding:12px 14px;border-radius:12px;border:1px solid color-mix(in srgb, var(--color-snow) 12%, transparent);background:color-mix(in srgb, var(--color-void) 55%, transparent);color:var(--color-snow);font-size:15px"/>
+        <button class="btn" type="button" id="bond-cta" title="Open Bond">Open Bond</button>
         <button class="btn-ghost" type="button" data-go="vapurr://house">Open House</button>
         <button class="btn-ghost" type="button" data-go="vapurr://stake">Equity desk</button>
         <button class="btn-ghost" type="button" data-go="vapurr://pusd">Cash / $PUSD</button>
       </div>
+      <div id="bond-err" role="alert" style="display:none;margin-top:10px;padding:10px 12px;border-radius:10px;border:1px solid color-mix(in srgb,#f87171 45%,transparent);color:#fecaca;font-size:13px;line-height:1.4"></div>
       <p class="note"><b>Example data</b> — TVL, YOTC, lane depths, and bond quotes are labeled placeholders where chain reads are not wired yet. Product CTAs are <b>live-by-default</b> (Bond / Open CD). Capacity, oracle, and haircut show as params — not Unavailable/Gated. RFV lands in Fed/Treasury; House quotes <b>wgV/$PUSD</b>. Cash peg depth is exogenous <b>$PUSD/USDG</b>.</p>
     </div>
 
@@ -740,8 +744,10 @@
       if (cta) {
         cta.disabled = false;
         cta.removeAttribute("aria-disabled");
-        cta.textContent = "Bond " + asset;
-        cta.title = "Bond " + asset + " — capacity " + m.capacity + ", haircut " + m.haircut;
+        currentAsset = asset;
+        cta.textContent = "Open Bond";
+        cta.title = "Open Bond · " + asset + " — capacity " + m.capacity + ", haircut " + m.haircut;
+        showErr("bond-err", null);
       }
 
       document.querySelectorAll(".tab").forEach(function (t) {
@@ -755,9 +761,22 @@
       });
     }
 
-    document.querySelectorAll(".tab").forEach(function (el) {
-      el.onclick = function () { paintAsset(el.getAttribute("data-asset")); };
-    });
+    var currentAsset = "ETH";
+
+    function showErr(id, msg) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      if (!msg) { el.style.display = "none"; el.textContent = ""; return; }
+      el.textContent = msg;
+      el.style.display = "block";
+    }
+
+    function surfaceTxErr(which, title, lede) {
+      showErr(which, lede);
+      if (window.vapurr && typeof vapurr.showTx === "function") {
+        vapurr.showTx({ ok: false, title: title, lede: lede, rows: [] });
+      }
+    }
 
     document.querySelectorAll("[data-go]").forEach(function (el) {
       el.onclick = function () {
@@ -771,6 +790,49 @@
         if (window.vapurr && vapurr.go) vapurr.go(go);
       };
     });
+
+    document.querySelectorAll(".tab").forEach(function (el) {
+      var prev = el.onclick;
+      el.onclick = function () {
+        currentAsset = el.getAttribute("data-asset");
+        paintAsset(currentAsset);
+      };
+    });
+
+    var bondCta = document.getElementById("bond-cta");
+    if (bondCta) bondCta.onclick = function () {
+      var amt = ((document.getElementById("bond-amt") || {}).value || "").trim();
+      if (!amt || !(Number(amt) > 0)) {
+        surfaceTxErr("bond-err", "Bond needs an amount", "Enter a positive amount, then Open Bond again.");
+        return;
+      }
+      if (window.vapurr && typeof vapurr.send === "function") {
+        vapurr.send({ cmd: "econ-bond", asset: currentAsset, amt: amt });
+      }
+      // Address book wire still open — keep CTA live; surface clear on-tx error (not a gray gate).
+      surfaceTxErr(
+        "bond-err",
+        "Bond tx not configured",
+        "Open Bond is live, but BondMarket is not in the address book on this chain yet. Capacity/oracle/inventory limits still apply on-chain when wired."
+      );
+    };
+
+    var cdCta = document.getElementById("cd-cta");
+    if (cdCta) cdCta.onclick = function () {
+      var amt = ((document.getElementById("cd-amt") || {}).value || "").trim();
+      if (!amt || !(Number(amt) > 0)) {
+        surfaceTxErr("cd-err", "CD needs an amount", "Enter a positive $PUSD amount, then Open CD again.");
+        return;
+      }
+      if (window.vapurr && typeof vapurr.send === "function") {
+        vapurr.send({ cmd: "econ-cd-open", amt: amt });
+      }
+      surfaceTxErr(
+        "cd-err",
+        "CD tx not configured",
+        "Open CD is live, but SpusdCd is not in the address book on this chain yet. Coupon surplus remains a live param — underfunded closes can still fail on-chain."
+      );
+    };
 
     paintAsset("ETH");
   </script>

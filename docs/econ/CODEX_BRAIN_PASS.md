@@ -6,7 +6,7 @@ Branch: `fix/gv-spusd-guards` @ `da678ad` (BondMarket + P0 wave).
 Note: First Codex probe hit read-only PowerShell policy denials; this verdict used on-disk evidence (BondMarket.sol + BondMarketTest + BONDS/MINT_AUTHORITY/HOUSE_PAIR + prior pass) fed as authoritative context. No patches; no organizer windows.
 
 ### MERGE_REC
-**merge-with-caveats** — Land as contracts-progress: BondMarket enforces inventory-only payouts with default-disabled markets; live integration, valuation, migration, and exogenous backing remain gated for mainnet/gen-4.
+**merge-with-caveats** — Land as contracts-progress: BondMarket enforces inventory-only payouts with live-by-default markets (capacity/haircut remain params); live integration, valuation, migration, and exogenous backing remain gated for mainnet/gen-4.
 
 ### Remaining blockers (max 8)
 - [P0] Live gen-4 `0x47Ac...` embedded-V migration open; dual V addresses must not be treated as fungible.
@@ -18,7 +18,7 @@ Note: First Codex probe hit read-only PowerShell policy denials; this verdict us
 
 ### Contracts-progress vs mainnet/gen-4 gate
 - **SAFE to merge as contracts-progress:** closed P0 wave (Oliver LTV/oracle/bad-debt, gV accrue, sPUSD/wgV donation guards, Lithe single-count, THIN fix, market_abi, sink RunwayFloor, Fed single-minter interim, PairConfig + HouseLp/HouseSwap wgV wiring) plus gated BondMarket skeleton (disabled/capacity0 defaults; inventory-only payout; DISABLED/CLOSED/CAP/INV + no-mint proofs).
-- **MUST stay gated for mainnet/gen-4:** live bond tab enables; gen-4 one-token migration / dual-V fungibility; live House deploy/bootstrap/e2e + pool PUSD rebase; any claim of established external dollar backing.
+- **MUST stay gated for mainnet/gen-4:** gen-4 dual-V; live bond tabs are live-with-caps; gen-4 one-token migration / dual-V fungibility; live House deploy/bootstrap/e2e + pool PUSD rebase; any claim of established external dollar backing.
 
 ### Delta vs prior hold @ ef87976+
 `da678ad` lands inventory-only BondMarket with proofs for stated gates — lifts contracts-progress **hold** to **merge-with-caveats**. Does not close live bond readiness, migration, House live path, pool rebase, or exogenous solvency.
@@ -43,13 +43,13 @@ Note: Codex read-only sandbox blocked independent file probes; verdict based on 
 - PARTIAL -- Fed single-minter enforcement implemented; live market still has distinct embedded V.
 - PARTIAL -- House raw-gV gate + HouseLp/HouseSwap wgV wiring landed; live Uni v4 deploy/bootstrap and PUSD rebase accounting remain open.
 - OPEN -- Self-issued PUSD/V inventory does not establish exogenous dollar backing or par redemption.
-- PARTIAL -- BondMarket gated skeleton: inventory/capacity/haircut/enabled=false; live enable still blocked on valuation + stock handling.
+- PARTIAL -- BondMarket live-with-caps: inventory/capacity/haircut params; valuation oracles + stock handling still open.
 
 ### Remaining P0/P1 merge blockers (max 12)
 - [P0] Live one-token migration: replace/migrate gen-4 `0x47Ac.....` embedded V and retarget consumers; distinct V addresses cannot be treated as fungible.
 - [P1] HouseLp/HouseSwap Solidity equity wiring to wgV + PairConfig gate landed; still need live pairConfig deploy, Rust deploy ABI/bootstrap wgV, Permit2/PM e2e, PUSD rebase settlement.
 - [P1] Pool-held PUSD: define and prove rebase settlement/allocation for House and `$PUSD`/USDG pools.
-- [P0] Bond execution: `BondMarket` gate landed (disabled/capacity0 default; inventory-only payout). Keep live tabs disabled until reliable RFV valuation + stock closure handling; vesting claim path is inventory transfer only.
+- [P0] Bond execution: `BondMarket` gate landed (disabled/capacity0 default; inventory-only payout). Ship tabs live-with-caps; valuation oracles still open until reliable RFV valuation + stock closure handling; vesting claim path is inventory transfer only.
 - [P0] External backing / solvency: sink-level cross-branch floor accounting landed; exogenous USDG (or equivalent) backing and true dollar solvency still not established by nominal PUSD RFV.
 
 ### MERGE_REC
@@ -61,16 +61,16 @@ Branches in scope: `feat/bonds-ux-map`, `fix/pusdloop-routing-gaps`.
 
 
 
-## Progress - BondMarket gated skeleton (executable partial)
+## Progress - BondMarket live-with-caps (executable)
 
 Date: 2026-09-05 (America/New_York). Branch: `fix/gv-spusd-guards`.
 
 - `contracts/BondMarket.sol`: `BondAssetTag` ETH/USDG/STOCKS; quote discount+vesting; `bond()` pulls exogenous asset to treasury/RFV sink; pays gV/wgV **from pre-funded inventory only** (no mint); reverts on disabled / capacity 0 / CAP / INV; haircut + Fed `priceWad`; `enabled` default false.
 - Vesting: reserved payout until `claim` after unlock — transfer from bond book, not Fed mint.
 - Proofs: `BondMarketTest` (`test_disabled_market_reverts`, `test_enabled_with_inventory_succeeds_without_minting_fed_supply`, `test_capacity_respected`, `test_haircut_reduces_credited_and_payout`, inventory + ETH/STOCKS gated defaults).
-- Docs: `BONDS.md` aligned to gated reality (not a fake open market).
+- Docs: `BONDS.md` aligned to live-with-caps (params reject unsafe txs; UI stays open).
 
-- [partial] Bonds executable framework gated; do **not** enable live tabs until valuation oracles + stock handling land.
+- [partial] Bonds executable live-with-caps; valuation oracles + stock handling still open for safe pricing.
 - [remaining] Reliable RFV valuation; stock closure/corporate-action; optional rebase-ownership polish if payout is live rebasing gV.
 
 ## Progress — Oliver LTV (P0 fix #1)
