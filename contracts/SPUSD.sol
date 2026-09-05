@@ -6,11 +6,20 @@ import "./Remittance.sol";
 /// Liquid sPUSD — minimal ERC-4626-style vault over $PUSD.
 /// Receives branch remittance (yield credit) without minting new shares (NAV rises).
 /// Time-lock CD tranches: TODO — see docs/econ/SPUSD.md.
+/// Donation guards: virtual shares + dead shares + min deposit.
 
 contract SPUSD is IRemittance {
     string public constant name = "Savings PUSD";
     string public constant symbol = "sPUSD";
     uint8 public constant decimals = 18;
+
+    /// Virtual offset (OZ ERC-4626 style) resists donation / inflation rounding theft.
+    uint256 public constant VIRTUAL_SHARES = 1e6;
+    uint256 public constant VIRTUAL_ASSETS = 1;
+    /// Permanently locked on first deposit (dead shares).
+    uint256 public constant DEAD_SHARES = 1_000;
+    /// Minimum deposit assets (blocks dust remittance skim + inflation seed).
+    uint256 public constant MIN_DEPOSIT = 1_000;
 
     IERC20Remit public immutable asset; // $PUSD
     address public owner;
@@ -48,20 +57,29 @@ contract SPUSD is IRemittance {
     }
 
     function convertToShares(uint256 assets) public view returns (uint256) {
-        uint256 supply = totalSupply;
-        uint256 ta = totalAssets();
-        if (supply == 0 || ta == 0) return assets;
-        return (assets * supply) / ta;
+        return (assets * (totalSupply + VIRTUAL_SHARES)) / (totalAssets() + VIRTUAL_ASSETS);
     }
 
     function convertToAssets(uint256 shares) public view returns (uint256) {
-        uint256 supply = totalSupply;
-        if (supply == 0) return shares;
-        return (shares * totalAssets()) / supply;
+        return (shares * (totalAssets() + VIRTUAL_ASSETS)) / (totalSupply + VIRTUAL_SHARES);
     }
 
     function deposit(uint256 assets, address receiver) external returns (uint256 shares) {
-        require(assets > 0 && receiver != address(0), "TINY");
+        require(assets >= MIN_DEPOSIT && receiver != address(0), "TINY");
+        if (totalSupply == 0) {
+            // First depositor: lock dead shares to address(0); remainder to receiver.
+            require(assets > DEAD_SHARES, "TINY");
+            require(asset.transferFrom(msg.sender, address(this), assets), "PULL");
+            shares = assets - DEAD_SHARES;
+            totalSupply = assets;
+            balanceOf[address(0)] = DEAD_SHARES;
+            balanceOf[receiver] = shares;
+            emit Transfer(address(0), address(0), DEAD_SHARES);
+            emit Deposit(msg.sender, receiver, assets, shares);
+            emit Transfer(address(0), receiver, shares);
+            return shares;
+        }
+        // Price against pre-transfer balances (donated assets already in totalAssets).
         shares = convertToShares(assets);
         require(shares > 0, "TINY");
         require(asset.transferFrom(msg.sender, address(this), assets), "PULL");
@@ -73,7 +91,9 @@ contract SPUSD is IRemittance {
 
     function withdraw(uint256 assets, address receiver, address owner_) external returns (uint256 shares) {
         require(assets > 0 && receiver != address(0), "TINY");
-        shares = totalSupply == 0 ? assets : (assets * totalSupply + totalAssets() - 1) / totalAssets();
+        uint256 ta = totalAssets();
+        // Ceil shares burned (favor vault / remaining holders).
+        shares = (assets * (totalSupply + VIRTUAL_SHARES) + (ta + VIRTUAL_ASSETS) - 1) / (ta + VIRTUAL_ASSETS);
         _burnFrom(owner_, shares, msg.sender);
         require(asset.transfer(receiver, assets), "PUSD");
         emit Withdraw(msg.sender, receiver, owner_, assets, shares);
@@ -81,6 +101,7 @@ contract SPUSD is IRemittance {
 
     function redeem(uint256 shares, address receiver, address owner_) external returns (uint256 assets) {
         require(shares > 0 && receiver != address(0), "TINY");
+        // Floor assets out (favor vault).
         assets = convertToAssets(shares);
         require(assets > 0, "TINY");
         _burnFrom(owner_, shares, msg.sender);

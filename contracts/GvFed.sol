@@ -147,6 +147,8 @@ contract gVAPURR {
 
     function stake(uint256 assets) external returns (uint256 sharesOut) {
         require(assets > 0, "TINY");
+        // Settle elapsed rebase before minting shares (blocks late-stake / empty-pool theft).
+        accrue();
         sharesOut = (assets * DEC) / index;
         require(sharesOut > 0, "TINY");
         require(vapurr.transferFrom(msg.sender, address(this), assets), "PULL");
@@ -158,6 +160,7 @@ contract gVAPURR {
 
     function unstake(uint256 assets) external returns (uint256 sharesIn) {
         require(assets > 0, "TINY");
+        accrue();
         sharesIn = (assets * DEC) / index;
         require(sharesIn > 0 && shares[msg.sender] >= sharesIn, "gV");
         unchecked {
@@ -169,9 +172,9 @@ contract gVAPURR {
         emit Transfer(msg.sender, address(0), assets);
     }
 
-    /// Accrue flat 3.5%/yr by minting V into this contract and lifting the index.
-    /// Only `policy` (Fed/treasury). Browse distributors must never be policy.
-    function rebase() external onlyPolicy returns (uint256 minted) {
+    /// Permissionless settle: flat 3.5%/yr mint into this contract and lift the index.
+    /// Called before stake/unstake so new shares never capture unpaid intervals.
+    function accrue() public returns (uint256 minted) {
         uint256 dt = block.timestamp - lastRebase;
         lastRebase = block.timestamp;
         uint256 supply = totalSupply();
@@ -187,6 +190,11 @@ contract gVAPURR {
         vapurr.mint(address(this), minted);
         index = (index * (supply + minted)) / supply;
         emit Rebase(minted, index, block.timestamp);
+    }
+
+    /// Policy-facing alias; browse distributors must never be policy.
+    function rebase() external onlyPolicy returns (uint256 minted) {
+        return accrue();
     }
 
     function transfer(address to, uint256 amt) external returns (bool) {
@@ -231,6 +239,11 @@ contract wgVAPURR {
     uint8 public constant decimals = 18;
 
     gVAPURR public immutable gV;
+    /// Virtual offset (OZ-style) + dead shares on first wrap — donation / inflation resistant.
+    uint256 public constant VIRTUAL_SHARES = 1e6;
+    uint256 public constant VIRTUAL_ASSETS = 1;
+    uint256 public constant DEAD_SHARES = 1_000;
+    uint256 public constant MIN_WRAP = 1_000;
     uint256 public totalSupply;
     mapping(address => uint256) public balanceOf;
     mapping(address => mapping(address => uint256)) public allowance;
@@ -245,15 +258,31 @@ contract wgVAPURR {
         gV = gVAPURR(gV_);
     }
 
+    function convertToShares(uint256 gvAssets, uint256 pooled) public view returns (uint256) {
+        return (gvAssets * (totalSupply + VIRTUAL_SHARES)) / (pooled + VIRTUAL_ASSETS);
+    }
+
+    function convertToAssets(uint256 sharesIn, uint256 pooled) public view returns (uint256) {
+        return (sharesIn * (pooled + VIRTUAL_ASSETS)) / (totalSupply + VIRTUAL_SHARES);
+    }
+
     function wrap(uint256 gvAssets) external returns (uint256 sharesOut) {
-        require(gvAssets > 0, "TINY");
+        require(gvAssets >= MIN_WRAP, "TINY");
         uint256 pooled = gV.balanceOf(address(this));
         require(gV.transferFrom(msg.sender, address(this), gvAssets), "PULL");
-        if (totalSupply == 0 || pooled == 0) {
-            sharesOut = gvAssets;
-        } else {
-            sharesOut = (gvAssets * totalSupply) / pooled;
+        if (totalSupply == 0) {
+            // First wrap: lock dead shares permanently (address(0)).
+            require(gvAssets > DEAD_SHARES, "TINY");
+            sharesOut = gvAssets - DEAD_SHARES;
+            totalSupply = gvAssets;
+            balanceOf[address(0)] = DEAD_SHARES;
+            balanceOf[msg.sender] = sharesOut;
+            emit Transfer(address(0), address(0), DEAD_SHARES);
+            emit Wrap(msg.sender, gvAssets, sharesOut);
+            emit Transfer(address(0), msg.sender, sharesOut);
+            return sharesOut;
         }
+        sharesOut = convertToShares(gvAssets, pooled);
         require(sharesOut > 0, "TINY");
         totalSupply += sharesOut;
         balanceOf[msg.sender] += sharesOut;
@@ -264,7 +293,8 @@ contract wgVAPURR {
     function unwrap(uint256 sharesIn) external returns (uint256 gvOut) {
         require(sharesIn > 0 && balanceOf[msg.sender] >= sharesIn, "wgV");
         uint256 pooled = gV.balanceOf(address(this));
-        gvOut = (sharesIn * pooled) / totalSupply;
+        // Floor assets out (favor remaining holders / dead+virtual).
+        gvOut = convertToAssets(sharesIn, pooled);
         require(gvOut > 0, "TINY");
         unchecked {
             balanceOf[msg.sender] -= sharesIn;
@@ -277,7 +307,8 @@ contract wgVAPURR {
 
     function gvPerShare() external view returns (uint256) {
         if (totalSupply == 0) return 1e18;
-        return (gV.balanceOf(address(this)) * 1e18) / totalSupply;
+        uint256 pooled = gV.balanceOf(address(this));
+        return ((pooled + VIRTUAL_ASSETS) * 1e18) / (totalSupply + VIRTUAL_SHARES);
     }
 
     function transfer(address to, uint256 amt) external returns (bool) {
@@ -315,14 +346,14 @@ contract wgVAPURR {
     }
 }
 
-/// 50k V / 3y from already-minted treasury. Transfers only — never mints.
+/// 50k V / 3y from already-minted treasury. Transfers only â€” never mints.
 contract BrowserStream {
     uint256 public constant CAP = 50_000 ether;
     uint256 public constant DURATION = 3 * 365 days;
 
     IVapurrMint public immutable vapurr;
     address public owner;
-    address public distributor; // browse/earn path — cannot be gV policy
+    address public distributor; // browse/earn path â€” cannot be gV policy
     uint256 public start;
     uint256 public released;
     bool public started;

@@ -1,4 +1,4 @@
-﻿# Codex brain pass (econ hard knots)
+# Codex brain pass (econ hard knots)
 
 Date: 2026-09-05 (America/New_York). Model: gpt-6-astra, high effort. Mode: brain-only, no patches.
 Branches in scope: `feat/bonds-ux-map`, `fix/pusdloop-routing-gaps`.
@@ -15,12 +15,26 @@ Date: 2026-09-05 (America/New_York). Branch: `fix/oliver-ltv`.
 - Tests (FAIL before / PASS after): `test_sole_supplier_cannot_borrow_past_ltv_cash`, `test_sole_supplier_max_borrow_respects_85_ltv`, `test_withdraw_ltv_uses_post_cash_state`, `test_remit_reserve_respects_owner_ltv`, `test_auto_remit_revert_does_not_freeze_repay`.
 
 - [done] `PusdLoop.borrow`/`withdraw` LTV now checked on post-transfer cash (fix/oliver-ltv). Mid-transfer collateral inflation closed; sole-supplier cannot drain past 85% LTV. Proofs: `OliverLtvTest`.
+
+## Progress — gV rebase settle + sPUSD donation guards (P0 fix #2)
+
+Date: 2026-09-05 (America/New_York). Branch: `fix/gv-spusd-guards` (from `fix/oliver-ltv`).
+
+- `gVAPURR.stake` / `unstake` call permissionless `accrue()` before share mint/burn so late stake cannot capture unpaid intervals; empty-pool stake clocks `lastRebase` (no multi-year backlog mint).
+- `rebase()` remains policy-gated and delegates to `accrue()`.
+- `SPUSD`: virtual shares (1e6/1) + dead shares on first deposit + `MIN_DEPOSIT`; withdraw ceils shares / redeem floors assets.
+- `wgVAPURR`: same virtual + dead + `MIN_WRAP` pattern on wrap/unwrap.
+- Tests (FAIL before / PASS after): `GvRebaseSettleTest` (`test_late_stake_does_not_capture_prior_interval`, `test_empty_pool_stake_does_not_award_stale_years`); `SpusdDonationGuardsTest` (`test_donation_cannot_steal_next_depositor`, `test_dust_deposit_cannot_skim_remittance`, `test_wgV_donation_cannot_steal_next_wrapper`).
+
+- [done] `gVAPURR.stake` settles accrued rebase before share mint (fix/gv-spusd-guards). Late-stake / empty-pool emission theft closed. Proofs: `GvRebaseSettleTest`.
+- [done] `SPUSD` + `wgVAPURR` donation-resistant pricing (virtual + dead shares + min deposit/wrap). Proofs: `SpusdDonationGuardsTest`.
+
 - [P0-bug] Mint authority remains split: market V permanently assigns its minter to `PusdMarket`, while Fed staking requires mint access. That token cannot support Fed rebases; deploying the separate Fed token creates two incompatible V assets.
-- [attack] `gVAPURR.stake` does not settle elapsed rewards before admitting deposits. Staking immediately before a delayed rebase captures emissions for time never staked; rebase frequency also changes issuance despite the stated flat-rate policy.
+- [done] `gVAPURR.stake` settles via `accrue()` before share mint (see Progress — P0 fix #2).
 - [P0-bug] Lithe mints fee PUSD into market inventory, then `accrue` increases PUSD supply through `drip` without burning that inventory. Decreasing `yieldReserve` alone leaves duplicate outstanding claims against unchanged V backing.
 - [P0-bug] `computeSwap` rejects negative calculated spreads through `baseOffer >= askBaseAmount`. After one-sided flow, favorable counterflow can therefore revert `THIN` even with sufficient V inventory, obstructing redemption and arbitrage.
 - [attack] Wrapping gV fixes only one House leg: PUSD itself rebases. Both wgV/PUSD and PUSD/USDG require explicit handling of pool-held PUSD rebases; ordinary swap accounting cannot be assumed to allocate those gains correctly.
-- [attack] `SPUSD` and `wgVAPURR` price shares from donated balances without initial-share protection or minimum-output limits, enabling donation-driven rounding theft. Immediate sPUSD deposit/redeem also permits capture of predictable remittance distributions.
+- [done] `SPUSD` / `wgVAPURR` virtual+dead shares + min deposit/wrap (see Progress — P0 fix #2). Dust remittance skim bounded; CD time-locks still TODO for full skim resistance.
 - [P0-bug] Self-issued PUSD reserves and V inventory do not establish exogenous dollar backing. The minimum 2% V swap spread is not ~par USDG redemption; a nominal PUSD runway floor cannot establish dollar solvency, and Lithe drip can consume the supposedly retained reserve.
 - [attack] Oliver uses owner-fed `vapurrRate`, refreshed only on market swaps, without freshness or collateral-price safeguards. Stale or inflated valuations permit excessive borrowing; wrapping collateral would not repair this oracle dependency.
 - [P0-bug] Oliver has no bad-debt write-down: exhausted collateral can leave irrecoverable debt inside supplier NAV while reserve fees accrue. Define loss allocation and bounded LOLR funding before expansion; gV/wgV collateral also remains unimplemented and needs redemption-aware valuation.

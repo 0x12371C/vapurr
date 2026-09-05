@@ -114,7 +114,7 @@ contract GvBoundariesTest is Test {
         uint256 shares = wgV.wrap(40_000 ether);
         vm.stopPrank();
 
-        assertEq(shares, 40_000 ether, "1:1 wrap at genesis index");
+        assertEq(shares, 40_000 ether - wgV.DEAD_SHARES(), "first wrap locks dead shares");
         uint256 rate0 = wgV.gvPerShare();
         uint256 gv0 = gV.balanceOf(address(wgV));
 
