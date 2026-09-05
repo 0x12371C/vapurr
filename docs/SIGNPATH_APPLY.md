@@ -34,3 +34,16 @@ GitHub: 0x12371C
 - [x] Signing policy doc in repo
 - [ ] SignPath account / apply form submitted
 - [ ] GitHub Actions workflow that uploads artifacts to SignPath
+
+## Form paste (2026-09-04)
+
+- Project name: vapurr
+- Repository URL: https://github.com/0x12371C/vapurr
+- Project homepage: https://thesecretlab.app/vapurr
+- Download URL (page, not raw exe): https://thesecretlab.app/vapurr
+  - Note: that page must mention SignPath Foundation for code signing (also mirrored in README). Prefer the page URL over a direct .exe link.
+- Privacy Policy URL: https://github.com/0x12371C/vapurr/blob/master/PRIVACY.md
+- Wikipedia: leave blank
+- Tagline: Native Windows on-chain browser for Robinhood Chain.
+- Description: vapurr is an MIT-licensed Windows browser for Robinhood Chain with free public downloads. We need Authenticode signing because Windows Defender ML flags our unsigned installer (Wacatac.C!ml false positive). Independent ClamAV/PE checks match our release build. CI will submit PE artifacts (vapurr-setup.exe / Install vapurr.exe) to SignPath; see docs/SIGNING.md.
+
