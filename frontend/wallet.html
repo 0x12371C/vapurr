@@ -556,7 +556,7 @@
         <button class="btn" id="set-copy" type="button" style="margin-top:8px">Copy address</button>
         <button class="btn ghost" id="set-scan" type="button">View on Scan</button>
         <button class="btn ghost" id="set-hood-go" type="button">Claim .hood</button>
-        <button class="btn ghost" id="set-lithe" type="button">Lithe 9%</button>
+        <button class="btn ghost" id="set-lithe" type="button">Lithe</button>
         <button class="btn ghost" id="set-faucet" type="button" style="display:none">Faucet</button>
       </div>
       <div class="set-block">
@@ -826,7 +826,7 @@
         b.querySelector("b").textContent = prettySym(a.symbol);
         var hint = a.hint || "";
         if (!hint && (a.id === "pusd" || String(a.symbol || "").toUpperCase() === "PUSD")) {
-          hint = "Lithe 9% · vault stacks";
+          hint = "Lithe · vault stacks";
         }
         b.querySelector(".hint").textContent = hint;
         b.querySelector(".amt").textContent = fmtAmt(a.amount || "0");
@@ -1144,7 +1144,7 @@
       document.getElementById("usd").innerHTML = "<em>$</em>" + fmtUsd(s.total_usd || "0");
       wtick.t = Date.now();
       wtick.usd = parseFloat(String(s.total_usd || "0").replace(/,/g, "")) || 0;
-      wtick.apy = 9;
+      wtick.apy = null;
       var test = s.net === "testnet" || s.chain_id === 46630;
       document.getElementById("net-pill").textContent = test ? "Testnet" : "Mainnet";
       document.getElementById("rpc-lab").textContent = (s.net || "") + " " + String(s.chain_id || "");
@@ -1223,7 +1223,7 @@
       document.getElementById("book-red").classList.toggle("on", !mint);
       document.getElementById("book-title").textContent = mint ? "Mint $PUSD" : "Redeem $PUSD";
       document.getElementById("book-copy").textContent = mint
-        ? "Burn $VAPURR, mint $PUSD at the oracle. Spread ≥ 2%. Lithe is 9%."
+        ? "Burn $VAPURR, mint $PUSD at the oracle. Spread ≥ 2%."
         : "Burn $PUSD, mint $VAPURR at the oracle. Spread ≥ 2%.";
       document.getElementById("book-lab").textContent = mint ? "VAPURR" : "PUSD";
       var v = (snap && snap.vapurr) || "0";
@@ -1369,7 +1369,7 @@
         title: mint ? "Mint $PUSD" : "Redeem $PUSD",
         kicker: "This device signs",
         lede: mint
-          ? "Burn $VAPURR, mint $PUSD at the oracle. Spread ≥ 2%. Lithe 9%. Hash or it failed."
+          ? "Burn $VAPURR, mint $PUSD at the oracle. Spread ≥ 2%. Hash or it failed."
           : "Burn $PUSD, mint $VAPURR at the oracle. Spread ≥ 2%. Hash or it failed.",
         rows: [
           { k: "Network", v: netName() },
@@ -1377,7 +1377,7 @@
           { k: mint ? "Burn V" : "Burn P", v: amt },
           { k: "Path", v: mint ? "burn VAPURR → mint PUSD" : "burn PUSD → mint VAPURR" },
           { k: "Spread", v: "≥ 2%" },
-          { k: "Lithe", v: "9%" }
+          { k: "Lithe", v: "—" }
         ],
         confirmLabel: mint ? "Sign and mint" : "Sign and redeem",
         doneTitle: mint ? "Minted" : "Redeemed",

@@ -627,7 +627,7 @@
       </div>
       <div class="card" id="lithe">
         <h2>Lithe</h2>
-        <p class="rate"><b id="apy">9.00%</b><span id="earned"></span></p>
+        <p class="rate"><b id="apy">—</b><span id="earned"></span></p>
         <p class="say">Every <b>$PUSD</b> earns in place — no claim. Mint spread funds it. Oliver stacks on top. Browse-earn is separate (<code>vapurr://earn</code>).</p>
       </div>
     </div>
@@ -793,7 +793,7 @@
     var emode = "supply";
     var hmode = "v";
     var YEAR = 365.25 * 24 * 3600;
-    var tick = { t: 0, p: 0, sup: 0, debt: 0, apyP: 9, apyS: 0, apyD: 0, net0: 0, lastTx: "" };
+    var tick = { t: 0, p: 0, sup: 0, debt: 0, apyP: null, apyS: 0, apyD: 0, net0: 0, lastTx: "" };
     function n(v) {
       var x = parseFloat(String(v || "0").replace(/,/g, ""));
       return isFinite(x) ? x : 0;
@@ -1202,7 +1202,7 @@
       document.getElementById("oracle").textContent = px > 0 ? trimNum(s.price) : "—";
       document.getElementById("spread").textContent = spreadPct().toFixed(2) + "%";
       var y = stackApy(s);
-      document.getElementById("apy").textContent = y.user.toFixed(2) + "%";
+      document.getElementById("apy").textContent = (tick.apyP == null && !(s && s.apy != null && s.apy !== "")) ? "—" : (y.user.toFixed(2) + "%");
       document.getElementById("index").textContent = s.index || "1.000000";
       document.getElementById("index-big").textContent = s.index || "1.000000";
       document.getElementById("reserve").textContent = s.yield_reserve || "0.00";
@@ -1331,7 +1331,7 @@
           { k: mint ? "Burn V" : "Burn P", v: amt },
           { k: "Path", v: mint ? "burn VAPURR → mint PUSD" : "burn PUSD → mint VAPURR" },
           { k: "Spread", v: spreadPct().toFixed(2) + "%" },
-          { k: "Lithe", v: (snap && snap.apy ? snap.apy : "9.00") + "%" }
+          { k: "Lithe", v: (snap && snap.apy != null && snap.apy !== "" ? Number(snap.apy).toFixed(2) + "%" : "—") }
         ],
         confirmLabel: mint ? "Sign and mint" : "Sign and redeem",
         doneTitle: mint ? "Minted" : "Redeemed",
