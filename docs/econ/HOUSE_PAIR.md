@@ -39,7 +39,13 @@ Pool-held `$PUSD` therefore accrues Lithe drip to whoever holds the pool balance
 
 ## Live wiring gap
 
-`HouseLp` / `HouseSwap` still read `market.vapurr()` + `market.pusd()` and build PoolKeys from those. That is **not** yet the locked wgV/$PUSD pair. Full Uni v4 rewire (equity = wgV address, call PairConfig before init, settle hair for rebasing PUSD) remains open — PairConfig is the gate to land now.
+`HouseLp` / `HouseSwap` constructors now take `HousePairConfig` and set equity/cash immutables from `config.wgV()` / `config.pusd()` (not `market.vapurr()`). `seed` / `unlockCallback` call `requireHousePair` before PositionManager / PoolManager work.
+
+Still open for **live** Uni v4:
+- Deploy `HousePairConfig` + pass its address into HouseLp/HouseSwap (Rust `house_deploy` / `swap_deploy` ABI must encode `pairConfig` first).
+- Bootstrap must seed **wgV** inventory (wrap gV first), not raw `$VAPURR` / market.vapurr balances.
+- PositionManager + Permit2 approvals for wgV on the live book; PoolManager unlock/settle e2e fork proofs.
+- Pool-held `$PUSD` Lithe-index rebase settlement / LP allocation remains **P1** (settle hair is interim only).
 
 ## Hard wall (reminder)
 

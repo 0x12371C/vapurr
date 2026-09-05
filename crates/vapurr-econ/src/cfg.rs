@@ -27,6 +27,9 @@ pub(crate) struct MarketCfg {
     pub(crate) house: String,
     #[serde(default)]
     pub(crate) swap: String,
+    /// HousePairConfig address (wgV + PUSD SoT). Required for HouseLp/HouseSwap deploy.
+    #[serde(default)]
+    pub(crate) pair_config: String,
     #[serde(default)]
     pub(crate) net: String,
 }

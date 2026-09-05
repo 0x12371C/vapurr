@@ -1,4 +1,5 @@
-//! House Uniswap v4 CL book. $VAPURR / $PUSD only. Empty until this device deploys it.
+//! House Uniswap v4 CL book. Canon: wgV / $PUSD via HousePairConfig. Empty until this device deploys it.
+//! LIVE GAP: bootstrap still seeds raw V balances — must wrap to wgV before seed; need live pair_config in market.json.
 
 use serde_json::{json, Value};
 
@@ -27,6 +28,9 @@ impl Client {
         if self.live_house().is_some() {
             return Ok(self.cfg.house.clone());
         }
+        let pair_config = self
+            .live_ca(&self.cfg.pair_config)
+            .ok_or_else(|| EconError::Rpc("need HousePairConfig (cfg.pair_config)".into()))?;
         let market = self.live_market().ok_or(EconError::NotLive)?;
         let posm = addr_from_hex(rhc::UNI_V4_POSITION_MANAGER)
             .ok_or_else(|| EconError::Rpc("posm".into()))?;
@@ -38,6 +42,8 @@ impl Client {
             return Err(EconError::NeedGas);
         }
         let mut bytecode = house_bytecode()?;
+        // Constructor: (pairConfig, market, posm, permit2, fee, tickSpacing)
+        bytecode.extend_from_slice(&vapurr_wallet::tx::abi_addr(pair_config));
         bytecode.extend_from_slice(&vapurr_wallet::tx::abi_addr(market));
         bytecode.extend_from_slice(&vapurr_wallet::tx::abi_addr(posm));
         bytecode.extend_from_slice(&vapurr_wallet::tx::abi_addr(permit2));
@@ -191,6 +197,7 @@ impl Client {
             "vapurr": fmt_tok(v_bal),
             "pusd": fmt_tok(p_bal),
             "px": fmt_price(s.px),
+            // Snap.wgVToken — JSON key kept as vapurr_token for UI compat until frontend rename.
             "vapurr_token": s.vapurr_token,
             "pusd_token": s.pusd_token,
             "posm": s.posm,

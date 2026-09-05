@@ -17,13 +17,13 @@ Note: Codex read-only sandbox blocked independent file probes; verdict based on 
 - PARTIAL -- Auto-remit isolation closes Oliver failure propagation; Lithe isolation remains unconfirmed.
 - CLOSED -- Realized-only Oliver remittance + sink-level RunwayFloor on consolidated RemittanceSink RFV (cross-branch floor). Exogenous USDG backing still open.
 - PARTIAL -- Fed single-minter enforcement implemented; live market still has distinct embedded V.
-- PARTIAL -- House raw-gV gate implemented; live wiring and PUSD rebase accounting remain open.
+- PARTIAL -- House raw-gV gate + HouseLp/HouseSwap wgV wiring landed; live Uni v4 deploy/bootstrap and PUSD rebase accounting remain open.
 - OPEN -- Self-issued PUSD/V inventory does not establish exogenous dollar backing or par redemption.
 - OPEN -- Executable bonds lack completed inventory, vesting, capacity and valuation prerequisites.
 
 ### Remaining P0/P1 merge blockers (max 12)
 - [P0] Live one-token migration: replace/migrate gen-4 `0x47Ac...` embedded V and retarget consumers; distinct V addresses cannot be treated as fungible.
-- [P1] HouseLp rewire: use wgV, enforce PairConfig before actual initialization, complete Permit2/PositionManager integration and live-v4 fork proofs.
+- [P1] HouseLp/HouseSwap Solidity equity wiring to wgV + PairConfig gate landed; still need live pairConfig deploy, Rust deploy ABI/bootstrap wgV, Permit2/PM e2e, PUSD rebase settlement.
 - [P1] Pool-held PUSD: define and prove rebase settlement/allocation for House and `$PUSD`/USDG pools.
 - [P0] Bond execution: keep disabled until payout inventory, vesting/rebase ownership, per-asset capacity, haircuts and reliable RFV valuation are enforced.
 - [P0] External backing / solvency: sink-level cross-branch floor accounting landed; exogenous USDG (or equivalent) backing and true dollar solvency still not established by nominal PUSD RFV.
@@ -146,7 +146,21 @@ Date: 2026-09-05 (America/New_York). Branch: `fix/gv-spusd-guards`.
 
 - [done] House PairConfig/factory gate + docs invariant + raw-gV rejection proofs.
 - [P1] Pool-held `$PUSD` Lithe-index rebase accounting (House + `$PUSD`/USDG books). Ordinary Uni v4 reserves do not allocate drip gains to LPs.
-- [blocked-live-v4] Full House rewire: equity currency = wgV address (not market.vapurr); call PairConfig before initializePool/seed; PositionManager/Permit2 wiring for wgV; hook or settle path for rebasing PUSD; end-to-end fork tests against live Uni v4 PM.
+- [done-wiring] HouseLp/HouseSwap equity = wgV + PairConfig before init/seed (see Progress below). [blocked-live-v4] Permit2/PM e2e + Rust pairConfig deploy + bootstrap wgV + PUSD rebase hook still open.
+
+
+## Progress - HouseLp/HouseSwap equity = wgV (P1 wiring)
+
+Date: 2026-09-05 (America/New_York). Branch: `fix/gv-spusd-guards`.
+
+- `HouseLp` / `HouseSwap`: constructor takes `pairConfig`; immutables `wgV` + `pusd` from config; `requireHousePair` in constructor and again before `initializePool`/seed (`HouseLp`) or in `unlockCallback` (`HouseSwap`). No longer reads `market.vapurr()` for the equity leg. Cash leg remains `$PUSD`.
+- Compile scripts (`compile-house.mjs` / `compile-swap.mjs`) include `HousePairConfig.sol` for hex rebuild.
+- Proofs: `HouseLpWiringTest` + `HouseSwapWiringTest` (config wiring, snapshot wgV token, seed gate before mock Posm, reject zero config). Guard suite still green.
+- Docs: `HOUSE_PAIR.md` live gap narrowed to deploy/Rust/bootstrap + PUSD rebase P1.
+
+- [done] House Solidity equity currency = wgV via PairConfig; PairConfig called before init/seed path.
+- [P1 remaining] Pool-held `$PUSD` rebase settlement/allocation (interim settle hair only).
+- [LIVE GAP] Uni v4 PM/Permit2 e2e fork proofs; Rust deploy must pass `pairConfig`; bootstrap must wrap to wgV before seed; cfg book needs pairConfig/wgV addresses.
 
 
 

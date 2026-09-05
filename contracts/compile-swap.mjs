@@ -4,10 +4,13 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 const dir = path.dirname(fileURLToPath(import.meta.url));
-const src = fs.readFileSync(path.join(dir, "HouseSwap.sol"), "utf8");
+const sources = {
+  "HouseSwap.sol": { content: fs.readFileSync(path.join(dir, "HouseSwap.sol"), "utf8") },
+  "HousePairConfig.sol": { content: fs.readFileSync(path.join(dir, "HousePairConfig.sol"), "utf8") },
+};
 const input = {
   language: "Solidity",
-  sources: { "HouseSwap.sol": { content: src } },
+  sources,
   settings: {
     optimizer: { enabled: true, runs: 200 },
     evmVersion: "paris",

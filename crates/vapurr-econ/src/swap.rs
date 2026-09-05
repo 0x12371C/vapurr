@@ -1,4 +1,5 @@
-//! House Uniswap v4 exact-in swap. $VAPURR / $PUSD only.
+//! House Uniswap v4 exact-in swap. Canon: wgV / $PUSD via HousePairConfig.
+//! LIVE GAP: pulse/house_swap still approve raw V — retarget to wgV when pair_config is live.
 
 use serde_json::Value;
 
@@ -14,7 +15,9 @@ impl Client {
         if self.live_swap().is_some() {
             return Ok(self.cfg.swap.clone());
         }
-        let market = self.live_market().ok_or(EconError::NotLive)?;
+        let pair_config = self
+            .live_ca(&self.cfg.pair_config)
+            .ok_or_else(|| EconError::Rpc("need HousePairConfig (cfg.pair_config)".into()))?;
         let pm = addr_from_hex(rhc::UNI_V4_POOL_MANAGER)
             .ok_or_else(|| EconError::Rpc("pool manager".into()))?;
         let from = self.key.address.to_hex();
@@ -23,7 +26,8 @@ impl Client {
             return Err(EconError::NeedGas);
         }
         let mut bytecode = swap_bytecode()?;
-        bytecode.extend_from_slice(&vapurr_wallet::tx::abi_addr(market));
+        // Constructor: (pairConfig, pm, fee, tickSpacing) — no market.vapurr
+        bytecode.extend_from_slice(&vapurr_wallet::tx::abi_addr(pair_config));
         bytecode.extend_from_slice(&vapurr_wallet::tx::abi_addr(pm));
         bytecode.extend_from_slice(&vapurr_wallet::tx::abi_u256(rhc::UNI_V4_FEE_VOL as u128));
         bytecode.extend_from_slice(&abi_i24(rhc::UNI_V4_TICK_VOL));

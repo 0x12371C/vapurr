@@ -4,7 +4,7 @@ pragma solidity ^0.8.24;
 /// @title HousePairConfig - rebase-safe House equity/cash pairing
 /// @notice Canon: House AMM leg is **wgV / $PUSD** only (see docs/econ/HOUSE_PAIR.md).
 /// Raw rebasing gVAPURR must never appear as a Uni v4 / CPMM currency on the House book.
-/// This config is the deploy-time / factory check until HouseLp/HouseSwap are rewired off market.vapurr().
+/// HouseLp/HouseSwap take this config as immutable equity/cash SoT (wgV + ); factory still gates init.
 interface IHousePairConfig {
     function wgV() external view returns (address);
     function pusd() external view returns (address);

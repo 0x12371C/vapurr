@@ -1,9 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.24;
 
+import "./HousePairConfig.sol";
+
 /// Exact-in swap on the house Uniswap v4 pool.
-/// CANON pair = wgV / $PUSD (HOUSE_PAIR.md). LIVE GAP: still wires market.vapurr()/pusd().
+/// CANON pair = wgV / $PUSD (HOUSE_PAIR.md). Equity immutable is wgV via HousePairConfig.
 /// $PUSD is shares*index (rebasing); settle hair below is interim - full pool rebase accounting is P1.
+/// LIVE GAP: live Uni v4 PoolManager unlock/settle e2e + Rust deploy ABI for pairConfig still open.
 
 interface IERC20 {
     function transfer(address, uint256) external returns (bool);
@@ -11,10 +14,6 @@ interface IERC20 {
     function balanceOf(address) external view returns (uint256);
 }
 
-interface IMarket {
-    function vapurr() external view returns (address);
-    function pusd() external view returns (address);
-}
 
 struct PoolKey {
     address currency0;
@@ -43,8 +42,11 @@ contract HouseSwap {
     uint160 internal constant MAX_SQRT = 1461446703485210103287273052203988822378723970341;
 
     address public immutable owner;
+    IHousePairConfig public immutable pairConfig;
     IPoolManager public immutable pm;
-    IERC20 public immutable vapurr;
+    /// Equity leg: wgV (never raw gV / market.vapurr).
+    IERC20 public immutable wgV;
+    /// Cash leg: $PUSD.
     IERC20 public immutable pusd;
     uint24 public immutable fee;
     int24 public immutable tickSpacing;
@@ -60,26 +62,33 @@ contract HouseSwap {
         _locked = 1;
     }
 
-    constructor(address market_, address pm_, uint24 fee_, int24 tickSpacing_) {
-        require(market_ != address(0) && pm_ != address(0), "MKT");
+    constructor(address pairConfig_, address pm_, uint24 fee_, int24 tickSpacing_) {
+        require(pairConfig_ != address(0) && pm_ != address(0), "MKT");
+        require(fee_ > 0 && tickSpacing_ > 0, "FEE");
         owner = msg.sender;
+        pairConfig = IHousePairConfig(pairConfig_);
         pm = IPoolManager(pm_);
-        vapurr = IERC20(IMarket(market_).vapurr());
-        pusd = IERC20(IMarket(market_).pusd());
+        address equity = IHousePairConfig(pairConfig_).wgV();
+        address cash = IHousePairConfig(pairConfig_).pusd();
+        IHousePairConfig(pairConfig_).requireHousePair(equity, cash);
+        wgV = IERC20(equity);
+        pusd = IERC20(cash);
         fee = fee_;
         tickSpacing = tickSpacing_;
     }
 
+    /// sellV = true means sell equity (wgV) for .
     function swapExact(bool sellV, uint256 amountIn, uint256 minOut) external lock returns (uint256 outAmt) {
         require(amountIn > 0, "TINY");
-        IERC20 inn = sellV ? vapurr : pusd;
-        IERC20 outt = sellV ? pusd : vapurr;
+        IERC20 inn = sellV ? wgV : pusd;
+        IERC20 outt = sellV ? pusd : wgV;
         // $PUSD is shares*index. Pull then swap the balance we actually got.
         uint256 before = inn.balanceOf(address(this));
         require(inn.transferFrom(msg.sender, address(this), amountIn), "PULL");
         uint256 got = inn.balanceOf(address(this)) - before;
         require(got > 0, "TINY");
-        // Leave a hair so a rebasing $PUSD transfer still covers the settle.
+        // Leave a hair so a rebasing  transfer still covers the settle.
+        // Full pool-held $PUSD rebase allocation to LPs remains P1.
         uint256 use = got > 1e12 ? got - 1e12 : got;
         bytes memory raw = pm.unlock(abi.encode(msg.sender, sellV, use, minOut));
         outAmt = abi.decode(raw, (uint256));
@@ -101,7 +110,8 @@ contract HouseSwap {
             (address, bool, uint256, uint256)
         );
         PoolKey memory key = _key();
-        bool vIs0 = address(vapurr) == key.currency0;
+        pairConfig.requireHousePair(key.currency0, key.currency1);
+        bool vIs0 = address(wgV) == key.currency0;
         bool zeroForOne = sellV ? vIs0 : !vIs0;
         SwapParams memory sp = SwapParams({
             zeroForOne: zeroForOne,
@@ -116,7 +126,7 @@ contract HouseSwap {
     }
 
     function _key() internal view returns (PoolKey memory key) {
-        address a = address(vapurr);
+        address a = address(wgV);
         address b = address(pusd);
         if (uint160(a) < uint160(b)) {
             key.currency0 = a;
