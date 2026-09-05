@@ -22,7 +22,7 @@
     }
     .top { flex-shrink: 0; padding: 14px 22px 8px; }
     .nav {
-      display: flex; align-items: center; justify-content: flex-end; min-height: 36px;
+      display: flex; align-items: center; justify-content: flex-end; gap: 8px; min-height: 36px;
     }
     .icon-btn {
       width: 36px; height: 36px; padding: 0; border: 0; border-radius: 50%;
@@ -374,6 +374,9 @@
   <div class="app" id="app">
     <header class="top">
       <div class="nav">
+        <button class="icon-btn" id="go-lock" type="button" title="Lock wallet" aria-label="Lock wallet">
+          <svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>
+        </button>
         <button class="icon-btn" id="go-settings" type="button" title="Wallet settings" aria-label="Wallet settings">
           <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.2a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.2a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.2a1.7 1.7 0 001.1 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9c.3.6.9 1 1.5 1.1H21a2 2 0 110 4h-.2a1.7 1.7 0 00-1.4.9z"/></svg>
         </button>
@@ -548,6 +551,7 @@
       <div class="set-block">
         <label class="mono">Security</label>
         <div class="words" id="set-secret" hidden></div>
+        <button class="btn ghost" id="set-lock" type="button">Lock wallet</button>
         <button class="btn ghost" id="set-seed" type="button">Show seed</button>
         <button class="btn ghost" id="set-hex" type="button">Export key</button>
       </div>
@@ -1276,6 +1280,9 @@
     document.getElementById("gas-ban").onclick = function () { openSheet("sheet-recv"); };
     document.getElementById("backup-ban").onclick = openSettings;
     document.getElementById("go-settings").onclick = openSettings;
+    function lockWallet() { vapurr.send({ cmd: "lock-session" }); }
+    document.getElementById("go-lock").onclick = lockWallet;
+    document.getElementById("set-lock").onclick = lockWallet;
     document.getElementById("act-sec").onclick = function () {
       if (lastAct.length) openActSheet(lastAct);
     };
