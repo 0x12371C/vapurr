@@ -1332,7 +1332,7 @@ fn main() {
                         "unlock"
                     };
                     let js = format!(
-                        "window.__passcodePaint && window.__passcodePaint({{mode:{}}});",
+                        r#"(function(){{var L=window.VapurrLock;if(L){{L.onSubmit=function(pin){{window.vapurr&&vapurr.send({{cmd:"passcode-submit",code:String(pin||"")}});}};L.onSetPin=function(a,b){{window.vapurr&&vapurr.send({{cmd:"passcode-set",a:String(a||""),b:String(b||"")}});}};}}window.__passcodePaint&&window.__passcodePaint({{mode:{0}}});}})();"#,
                         serde_json::to_string(mode).unwrap_or_else(|_| "\"unlock\"".into())
                     );
                     let _ = security::eval_chrome(&page.borrow(), &js);
@@ -1397,7 +1397,7 @@ fn main() {
                             "unlock"
                         };
                         let js = format!(
-                            "window.__passcodePaint && window.__passcodePaint({{mode:{}}});",
+                            r#"(function(){{var L=window.VapurrLock;if(L){{L.onSubmit=function(pin){{window.vapurr&&vapurr.send({{cmd:"passcode-submit",code:String(pin||"")}});}};L.onSetPin=function(a,b){{window.vapurr&&vapurr.send({{cmd:"passcode-set",a:String(a||""),b:String(b||"")}});}};}}window.__passcodePaint&&window.__passcodePaint({{mode:{0}}});}})();"#,
                             serde_json::to_string(mode).unwrap_or_else(|_| "\"unlock\"".into())
                         );
                         let _ = security::eval_chrome(&page.borrow(), &js);
