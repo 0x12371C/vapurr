@@ -40,6 +40,7 @@ If you add a `vapurr://` id, add a row here in the same change.
 | `ketcharts` | `charts`, `chart` | `ketcharts.html` | DexScreener-shaped RHC pair tape. Our `/liq/api/tape` + `/liq/api/trades/{pool}`. Vela™ candles. Gecko/Paprika fill history only. **Listed** is `$PUSD` pay-to-list (`KetList.sol`) — profile (web/X/tg/bio/logo) rides with the paid tx and paints from the snap |
 | `ketbook` | `docs`, `honkit`, `book` | `ketbook.html` | Public product docs (Ketbook). Source `ketbook/`. Not the internal `docs/` folder |
 | `earn` | | `earn.html` | browsing receipts — host + HTTPS + time, sealed window with hash |
+| `bonds` | `routing`, `markets` | `bonds.html` | Product map: Cash ($PUSD/sPUSD), Equity (gV/stake), Bonds (ETH/USDG/stocks), House (wgV/$PUSD). Presentation stub — bond contracts P1. |
 | `history` | | `history.html` | |
 | `bookmarks` | | `bookmarks.html` | |
 | `cookies` | `cookie`, `jar` | `cookies.html` | |

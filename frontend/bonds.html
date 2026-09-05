@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>Bonds / Routing</title>
+  <link rel="stylesheet" href="/tokens.css"/>
+  <link rel="stylesheet" href="/chrome.css"/>
+  <style>
+    html, body { height: 100%; }
+    body {
+      overflow: auto;
+      position: relative;
+      background: var(--color-void);
+    }
+    .aura {
+      position: fixed; inset: 0; z-index: 0;
+      pointer-events: none; overflow: hidden;
+    }
+    .aura canvas { width: 100%; height: 100%; display: block; }
+    .wrap {
+      max-width: 920px;
+      margin: 0 auto;
+      padding: 36px 22px 96px;
+      position: relative;
+      z-index: 1;
+    }
+    .hero { margin-bottom: 28px; }
+    .hero .mono { color: var(--color-lime); margin-bottom: 10px; }
+    .hero h1 {
+      font-size: clamp(42px, 8vw, 64px);
+      font-weight: 600;
+      letter-spacing: -0.05em;
+      line-height: 0.95;
+    }
+    .lede {
+      margin-top: 12px;
+      color: var(--color-muted);
+      font-size: 15px;
+      line-height: 1.45;
+      max-width: 36em;
+    }
+    .lede b { color: var(--color-snow); font-weight: 600; }
+
+    .map-label {
+      margin: 8px 0 12px;
+      color: var(--color-lime);
+    }
+
+    .map {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+    @media (max-width: 640px) {
+      .map { grid-template-columns: 1fr; }
+    }
+
+    .lane {
+      text-align: left;
+      padding: 18px 18px 16px;
+      border-radius: 18px;
+      background: color-mix(in srgb, var(--color-steel) 55%, transparent);
+      backdrop-filter: blur(24px) saturate(1.5);
+      -webkit-backdrop-filter: blur(24px) saturate(1.5);
+      border: 1px solid color-mix(in srgb, var(--color-snow) 8%, transparent);
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0;
+      min-height: 168px;
+    }
+    .lane:hover {
+      background: color-mix(in srgb, var(--color-forest) 48%, transparent);
+      border-color: color-mix(in srgb, var(--color-lime) 28%, transparent);
+    }
+    .lane.focus {
+      border-color: var(--color-lime);
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-lime) 35%, transparent);
+    }
+    .lane .mono { color: var(--color-lime); }
+    .lane b.title {
+      display: block;
+      margin-top: 8px;
+      font-size: 26px;
+      font-weight: 600;
+      letter-spacing: -0.03em;
+    }
+    .lane .hint {
+      margin-top: 8px;
+      color: var(--color-muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .lane .hint b { color: var(--color-snow); font-weight: 600; }
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 14px;
+    }
+    .chip {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      color: var(--color-snow);
+      border: 1px solid var(--color-forest);
+      border-radius: 999px;
+      padding: 4px 10px;
+      background: color-mix(in srgb, var(--color-void) 35%, transparent);
+    }
+    .chip.on {
+      border-color: var(--color-lime);
+      color: var(--color-lime);
+    }
+
+    .panel {
+      margin-top: 8px;
+      padding: 20px 20px 18px;
+      border-radius: 18px;
+      background: color-mix(in srgb, var(--color-steel) 58%, transparent);
+      border: 1px solid color-mix(in srgb, var(--color-snow) 8%, transparent);
+      backdrop-filter: blur(20px) saturate(1.4);
+      -webkit-backdrop-filter: blur(20px) saturate(1.4);
+    }
+    .panel h2 {
+      font-size: 22px;
+      font-weight: 600;
+      letter-spacing: -0.03em;
+      margin: 6px 0 8px;
+    }
+    .panel .lede { margin-top: 0; margin-bottom: 16px; font-size: 14px; }
+
+    .tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .tab {
+      height: 36px;
+      padding: 0 14px;
+      border-radius: 999px;
+      border: 1px solid var(--color-forest);
+      background: color-mix(in srgb, var(--color-void) 40%, transparent);
+      color: var(--color-muted);
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .tab:hover { color: var(--color-snow); background: color-mix(in srgb, var(--color-forest) 55%, transparent); }
+    .tab.on {
+      color: var(--color-on-lime);
+      background: var(--color-lime);
+      border-color: var(--color-lime);
+    }
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    @media (max-width: 720px) {
+      .steps { grid-template-columns: 1fr; }
+    }
+    .step {
+      padding: 14px 14px 12px;
+      border-radius: 14px;
+      background: color-mix(in srgb, var(--color-void) 45%, transparent);
+      border: 1px solid color-mix(in srgb, var(--color-snow) 7%, transparent);
+    }
+    .step .mono { color: var(--color-lime); margin-bottom: 6px; }
+    .step b { display: block; font-size: 15px; margin-bottom: 4px; }
+    .step p { color: var(--color-muted); font-size: 12px; line-height: 1.4; }
+
+    .quote {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    @media (max-width: 720px) {
+      .quote { grid-template-columns: 1fr; }
+    }
+    .stat {
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: color-mix(in srgb, var(--color-forest) 35%, transparent);
+      border: 1px solid color-mix(in srgb, var(--color-lime) 18%, transparent);
+    }
+    .stat .mono { color: var(--color-muted); }
+    .stat .val {
+      margin-top: 4px;
+      font-size: 22px;
+      font-weight: 600;
+      letter-spacing: -0.03em;
+      font-variant-numeric: tabular-nums;
+    }
+    .stat .val em {
+      font-style: normal;
+      font-size: 13px;
+      color: var(--color-muted);
+      font-weight: 600;
+      margin-left: 4px;
+    }
+
+    .actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .note {
+      margin-top: 14px;
+      color: var(--color-muted);
+      font-size: 12px;
+      line-height: 1.45;
+      max-width: 42em;
+    }
+
+    .flow {
+      margin-top: 22px;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+    }
+    @media (max-width: 720px) {
+      .flow { grid-template-columns: 1fr 1fr; }
+    }
+    .flow .node {
+      padding: 12px 12px 10px;
+      border-radius: 12px;
+      border: 1px dashed color-mix(in srgb, var(--color-lime) 30%, transparent);
+      background: color-mix(in srgb, var(--color-void) 30%, transparent);
+      text-align: center;
+    }
+    .flow .node .mono { color: var(--color-lime); }
+    .flow .node b { display: block; margin-top: 4px; font-size: 14px; }
+    .flow .node span { display: block; margin-top: 4px; color: var(--color-muted); font-size: 11px; line-height: 1.35; }
+
+    html[data-theme="light"] .lane,
+    html[data-theme="light"] .panel {
+      background: color-mix(in srgb, var(--color-steel) 88%, transparent);
+    }
+  </style>
+</head>
+<body>
+  <div class="aura" aria-hidden="true"><canvas id="shader"></canvas></div>
+  <div class="wrap">
+    <div class="hero">
+      <div class="mono">routing · product map</div>
+      <h1>Cash. Equity.<br/>Bonds. House.</h1>
+      <p class="lede">Four doors normals actually use. <b>Bonds</b> turn outside assets into protocol RFV — you get <b>gV at a discount</b> after a wait.</p>
+    </div>
+
+    <div class="mono map-label">product map</div>
+    <div class="map" role="navigation" aria-label="Product map">
+      <button class="lane" type="button" data-go="vapurr://pusd" data-lane="cash">
+        <span class="mono">01 · Cash</span>
+        <b class="title">Cash</b>
+        <span class="hint">Spend and save. <b>$PUSD</b> is the dollar rail. <b>sPUSD</b> is slow-growth savings after runway.</span>
+        <div class="chips">
+          <span class="chip on">$PUSD</span>
+          <span class="chip">sPUSD</span>
+        </div>
+      </button>
+      <button class="lane" type="button" data-go="vapurr://stake" data-lane="equity">
+        <span class="mono">02 · Equity</span>
+        <b class="title">Equity</b>
+        <span class="hint">Hold <b>gV</b>. Stake for the Fed <b>3.5%/yr</b> rebase. Wrap to <b>wgV</b> before House.</span>
+        <div class="chips">
+          <span class="chip on">gV</span>
+          <span class="chip">stake</span>
+          <span class="chip">wgV</span>
+        </div>
+      </button>
+      <button class="lane focus" type="button" data-go="#bonds" data-lane="bonds">
+        <span class="mono">03 · Bonds</span>
+        <b class="title">Bonds</b>
+        <span class="hint">Park <b>ETH</b>, <b>USDG</b>, or a <b>major stock</b>. Wait. Claim discounted <b>gV</b>.</span>
+        <div class="chips">
+          <span class="chip on">ETH</span>
+          <span class="chip on">USDG</span>
+          <span class="chip on">stocks</span>
+        </div>
+      </button>
+      <button class="lane" type="button" data-go="vapurr://house" data-lane="house">
+        <span class="mono">04 · House</span>
+        <b class="title">House</b>
+        <span class="hint">Interbank desk. Equity meets cash as <b>wgV / $PUSD</b> — not raw rebasing gV.</span>
+        <div class="chips">
+          <span class="chip on">wgV</span>
+          <span class="chip on">$PUSD</span>
+        </div>
+      </button>
+    </div>
+
+    <div class="panel" id="bonds">
+      <div class="mono">bonds · v1 assets</div>
+      <h2>Bond in. Wait. Claim gV.</h2>
+      <p class="lede">Pick an asset. See discount and wait up front. Bonded value goes to <b>Fed / Treasury RFV</b>. You get equity later — not a second dollar.</p>
+
+      <div class="tabs" role="tablist" aria-label="Bond assets">
+        <button class="tab on" type="button" data-asset="ETH" role="tab" aria-selected="true">ETH</button>
+        <button class="tab" type="button" data-asset="USDG" role="tab" aria-selected="false">USDG</button>
+        <button class="tab" type="button" data-asset="AMZN" role="tab" aria-selected="false">AMZN</button>
+        <button class="tab" type="button" data-asset="TSLA" role="tab" aria-selected="false">TSLA</button>
+        <button class="tab" type="button" data-asset="AMD" role="tab" aria-selected="false">AMD</button>
+        <button class="tab" type="button" data-asset="NFLX" role="tab" aria-selected="false">NFLX</button>
+        <button class="tab" type="button" data-asset="PLTR" role="tab" aria-selected="false">PLTR</button>
+      </div>
+
+      <div class="quote" aria-live="polite">
+        <div class="stat">
+          <div class="mono">asset</div>
+          <div class="val" id="q-asset">ETH</div>
+        </div>
+        <div class="stat">
+          <div class="mono">discount</div>
+          <div class="val" id="q-discount">8<em>%</em></div>
+        </div>
+        <div class="stat">
+          <div class="mono">wait</div>
+          <div class="val" id="q-wait">5<em>d</em></div>
+        </div>
+      </div>
+
+      <div class="steps">
+        <div class="step">
+          <div class="mono">step 1</div>
+          <b>Bond the asset</b>
+          <p>Send ETH, USDG, or a listed stock into Bonds. Outside value becomes RFV.</p>
+        </div>
+        <div class="step">
+          <div class="mono">step 2</div>
+          <b>Wait the vest</b>
+          <p>Clock is on the ticket. No instant equity. Copy: wait → then claim.</p>
+        </div>
+        <div class="step">
+          <div class="mono">step 3</div>
+          <b>Claim gV</b>
+          <p>Receive discounted gV. Stake, or wrap to wgV and trade on House.</p>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn" type="button" id="bond-cta" disabled title="Contracts P1">Bond <span id="cta-asset">ETH</span></button>
+        <button class="btn-ghost" type="button" data-go="vapurr://house">Open House</button>
+        <button class="btn-ghost" type="button" data-go="vapurr://stake">Equity desk</button>
+        <button class="btn-ghost" type="button" data-go="vapurr://pusd">Cash / $PUSD</button>
+      </div>
+      <p class="note">Stub UI — live bond contracts are P1. Quotes above are presentation placeholders so the surface is clear. RFV lands in Fed/Treasury; House quotes <b>wgV/$PUSD</b>.</p>
+    </div>
+
+    <div class="flow" aria-label="RFV flow">
+      <div class="node">
+        <div class="mono">in</div>
+        <b>Bond asset</b>
+        <span>ETH · USDG · stocks</span>
+      </div>
+      <div class="node">
+        <div class="mono">treasury</div>
+        <b>Fed RFV</b>
+        <span>Reserves / POL battery</span>
+      </div>
+      <div class="node">
+        <div class="mono">out</div>
+        <b>gV claim</b>
+        <span>Discount after wait</span>
+      </div>
+      <div class="node">
+        <div class="mono">market</div>
+        <b>House</b>
+        <span>wgV / $PUSD</span>
+      </div>
+    </div>
+  </div>
+  <script src="/ipc.js"></script>
+  <script src="/shader.js"></script>
+  <script>
+    if (window.startShader) startShader(document.getElementById("shader"));
+
+    var DEMO = {
+      ETH:  { discount: "8%",  wait: "5d" },
+      USDG: { discount: "5%",  wait: "3d" },
+      AMZN: { discount: "7%",  wait: "7d" },
+      TSLA: { discount: "9%",  wait: "7d" },
+      AMD:  { discount: "8%",  wait: "7d" },
+      NFLX: { discount: "7%",  wait: "7d" },
+      PLTR: { discount: "10%", wait: "7d" }
+    };
+
+    function paintAsset(asset) {
+      var row = DEMO[asset] || DEMO.ETH;
+      document.getElementById("q-asset").textContent = asset;
+      document.getElementById("q-discount").innerHTML = row.discount.replace("%", "<em>%</em>");
+      var w = row.wait;
+      document.getElementById("q-wait").innerHTML = w.replace(/d$/, "<em>d</em>");
+      document.getElementById("cta-asset").textContent = asset;
+      document.querySelectorAll(".tab").forEach(function (t) {
+        var on = t.getAttribute("data-asset") === asset;
+        t.classList.toggle("on", on);
+        t.setAttribute("aria-selected", on ? "true" : "false");
+      });
+    }
+
+    document.querySelectorAll(".tab").forEach(function (el) {
+      el.onclick = function () { paintAsset(el.getAttribute("data-asset")); };
+    });
+
+    document.querySelectorAll("[data-go]").forEach(function (el) {
+      el.onclick = function () {
+        var go = el.getAttribute("data-go");
+        if (!go) return;
+        if (go.charAt(0) === "#") {
+          var target = document.querySelector(go);
+          if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+          return;
+        }
+        if (window.vapurr && vapurr.go) vapurr.go(go);
+      };
+    });
+
+    paintAsset("ETH");
+  </script>
+</body>
+</html>

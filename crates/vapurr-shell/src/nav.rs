@@ -41,6 +41,7 @@ pub(crate) fn pane_url(id: &str) -> String {
         "trenches" | "tape" | "hood-tape" => "trenches.html",
         "ketbook" | "docs" | "honkit" | "book" => "ketbook.html",
         "earn" => "earn.html",
+        "bonds" | "routing" | "markets" => "bonds.html",
         "history" => "history.html",
         "bookmarks" => "bookmarks.html",
         "cookies" | "cookie" | "jar" => "cookies.html",
