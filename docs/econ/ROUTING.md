@@ -21,7 +21,7 @@ Relic lock 2026-09-05. Living truth for Fed/branches split.
 
 ## Inflows Ã¢â€ â€™ RFV battery
 
-- House fees, Lithe + mint-spread, Oliver interest/liq surplus, bonds (exogenous $PUSD) Ã¢â€ â€™ treasury cash / POL.
+- House fees, Lithe + mint-spread, Oliver interest/liq surplus, bonds (ETH / USDG / major stocks — see BONDS.md) → treasury cash / POL.
 
 ## Outflows
 
