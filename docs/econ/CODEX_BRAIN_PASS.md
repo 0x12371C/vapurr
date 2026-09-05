@@ -36,8 +36,8 @@ Date: 2026-09-05 (America/New_York). Branch: `fix/gv-spusd-guards` (from `fix/ol
 - [attack] Wrapping gV fixes only one House leg: PUSD itself rebases. Both wgV/PUSD and PUSD/USDG require explicit handling of pool-held PUSD rebases; ordinary swap accounting cannot be assumed to allocate those gains correctly.
 - [done] `SPUSD` / `wgVAPURR` virtual+dead shares + min deposit/wrap (see Progress — P0 fix #2). Dust remittance skim bounded; CD time-locks still TODO for full skim resistance.
 - [P0-bug] Self-issued PUSD reserves and V inventory do not establish exogenous dollar backing. The minimum 2% V swap spread is not ~par USDG redemption; a nominal PUSD runway floor cannot establish dollar solvency, and Lithe drip can consume the supposedly retained reserve.
-- [attack] Oliver uses owner-fed `vapurrRate`, refreshed only on market swaps, without freshness or collateral-price safeguards. Stale or inflated valuations permit excessive borrowing; wrapping collateral would not repair this oracle dependency.
-- [P0-bug] Oliver has no bad-debt write-down: exhausted collateral can leave irrecoverable debt inside supplier NAV while reserve fees accrue. Define loss allocation and bounded LOLR funding before expansion; gV/wgV collateral also remains unimplemented and needs redemption-aware valuation.
+- [done] Oliver oracle freshness + conservative credit rate + feed jump clamp (P0 fix #4). Stale rate blocks borrow/withdrawV/liq sizing. See Progress - P0 fix #4.
+- [done] Oliver bad-debt absorb + stub Fed backstop (P0 fix #4). gV/wgV collateral still unimplemented / needs redemption-aware valuation (out of slice).
 - [partial] Oliver auto-remit is try/catch isolated (`remitReserveFromAccrue`); sink revert no longer freezes repay/withdraw/liq. `remitReserve` now `_requireLtv(owner)` after exit. Lithe auto-remit isolation still open.
 - [merge-blocker] Executable bonds must remain gated until payout inventory, vesting/rebase ownership, per-asset capacity, haircuts and reliable valuation are defined; stocks additionally need market-closure and corporate-action handling. Discounts against manipulable equity prices can overissue gV claims for inadequate RFV.
 - [confusion] Keep ETH/USDG/stock bonds visible and printer mechanics hidden; never hide execution availability, vesting, capacity or loss exposure. gV already earns rebases, contradicting "claim gV, then stake"; TVL must exclude recursive double counting, and YOTC must disclose costs and conditional yield assumptions.
@@ -59,5 +59,17 @@ Date: 2026-09-05 (America/New_York). Branch: `fix/gv-spusd-guards` (slice also o
 - [done] `computeSwap` allows inventory redeem after one-sided flow (no false THIN). Proofs: `LitheMintP0Test`.
 - [done] `market_abi` non-sticky fail-open detect + committed bridge module.
 - [partial] Mint authority: design doc landed; full Fed+market one-token unify still open.
+
+## Progress - Oliver oracle freshness + bad-debt path (P0 fix #4)
+
+Date: 2026-09-05 (America/New_York). Branch: fix/gv-spusd-guards.
+
+- PusdMarket: rateUpdatedAt heartbeat on feed + first-spot _spot; creditVapurrRate(maxAge) requires freshness and prefers lower of live vs pending; MAX_FEED_JUMP_WAD (50%) rejects spiked feeds.
+- PusdLoop (Oliver): _px() uses creditVapurrRate(MAX_RATE_AGE=1h) so borrow / withdrawV / liq sizing revert STALE on stale oracle; snapshot falls back to raw rate if stale.
+- Bad debt: absorbBadDebt sweeps dust collat, try/catches optional IFedBackstop.coverBadDebt, then socializes residual (badDebtSocialized); does not freeze repay for others.
+- Tests: OliverOracleBadDebtTest (test_stale_rate_blocks_borrow, test_stale_rate_blocks_withdraw_v, test_stale_blocks_liquidate_sizing, test_pending_devaluation_tightens_before_swap, test_feed_jump_clamp_rejects_spike, test_absorb_bad_debt_does_not_freeze_repay, test_absorb_with_reverting_backstop_still_clears, test_absorb_prefers_backstop_cover, test_fresh_feed_restores_borrow_room_check).
+
+- [done] Oliver oracle freshness + conservative pending devaluation + feed jump clamp. Proofs: OliverOracleBadDebtTest.
+- [done] Bounded LOLR hook (IFedBackstop) + socialized write-down via absorbBadDebt. Proofs: OliverOracleBadDebtTest.
 
 MERGE_REC: hold — solvency bugs, split mint authority and incomplete ABI integration block merge.

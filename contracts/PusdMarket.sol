@@ -165,6 +165,10 @@ contract PusdMarket {
     uint256 public vapurrRate;
     uint256 public pendingRate;
     uint256 public liveBlock;
+    /// Last oracle heartbeat (`feed`) or first-spot apply. Oliver credit paths require freshness.
+    uint256 public rateUpdatedAt;
+    /// Max relative jump per `feed` vs live rate (0.5e18 = 50%). Rejects inflated spikes.
+    uint256 public constant MAX_FEED_JUMP_WAD = 5e17;
 
     /// stability-pool math (internal).
     int256 public poolDelta;
@@ -193,16 +197,36 @@ contract PusdMarket {
         vapurrRate = vapurrRate_;
         pendingRate = vapurrRate_;
         liveBlock = block.number;
+        rateUpdatedAt = block.timestamp;
         lastReplenish = block.number;
         lastAccrue = block.timestamp;
         vapurr.mint(msg.sender, GENESIS);
     }
 
     /// Oracle vote. Live rate snapshots on first swap of the block (first-spot).
+    /// Heartbeats `rateUpdatedAt` immediately so credit freshness does not wait on a swap.
     function feed(uint256 rate) external onlyOwner {
         require(rate > 0, "PRICE");
+        if (vapurrRate > 0) {
+            uint256 hi = vapurrRate + (vapurrRate * MAX_FEED_JUMP_WAD) / DEC;
+            uint256 lo = vapurrRate - (vapurrRate * MAX_FEED_JUMP_WAD) / DEC;
+            require(rate <= hi && rate >= lo, "JUMP");
+        }
         pendingRate = rate;
+        rateUpdatedAt = block.timestamp;
         emit Feed(rate);
+    }
+
+    /// Conservative credit oracle for Oliver: requires fresh heartbeat; prefers lower of live vs pending
+    /// so a pending devaluation tightens LTV before the next swap applies first-spot.
+    function creditVapurrRate(uint256 maxAge) external view returns (uint256) {
+        require(maxAge > 0, "AGE");
+        require(rateUpdatedAt > 0 && block.timestamp >= rateUpdatedAt, "STALE");
+        require(block.timestamp - rateUpdatedAt <= maxAge, "STALE");
+        uint256 px = vapurrRate;
+        if (pendingRate > 0 && pendingRate < px) px = pendingRate;
+        require(px > 0, "PRICE");
+        return px;
     }
 
     function setRemittance(address sink, address runway_, bool autoRemit) external onlyOwner {
@@ -249,6 +273,7 @@ contract PusdMarket {
         if (liveBlock != block.number) {
             if (pendingRate > 0) vapurrRate = pendingRate;
             liveBlock = block.number;
+            rateUpdatedAt = block.timestamp;
         }
         require(vapurrRate > 0, "PRICE");
     }

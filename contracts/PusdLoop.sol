@@ -20,6 +20,13 @@ interface IMarket {
     function vapurr() external view returns (address);
     function pusd() external view returns (address);
     function vapurrRate() external view returns (uint256);
+    function creditVapurrRate(uint256 maxAge) external view returns (uint256);
+}
+
+/// Optional bounded LOLR / Fed backstop. Stub-safe: vault try/catches failures.
+interface IFedBackstop {
+    /// Pull/cover up to `need` $PUSD into `vault`. Returns assets actually delivered.
+    function coverBadDebt(address vault, uint256 need) external returns (uint256 funded);
 }
 
 contract PusdLoop {
@@ -40,6 +47,8 @@ contract PusdLoop {
     /// Looping does not raise cash â€” only real supply / Lithe drip does.
     uint256 public constant BOOT_CASH = 100_000 * DEC;
     uint256 public constant MAX_STEPS = 16;
+    /// Max age of market oracle heartbeat for borrow / withdraw / liq sizing.
+    uint256 public constant MAX_RATE_AGE = 1 hours;
 
     address public immutable owner;
     IMarket public immutable market;
@@ -51,10 +60,13 @@ contract PusdLoop {
     uint256 public totalBorrowAssets;
     uint256 public lastAccrue;
     uint256 private _locked = 1;
+    /// Cumulative socialized bad debt (written down without backstop cover).
+    uint256 public badDebtSocialized;
 
     IRemittance public remittance; // surplus sink (RemittanceSink / sPUSD)
     IRunwayView public runway; // optional floor gate before remit
     bool public remitOnAccrue; // when true, _accrue best-effort pushes reserve cash to sink
+    IFedBackstop public backstop; // optional bounded LOLR cover
 
     mapping(address => uint256) public supplyShares;
     mapping(address => uint256) public borrowShares;
@@ -72,6 +84,9 @@ contract PusdLoop {
     event Accrue(uint256 interest, uint256 borrows);
     event RemittanceSet(address indexed sink, address indexed runway_, bool autoRemit);
     event Remitted(address indexed sink, uint256 assets, uint256 shares);
+    event BackstopSet(address indexed backstop);
+    event BadDebtCovered(address indexed user, address indexed backstop, uint256 covered);
+    event BadDebtWritten(address indexed user, uint256 written);
 
     modifier lock() {
         require(_locked == 1, "LOCK");
@@ -100,6 +115,12 @@ contract PusdLoop {
         runway = IRunwayView(runway_);
         remitOnAccrue = autoRemit;
         emit RemittanceSet(sink, runway_, autoRemit);
+    }
+
+    function setBackstop(address backstop_) external {
+        require(msg.sender == owner, "OWN");
+        backstop = IFedBackstop(backstop_);
+        emit BackstopSet(backstop_);
     }
 
     /// Push owner reserve supply (RESERVE_BPS share claim) out as $PUSD to remittance sink.
@@ -307,6 +328,66 @@ contract PusdLoop {
         emit Liquidate(user, msg.sender, got, vOut, pOut);
     }
 
+    /// Resolve residual bad debt when liq cannot clear (underwater, collat < debt).
+    /// Sweeps dust collat, tries optional Fed backstop, then socializes remainder.
+    /// Does not freeze repay/borrow for others - only clears the underwater account.
+    function absorbBadDebt(address user) external lock {
+        require(user != address(0), "USER");
+        _accrue();
+        // Freshness required so underwater status is not an artifact of a stale inflated rate.
+        uint256 px = _px();
+        uint256 debt = _debtOf(user);
+        require(debt > 0, "DEBT");
+        uint256 cv = _collatValuePreview(user, _assetsOf(user), px);
+        require(debt * 10_000 > cv * LLTV_BPS, "LIQ");
+        require(cv < debt, "COVERED");
+
+        // Sweep remaining collat: V to caller; P supply shares burned in-vault (cash stays).
+        uint256 vHave = collatV[user];
+        if (vHave > 0) {
+            collatV[user] = 0;
+            require(vapurr.transfer(msg.sender, vHave), "VAPURR");
+        }
+        uint256 sHave = supplyShares[user];
+        if (sHave > 0) {
+            supplyShares[user] = 0;
+            totalSupplyShares -= sHave;
+        }
+
+        uint256 covered = _tryBackstopCover(user, debt);
+        if (covered > 0) {
+            _burnDebt(user, covered, debt);
+            emit BadDebtCovered(user, address(backstop), covered);
+            debt = _debtOf(user);
+            if (debt == 0) return;
+        }
+
+        uint256 sh = borrowShares[user];
+        borrowShares[user] = 0;
+        totalBorrowShares -= sh;
+        if (debt >= totalBorrowAssets) {
+            totalBorrowAssets = 0;
+            if (totalBorrowShares > 0) totalBorrowShares = 0;
+        } else {
+            totalBorrowAssets -= debt;
+        }
+        badDebtSocialized += debt;
+        emit BadDebtWritten(user, debt);
+    }
+
+    function _tryBackstopCover(address /* user */, uint256 need) internal returns (uint256 funded) {
+        if (address(backstop) == address(0) || need == 0) return 0;
+        uint256 before = pusd.balanceOf(address(this));
+        try backstop.coverBadDebt(address(this), need) returns (uint256 got) {
+            uint256 balAfter = pusd.balanceOf(address(this));
+            funded = balAfter > before ? balAfter - before : 0;
+            if (got < funded) funded = got;
+            if (funded > need) funded = need;
+        } catch {
+            funded = 0;
+        }
+    }
+
     function _burnDebt(address u, uint256 got, uint256 debt) internal {
         uint256 dSh = _debtSharesForAssets(got);
         uint256 dHave = borrowShares[u];
@@ -392,7 +473,12 @@ contract PusdLoop {
             : (rate * s.util / DEC) * (10_000 - RESERVE_BPS) / 10_000 * 10_000 / DEC;
         s.ltvBps = LTV_BPS;
         s.lltvBps = LLTV_BPS;
-        s.px = market.vapurrRate();
+        // Snapshot prefers fresh credit rate; falls back to raw rate if heartbeat stale.
+        try market.creditVapurrRate(MAX_RATE_AGE) returns (uint256 fresh) {
+            s.px = fresh;
+        } catch {
+            s.px = market.vapurrRate();
+        }
         s.supplied = _assetsOfPreview(a, cash, borrows);
         s.collatV_ = collatV[a];
         s.debt = _debtOfPreview(a, borrows);
@@ -478,7 +564,8 @@ contract PusdLoop {
     }
 
     function _px() internal view returns (uint256) {
-        return market.vapurrRate();
+        // Borrow / withdraw / liq sizing reject stale oracle (STALE).
+        return market.creditVapurrRate(MAX_RATE_AGE);
     }
 
     function _mintSupply(address u, uint256 assets, bool alreadyIn) internal returns (uint256 sh) {
