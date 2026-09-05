@@ -16,7 +16,7 @@ Living owner board. Snapshot: `docs/SNAPSHOT.md`. Flash: `docs/ORG_FLASH.md`.
 
 | Code signing | Relic + House | **P0 SHIP BLOCKER** - unsigned Defender hit (`NotSigned` on Programs exe). Wallet IPC hardening in-tree; Relic hostile-page retest open — `docs/RELEASE_REVIEW_2026-09-04.md`. | OV/Artifact Signing; `pack.ps1` must sign; MSFT FP; Relic security retest before public ship |
 
-| Build / pack | House | **1.1.9** Programs Display+FileVersion live rev `41df999` (~17:47 ET); AppData channel **1.1.9**; TSL `vapurr/channel/manifest.json` **404**; **NotSigned**. Hold public pack until signed + Relic security bar. | Signed 1.1.10 pack to TSL after Relic retest; restore public channel manifest |
+| Build / pack | House | **1.1.9** Programs Display+FileVersion live; AppData channel **1.1.9** rev `586d9d0` (~19:09 ET, sha `D9A53426...`); TSL `vapurr/channel/manifest.json` **404**; **NotSigned**. Hold public pack until signed + Relic security bar. | Signed 1.1.10 pack to TSL after Relic retest; restore public channel manifest |
 
 | Media hosting | vapurrbot + TSL | Ketflix `TRAILER_BASE` ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ thesecretlab.app; CDN 404 until upload | sync `frontend/ketflix/trailers/*.mp4`; see HOSTING.md |
 
