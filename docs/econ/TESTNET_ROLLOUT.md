@@ -33,7 +33,7 @@ Execute in order. Record each address in `docs/STATUS.md` only after a successfu
 
 ### 1. Fed V + gV + RebasePolicy (dynamic 1–9%) — [IN SCRIPT]
 
-- [x] Deploy `VapurrToken` (Fed V) — in `TestnetRollout._deployCore`
+- [x] Deploy `VapurrToken` (Fed V) — in `TestnetRolloutDeploy`
 - [x] Deploy `RebasePolicy` (floor **1%/yr**, ceiling **9%/yr**, mid **3.5%** unbound — see `POLICY_RATE.md`)
 - [x] Deploy `gVAPURR`; `policy.bindGV(gV)`
 - [x] **Do not** `setMinter(gV)` until genesis mint + DevFund allocation complete (enforced by step order)
@@ -60,12 +60,14 @@ Execute in order. Record each address in `docs/STATUS.md` only after a successfu
 - [x] `policy.bindBondMarket(bonds)` for dynamic 1–9% rate
 - [ ] Live valuation oracle / capacity ops after cutover (params env-tunable: `BOND_USDG_CAPACITY`, `BOND_TREASURY`, `USDG`)
 
-### 5. Remittance + savings — [IN SCRIPT] + [MANUAL]
+### 5. Remittance + savings — [IN SCRIPT]
 
 - [x] Deploy / wire `RemittanceSink` + `RunwayFloor`
 - [x] `market.setRemittance(sink, runway, autoRemit)` + Oliver same sink/floor
-- [ ] `SavingsRouter` / sPUSD / CD as per `EARNINGS_ENGINE.md` (post-floor split) — **[MANUAL]** `sink.setForward(...)`
-- [x] Not auto-wired by CanonicalLitheFactory — now composed in rollout script (forward still initiator)
+- [x] Deploy `SPUSD` + `SpusdCd` + `SavingsRouter(sink, liquid, cd)`
+- [x] `sink.setForward(savingsRouter)` — post-floor split per `EARNINGS_ENGINE.md` / `SPUSD.md`
+- [x] **Starts DISABLED** (`setAllocation(false, 0)`) — safe default until liquid shares are seeded / operator enables
+- [ ] Operator enable + seed liquid vault (or all-CD allocation) before first `forwardSurplus` — **[MANUAL]** post-deploy
 
 ### 6. DevFund (200k stream → Oliver collateral only) — [IN SCRIPT]
 
@@ -81,18 +83,22 @@ Execute in order. Record each address in `docs/STATUS.md` only after a successfu
 - [x] Ban USDG / PUSD as exogenous pair legs (registry constructor)
 - [ ] Optional minimal POL seed (`SEED_POL=1` / `seedPol_`) — off by default in dry-run
 
-### 8. Minter handoff — [IN SCRIPT]
+### 8. Minter handoff + cutover inventory — [IN SCRIPT]
 
 - [x] Dual-minter handoff (match `CanonicalLitheFactory` / `MINT_AUTHORITY.md`):
-  - Genesis mint complete (bootstrap float + DevFund 200k) **before** policy handoff
+  - Genesis mint complete (bootstrap float + DevFund 200k + optional cutover inventory) **before** policy handoff
   - `canonicalV.setMarketMinter(Lithe)` — Lithe seigniorage printer (while deployer still holds policy minter)
   - `canonicalV.setMinter(gV)` — gV policy inflate 1–9%
   - No Lithe redeem inventory fund — redeem mints V via `marketMinter`
 - [x] Policy owner = rollout owner
+- [x] `LegacyVConverter` + `LitheCutoverMigrator` composed like factory:
+  - **Dry-run (CONFIRM unset):** local mock legacy market/V if `LEGACY_*` unset — **not** live gen-4 addresses
+  - **Live (`CONFIRM_TESTNET_DEPLOY=1`):** requires `LEGACY_MARKET` + `LEGACY_V` + `LEGACY_V_SUPPLY` (verified vs `vapurr()` / `totalSupply()`); otherwise cutover skipped (no invented addresses)
+  - Converter funded 1:1 with canonical V inventory; migrator constructed against Lithe proxy
 - [ ] Snapshot desk ABI (`snapshot(address)` 12 words) against proxy on live chain
-- [ ] Legacy converter / migrator inventory — **[MANUAL]** cutover companion when gen-4 supply known (not in this script; factory path)
+- [ ] Migrator fork verify against real gen-4 before CutoverDeploy — **[MANUAL]**
 
-### 9. House / wgV follow-up (not in factory) — [FOLLOW-UP]
+### 9. House / wgV follow-up (not in factory) — [FOLLOW-UP] / manual next
 
 - [ ] House pairs are **wgV / $PUSD** (`HOUSE_PAIR.md`, `WGV_HOUSE.md`) — not raw gV
 - [ ] Deploy / wire `HousePairConfig` + House Uni path **after** core cutover
@@ -121,10 +127,11 @@ forge script script/VanityCreate2Hunt.s.sol:VanityCreate2Hunt -vv
 
 # LIVE broadcast — explicit gate required
 $env:CONFIRM_TESTNET_DEPLOY = "1"
+# Also set LEGACY_MARKET / LEGACY_V / LEGACY_V_SUPPLY for cutover inventory (else skipped)
 # forge script script/TestnetRollout.s.sol:TestnetRollout --rpc-url $TESTNET_RPC --broadcast
 ```
 
-Optional env (dry-run deploys MockUsdg / mock exo legs when unset): `USDG`, `EXO_ETH`, `EXO_NVDA`, `EXO_AMD`, `BOOTSTRAP_V`, `RUNWAY_FLOOR`, `BOND_USDG_CAPACITY`, `BOND_TREASURY`, `DEVFUND_RECIPIENT`, `SEED_POL`, `AUTO_REMIT`, `ROLLOUT_OWNER`, `LITHE_RATE_WAD`.
+Optional env (dry-run deploys MockUsdg / mock exo legs when unset): `USDG`, `EXO_ETH`, `EXO_NVDA`, `EXO_AMD`, `BOOTSTRAP_V`, `RUNWAY_FLOOR`, `BOND_USDG_CAPACITY`, `BOND_TREASURY`, `DEVFUND_RECIPIENT`, `SEED_POL`, `AUTO_REMIT`, `ROLLOUT_OWNER`, `LITHE_RATE_WAD`, `CD_COUPON_BPS`, `CD_BREAK_FEE_BPS`, `CD_TERM`, `LEGACY_MARKET`, `LEGACY_V`, `LEGACY_V_SUPPLY`.
 
 Proxy upgrade proofs:
 
@@ -158,21 +165,23 @@ Captured from `forge script script/TestnetRollout.s.sol:TestnetRollout -vv` (CON
 3. Oliver (`PusdLoop`) behind market proxy
 4. BondMarket (USDG BondAssetTag only) + `policy.bindBondMarket`
 5. RemittanceSink + RunwayFloor + `setRemittance` on Lithe + Oliver
-6. Genesis mint DevFund 200k (+ optional `BOOTSTRAP_V`) **before** `setMinter(gV)`
-7. LaunchBootstrap: DevFundStream start + V/ETH+V/NVDA+V/AMD
-8. Dual-minter: `setMarketMinter(Lithe)` then `setMinter(gV)` (no Lithe redeem inventory)
+6. **SavingsRouter + SPUSD + SpusdCd** + `sink.setForward` — **starts DISABLED**
+7. Genesis mint DevFund 200k (+ optional `BOOTSTRAP_V`) + cutover converter inventory **before** `setMinter(gV)`
+8. **LegacyVConverter + LitheCutoverMigrator** (factory-shaped; dry-run mocks if `LEGACY_*` unset)
+9. LaunchBootstrap: DevFundStream start + V/ETH+V/NVDA+V/AMD
+10. Dual-minter: `setMarketMinter(Lithe)` then `setMinter(gV)` (no Lithe redeem inventory)
 
 **Still manual / follow-up:**
 
-- SavingsRouter / sPUSD / CD (`sink.setForward`)
-- House / wgV
-- LegacyVConverter + migrator when cutting over gen-4 supply
+- Enable SavingsRouter + seed liquid vault (or all-CD) before first `forwardSurplus`
+- House / wgV (**manual next** — not factory)
+- Live `LEGACY_*` env for real gen-4 cutover inventory (no invented addresses)
 - Vanity land via STATUS deployer nonce-0 (or CREATE2 hunt)
-- Relic-approved CutoverDeploy + UI address book
+- Relic-approved CutoverDeploy + UI address book + migrator fork verify
 
 HONEST: gen-4 remains live on 46630 until Relic-approved CutoverDeploy. Do not invent live gen-5 addresses here.
 
-**Last dry-run (2026-09-05 ~1:55pm ET):** `forge script script/TestnetRollout.s.sol:TestnetRollout -vv` from `contracts/` — **exit 0**, `CONFIRM_TESTNET_DEPLOY 0`, no broadcast. Local simulate composed Fed V/gV/policy, Lithe UUPS proxy, Oliver, BondMarket(USDG)+bindBondMarket, RemittanceSink+RunwayFloor+setRemittance, genesis DevFund 200k, LaunchBootstrap (DevFundStream + V/ETH+V/NVDA+V/AMD), dual-minter handoff. Gas used ~33.4M (full local simulate). Vanity MISS expected off STATUS deployer nonce-0 path. No live gen-5 addresses — dry-run only.
+**Last dry-run (2026-09-05 ~2:05pm ET):** `forge script script/TestnetRollout.s.sol:TestnetRollout -vv` from `contracts/` — **exit 0**, `CONFIRM_TESTNET_DEPLOY 0`, no broadcast. Local simulate composed prior stack + SPUSD/SpusdCd/SavingsRouter (`sink.setForward`, **savings enabled 0 / cdBps 0**), + LegacyVConverter+LitheCutoverMigrator (dry-run mock legacy, inventory 1e6 V). Gas used ~44.7M. Vanity MISS expected off STATUS deployer nonce-0 path. No live gen-5 addresses — dry-run only.
 
 ## Related
 
@@ -183,5 +192,6 @@ HONEST: gen-4 remains live on 46630 until Relic-approved CutoverDeploy. Do not i
 - `POLICY_RATE.md` — 1–9% bond-utilization policy
 - `DEV_FUND.md` — 200k → Oliver collateral
 - `BONDS.md` / `ROUTING.md` — USDG bond-only lock
+- `SPUSD.md` / `EARNINGS_ENGINE.md` — savings forward + post-floor split
 - `TESTNET_SHAPE.md` — historical LP shape (gen-4 context)
-- Contracts: `PusdMarketFedUpgradeable`, `proxy/ERC1967Proxy`, `LaunchBootstrap`, `CanonicalLitheFactory`, `BondMarket`, `Remittance`
+- Contracts: `PusdMarketFedUpgradeable`, `proxy/ERC1967Proxy`, `LaunchBootstrap`, `CanonicalLitheFactory`, `BondMarket`, `Remittance`, `SavingsRouter`, `SPUSD`, `SpusdCd`, `LegacyVConverter`, `LitheCutoverMigrator`

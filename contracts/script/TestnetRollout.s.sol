@@ -11,6 +11,15 @@ import {BondMarket, BondAssetTag} from "../BondMarket.sol";
 import {RunwayFloor, RemittanceSink} from "../Remittance.sol";
 import {LaunchBootstrap} from "../LaunchBootstrap.sol";
 import {MockUsdg} from "../MockUsdg.sol";
+import {SPUSD} from "../SPUSD.sol";
+import {SpusdCd} from "../SpusdCd.sol";
+import {SavingsRouter} from "../SavingsRouter.sol";
+import {LegacyVConverter} from "../LegacyVConverter.sol";
+import {ILegacyLitheMarket, LitheCutoverMigrator} from "../LitheCutoverMigrator.sol";
+
+interface ILegacyVSupply {
+    function totalSupply() external view returns (uint256);
+}
 
 /// Minimal exo ERC20 stand-in for dry-run / testnet when ENV legs are unset.
 contract RolloutMockErc20 {
@@ -47,10 +56,27 @@ contract RolloutMockErc20 {
     }
 }
 
+/// Dry-run-only legacy Lithe surface so LitheCutoverMigrator can construct without live gen-4 addresses.
+contract RolloutMockLegacyMarket {
+    address public vapurr;
+    address public pusd;
+
+    constructor(address vapurr_, address pusd_) {
+        require(vapurr_ != address(0) && pusd_ != address(0), "TO");
+        vapurr = vapurr_;
+        pusd = pusd_;
+    }
+
+    function swapPusdToV(uint256) external pure returns (uint256, uint256) {
+        revert("MOCK");
+    }
+}
+
 /// Non-script executor so custody can use address(this) (forge forbids that on Script).
-/// Composes CanonicalLitheFactory order + LaunchBootstrap companion.
+/// Composes CanonicalLitheFactory order + LaunchBootstrap companion + savings forward + cutover inventory.
 contract TestnetRolloutDeploy {
     uint256 public constant DEV_FUND_AMOUNT = 200_000 ether;
+    uint256 public constant DRY_RUN_LEGACY_SUPPLY = 1_000_000 ether;
 
     VapurrToken public v;
     RebasePolicy public policy;
@@ -62,11 +88,21 @@ contract TestnetRolloutDeploy {
     RunwayFloor public runway;
     RemittanceSink public sink;
     LaunchBootstrap public boot;
+    SPUSD public spusd;
+    SpusdCd public spusdCd;
+    SavingsRouter public savingsRouter;
+    LegacyVConverter public converter;
+    LitheCutoverMigrator public migrator;
     address public litheProxy;
     address public usdg;
     address public exoEth;
     address public exoNvda;
     address public exoAmd;
+    address public legacyMarket;
+    address public legacyV;
+    uint256 public legacyVSupply;
+    bool public cutoverWired;
+    bool public cutoverIsDryRunMock;
 
     struct Env {
         address usdg;
@@ -79,11 +115,20 @@ contract TestnetRolloutDeploy {
         uint256 runwayFloor;
         bool seedPol;
         bool autoRemit;
+        address legacyMarket;
+        address legacyV;
+        uint256 legacyVSupply;
+        uint256 cdCouponBps;
+        uint256 cdBreakFeeBps;
+        uint256 cdTerm;
+        bool allowDryRunCutoverMock;
     }
 
     function execute(uint256 rate, address owner_, uint256 bootstrapV, Env calldata env) external {
         _deployFedLitheOliver(rate);
         _wireBondsRemit(owner_, env);
+        _wireSavings(owner_, env);
+        _wireCutover(env);
         _genesisBootstrapHandoff(owner_, bootstrapV, env);
     }
 
@@ -118,8 +163,66 @@ contract TestnetRolloutDeploy {
         oliver.setRemittance(address(sink), address(runway), env.autoRemit);
     }
 
+    /// Savings path per EARNINGS_ENGINE / SPUSD.md: sink -> SavingsRouter -> SPUSD + SpusdCd.
+    /// Starts DISABLED (cdBps=0) so empty liquid vault cannot receive first-depositor windfall.
+    function _wireSavings(address owner_, Env calldata env) internal {
+        address pusd = address(market.pusd());
+        uint256 coupon = env.cdCouponBps == 0 ? 500 : env.cdCouponBps;
+        uint256 breakFee = env.cdBreakFeeBps == 0 ? 200 : env.cdBreakFeeBps;
+        uint256 term_ = env.cdTerm == 0 ? 30 days : env.cdTerm;
+        spusd = new SPUSD(pusd);
+        spusdCd = new SpusdCd(pusd, coupon, breakFee, term_);
+        savingsRouter = new SavingsRouter(address(sink), address(spusd), address(spusdCd));
+        // Contract constructor enables by default; safe rollout default is disabled until seeded.
+        savingsRouter.setAllocation(false, 0);
+        sink.setForward(address(savingsRouter));
+        spusd.setOwner(owner_);
+        spusdCd.setOwner(owner_);
+        savingsRouter.setOwner(owner_);
+    }
+
+    /// Cutover inventory as CanonicalLitheFactory: LegacyVConverter + LitheCutoverMigrator.
+    /// Live addresses only via LEGACY_* env (verified). Dry-run may use local mocks — never hardcoded gen-4.
+    function _wireCutover(Env calldata env) internal {
+        address legacyMarket_ = env.legacyMarket;
+        address legacyV_ = env.legacyV;
+        uint256 supply_ = env.legacyVSupply;
+
+        if (legacyMarket_ != address(0) || legacyV_ != address(0) || supply_ != 0) {
+            require(legacyMarket_ != address(0) && legacyV_ != address(0) && supply_ > 0, "LEGACY_ENV");
+            require(ILegacyLitheMarket(legacyMarket_).vapurr() == legacyV_, "LEGACY");
+            require(ILegacyVSupply(legacyV_).totalSupply() == supply_, "SUPPLY");
+            cutoverIsDryRunMock = false;
+        } else if (env.allowDryRunCutoverMock) {
+            // Local composition only — not live gen-4 addresses.
+            address mockLegacyV = address(new RolloutMockErc20("Legacy V (dry-run)", "lV"));
+            address mockLegacyPusd = address(new RolloutMockErc20("Legacy PUSD (dry-run)", "lPUSD"));
+            legacyMarket_ = address(new RolloutMockLegacyMarket(mockLegacyV, mockLegacyPusd));
+            legacyV_ = mockLegacyV;
+            supply_ = DRY_RUN_LEGACY_SUPPLY;
+            cutoverIsDryRunMock = true;
+        } else {
+            // Live confirm path without LEGACY_* — leave cutover for CutoverDeploy / manual.
+            cutoverWired = false;
+            return;
+        }
+
+        converter = new LegacyVConverter(legacyV_, address(v));
+        migrator = new LitheCutoverMigrator(legacyMarket_, litheProxy, address(converter));
+        legacyMarket = legacyMarket_;
+        legacyV = legacyV_;
+        legacyVSupply = supply_;
+        cutoverWired = true;
+    }
+
     function _genesisBootstrapHandoff(address owner_, uint256 bootstrapV, Env calldata env) internal {
-        v.mint(address(this), DEV_FUND_AMOUNT + bootstrapV);
+        uint256 cutoverInv = cutoverWired ? legacyVSupply : 0;
+        v.mint(address(this), DEV_FUND_AMOUNT + bootstrapV + cutoverInv);
+
+        if (cutoverWired && cutoverInv > 0) {
+            require(v.approve(address(converter), cutoverInv), "ALLOW");
+            converter.fund(cutoverInv);
+        }
 
         exoEth = env.eth;
         exoNvda = env.nvda;
@@ -157,7 +260,7 @@ contract TestnetRolloutDeploy {
 /// SAFETY: does NOT broadcast unless CONFIRM_TESTNET_DEPLOY=1 is set in the env.
 /// Default path simulates the full ordered stack locally (no chain write).
 ///
-/// House / wgV / SavingsRouter forward remain documented follow-ups (not factory).
+/// House / wgV remain documented follow-ups (not factory).
 contract TestnetRollout is Script {
     address constant VANITY = 0xC47f00D61F8379337f9fb42E6DcC695AE2d6EBD2;
     address constant STATUS_DEPLOYER = 0x48043E2Cda4D403c10dbB1F4614c4F6ad0f9AeA5;
@@ -176,7 +279,7 @@ contract TestnetRollout is Script {
         if (!confirm) {
             console2.log("DRY-RUN only - no broadcast. Set CONFIRM_TESTNET_DEPLOY=1 to enable live deploy.");
             if (owner_ == address(0)) owner_ = msg.sender;
-            TestnetRolloutDeploy.Env memory env = _readEnv(owner_);
+            TestnetRolloutDeploy.Env memory env = _readEnv(owner_, true);
             _plan(rate, owner_, bootstrapV, env);
             TestnetRolloutDeploy dryHelper = new TestnetRolloutDeploy();
             dryHelper.execute(rate, owner_, bootstrapV, env);
@@ -186,7 +289,8 @@ contract TestnetRollout is Script {
 
         uint256 pk = vm.envUint("PRIVATE_KEY");
         if (owner_ == address(0)) owner_ = vm.addr(pk);
-        TestnetRolloutDeploy.Env memory envLive = _readEnv(owner_);
+        // Live path: never invent gen-4 addresses; cutover only if LEGACY_* set.
+        TestnetRolloutDeploy.Env memory envLive = _readEnv(owner_, false);
 
         vm.startBroadcast(pk);
         TestnetRolloutDeploy liveHelper = new TestnetRolloutDeploy();
@@ -195,7 +299,11 @@ contract TestnetRollout is Script {
         _logDeployed(liveHelper);
     }
 
-    function _readEnv(address ownerFallback) internal view returns (TestnetRolloutDeploy.Env memory env) {
+    function _readEnv(address ownerFallback, bool allowDryRunCutoverMock)
+        internal
+        view
+        returns (TestnetRolloutDeploy.Env memory env)
+    {
         env.usdg = vm.envOr("USDG", address(0));
         env.eth = vm.envOr("EXO_ETH", address(0));
         env.nvda = vm.envOr("EXO_NVDA", address(0));
@@ -206,6 +314,13 @@ contract TestnetRollout is Script {
         env.runwayFloor = vm.envOr("RUNWAY_FLOOR", uint256(0));
         env.seedPol = vm.envOr("SEED_POL", uint256(0)) == 1;
         env.autoRemit = vm.envOr("AUTO_REMIT", uint256(0)) == 1;
+        env.legacyMarket = vm.envOr("LEGACY_MARKET", address(0));
+        env.legacyV = vm.envOr("LEGACY_V", address(0));
+        env.legacyVSupply = vm.envOr("LEGACY_V_SUPPLY", uint256(0));
+        env.cdCouponBps = vm.envOr("CD_COUPON_BPS", uint256(500));
+        env.cdBreakFeeBps = vm.envOr("CD_BREAK_FEE_BPS", uint256(200));
+        env.cdTerm = vm.envOr("CD_TERM", uint256(30 days));
+        env.allowDryRunCutoverMock = allowDryRunCutoverMock;
     }
 
     function _plan(uint256 rate, address owner_, uint256 bootstrapV, TestnetRolloutDeploy.Env memory env)
@@ -218,18 +333,24 @@ contract TestnetRollout is Script {
         console2.log("plan runway floor:", env.runwayFloor);
         console2.log("plan USDG bond capacity:", env.bondCapacity);
         console2.log("plan seedPol:", env.seedPol ? uint256(1) : uint256(0));
+        console2.log("plan CD coupon bps:", env.cdCouponBps);
+        console2.log("plan legacy market:", env.legacyMarket);
+        console2.log("plan legacy V:", env.legacyV);
+        console2.log("plan legacy V supply:", env.legacyVSupply);
         console2.log("ordered steps (IN SCRIPT vs MANUAL) - see docs/econ/TESTNET_ROLLOUT.md:");
         console2.log("  1 [IN SCRIPT] Fed V + RebasePolicy + gV (dynamic 1-9%)");
         console2.log("  2 [IN SCRIPT] Lithe impl + ERC1967Proxy (UUPS) - prefer vanity land");
         console2.log("  3 [IN SCRIPT] Oliver (PusdLoop) behind market proxy");
         console2.log("  4 [IN SCRIPT] BondMarket(gV,V) + USDG BondAssetTag only + policy.bindBondMarket");
         console2.log("  5 [IN SCRIPT] RunwayFloor + RemittanceSink + market/oliver.setRemittance");
-        console2.log("     [MANUAL]   SavingsRouter / sPUSD / CD forward (sink.setForward)");
+        console2.log("     [IN SCRIPT] SavingsRouter + SPUSD + SpusdCd; sink.setForward; starts DISABLED");
         console2.log("  6 [IN SCRIPT] Genesis mint bootstrap + DevFund 200k BEFORE setMinter(gV)");
+        console2.log("     [IN SCRIPT] Cutover inventory: LegacyVConverter.fund + LitheCutoverMigrator");
+        console2.log("                 dry-run mock if LEGACY_* unset; live requires LEGACY_* (no invented addrs)");
         console2.log("  7 [IN SCRIPT] LaunchBootstrap: DevFundStream start + V/ETH+V/NVDA+V/AMD");
         console2.log("  8 [IN SCRIPT] Dual-minter: setMarketMinter(Lithe) then setMinter(gV)");
         console2.log("     (no Lithe redeem inventory fund; seigniorage mint on swapPusdToV)");
-        console2.log("  9 [FOLLOW-UP] House / wgV (not in factory / not this script)");
+        console2.log("  9 [FOLLOW-UP] House / wgV (not in factory / not this script) - manual next");
         console2.log(" 10 [MANUAL]   CutoverDeploy gate + UI address book + migrator fork verify");
         console2.log("HONEST: gen-4 remains live on 46630 until approved cutover.");
     }
@@ -244,6 +365,11 @@ contract TestnetRollout is Script {
         console2.log("deployed bonds", address(h.bonds()));
         console2.log("deployed runway", address(h.runway()));
         console2.log("deployed remit sink", address(h.sink()));
+        console2.log("deployed SPUSD", address(h.spusd()));
+        console2.log("deployed SpusdCd", address(h.spusdCd()));
+        console2.log("deployed SavingsRouter", address(h.savingsRouter()));
+        console2.log("savings enabled", h.savingsRouter().enabled() ? uint256(1) : uint256(0));
+        console2.log("savings cdBps", h.savingsRouter().cdBps());
         console2.log("deployed launch bootstrap", address(h.boot()));
         console2.log("deployed DevFundStream", address(h.boot().devFund()));
         console2.log("deployed exo registry", address(h.boot().registry()));
@@ -251,7 +377,17 @@ contract TestnetRollout is Script {
         console2.log("EXO ETH", h.exoEth());
         console2.log("EXO NVDA", h.exoNvda());
         console2.log("EXO AMD", h.exoAmd());
-        console2.log("FOLLOW-UP not deployed: House / wgV / SavingsRouter forward");
+        if (h.cutoverWired()) {
+            console2.log("deployed LegacyVConverter", address(h.converter()));
+            console2.log("deployed LitheCutoverMigrator", address(h.migrator()));
+            console2.log("cutover legacy market", h.legacyMarket());
+            console2.log("cutover legacy V", h.legacyV());
+            console2.log("cutover inventory", h.legacyVSupply());
+            console2.log("cutover dry-run mock", h.cutoverIsDryRunMock() ? uint256(1) : uint256(0));
+        } else {
+            console2.log("cutover SKIPPED (set LEGACY_MARKET/LEGACY_V/LEGACY_V_SUPPLY for live)");
+        }
+        console2.log("FOLLOW-UP not deployed: House / wgV (manual next)");
         if (h.litheProxy() == VANITY) {
             console2.log("vanity MATCH");
         } else {
