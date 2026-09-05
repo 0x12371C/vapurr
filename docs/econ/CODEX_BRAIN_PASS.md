@@ -48,7 +48,7 @@ Note: Codex read-only sandbox blocked independent file probes; verdict based on 
 ### Remaining P0/P1 merge blockers (max 12)
 - [P0] Live one-token migration: replace/migrate gen-4 `0x47Ac.....` embedded V and retarget consumers; distinct V addresses cannot be treated as fungible.
 - [P1] HouseLp/HouseSwap Solidity equity wiring to wgV + PairConfig gate landed; still need live pairConfig deploy, Rust deploy ABI/bootstrap wgV, Permit2/PM e2e, PUSD rebase settlement.
-- [P1] Pool-held PUSD: define and prove rebase settlement/allocation for House and `$PUSD`/USDG pools.
+- [P1] Pool-held PUSD: define and prove rebase settlement/allocation for **House** (`wgV`/`$PUSD`) only. `$PUSD`/USDG pools are **banned** (USDG = BondAssetTag).
 - [P0] Bond execution: `BondMarket` gate landed (disabled/capacity0 default; inventory-only payout). Ship tabs live-with-caps; valuation oracles still open until reliable RFV valuation + stock closure handling; vesting claim path is inventory transfer only.
 - [P0] External backing / solvency: sink-level cross-branch floor accounting landed; exogenous USDG (or equivalent) backing and true dollar solvency still not established by nominal PUSD RFV.
 
@@ -102,7 +102,7 @@ Date: 2026-09-05 (America/New_York). Branch: `fix/gv-spusd-guards` (from `fix/ol
 - [done] `gVAPURR.stake` settles via `accrue()` before share mint (see Progress — P0 fix #2).
 - [done] Lithe single-count: burn fee inventory on drip before index expand (P0 fix #3). Remit spends remaining inventory only.
 - [done] `computeSwap` clamps inverted CP spread; redeem/arb no longer false-THIN when inventory present (P0 fix #3).
-- [partial] Wrapping gV fixes only the House **equity** leg (PairConfig now rejects raw gV). Naked `$PUSD` still rebases (Lithe index); pool-held PUSD rebase accounting remains **P1** for wgV/PUSD and PUSD/USDG.
+- [partial] Wrapping gV fixes only the House **equity** leg (PairConfig now rejects raw gV). Naked `$PUSD` still rebases (Lithe index); pool-held PUSD rebase accounting remains **P1** for wgV/PUSD only (`$PUSD`/USDG books banned).
 - [done] `SPUSD` / `wgVAPURR` virtual+dead shares + min deposit/wrap (see Progress — P0 fix #2). Dust remittance skim bounded; CD time-locks still TODO for full skim resistance.
 - [P0-bug] Self-issued PUSD reserves and V inventory do not establish exogenous dollar backing. The minimum 2% V swap spread is not ~par USDG redemption; a nominal PUSD runway floor cannot establish dollar solvency, and Lithe drip can consume the supposedly retained reserve.
 - [done] Oliver oracle freshness + conservative credit rate + feed jump clamp (P0 fix #4). Stale rate blocks borrow/withdrawV/liq sizing. See Progress - P0 fix #4.
@@ -182,7 +182,7 @@ Date: 2026-09-05 (America/New_York). Branch: `fix/gv-spusd-guards`.
 - `HouseLp` / `HouseSwap` headers document LIVE GAP (still `market.vapurr()`/`pusd()`).
 
 - [done] House PairConfig/factory gate + docs invariant + raw-gV rejection proofs.
-- [P1] Pool-held `$PUSD` Lithe-index rebase accounting (House + `$PUSD`/USDG books). Ordinary Uni v4 reserves do not allocate drip gains to LPs.
+- [P1] Pool-held `$PUSD` Lithe-index rebase accounting (**House only**). `$PUSD`/USDG books banned. Ordinary Uni v4 reserves do not allocate drip gains to LPs.
 - [done-wiring] HouseLp/HouseSwap equity = wgV + PairConfig before init/seed (see Progress below). [blocked-live-v4] Permit2/PM e2e + Rust pairConfig deploy + bootstrap wgV + PUSD rebase hook still open.
 
 

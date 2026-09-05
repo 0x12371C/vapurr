@@ -85,7 +85,7 @@ If product copy says "earn V by browsing", the nerds' reading is: **pro-rata / p
 | Lithe `swapPusdToV` | **NO** — inventory unwrap | redeemer (burns `$PUSD`, takes extant V) |
 | Bonds claim | **NO** — inventory transfer | bond claimer (pre-funded gV/wgV) |
 
-gV applies **`policyRateBps()`** (clamp 100–900; mid 350 when bonds unbound) annualized per settlement interval to current supply. Repeated settlements compound slightly. `accrue()` is permissionless; `rebase()` is the policy-only alias. Hot bond util → toward 1%; cold → toward 9%. See `POLICY_RATE.md`. Equity issuance, separate from Oliver leverage and cash earnings.
+gV applies **`policyRateBps()`** (clamp 100–900; mid 350 when bonds unbound) annualized per settlement interval to current supply. Repeated settlements compound slightly. `accrue()` is permissionless; `rebase()` is the policy-only alias. Hot bond util -> toward 1%; cold -> toward 9%. See `POLICY_RATE.md`. Equity issuance, separate from Oliver leverage and cash earnings.
 
 ---
 
@@ -97,13 +97,13 @@ Canonical redeem surfaces:
 |--------|----------|--------------|
 | Lithe `swapPusdToV` | Extant `$VAPURR` from **market inventory** | Reverts `INV` / empty inventory — **never** Fed mint |
 | Lithe mint/redeem ~par (cash rail) | `$PUSD` <-> inventory / spread path | Spread widens; still no V print |
-| Exit vs outside money | `$PUSD` -> **USDG** (primary exogenous book) | Depth-limited; soft peg if book thin |
+| Exit vs outside money | No `$PUSD`/USDG cash market; USDG = **bond/treasury intake only** | Peg = mint-redeem ~par; House = equity exit |
 | sPUSD redeem | Underlying `$PUSD` at vault NAV | NAV can lag; no V mint into shortfall |
 | V "backing" intuition | **Not** a dollar claim on Fed RFV | Equity token; mcap != RFV |
 
-**Forced float:** social trust is ~par mint/redeem + **exogenous `$PUSD`/USDG** depth (`PUSD_LIQUIDITY.md`). Sink-held nominal `$PUSD` is **not** exogenous USDG backing.
+**Forced float:** social trust is ~par mint/redeem (`PUSD_LIQUIDITY.md`). **USDG** is BondAssetTag / Fed treasury intake only — not a competing cash or peg book. Sink-held nominal `$PUSD` is **not** dollar solvency.
 
-Stress sentence: *If inventory is empty and USDG book is thin, `$PUSD` does not conjure V or dollars — it waits on inventory, outside depth, or discounted equity exit via House.*
+Stress sentence: *If inventory is empty, `$PUSD` does not conjure V or dollars — it waits on inventory or discounted equity exit via House. No USDG cash/peg pool fills the gap.*
 
 ---
 
@@ -115,14 +115,14 @@ Stress sentence: *If inventory is empty and USDG book is thin, `$PUSD` does not 
 | **RFV / backing** | exogenous assets (bond inflows, USDG/ETH POL, etc.) + sink `accountedRfv` (nominal) | Treasury battery / runway |
 | Recursive inventory | protocol-held `$PUSD` / V locked in Lithe or House | **Not** exogenous dollar solvency |
 
-Do not quote mcap as "backed by." Do not quote sink `$PUSD` alone as USDG peg trust. TVL panels that sum House + Lithe + Oliver + sink without stripping circular legs **lie**.
+Do not quote mcap as "backed by." Do not quote sink `$PUSD` alone as dollar peg trust. TVL panels that sum House + Lithe + Oliver + sink without stripping circular legs **lie**.
 
 ---
 
 ## 6. Rebase vs purchasing power
 
 - **Rebase** increases gV **balances** (index up at the live policy rate, 1–9%/yr). Staker share of *equity supply* is preserved among stakers; unstaked V is diluted relative to staked.
-- **Purchasing power** vs dollars is `balance_gV * price_V_in_USD` (or House wgV/`$PUSD` quote). Rebase does not print USDG, thicken `$PUSD`/USDG, or credit sPUSD.
+- **Purchasing power** vs dollars is `balance_gV * price_V_in_USD` (or House wgV/`$PUSD` quote). Rebase does not print dollars, invent a `$PUSD`/USDG cash book, or credit sPUSD.
 - Holding gV through rebase is an **equity index claim**, not a cash-yield coupon. Cash coupon = sPUSD path from branch surplus.
 
 ---
@@ -150,7 +150,7 @@ Discount = explicit financing cost. Capacity / `enabled` gates exist because bli
 |-------|-------|--------------|
 | `LTV_BPS` | 8500 (85%) | Max debt / collat value |
 | `LLTV_BPS` | 9000 (90%) | Liq threshold |
-| Implied max leverage on equity | `1 / (1 - 0.85) ≈ 6.67x` | **~6x banking leverage** |
+| Implied max leverage on equity | `1 / (1 - 0.85) â‰ˆ 6.67x` | **~6x banking leverage** |
 
 This leverage is **borrow vs collateral** (balance-sheet). It is **not**:
 
@@ -179,7 +179,7 @@ Frame (stress, not a happy path):
 | Lithe V redeem | Inventory >= expected `swapPusdToV` demand or redeem cleanly reverts (no mint) |
 | Oliver | Depositor claims backed by `cash + totalBorrowAssets`; remits only `realizedReserve`; owner LTV after remit |
 | RemittanceSink | `accountedRfv` respects single `RunwayFloor`; `forwardSurplus` cannot pierce floor |
-| Peg trust | Exogenous `$PUSD`/USDG depth still defines dollar exit — sink nominal `$PUSD` insufficient alone |
+| Peg trust | Mint-redeem ~par / social proof — **no** `$PUSD`/USDG depth book; sink nominal `$PUSD` insufficient alone |
 | sPUSD / CD | Coupons / NAV only from surplus above floor; underfunded CD pays principal first, never mints |
 
 **Fail tells**

@@ -43,7 +43,7 @@ Revert class: `RawGvNotHouseEquity` if either Uni currency is raw gV.
 ## Do not
 
 - Pair raw gV or raw `$VAPURR` as House equity once staking is live
-- Treat House volume as `$PUSD` peg depth (peg books are `$PUSD`/USDG — see `PUSD_LIQUIDITY.md`)
+- Treat House volume as `$PUSD` peg depth (peg = mint-redeem ~par; USDG is BondAssetTag only — see `PUSD_LIQUIDITY.md`)
 - Fund browse earn from gV rebase mint (BrowserStream = treasury earmark only)
 
 ## UI visual stub (2026-09-05)
