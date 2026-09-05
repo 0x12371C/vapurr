@@ -1,17 +1,22 @@
-﻿# Passcode lock UI
+# Passcode lock UI
 
-`frontend/lock.html` — Apple-style 4-digit fullscreen chrome (void/lime).
+rontend/lock.html — Apple-style 4-digit fullscreen chrome (void/lime).
+**Never stores plaintext PIN** (no localStorage / sessionStorage). Shell hashes + gates.
 
-## Shell contract
+## Hooks (shell assigns, UI calls)
 
-| Direction | Hook |
-|-----------|------|
-| UI → shell | `vapurr.send({ cmd: "passcode-submit", code: "####", mode })` when 4 digits entered |
-| Shell → UI | `window.__passcodeFail(msg)` shake + clear |
-| Shell → UI | `window.__passcodeOk()` clear (then navigate away) |
-| Shell → UI | `window.__passcodePaint({ mode, title, hint, kicker })` |
-| Modes | `unlock` (default), `set`, `confirm` — also `?mode=` |
+| Hook | Role |
+|------|------|
+| VapurrLock.onSubmit(pin) | Unlock: fired with 4-digit pin, then UI wipes digits |
+| VapurrLock.onUnlock() | Fired from VapurrLock.unlock() after shell verifies |
+| VapurrLock.lock(opts?) | Show/re-arm lock (startup + idle). opts.mode: unlock\|set\|confirm |
+| VapurrLock.onSetPin(a, b) | First-run: set then confirm; both wiped after call |
+| VapurrLock.fail(msg) | Wrong pin / mismatch — shake + clear |
+| VapurrLock.unlock() | Shell success path |
+| VapurrLock.setMode(m) | Copy only |
 
-Idle auto-lock default **15 min** is shell-owned (storage + timer + gate). UI does not start the timer.
+Aliases: window.lock, __passcodeFail, __passcodeOk, __passcodePaint.
 
-No Luna/UST/Olympus names.
+Idle auto-lock default **15 min** is shell-owned (storage + timer + IPC gate).
+
+Fallback while wiring: apurr.send({ cmd: "passcode-submit", code, mode }) / passcode-set.
