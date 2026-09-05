@@ -1,12 +1,11 @@
-name: signpath-release
+﻿name: signpath-release
 
 # After SignPath OSS approval, set:
 #   secrets.SIGNPATH_API_TOKEN
 #   vars.SIGNPATH_ORGANIZATION_ID
 #   vars.SIGNPATH_PROJECT_SLUG=vapurr
 #   vars.SIGNPATH_POLICY_SLUG=release-signing
-# Then extend this workflow to pack on windows-latest and call
-# signpath/github-action-submit-signing-request@v2 on dist/vapurr-setup.exe.
+# Gate signing with SIGNPATH_ORGANIZATION_ID (secrets cannot be tested in if:).
 
 on:
   workflow_dispatch:
@@ -16,14 +15,56 @@ permissions:
   actions: read
 
 jobs:
-  checklist:
-    runs-on: ubuntu-latest
+  pack-and-sign:
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Print SignPath checklist
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Pack unsigned release
+        shell: pwsh
+        env:
+          VAPURR_ALLOW_UNSIGNED: "1"
         run: |
-          echo "Policy: docs/SIGNING.md"
-          echo "Apply draft: docs/SIGNPATH_APPLY.md"
-          echo "Artifact XML: .signpath/artifact-configurations/default.xml"
-          echo "Repo: https://github.com/0x12371C/vapurr"
-          echo "Download: https://thesecretlab.app/vapurr"
+          ./pack.ps1
+          if (-not (Test-Path dist/vapurr-setup.exe)) { throw "pack did not produce dist/vapurr-setup.exe" }
+          Get-Item dist/vapurr-setup.exe | Format-List Name,Length,LastWriteTime
+
+      - name: Upload unsigned PE
+        id: upload-unsigned
+        uses: actions/upload-artifact@v4
+        with:
+          name: vapurr-setup-unsigned
+          path: dist/vapurr-setup.exe
+          if-no-files-found: error
+          retention-days: 3
+
+      - name: Submit SignPath signing request
+        if: ${{ vars.SIGNPATH_ORGANIZATION_ID != '' }}
+        uses: signpath/github-action-submit-signing-request@v1
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG || 'vapurr' }}
+          signing-policy-slug: ${{ vars.SIGNPATH_POLICY_SLUG || 'release-signing' }}
+          artifact-configuration-slug: default
+          github-artifact-id: ${{ steps.upload-unsigned.outputs.artifact-id }}
+          wait-for-completion: true
+          output-artifact-directory: signed
+          wait-for-completion-timeout-in-seconds: 900
+
+      - name: Upload signed setup
+        if: ${{ vars.SIGNPATH_ORGANIZATION_ID != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: vapurr-setup-signed
+          path: signed/
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Remind if org var missing
+        if: ${{ vars.SIGNPATH_ORGANIZATION_ID == '' }}
+        shell: pwsh
+        run: Write-Warning "SIGNPATH_ORGANIZATION_ID not set — packed unsigned only. After OSS approval, set token + org/project/policy vars."

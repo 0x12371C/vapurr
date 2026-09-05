@@ -1,11 +1,11 @@
-# SignPath CI wiring (vapurr)
+﻿# SignPath CI wiring (vapurr)
 
-After OSS approval:
+Apply submitted 2026-09-04 (agent@thesecretlab.app). After approval:
 
-1. In SignPath: create project slug `vapurr`, link `https://github.com/0x12371C/vapurr`, attach `.signpath/artifact-configurations/default.xml`.
-2. Create signing policy `release-signing` (origin verification on `master` / tags).
-3. Create API token (submitter) → GitHub secret `SIGNPATH_API_TOKEN`.
-4. Set GitHub Actions variables: `SIGNPATH_ORGANIZATION_ID`, `SIGNPATH_PROJECT_SLUG=vapurr`, `SIGNPATH_POLICY_SLUG=release-signing`.
-5. Extend `signpath-release.yml` to run `pack.ps1` on `windows-latest` (or a self-hosted justin runner), upload `dist/vapurr-setup.exe`, submit signing request, then deploy signed files to thesecretlab.
+1. SignPath: project `vapurr`, policy `release-signing`, link GitHub repo + `.signpath/artifact-configurations/default.xml`
+2. GitHub secret `SIGNPATH_API_TOKEN`
+3. GitHub vars: `SIGNPATH_ORGANIZATION_ID`, `SIGNPATH_PROJECT_SLUG=vapurr`, `SIGNPATH_POLICY_SLUG=release-signing`
+4. Run Actions → `signpath-release` (workflow_dispatch). Packs on `windows-latest`, submits PE to SignPath, uploads signed artifact.
+5. Copy signed `vapurr-setup.exe` to thesecretlab `public/vapurr/` and ship.
 
-Until then, strangers still need a signed binary — unsigned stays blocked by Defender Wacatac.
+Download page already names SignPath Foundation (required by SignPath).
