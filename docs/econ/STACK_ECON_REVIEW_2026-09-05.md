@@ -23,7 +23,7 @@ in vapurr-rhc; deployment claims in older docs were not treated as source parity
 | Payments/mail | vapurr-pay protocol; shell KetPay testnet sends; vapurr-zmail/PNS/CID vouchers | Payment utility exists; postage vouchers are not settled fee revenue |
 | Content/feed | frontend Ketflix/radio, vapurr-fomo; public content surfaces | Distribution/retention possibilities; no proven revenue budget in this review |
 | Treasury optimizer | vapurr-econ treasury.rs + kelly.rs, recent Scan price windows | Suggested weights, not executed holdings, external reserves, or a solvency ledger |
-| Lithe | PusdMarket/PusdToken, inventory V redemption, fee-funded PUSD rebase cap | Native PUSD fees; no contractual USDG redemption or 10M-market-cap peg switch |
+| Lithe | PusdMarket/PusdToken, V↔PUSD mint/redeem rail, fee-funded PUSD rebase cap | Native PUSD fees; no contractual USDG redemption or 10M-market-cap peg switch |
 | Oliver | PusdLoop supply, V collateral, borrowing/loop/unwind, 85% LTV / 90% liquidation threshold | Leverage belongs to user borrowing positions; protocol takes reserve fees |
 | House | wgV pair configuration and fee adapters in source; older canonical testnet book | Wrapped equity book and outside-dollar peg book are distinct |
 | Fed | GvFed V/gV/wgV, policy wrapper, BrowserStream | Separate Fed V and market V until migration; cannot treat them as interchangeable |
@@ -130,8 +130,10 @@ profitability, automated House fee generation, or USDG solvency.
    settlement produces 3.5%, while frequent settlements approach about 3.562%.
    Existing prose claiming an absolutely flat, policy-only clock is too strong.
 7. **Deployment/identity:** current Rust commands/address book do not deploy or invoke
-   the savings router or CDs. Fed V and market V remain separate. New source behavior
-   must not be attributed to older deployed contracts or the September 4 zip.
+   the savings router or CDs. `PusdMarketFed` and `LegacyVConverter` now provide the
+   one-token source path, but the live gen-4 address book still uses the embedded-V
+   market. New source behavior must not be attributed to older deployed contracts or
+   the September 4 zip.
 8. **Release:** signing and hostile-page retest remain open on the existing release
    board. This work changes source and tests; it does not pack, install, publish, or
    authorize transactions.

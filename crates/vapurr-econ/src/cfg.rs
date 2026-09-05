@@ -3,7 +3,7 @@
 use serde::{Deserialize, Serialize};
 use vapurr_rhc as rhc;
 
-pub(crate) const GEN: u32 = 4;
+pub(crate) const GEN: u32 = 5;
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub(crate) struct MarketCfg {
@@ -30,6 +30,24 @@ pub(crate) struct MarketCfg {
     /// HousePairConfig address (wgV + PUSD SoT). Required for HouseLp/HouseSwap deploy.
     #[serde(default)]
     pub(crate) pair_config: String,
+    /// Previous Lithe book retained for cutover provenance and the PUSD migration route.
+    #[serde(default)]
+    pub(crate) legacy_market: String,
+    #[serde(default)]
+    pub(crate) legacy_vapurr: String,
+    #[serde(default)]
+    pub(crate) legacy_pusd: String,
+    /// Successor one-token deployment record.
+    #[serde(default)]
+    pub(crate) cutover_factory: String,
+    #[serde(default)]
+    pub(crate) v_converter: String,
+    #[serde(default)]
+    pub(crate) pusd_migrator: String,
+    #[serde(default)]
+    pub(crate) rebase_policy: String,
+    #[serde(default)]
+    pub(crate) gv: String,
     #[serde(default)]
     pub(crate) net: String,
 }

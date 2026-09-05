@@ -50,7 +50,7 @@ contract PusdLoop {
     /// Max age of market oracle heartbeat for borrow / withdraw / liq sizing.
     uint256 public constant MAX_RATE_AGE = 1 hours;
 
-    address public immutable owner;
+    address public owner;
     IMarket public immutable market;
     IERC20 public immutable vapurr;
     IERC20 public immutable pusd;
@@ -89,6 +89,7 @@ contract PusdLoop {
     event RemittanceSet(address indexed sink, address indexed runway_, bool autoRemit);
     event Remitted(address indexed sink, uint256 assets, uint256 shares);
     event BackstopSet(address indexed backstop);
+    event OwnerUpdated(address indexed owner);
     event BadDebtCovered(address indexed user, address indexed backstop, uint256 covered);
     event BadDebtWritten(address indexed user, uint256 written);
 
@@ -111,7 +112,16 @@ contract PusdLoop {
         lastAccrue = block.timestamp;
     }
 
-    function accrue() external lock { _accrue(); }
+    function accrue() external lock {
+        _accrue();
+    }
+
+    /// Factory deployments hand configuration authority to their initiating wallet.
+    function setOwner(address owner_) external {
+        require(msg.sender == owner && owner_ != address(0), "OWN");
+        owner = owner_;
+        emit OwnerUpdated(owner_);
+    }
 
     function setRemittance(address sink, address runway_, bool autoRemit) external {
         require(msg.sender == owner, "OWN");

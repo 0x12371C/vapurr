@@ -2,6 +2,7 @@
 //! $VAPURR / $PUSD. Burn V mint P, burn P mint V. Lithe is 9% on $PUSD.
 
 pub mod cfg;
+pub mod cutover;
 pub mod euler;
 pub mod house;
 pub mod kelly;
@@ -83,6 +84,7 @@ pub enum EconCmd {
     Mint(String),
     Redeem(String),
     Deploy,
+    CutoverDeploy,
     Seed { usdg: String, vapurr: String },
     Outbid,
     OutbidBid {
@@ -173,6 +175,7 @@ impl Client {
             EconCmd::Mint(_) => "mint",
             EconCmd::Redeem(_) => "redeem",
             EconCmd::Deploy => "deploy",
+            EconCmd::CutoverDeploy => "cutover",
             EconCmd::Seed { .. } => "seed",
             EconCmd::Outbid | EconCmd::OutbidBid { .. } => "outbid",
             EconCmd::OutbidDeploy => "deploy",
@@ -209,6 +212,10 @@ impl Client {
             }
             EconCmd::Deploy => {
                 self.deploy()?;
+                Ok(self.snapshot())
+            }
+            EconCmd::CutoverDeploy => {
+                self.cutover_deploy()?;
                 Ok(self.snapshot())
             }
             EconCmd::Seed { .. } => {
