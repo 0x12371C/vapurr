@@ -90,7 +90,7 @@ contract BondMarketTest is Test {
         fedV.setMinter(address(0));
         assertEq(fedV.totalSupply(), supply);
 
-        // Default market: DISABLED, capacity 0 (gated until Fed enables).
+        // Default market: LIVE — enabled with non-zero capacity (product posture).
         bonds.setMarket(
             BondAssetTag.USDG,
             address(usdg),
@@ -98,9 +98,9 @@ contract BondMarketTest is Test {
             1_000, // 10% discount
             500, // 5% haircut
             7 days,
-            0, // capacity 0
+            100_000 ether, // live capacity
             PRICE,
-            false // enabled false
+            true // enabled live-by-default
         );
 
         usdg.mint(user, 1_000_000 ether);
@@ -113,17 +113,16 @@ contract BondMarketTest is Test {
         bonds.fundInventory(200_000 ether);
     }
 
-    function test_disabled_market_reverts() public {
-        // Even with capacity later set, disabled must revert.
-        bonds.setCapacity(BondAssetTag.USDG, 100_000 ether);
+    function test_owner_disable_killswitch_reverts() public {
+        // Happy path is live; owner setEnabled(false) remains the safety killswitch.
+        bonds.setEnabled(BondAssetTag.USDG, false);
         vm.prank(user);
         vm.expectRevert(bytes("DISABLED"));
         bonds.bond(BondAssetTag.USDG, 1_000 ether);
     }
 
     function test_enabled_zero_capacity_reverts() public {
-        bonds.setEnabled(BondAssetTag.USDG, true);
-        // capacity still 0 from setUp
+        bonds.setCapacity(BondAssetTag.USDG, 0);
         vm.prank(user);
         vm.expectRevert(bytes("CLOSED"));
         bonds.bond(BondAssetTag.USDG, 1_000 ether);
@@ -133,8 +132,7 @@ contract BondMarketTest is Test {
         uint256 fedSupply0 = fedV.totalSupply();
         uint256 payoutSupply0 = payout.totalSupply();
 
-        bonds.setCapacity(BondAssetTag.USDG, 100_000 ether);
-        bonds.setEnabled(BondAssetTag.USDG, true);
+        // setUp already enabled USDG with capacity — happy path is live.
 
         // asset 1000, price 1e18 -> gross 1000; haircut 5% -> credit 950;
         // discount 10% -> payout = 950 * 10000 / 9000 = 1055.555... 
@@ -165,7 +163,6 @@ contract BondMarketTest is Test {
     }
 
     function test_capacity_respected() public {
-        bonds.setEnabled(BondAssetTag.USDG, true);
         // credit(1000) = 950. Leave a positive remainder so the next bond hits CAP (not CLOSED).
         bonds.setCapacity(BondAssetTag.USDG, 950 ether + 100 ether);
 
@@ -179,7 +176,6 @@ contract BondMarketTest is Test {
 
     function test_haircut_reduces_credited_and_payout() public {
         bonds.setCapacity(BondAssetTag.USDG, 1_000_000 ether);
-        bonds.setEnabled(BondAssetTag.USDG, true);
 
         (uint256 payoutWithHaircut, uint256 creditWithHaircut,,,) = bonds.quote(BondAssetTag.USDG, 10_000 ether);
 
@@ -198,7 +194,6 @@ contract BondMarketTest is Test {
         // Drain free inventory by setting a huge capacity but tiny funded balance remaining.
         // available = 200k funded; quote for 1M asset ~ payout > 200k after discount.
         bonds.setCapacity(BondAssetTag.USDG, type(uint256).max);
-        bonds.setEnabled(BondAssetTag.USDG, true);
 
         uint256 huge = 500_000 ether; // credit 475k, payout ~527k > 200k inventory
         vm.prank(user);
@@ -206,21 +201,28 @@ contract BondMarketTest is Test {
         bonds.bond(BondAssetTag.USDG, huge);
     }
 
-    function test_eth_and_stocks_tags_gated_by_default() public {
+    function test_eth_and_stocks_tags_live_by_default_config() public {
         MockBondAsset weth = new MockBondAsset();
         MockBondAsset stock = new MockBondAsset();
-        bonds.setMarket(BondAssetTag.ETH, address(weth), treasury, 500, 200, 14 days, 0, PRICE, false);
-        bonds.setMarket(BondAssetTag.STOCKS, address(stock), treasury, 500, 1_000, 30 days, 0, PRICE, false);
+        // Sensible live config for ETH / STOCKS tags (non-zero capacity, enabled).
+        bonds.setMarket(BondAssetTag.ETH, address(weth), treasury, 500, 200, 14 days, 50 ether, PRICE, true);
+        bonds.setMarket(BondAssetTag.STOCKS, address(stock), treasury, 500, 1_000, 30 days, 50 ether, PRICE, true);
 
         weth.mint(user, 10 ether);
         stock.mint(user, 10 ether);
         vm.startPrank(user);
         weth.approve(address(bonds), type(uint256).max);
         stock.approve(address(bonds), type(uint256).max);
+        uint256 ethId = bonds.bond(BondAssetTag.ETH, 1 ether);
+        uint256 stockId = bonds.bond(BondAssetTag.STOCKS, 1 ether);
+        vm.stopPrank();
+        assertEq(ethId, 1);
+        assertEq(stockId, 2);
+
+        // Killswitch still works per-tab.
+        bonds.setEnabled(BondAssetTag.ETH, false);
+        vm.prank(user);
         vm.expectRevert(bytes("DISABLED"));
         bonds.bond(BondAssetTag.ETH, 1 ether);
-        vm.expectRevert(bytes("DISABLED"));
-        bonds.bond(BondAssetTag.STOCKS, 1 ether);
-        vm.stopPrank();
     }
 }

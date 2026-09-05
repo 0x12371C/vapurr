@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.24;
 
-/// Gated bond market skeleton — exogenous RFV in, gV/wgV out from inventory only.
-/// HARD WALL: markets stay disabled (or capacity 0) until Fed enables after inventory,
-/// vesting ownership, capacity, haircuts, and valuation are wired. No mint path.
+/// Live-by-default bond market — exogenous RFV in, gV/wgV out from inventory only.
+/// Inventory wall: bond() never mints Fed supply; pays pre-funded equity inventory only.
+/// Capacity, haircut, and valuation are live params that can reject txs — not a reason
+/// to ship markets disabled. Owner setEnabled(false) remains the safety killswitch.
 /// See docs/econ/BONDS.md.
 
 interface IERC20Bond {
@@ -20,7 +21,7 @@ enum BondAssetTag {
     STOCKS
 }
 
-/// Fed-gated bond markets. Pays pre-funded equity inventory — never mints Fed supply.
+/// Bond markets. Pays pre-funded equity inventory — never mints Fed supply.
 contract BondMarket {
     uint256 public constant BPS = 10_000;
     uint256 public constant WAD = 1e18;
@@ -32,7 +33,7 @@ contract BondMarket {
     address public immutable fedV;
 
     struct Market {
-        bool enabled; // default false until Fed enables
+        bool enabled; // live when true; owner killswitch via setEnabled(false)
         address asset; // exogenous ERC20 (WETH / USDG / stock wrapper)
         address treasury; // RFV sink for pulled assets
         uint16 discountBps; // bond sweetener vs credited RFV (face > credit)
@@ -100,7 +101,8 @@ contract BondMarket {
         emit OwnerUpdated(o);
     }
 
-    /// Configure a tab. New markets should ship enabled=false and/or capacity=0.
+    /// Configure a tab. Prefer enabled=true with non-zero capacity for live tabs
+    /// (ETH / USDG / STOCKS). Capacity/haircut/price still reject oversized or mispriced bonds.
     function setMarket(
         BondAssetTag tag,
         address asset,

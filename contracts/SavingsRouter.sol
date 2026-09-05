@@ -6,7 +6,8 @@ import "./SPUSD.sol";
 import "./SpusdCd.sol";
 
 /// Splits one post-runway remittance between liquid savings and CD coupons.
-/// No deposits, borrowing, minting, or second runway floor. Disabled at deployment.
+/// No deposits, borrowing, minting, or second runway floor. Enabled by default;
+/// owner setAllocation(false, ...) is the safety killswitch.
 contract SavingsRouter is IRemittance {
     uint256 public constant BPS = 10_000;
 
@@ -47,6 +48,8 @@ contract SavingsRouter is IRemittance {
         asset = sink.asset();
         require(address(liquid.asset()) == address(asset) && address(cd.asset()) == address(asset), "ASSET");
         owner = msg.sender;
+        enabled = true; // live-by-default; owner may disable via setAllocation
+        cdBps = 2_500; // sane default: 25% of post-floor surplus to CD coupons
     }
 
     function setOwner(address o) external onlyOwner {

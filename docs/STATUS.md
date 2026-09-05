@@ -126,9 +126,16 @@ Or `cargo +stable-x86_64-pc-windows-gnu run -p vapurr-shell --release` (`target\
 ## 2026-09-05 - savings engine source integration
 
 - Source review starts at a825573 on fix/gv-spusd-guards; Cargo remains 1.1.9. Newest local zip is the September 4 1.1.9 archive and predates the September 5 earnings contracts.
-- contracts/SavingsRouter.sol: disabled-by-default split of one sink's post-floor PUSD surplus to liquid sPUSD and CD coupons. Same-asset checks, sink-only intake, atomic allocation, and empty-liquid-vault gate.
+- contracts/SavingsRouter.sol: live-by-default split of one sink's post-floor PUSD surplus to liquid sPUSD and CD coupons (owner setAllocation(false) killswitch). Same-asset checks, sink-only intake, atomic allocation, and empty-liquid-vault gate.
 - SpusdCd.sol: entry-time coupon target/fee/maturity, received-balance principal, explicit principal/coupon accounting, proportional underfunding including unmatured targets, and previewClose. Closing cancels unpaid targets; no guaranteed coupon or new mint.
-- frontend/bonds.html: examples explicitly labeled targets per term; live controls remain disabled.
+- frontend/bonds.html: examples explicitly labeled targets per term; Bonds/Open CD CTAs live-by-default (capacity/haircut as params).
 - Foundry: **102 passed**, including 17 new tests and two 256-case fuzz tests. EarningsEngine.t.sol traces real local branch remittances to both savings legs at a flat V price.
 - Rust: **workspace tests passed**, four live tests ignored, using the GNU toolchain, offline dependencies, and an isolated temporary LOCALAPPDATA/APPDATA profile. Existing unused-code/import warnings remain.
 - No deployment, mainnet action, pack, or installation. Savings address-book/IPC integration remains open. Review: [econ/STACK_ECON_REVIEW_2026-09-05.md](econ/STACK_ECON_REVIEW_2026-09-05.md).
+
+## 2026-09-05 — ungate Bonds / CD / SavingsRouter
+
+- Relic: nothing product-critical stays gated. `frontend/bonds.html` Open Bond / Open CD live-by-default; capacity/oracle/haircut are params.
+- `BondMarket` comments + tests ship enabled-with-capacity; `SavingsRouter` enabled by default (owner killswitch).
+- Docs: `BONDS.md` scrubbed from gated-until posture to live-with-caps.
+

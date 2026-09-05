@@ -28,7 +28,12 @@ contract SavingsRouterTest is Test {
         liquid.deposit(1_000 ether, saver);
     }
 
-    function test_disabled_by_default_keeps_cash_at_sink() public {
+    function test_enabled_by_default() public view {
+        assertTrue(router.enabled());
+    }
+
+    function test_owner_disable_killswitch_keeps_cash_at_sink() public {
+        router.setAllocation(false, 0);
         sink.receiveRemittance(1_100 ether);
         vm.expectRevert(bytes("DISABLED"));
         sink.forwardSurplus(0);

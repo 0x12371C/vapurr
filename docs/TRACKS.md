@@ -32,7 +32,7 @@ Living owner board. Snapshot: `docs/SNAPSHOT.md`. Flash: `docs/ORG_FLASH.md`.
 
 | Token economy | vapurrbot+Pilot | gen-4 / HouseLp claimed live 46630; Pilot touched pay/wallet/pusd PM | keep STATUS CAs honest; vault live |
 
-| Token economy / Fed gV | Relic+House | **slice green** — gV walls + fee/skim/CD/wgV stubs + **SavingsRouter** (`60f3744`, forge 20/20) | Live wire / Uni IHooks / House AMM wgV deploy when Relic opens; SignPath remains ship P0 |
+| Token economy / Fed gV | Relic+House | **slice green** — gV walls + fee/skim/CD/wgV stubs + **SavingsRouter/BondMarket live-by-default** (`60f3744`+) | Live wire / Uni IHooks / House AMM wgV deploy when Relic opens; SignPath remains ship P0 |
 
 | Charts / Psy / Tube | PARK | | |
 
