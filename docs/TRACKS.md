@@ -1,4 +1,4 @@
-# Tracks
+﻿# Tracks
 
 
 
@@ -10,13 +10,13 @@ Living owner board. Snapshot: `docs/SNAPSHOT.md`. Flash: `docs/ORG_FLASH.md`.
 
 |-------|-------|--------|------|
 
-| Org board | vapurrbot | live Ã¢â‚¬â€ Bot is primary (CLI credits dry) | KEEP House+Pilot; ACTIVE KFX/PayId/Bind only; **no new grok procs** |
+| Org board | vapurrbot | live ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Bot is primary (CLI credits dry) | KEEP House+Pilot; ACTIVE KFX/PayId/Bind only; **no new grok procs** |
 
-| Code signing | Relic + House | **P0 SHIP BLOCKER** - unsigned Defender hit. Wallet IPC hardening **in-tree** (Codex); Relic hostile-page retest open â€” `docs/RELEASE_REVIEW_2026-09-04.md`. | OV/Artifact Signing; `pack.ps1` must sign; MSFT FP; Relic security retest before public ship |
+| Code signing | Relic + House | **P0 SHIP BLOCKER** - unsigned Defender hit. Wallet IPC hardening **in-tree** (Codex); Relic hostile-page retest open Ã¢â‚¬â€ `docs/RELEASE_REVIEW_2026-09-04.md`. | OV/Artifact Signing; `pack.ps1` must sign; MSFT FP; Relic security retest before public ship |
 
-| Build / pack | House | **1.1.9** on TSL; Programs **1.1.9** (rev 37941b2 @ 01:31 ET); Defender quarantines local dist. Codex wallet hardening compiled+retested (shell/wallet green) â€” hold pack until signed + Relic security bar. | Signed 1.1.10 pack to TSL after Relic retest; then Programs hot-patch/reinstall |
+| Build / pack | House | **1.1.9** Programs rev `a825573` @ 11:02 ET (sha fa404567…); local TSL channel manifest **missing** this hour; Defender still hostile to unsigned dist. Hold pack until signed + Relic security bar. | Signed 1.1.10 pack to TSL after Relic retest; then Programs hot-patch/reinstall |
 
-| Media hosting | vapurrbot + TSL | Ketflix `TRAILER_BASE` Ã¢â€ â€™ thesecretlab.app; CDN 404 until upload | sync `frontend/ketflix/trailers/*.mp4`; see HOSTING.md |
+| Media hosting | vapurrbot + TSL | Ketflix `TRAILER_BASE` ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ thesecretlab.app; CDN 404 until upload | sync `frontend/ketflix/trailers/*.mp4`; see HOSTING.md |
 
 | Ketflix UI | KFX | posters+hero 1080p landscape; **idle** since ~13:07 | review only; no new proc |
 
@@ -32,7 +32,7 @@ Living owner board. Snapshot: `docs/SNAPSHOT.md`. Flash: `docs/ORG_FLASH.md`.
 
 | Token economy | vapurrbot+Pilot | gen-4 / HouseLp claimed live 46630; Pilot touched pay/wallet/pusd PM | keep STATUS CAs honest; vault live |
 
-| Token economy / Fed gV | Relic+House | **slice green** â€” gV 3.5% + wgV + BrowserStream walls tested | HouseFeeRemit + CD UI + HouseUniSkim + WGV_HOUSE + Bonds gated UI + House wgV visual stub green; full Uni IHooks + House AMM wgV deploy when Relic opens |
+| Token economy / Fed gV | Relic+House | **slice green** — gV walls + fee/skim/CD/wgV stubs + **SavingsRouter** (`60f3744`, forge 20/20) | Live wire / Uni IHooks / House AMM wgV deploy when Relic opens; SignPath remains ship P0 |
 
 | Charts / Psy / Tube | PARK | | |
 
@@ -40,5 +40,5 @@ Living owner board. Snapshot: `docs/SNAPSHOT.md`. Flash: `docs/ORG_FLASH.md`.
 
 ## Hard media rule (Relic)
 
-Never pack `.mp4` / `.webm`. Host at `https://thesecretlab.app/vapurr/Ã¢â‚¬Â¦`. Embed excludes in `crates/vapurr-shell/src/host/assets.rs`.
+Never pack `.mp4` / `.webm`. Host at `https://thesecretlab.app/vapurr/ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦`. Embed excludes in `crates/vapurr-shell/src/host/assets.rs`.
 
