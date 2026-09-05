@@ -12,138 +12,274 @@
     html, body { height: 100%; overflow: hidden; }
     body {
       margin: 0;
-      background: transparent;
+      background: #000;
       color: var(--color-snow);
       display: grid;
       place-items: center;
       position: relative;
       -webkit-font-smoothing: antialiased;
-      font-family: var(--font-sans, system-ui, -apple-system, Segoe UI, sans-serif);
+      font-family: var(--font-sans, var(--font), system-ui, -apple-system, Segoe UI, sans-serif);
     }
 
-    /* Dimmed chrome behind the physical pad — not edge-to-edge lock UI */
-    .dimmer {
+    /* Void + soft lime bokeh — matches mock 00 */
+    .void {
       position: fixed;
       inset: 0;
       z-index: 0;
+      pointer-events: none;
       background:
-        radial-gradient(ellipse 70% 50% at 50% 38%, color-mix(in srgb, var(--color-forest) 32%, transparent), transparent 72%),
-        color-mix(in srgb, var(--color-void) 74%, transparent);
+        radial-gradient(ellipse 55% 42% at 18% 58%, color-mix(in srgb, var(--color-lime) 14%, transparent), transparent 70%),
+        radial-gradient(ellipse 40% 36% at 78% 32%, color-mix(in srgb, var(--color-lime) 8%, transparent), transparent 68%),
+        radial-gradient(circle 2px at 22% 28%, color-mix(in srgb, var(--color-lime) 55%, transparent), transparent 60%),
+        radial-gradient(circle 3px at 68% 18%, color-mix(in srgb, var(--color-lime) 40%, transparent), transparent 60%),
+        radial-gradient(circle 2px at 84% 62%, color-mix(in srgb, var(--color-lime) 35%, transparent), transparent 60%),
+        radial-gradient(circle 1.5px at 40% 72%, color-mix(in srgb, var(--color-lime) 45%, transparent), transparent 60%),
+        radial-gradient(ellipse 80% 50% at 50% 100%, color-mix(in srgb, #111 90%, transparent), transparent 55%),
+        #000;
+    }
+    .void::after {
+      content: "";
+      position: absolute;
+      left: 8%;
+      right: 8%;
+      bottom: 0;
+      height: 28%;
+      background: linear-gradient(180deg, transparent, color-mix(in srgb, #000 70%, transparent));
+      mask-image: linear-gradient(180deg, transparent, #000 40%);
+      opacity: 0.55;
     }
 
-    /* Anodized titanium device shell — brushed metal chassis only */
-    .device {
-      --ti-hi: #b8bcc4;
-      --ti-mid: #7a808a;
-      --ti-lo: #3e444c;
-      --ti-void: #1c2026;
+    .stage {
       position: relative;
       z-index: 1;
-      width: min(328px, calc(100vw - 36px));
-      border-radius: 38px;
-      padding: 14px 14px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: clamp(12px, 3.5vw, 36px);
+      padding: 24px 16px 40px;
+      max-width: 920px;
+      width: 100%;
+      animation: stage-in 0.48s cubic-bezier(0.22, 1.2, 0.36, 1) both;
+    }
+    @keyframes stage-in {
+      from { opacity: 0; transform: translateY(16px) scale(0.97); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    /* Mascot beside the floating card */
+    .mascot-side {
+      flex: 0 0 auto;
+      width: clamp(132px, 22vw, 210px);
+      display: grid;
+      place-items: end center;
+      filter:
+        drop-shadow(0 18px 28px color-mix(in srgb, #000 55%, transparent))
+        drop-shadow(0 0 28px color-mix(in srgb, var(--color-lime) 28%, transparent));
+      align-self: flex-end;
+      margin-bottom: 8px;
+    }
+    .mascot-side img {
+      width: 100%;
+      height: auto;
+      display: block;
+      object-fit: contain;
+      user-select: none;
+      -webkit-user-drag: none;
+      pointer-events: none;
+      border-radius: 8px;
+    }
+    .mascot-glow {
+      position: absolute;
+      width: clamp(100px, 18vw, 170px);
+      height: 48px;
+      bottom: 4px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: radial-gradient(ellipse at center, color-mix(in srgb, var(--color-lime) 35%, transparent), transparent 70%);
+      filter: blur(10px);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .mascot-side { position: relative; }
+    .mascot-side img { position: relative; z-index: 1; }
+
+    /*
+      Floating dark liquid-glass wallet card (mock 00 chrome).
+      Clear refractive slab — NO frost / milk / backdrop-blur.
+    */
+    .wallet-card {
+      --card-w: min(340px, calc(100vw - 28px));
+      position: relative;
+      z-index: 2;
+      width: var(--card-w);
+      border-radius: 28px;
+      padding: 18px 16px 16px;
       background:
-        /* fine brush grain — metal shell only */
-        repeating-linear-gradient(
-          112deg,
-          transparent 0 1.5px,
-          color-mix(in srgb, var(--color-snow) 4.5%, transparent) 1.5px 2px,
-          transparent 2px 3.5px,
-          color-mix(in srgb, #000 5%, transparent) 3.5px 4px
-        ),
-        repeating-linear-gradient(
-          22deg,
-          transparent 0 6px,
-          color-mix(in srgb, var(--color-snow) 2%, transparent) 6px 7px
-        ),
-        linear-gradient(158deg,
-          var(--ti-hi) 0%,
-          var(--ti-mid) 22%,
-          var(--ti-lo) 48%,
-          var(--ti-void) 78%,
-          #12151a 100%);
-      border: 1px solid color-mix(in srgb, var(--ti-hi) 42%, transparent);
+        linear-gradient(165deg,
+          color-mix(in srgb, var(--color-snow) 9%, transparent) 0%,
+          color-mix(in srgb, #8ec8ff 3.5%, transparent) 28%,
+          color-mix(in srgb, var(--color-steel) 55%, transparent) 52%,
+          color-mix(in srgb, #0a0c0e 78%, transparent) 100%);
+      border: 1px solid color-mix(in srgb, var(--color-snow) 14%, transparent);
       box-shadow:
         0 0 0 1px color-mix(in srgb, #000 55%, transparent),
-        0 32px 72px color-mix(in srgb, #000 58%, transparent),
-        0 8px 20px color-mix(in srgb, #000 35%, transparent),
-        inset 0 1.5px 0 color-mix(in srgb, var(--color-snow) 38%, transparent),
-        inset 0 -2px 0 color-mix(in srgb, #000 50%, transparent),
-        inset 1.5px 0 0 color-mix(in srgb, var(--color-snow) 12%, transparent),
-        inset -1.5px 0 0 color-mix(in srgb, #000 28%, transparent),
-        inset 0 0 24px color-mix(in srgb, #000 18%, transparent);
-      transform: translateY(0);
-      animation: pad-in 0.42s cubic-bezier(0.22, 1.2, 0.36, 1) both;
+        0 28px 64px color-mix(in srgb, #000 62%, transparent),
+        0 8px 24px color-mix(in srgb, #000 40%, transparent),
+        0 0 48px color-mix(in srgb, var(--color-lime) 8%, transparent),
+        inset 0 1.5px 0 color-mix(in srgb, var(--color-snow) 42%, transparent),
+        inset 0 -1px 0 color-mix(in srgb, #000 35%, transparent),
+        inset 1px 0 0 color-mix(in srgb, var(--color-snow) 12%, transparent),
+        inset -1px 0 0 color-mix(in srgb, #7ec8ff 10%, transparent);
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+      display: flex;
+      flex-direction: column;
       isolation: isolate;
+      overflow: hidden;
     }
-    .device::after {
+
+    .glass-sheen {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      border-radius: inherit;
+      background:
+        radial-gradient(ellipse 90% 48% at 12% 0%,
+          color-mix(in srgb, var(--color-snow) 38%, transparent),
+          transparent 55%),
+        radial-gradient(ellipse 48% 26% at 88% 12%,
+          color-mix(in srgb, var(--color-snow) 12%, transparent),
+          transparent 58%),
+        radial-gradient(ellipse 70% 40% at 50% 110%,
+          color-mix(in srgb, #7ec8ff 7%, transparent),
+          transparent 60%),
+        linear-gradient(118deg,
+          color-mix(in srgb, #ff8a80 5%, transparent) 0%,
+          transparent 10%,
+          color-mix(in srgb, var(--color-snow) 9%, transparent) 18%,
+          transparent 36%,
+          color-mix(in srgb, #7ec8ff 6%, transparent) 58%,
+          transparent 72%,
+          color-mix(in srgb, var(--color-lime) 5%, transparent) 88%,
+          transparent 100%);
+      mix-blend-mode: screen;
+      opacity: 0.68;
+    }
+    .glass-sheen::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: linear-gradient(
+        105deg,
+        transparent 0%,
+        transparent 38%,
+        color-mix(in srgb, var(--color-snow) 16%, transparent) 49%,
+        transparent 58%,
+        transparent 100%
+      );
+      background-size: 220% 100%;
+      animation: glass-sweep 7.5s ease-in-out infinite;
+      opacity: 0.5;
+      mix-blend-mode: soft-light;
+    }
+    .glass-sheen::after {
       content: "";
       position: absolute;
       inset: 0;
       border-radius: inherit;
       pointer-events: none;
-      z-index: 5;
-      background:
-        linear-gradient(115deg,
-          color-mix(in srgb, var(--color-snow) 22%, transparent) 0%,
-          transparent 18%,
-          transparent 62%,
-          color-mix(in srgb, #000 18%, transparent) 100%);
-      mix-blend-mode: soft-light;
-      opacity: 0.85;
+      box-shadow:
+        inset 0 0 0 1px color-mix(in srgb, var(--color-snow) 22%, transparent),
+        inset 0 2px 10px color-mix(in srgb, var(--color-snow) 10%, transparent),
+        inset 0 -14px 28px color-mix(in srgb, #7ec8ff 6%, transparent);
     }
-    @keyframes pad-in {
-      from { opacity: 0; transform: translateY(18px) scale(0.96); }
-      to   { opacity: 1; transform: translateY(0) scale(1); }
+    @keyframes glass-sweep {
+      0%, 100% { background-position: 120% 0; opacity: 0.32; }
+      45% { background-position: -20% 0; opacity: 0.65; }
     }
 
-    .device::before { content: none; display: none; }
+    .glass-rim {
+      position: absolute;
+      inset: 0;
+      z-index: 3;
+      pointer-events: none;
+      border-radius: inherit;
+      overflow: hidden;
+    }
+    .glass-rim svg { display: block; width: 100%; height: 100%; }
 
-    /* Top titanium bezel: earpiece slit + physical status LED jewel */
-    .bezel-top {
+    .wallet-card > :not(.glass-sheen):not(.glass-rim):not(.crypto-viz) {
       position: relative;
-      z-index: 6;
+      z-index: 2;
+    }
+
+    .crypto-viz {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0.55;
+      border-radius: inherit;
+    }
+
+    /* Header — VAPURR WALLET chrome from mock 00 */
+    .card-head {
       display: flex;
       align-items: center;
-      justify-content: center;
-      gap: 14px;
-      height: 18px;
-      margin: 2px 0 12px;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 18px;
     }
-    .earpiece {
-      width: 92px;
-      height: 7px;
-      border-radius: 99px;
-      background:
-        linear-gradient(180deg,
-          color-mix(in srgb, #000 55%, var(--ti-lo)) 0%,
-          color-mix(in srgb, var(--ti-mid) 40%, #000) 100%);
-      box-shadow:
-        inset 0 1px 2px color-mix(in srgb, #000 60%, transparent),
-        0 1px 0 color-mix(in srgb, var(--color-snow) 18%, transparent);
-      flex-shrink: 0;
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
     }
-    .status-led-well {
-      width: 16px;
-      height: 16px;
+    .brand-mark {
+      width: 34px;
+      height: 34px;
       border-radius: 50%;
       display: grid;
       place-items: center;
       flex-shrink: 0;
-      background:
-        radial-gradient(circle at 50% 40%,
-          color-mix(in srgb, var(--ti-lo) 70%, #000),
-          var(--ti-void));
+      border: 1.5px solid color-mix(in srgb, var(--color-lime) 70%, transparent);
       box-shadow:
-        inset 0 1.5px 3px color-mix(in srgb, #000 70%, transparent),
-        inset 0 -1px 0 color-mix(in srgb, var(--color-snow) 10%, transparent),
-        0 1px 0 color-mix(in srgb, var(--color-snow) 14%, transparent);
+        0 0 14px color-mix(in srgb, var(--color-lime) 25%, transparent),
+        inset 0 0 8px color-mix(in srgb, var(--color-lime) 12%, transparent);
+      color: var(--color-lime);
     }
+    .brand-mark svg { width: 18px; height: 18px; display: block; }
+    .brand-text {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.05;
+      gap: 2px;
+    }
+    .brand-text .name {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: var(--color-snow);
+    }
+    .brand-text .sub {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.18em;
+      color: color-mix(in srgb, var(--color-snow) 55%, var(--color-muted));
+      text-transform: uppercase;
+    }
+
     .status-led {
       --led: #ff2a32;
-      width: 8px;
-      height: 8px;
+      width: 11px;
+      height: 11px;
       border-radius: 50%;
+      flex-shrink: 0;
       background:
         radial-gradient(circle at 32% 28%,
           color-mix(in srgb, #fff 70%, var(--led)) 0%,
@@ -151,9 +287,8 @@
           color-mix(in srgb, #000 40%, var(--led)) 100%);
       box-shadow:
         0 0 0 1px color-mix(in srgb, #000 45%, transparent),
-        0 0 8px color-mix(in srgb, var(--led) 85%, transparent),
-        0 0 18px color-mix(in srgb, var(--led) 55%, transparent),
-        0 0 32px color-mix(in srgb, var(--led) 28%, transparent),
+        0 0 10px color-mix(in srgb, var(--led) 85%, transparent),
+        0 0 22px color-mix(in srgb, var(--led) 45%, transparent),
         inset 0 1px 1px color-mix(in srgb, #fff 45%, transparent);
       animation: led-pulse 1.55s ease-in-out infinite;
     }
@@ -182,262 +317,33 @@
       50% { opacity: 0.25; }
     }
 
-    /*
-      Liquid-glass display pane (iOS liquid glass / Vision Pro–ish).
-      Truly transparent + refractive — NOT frosted, milky, etched, or grainy.
-      Glyphs + lock chrome live INSIDE this pane; physical keys sit below on titanium.
-    */
-    .screen {
-      position: relative;
-      overflow: hidden;
-      border-radius: 28px;
-      padding: 18px 14px 14px;
-      /* clear refractive slab — whisper of tint only, no frost wash */
-      background:
-        linear-gradient(165deg,
-          color-mix(in srgb, var(--color-snow) 7%, transparent) 0%,
-          color-mix(in srgb, #8ec8ff 3%, transparent) 34%,
-          color-mix(in srgb, var(--color-snow) 1.5%, transparent) 62%,
-          color-mix(in srgb, #c0f800 2%, transparent) 100%);
-      border: 1px solid transparent;
-      background-clip: padding-box;
-      box-shadow:
-        /* thin glass lip + edge refraction */
-        inset 0 1px 0 color-mix(in srgb, var(--color-snow) 62%, transparent),
-        inset 0 -1px 0 color-mix(in srgb, #000 22%, transparent),
-        inset 1px 0 0 color-mix(in srgb, var(--color-snow) 22%, transparent),
-        inset -1px 0 0 color-mix(in srgb, #7ec8ff 14%, transparent),
-        inset 0 0 0 0.5px color-mix(in srgb, var(--color-snow) 28%, transparent),
-        0 0 0 1px color-mix(in srgb, #000 45%, transparent),
-        0 1px 0 color-mix(in srgb, var(--color-snow) 10%, transparent),
-        0 10px 28px color-mix(in srgb, #000 28%, transparent);
-      /* no backdrop blur — clear glass, not frosted */
-      backdrop-filter: none;
-      -webkit-backdrop-filter: none;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      isolation: isolate;
-      margin-bottom: 12px;
+    /* Unlock section replaces fake TOTAL BALANCE */
+    .unlock-block {
+      margin-bottom: 14px;
     }
-
-    /* SVG refractive rim — chromatic edge, lens feel */
-    .glass-rim {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 3;
-      pointer-events: none;
-      border-radius: inherit;
-      overflow: hidden;
-    }
-    .glass-rim svg {
-      display: block;
-      width: 100%;
-      height: 100%;
-    }
-
-    /* Depth field for drifting cipher glyphs — inside the pane */
-    .crypto-viz {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 0;
-      pointer-events: none;
-      opacity: 0.9;
-      border-radius: inherit;
-    }
-
-    /*
-      Specular + refraction sheen only.
-      Soft highlights, edge caustic, subtle RGB fringe — zero frost/grain/milk.
-    */
-    .glass-sheen {
-      position: absolute;
-      inset: 0;
-      z-index: 1;
-      pointer-events: none;
-      border-radius: inherit;
-      background:
-        /* primary specular catch (top-left) */
-        radial-gradient(ellipse 90% 48% at 14% 4%,
-          color-mix(in srgb, var(--color-snow) 42%, transparent),
-          transparent 55%),
-        /* secondary specular */
-        radial-gradient(ellipse 48% 26% at 82% 14%,
-          color-mix(in srgb, var(--color-snow) 14%, transparent),
-          transparent 58%),
-        /* soft lens caustic */
-        radial-gradient(ellipse 70% 40% at 50% 110%,
-          color-mix(in srgb, #7ec8ff 8%, transparent),
-          transparent 60%),
-        /* chromatic refraction band */
-        linear-gradient(118deg,
-          color-mix(in srgb, #ff8a80 6%, transparent) 0%,
-          transparent 10%,
-          color-mix(in srgb, var(--color-snow) 10%, transparent) 18%,
-          transparent 36%,
-          color-mix(in srgb, #7ec8ff 7%, transparent) 58%,
-          transparent 72%,
-          color-mix(in srgb, var(--color-lime) 5%, transparent) 88%,
-          transparent 100%),
-        /* bottom glass thickness cue — clear, not milky */
-        linear-gradient(180deg,
-          color-mix(in srgb, var(--color-snow) 6%, transparent) 0%,
-          transparent 16%,
-          transparent 84%,
-          color-mix(in srgb, #000 8%, transparent) 100%);
-      mix-blend-mode: screen;
-      opacity: 0.72;
-    }
-    .glass-sheen::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      border-radius: inherit;
-      pointer-events: none;
-      /* moving light kiss across the pane */
-      background: linear-gradient(
-        105deg,
-        transparent 0%,
-        transparent 38%,
-        color-mix(in srgb, var(--color-snow) 18%, transparent) 49%,
-        transparent 58%,
-        transparent 100%
-      );
-      background-size: 220% 100%;
-      animation: glass-sweep 7.5s ease-in-out infinite;
-      opacity: 0.55;
-      mix-blend-mode: soft-light;
-    }
-    .glass-sheen::after {
-      content: "";
-      position: absolute;
-      inset: 0;
-      border-radius: inherit;
-      pointer-events: none;
-      box-shadow:
-        inset 0 0 0 1px color-mix(in srgb, var(--color-snow) 28%, transparent),
-        inset 0 2px 10px color-mix(in srgb, var(--color-snow) 14%, transparent),
-        inset 0 -12px 26px color-mix(in srgb, #7ec8ff 8%, transparent),
-        inset 1px 0 10px color-mix(in srgb, #ff8a80 5%, transparent),
-        inset -1px 0 12px color-mix(in srgb, #7ec8ff 7%, transparent),
-        inset 0 0 40px color-mix(in srgb, var(--color-snow) 3%, transparent);
-    }
-    @keyframes glass-sweep {
-      0%, 100% { background-position: 120% 0; opacity: 0.35; }
-      45% { background-position: -20% 0; opacity: 0.7; }
-    }
-
-    .screen > :not(.crypto-viz):not(.glass-sheen):not(.glass-rim) {
-      position: relative;
-      z-index: 2;
-    }
-
-    .hero {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 10px;
-    }
-
-    .mascot-wrap {
-      position: relative;
-      width: 72px;
-      height: 72px;
-      display: grid;
-      place-items: center;
-      /* mascot floats inside the glass with a soft refractive halo */
-      filter: drop-shadow(0 0 12px color-mix(in srgb, var(--color-snow) 18%, transparent));
-    }
-
-    .mascot {
-      width: 64px;
-      height: 64px;
-      object-fit: contain;
-      display: block;
-      border-radius: 16px;
-      background: #000;
-      box-shadow:
-        0 6px 18px color-mix(in srgb, #000 45%, transparent),
-        0 0 0 1px color-mix(in srgb, var(--color-lime) 22%, transparent),
-        inset 0 1px 0 color-mix(in srgb, var(--color-snow) 20%, transparent);
-      user-select: none;
-      -webkit-user-drag: none;
-      pointer-events: none;
-    }
-
-    .lock-badge {
-      position: absolute;
-      right: -6px;
-      bottom: -4px;
-      width: 26px;
-      height: 26px;
-      border-radius: 9px;
-      background: color-mix(in srgb, var(--color-void) 72%, transparent);
-      border: 1px solid color-mix(in srgb, var(--color-lime) 45%, transparent);
-      box-shadow:
-        0 4px 10px color-mix(in srgb, #000 40%, transparent),
-        inset 0 1px 0 color-mix(in srgb, var(--color-snow) 14%, transparent);
-      display: grid;
-      place-items: center;
-      color: var(--color-lime);
-      backdrop-filter: none;
-      -webkit-backdrop-filter: none;
-    }
-    .lock-badge svg {
-      width: 14px;
-      height: 14px;
-      display: block;
-    }
-
-    .title-row {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      margin-bottom: 4px;
-    }
-    .title-row .lock-inline {
-      width: 16px;
-      height: 16px;
-      color: var(--color-lime);
-      flex-shrink: 0;
-      opacity: 0.95;
-      filter: drop-shadow(0 0 6px color-mix(in srgb, var(--color-lime) 35%, transparent));
-    }
-
-    .mono.kicker {
-      color: var(--color-lime);
-      font-size: 11px;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      margin-bottom: 2px;
-      font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
-      text-shadow: 0 0 12px color-mix(in srgb, var(--color-lime) 28%, transparent);
-    }
-
-    h1 {
-      font-size: 20px;
+    .unlock-label {
+      font-size: 10px;
       font-weight: 600;
-      letter-spacing: -0.035em;
-      line-height: 1.15;
-      text-align: center;
-      margin: 0;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: color-mix(in srgb, var(--color-snow) 45%, var(--color-muted));
+      margin-bottom: 6px;
+    }
+    h1 {
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -0.04em;
+      line-height: 1.1;
+      margin: 0 0 6px;
+      color: var(--color-snow);
       text-shadow: 0 1px 0 color-mix(in srgb, #000 35%, transparent);
     }
-
     .hint {
       color: var(--color-muted);
       font-size: 12px;
       line-height: 1.4;
-      text-align: center;
       min-height: 16px;
-      margin: 6px 0 16px;
-      max-width: 22em;
+      margin: 0 0 14px;
     }
     .hint.err { color: #ff8a80; }
     .hint.ok { color: var(--color-lime); }
@@ -445,8 +351,8 @@
     .dots {
       display: flex;
       gap: 14px;
-      margin-bottom: 6px;
-      padding: 4px;
+      margin: 4px 0 18px;
+      padding: 2px 0;
     }
     .dots.shake {
       animation: shake 0.42s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
@@ -465,7 +371,6 @@
       45% { transform: scale(1.22); }
       100% { transform: scale(1); }
     }
-
     .dot {
       width: 12px;
       height: 12px;
@@ -491,32 +396,26 @@
       box-shadow: 0 0 10px color-mix(in srgb, #ff8a80 45%, transparent);
     }
 
-    /* Physical keypad sits on the titanium body, around/below the glass pane */
+    /* Keypad inside the glass card — dark glass keys */
     .pad {
       display: grid;
-      grid-template-columns: repeat(3, 68px);
-      gap: 11px 14px;
-      justify-content: center;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px 12px;
       user-select: none;
-      margin-bottom: 2px;
+      margin-bottom: 14px;
       perspective: 600px;
-      position: relative;
-      z-index: 4;
     }
-
-    /* Vercel-style physicalized keys: depth, soft shadow, spring press */
     .key {
-      --key-face: color-mix(in srgb, var(--color-steel) 88%, #2a2e34);
-      --key-depth: 5px;
+      --key-face: color-mix(in srgb, var(--color-steel) 72%, #12151a);
+      --key-depth: 4px;
       position: relative;
-      width: 68px;
-      height: 68px;
-      border-radius: 50%;
+      height: 56px;
+      border-radius: 16px;
       border: 0;
       padding: 0;
       background: transparent;
       color: var(--color-snow);
-      font-size: 24px;
+      font-size: 22px;
       font-weight: 600;
       letter-spacing: -0.03em;
       cursor: default;
@@ -529,9 +428,8 @@
       position: absolute;
       inset: 0;
       border-radius: inherit;
-      background: color-mix(in srgb, #000 55%, transparent);
+      background: color-mix(in srgb, #000 50%, transparent);
       transform: translateY(var(--key-depth));
-      filter: blur(0.2px);
       z-index: 0;
     }
     .key::after {
@@ -540,20 +438,16 @@
       inset: 0;
       border-radius: inherit;
       background:
-        linear-gradient(180deg,
-          color-mix(in srgb, var(--color-snow) 10%, var(--key-face)) 0%,
-          var(--key-face) 42%,
-          color-mix(in srgb, var(--key-face) 78%, #000) 100%);
+        linear-gradient(165deg,
+          color-mix(in srgb, var(--color-snow) 10%, transparent) 0%,
+          color-mix(in srgb, var(--key-face) 88%, transparent) 42%,
+          color-mix(in srgb, #000 28%, var(--key-face)) 100%);
+      border: 1px solid color-mix(in srgb, var(--color-snow) 10%, transparent);
       box-shadow:
-        inset 0 1px 0 color-mix(in srgb, var(--color-snow) 14%, transparent),
-        inset 0 -1px 0 color-mix(in srgb, #000 35%, transparent),
-        0 1px 0 color-mix(in srgb, var(--color-snow) 4%, transparent);
-      border: 1px solid color-mix(in srgb, var(--color-snow) 8%, transparent);
+        inset 0 1px 0 color-mix(in srgb, var(--color-snow) 16%, transparent),
+        inset 0 -1px 0 color-mix(in srgb, #000 30%, transparent);
       z-index: 1;
-      transition:
-        transform 0.14s cubic-bezier(0.22, 1.5, 0.36, 1),
-        background 0.12s ease,
-        box-shadow 0.14s ease;
+      transition: transform 0.14s cubic-bezier(0.22, 1.5, 0.36, 1), background 0.12s ease, box-shadow 0.14s ease;
     }
     .key > span {
       position: relative;
@@ -566,9 +460,10 @@
     }
     .key:hover::after {
       background:
-        linear-gradient(180deg,
-          color-mix(in srgb, var(--color-forest) 55%, var(--key-face)) 0%,
+        linear-gradient(165deg,
+          color-mix(in srgb, var(--color-forest) 40%, var(--key-face)) 0%,
           color-mix(in srgb, var(--color-steel) 70%, var(--color-forest)) 100%);
+      border-color: color-mix(in srgb, var(--color-lime) 22%, transparent);
     }
     .key:focus-visible::after {
       box-shadow:
@@ -576,19 +471,17 @@
         0 0 0 2px color-mix(in srgb, var(--color-lime) 55%, transparent);
     }
     .key:active,
-    .key.is-press {
-      transform: translateY(2px);
-    }
+    .key.is-press { transform: translateY(2px); }
     .key:active::after,
     .key.is-press::after {
       transform: translateY(var(--key-depth));
       background:
         linear-gradient(180deg,
-          color-mix(in srgb, var(--color-lime) 28%, var(--key-face)) 0%,
+          color-mix(in srgb, var(--color-lime) 22%, var(--key-face)) 0%,
           color-mix(in srgb, var(--color-steel) 75%, #000) 100%);
       box-shadow:
         inset 0 2px 6px color-mix(in srgb, #000 45%, transparent),
-        inset 0 1px 0 color-mix(in srgb, var(--color-lime) 20%, transparent);
+        inset 0 1px 0 color-mix(in srgb, var(--color-lime) 18%, transparent);
     }
     .key:active > span,
     .key.is-press > span {
@@ -619,17 +512,15 @@
     }
     .key.ghost:active,
     .key.ghost.is-press { transform: scale(0.96); }
-    /* phone-pad spacer — keeps 0 centered */
     .key.ghost.spacer,
     .key.ghost.spacer:disabled {
       opacity: 0;
       pointer-events: none;
       cursor: default;
     }
-    /* ket lime back-arrow delete */
     .key.ghost.del {
       color: var(--color-lime);
-      font-size: 26px;
+      font-size: 24px;
       font-weight: 500;
       letter-spacing: 0;
       text-transform: none;
@@ -646,9 +537,7 @@
       background: color-mix(in srgb, var(--color-lime) 10%, transparent);
     }
     .key.ghost.del:active,
-    .key.ghost.del.is-press {
-      color: var(--color-lime);
-    }
+    .key.ghost.del.is-press { color: var(--color-lime); }
     .key.ghost.del:active::after,
     .key.ghost.del.is-press::after {
       background: color-mix(in srgb, var(--color-lime) 18%, transparent);
@@ -656,69 +545,93 @@
     .key:disabled { opacity: 0.35; pointer-events: none; }
     .key.ghost.spacer:disabled { opacity: 0; }
 
+    /* Lime CTA bar — mock 00 ENTER SUPERAPP chrome */
+    .cta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      width: 100%;
+      min-height: 48px;
+      padding: 0 18px;
+      border: 0;
+      border-radius: 9999px;
+      background: var(--color-lime);
+      color: var(--color-on-lime, #0e0e0e);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      box-shadow:
+        0 0 24px color-mix(in srgb, var(--color-lime) 35%, transparent),
+        inset 0 1px 0 color-mix(in srgb, #fff 35%, transparent);
+      cursor: default;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .cta svg {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+    }
+    .cta[data-state="ok"] {
+      box-shadow:
+        0 0 32px color-mix(in srgb, var(--color-lime) 55%, transparent),
+        inset 0 1px 0 color-mix(in srgb, #fff 35%, transparent);
+    }
+    .cta[data-state="fail"] {
+      background: #ff8a80;
+      box-shadow: 0 0 20px color-mix(in srgb, #ff8a80 40%, transparent);
+    }
+
     .foot {
       margin-top: 12px;
       color: var(--color-muted);
       font-size: 10px;
       text-align: center;
       line-height: 1.4;
-      max-width: 26em;
       opacity: 0.9;
-      position: relative;
-      z-index: 4;
     }
     .foot b { color: var(--color-snow); font-weight: 600; }
 
-    html[data-theme="light"] .dimmer {
-      background: color-mix(in srgb, var(--color-void) 55%, transparent);
-    }
-    html[data-theme="light"] .device {
-      --ti-hi: #f2f3f5;
-      --ti-mid: #c5c9d0;
-      --ti-lo: #8e949e;
-      --ti-void: #5c636e;
-    }
-    html[data-theme="light"] .screen {
-      background:
-        linear-gradient(165deg,
-          color-mix(in srgb, #fff 18%, transparent) 0%,
-          color-mix(in srgb, #8ec8ff 4%, transparent) 40%,
-          color-mix(in srgb, #fff 6%, transparent) 100%);
-      backdrop-filter: none;
-      -webkit-backdrop-filter: none;
-    }
-    html[data-theme="light"] .crypto-viz { opacity: 0.5; }
-    html[data-theme="light"] .glass-sheen {
-      mix-blend-mode: soft-light;
-      opacity: 0.55;
-    }
-    html[data-theme="light"] .key {
-      --key-face: color-mix(in srgb, var(--color-steel) 98%, #fff);
-      color: var(--color-void);
+    @media (max-width: 560px) {
+      .stage {
+        flex-direction: column;
+        gap: 10px;
+        padding-top: 12px;
+      }
+      .mascot-side {
+        width: clamp(88px, 28vw, 120px);
+        align-self: center;
+        margin-bottom: 0;
+        order: -1;
+      }
+      .mascot-glow { height: 28px; }
+      h1 { font-size: 22px; }
+      .key { height: 52px; font-size: 20px; }
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .device { animation: none; }
+      .stage { animation: none; }
       .crypto-viz { display: none; }
       .glass-sheen::before { animation: none; opacity: 0.4; }
       .status-led { animation: none; opacity: 1; filter: none; }
+      .dots.shake, .dots.ok-pulse .dot.on { animation: none; }
     }
   </style>
 </head>
 <body>
-  <div class="dimmer" aria-hidden="true"></div>
-  <div class="device" role="dialog" aria-modal="true" aria-labelledby="lock-title">
-    <div class="bezel-top">
-      <span class="earpiece" aria-hidden="true"></span>
-      <span class="status-led-well" aria-hidden="true">
-        <span class="status-led" id="status-led" data-state="locked" role="img" aria-label="Locked"></span>
-      </span>
+  <div class="void" aria-hidden="true"></div>
+  <div class="stage">
+    <div class="mascot-side" aria-hidden="true">
+      <span class="mascot-glow"></span>
+      <img src="/mascot.png" alt="" width="210" height="210" decoding="async"/>
     </div>
-    <div class="screen">
+
+    <div class="wallet-card" role="dialog" aria-modal="true" aria-labelledby="lock-title" id="wallet-card">
       <canvas class="crypto-viz" id="crypto-viz" aria-hidden="true"></canvas>
       <div class="glass-sheen" aria-hidden="true"></div>
       <div class="glass-rim" aria-hidden="true">
-        <svg viewBox="0 0 300 360" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+        <svg viewBox="0 0 300 520" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <linearGradient id="rimSpec" x1="0" y1="0" x2="1" y2="1">
               <stop offset="0%" stop-color="#ffffff" stop-opacity="0.55"/>
@@ -733,57 +646,65 @@
               <stop offset="100%" stop-color="#000000" stop-opacity="0.12"/>
             </linearGradient>
           </defs>
-          <rect x="1.2" y="1.2" width="297.6" height="357.6" rx="26" ry="26"
+          <rect x="1.2" y="1.2" width="297.6" height="517.6" rx="26" ry="26"
                 fill="none" stroke="url(#rimSpec)" stroke-width="1.6"/>
-          <rect x="3.5" y="3.5" width="293" height="353" rx="24" ry="24"
+          <rect x="3.5" y="3.5" width="293" height="513" rx="24" ry="24"
                 fill="none" stroke="url(#rimInner)" stroke-width="0.8" opacity="0.85"/>
         </svg>
       </div>
-      <div class="hero">
-        <div class="mascot-wrap">
-          <img class="mascot" src="/mascot.png" alt="" width="64" height="64" decoding="async"/>
-          <span class="lock-badge" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="5" y="11" width="14" height="10" rx="2.5"/>
-              <path d="M8 11V8a4 4 0 0 1 8 0v3"/>
+
+      <div class="card-head">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true">
+            <!-- flame / fox mark -->
+            <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 2.2c.4 0 2.6 2.1 3.8 4.2 1.4 2.4 1.6 4.2.7 5.4-.5.6-1.2.8-1.9.6.9 1.6 1.1 3.2.3 4.4-.9 1.4-2.5 2.1-4.1 1.7C8.2 21 7 22.8 7 22.8c0 0-1.2-2.8.2-5.2.7-1.2 1.9-2 3.2-2.2-.9-.2-1.7-.8-2.1-1.7-.6-1.4-.1-3.2 1.2-5.1C10.4 6.3 11.6 2.2 12 2.2z"/>
             </svg>
           </span>
+          <div class="brand-text">
+            <span class="name">VAPURR</span>
+            <span class="sub" id="kicker">Wallet</span>
+          </div>
         </div>
-        <div class="mono kicker" id="kicker">vapurr</div>
-        <div class="title-row">
-          <svg class="lock-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <rect x="5" y="11" width="14" height="10" rx="2.5"/>
-            <path d="M8 11V8a4 4 0 0 1 8 0v3"/>
-          </svg>
-          <h1 id="lock-title">Enter Passcode</h1>
+        <span class="status-led" id="status-led" data-state="locked" role="img" aria-label="Locked"></span>
+      </div>
+
+      <div class="unlock-block">
+        <div class="unlock-label">Unlock</div>
+        <h1 id="lock-title">Enter passcode</h1>
+        <p class="hint" id="hint">4-digit PIN · stays on this device</p>
+        <div class="dots" id="dots" aria-label="Passcode progress">
+          <span class="dot" data-i="0"></span>
+          <span class="dot" data-i="1"></span>
+          <span class="dot" data-i="2"></span>
+          <span class="dot" data-i="3"></span>
         </div>
       </div>
-      <p class="hint" id="hint">Unlock this wallet</p>
 
-      <div class="dots" id="dots" aria-label="Passcode progress">
-        <span class="dot" data-i="0"></span>
-        <span class="dot" data-i="1"></span>
-        <span class="dot" data-i="2"></span>
-        <span class="dot" data-i="3"></span>
+      <div class="pad" id="pad" aria-label="Number pad">
+        <button class="key" type="button" data-d="1"><span>1</span></button>
+        <button class="key" type="button" data-d="2"><span>2</span></button>
+        <button class="key" type="button" data-d="3"><span>3</span></button>
+        <button class="key" type="button" data-d="4"><span>4</span></button>
+        <button class="key" type="button" data-d="5"><span>5</span></button>
+        <button class="key" type="button" data-d="6"><span>6</span></button>
+        <button class="key" type="button" data-d="7"><span>7</span></button>
+        <button class="key" type="button" data-d="8"><span>8</span></button>
+        <button class="key" type="button" data-d="9"><span>9</span></button>
+        <button class="key ghost spacer" type="button" tabindex="-1" aria-hidden="true" disabled><span></span></button>
+        <button class="key" type="button" data-d="0"><span>0</span></button>
+        <button class="key ghost del" type="button" id="key-del" aria-label="Delete"><span aria-hidden="true">←</span></button>
       </div>
-    </div>
 
-    <div class="pad" id="pad" aria-label="Number pad">
-      <button class="key" type="button" data-d="1"><span>1</span></button>
-      <button class="key" type="button" data-d="2"><span>2</span></button>
-      <button class="key" type="button" data-d="3"><span>3</span></button>
-      <button class="key" type="button" data-d="4"><span>4</span></button>
-      <button class="key" type="button" data-d="5"><span>5</span></button>
-      <button class="key" type="button" data-d="6"><span>6</span></button>
-      <button class="key" type="button" data-d="7"><span>7</span></button>
-      <button class="key" type="button" data-d="8"><span>8</span></button>
-      <button class="key" type="button" data-d="9"><span>9</span></button>
-      <button class="key ghost spacer" type="button" tabindex="-1" aria-hidden="true" disabled><span></span></button>
-      <button class="key" type="button" data-d="0"><span>0</span></button>
-      <button class="key ghost del" type="button" id="key-del" aria-label="Delete"><span aria-hidden="true">←</span></button>
-    </div>
+      <button class="cta" type="button" id="cta" data-state="locked" tabindex="-1">
+        <span id="cta-label">Unlock wallet</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M5 12h14M13 6l6 6-6 6"/>
+        </svg>
+      </button>
 
-    <p class="foot" id="foot">Auto-locks after <b>15 min</b> idle by default.</p>
+      <p class="foot" id="foot">Auto-locks after <b>15 min</b> idle by default.</p>
+    </div>
   </div>
 
   <script src="/ipc.js"></script>
@@ -800,14 +721,24 @@
       var hint = document.getElementById("hint");
       var title = document.getElementById("lock-title");
       var kicker = document.getElementById("kicker");
-      var root = document.querySelector(".device");
+      var root = document.getElementById("wallet-card");
       var pad = document.getElementById("pad");
       var led = document.getElementById("status-led");
+      var cta = document.getElementById("cta");
+      var ctaLabel = document.getElementById("cta-label");
 
       function setLed(state) {
         if (!led) return;
         led.setAttribute("data-state", state);
         led.setAttribute("aria-label", state === "ok" ? "Unlocked" : "Locked");
+        if (cta) cta.setAttribute("data-state", state === "ok" ? "ok" : state === "fail" ? "fail" : "locked");
+        if (ctaLabel) {
+          if (state === "ok") ctaLabel.textContent = "Unlocked";
+          else if (state === "fail") ctaLabel.textContent = "Try again";
+          else if (mode === "set") ctaLabel.textContent = "Set passcode";
+          else if (mode === "confirm") ctaLabel.textContent = "Confirm passcode";
+          else ctaLabel.textContent = "Unlock wallet";
+        }
       }
 
       function haptic(pattern) {
@@ -862,18 +793,21 @@
 
       function paintMode() {
         if (mode === "set") {
-          title.textContent = "Set Passcode";
-          kicker.textContent = "secure wallet";
+          title.textContent = "Set passcode";
+          kicker.textContent = "Secure";
           setHint("Choose a 4-digit passcode", false);
+          if (ctaLabel) ctaLabel.textContent = "Set passcode";
         } else if (mode === "confirm") {
-          title.textContent = "Confirm Passcode";
-          kicker.textContent = "secure wallet";
+          title.textContent = "Confirm passcode";
+          kicker.textContent = "Secure";
           setHint("Enter the same passcode again", false);
+          if (ctaLabel) ctaLabel.textContent = "Confirm passcode";
         } else {
           mode = "unlock";
-          title.textContent = "Enter Passcode";
-          kicker.textContent = "vapurr";
-          setHint("Unlock this wallet", false);
+          title.textContent = "Enter passcode";
+          kicker.textContent = "Wallet";
+          setHint("4-digit PIN · stays on this device", false);
+          if (ctaLabel) ctaLabel.textContent = "Unlock wallet";
         }
       }
 
@@ -1055,7 +989,7 @@
         api.lock({ mode: m });
       })();
 
-      /* Liquid-glass cipher field — light glyphs with depth parallax + refraction catch */
+      /* Soft cipher field behind glass — clear, not milky */
       (function cryptoGlass() {
         var canvas = document.getElementById("crypto-viz");
         if (!canvas || !canvas.getContext) return;
@@ -1068,18 +1002,11 @@
         var running = true;
         var last = 0;
         var HEX = "0123456789abcdef";
-        var GLYPHS = "0123456789abcdef¤§¶†‡◊∆∇∞≈≠≤≥⊕⊗⊙◈◇◆◇○●◎◌";
-        var TAGS = ["sha256", "keccak", "hmac", "aes-gcm", "x25519", "secp256k1", "argon2id", "chacha20"];
 
         function randHex(n) {
           var s = "";
           for (var i = 0; i < n; i++) s += HEX[(Math.random() * 16) | 0];
           return s;
-        }
-
-        function randGlyph() {
-          if (Math.random() < 0.72) return randHex(2);
-          return GLYPHS.charAt((Math.random() * GLYPHS.length) | 0);
         }
 
         function resize() {
@@ -1097,40 +1024,36 @@
 
         function buildField(w, h) {
           layers = [
-            { depth: 0.35, cols: [], alpha: 0.14, size: 9, speedMul: 0.45 },
-            { depth: 0.7, cols: [], alpha: 0.28, size: 10, speedMul: 0.85 },
-            { depth: 1.0, cols: [], alpha: 0.48, size: 11, speedMul: 1.25 }
+            { depth: 0.4, cols: [], alpha: 0.1, size: 9, speedMul: 0.4 },
+            { depth: 0.85, cols: [], alpha: 0.2, size: 10, speedMul: 0.9 }
           ];
           for (var L = 0; L < layers.length; L++) {
             var layer = layers[L];
-            var n = Math.max(5, Math.floor(w / (36 - L * 4)));
+            var n = Math.max(4, Math.floor(w / (42 - L * 4)));
             for (var i = 0; i < n; i++) {
               layer.cols.push({
                 x: (i + 0.35 + Math.random() * 0.3) * (w / n),
                 y: Math.random() * h,
-                speed: (10 + Math.random() * 22) * layer.speedMul,
+                speed: (8 + Math.random() * 18) * layer.speedMul,
                 glyphs: (function () {
                   var g = [];
-                  var len = 8 + ((Math.random() * 8) | 0);
-                  for (var j = 0; j < len; j++) g.push(randGlyph());
+                  var len = 6 + ((Math.random() * 6) | 0);
+                  for (var j = 0; j < len; j++) g.push(randHex(2));
                   return g;
                 })(),
-                accent: Math.random() < 0.14,
-                tag: Math.random() < 0.12 ? TAGS[(Math.random() * TAGS.length) | 0] : null,
                 phase: Math.random() * Math.PI * 2
               });
             }
           }
           sparks = [];
-          for (var k = 0; k < 18; k++) {
+          for (var k = 0; k < 12; k++) {
             sparks.push({
               x: Math.random() * w,
               y: Math.random() * h,
-              r: 0.5 + Math.random() * 1.6,
-              vx: -8 + Math.random() * 16,
-              vy: -12 + Math.random() * 8,
-              a: 0.12 + Math.random() * 0.4,
-              chroma: Math.random()
+              r: 0.5 + Math.random() * 1.4,
+              vx: -6 + Math.random() * 12,
+              vy: -10 + Math.random() * 6,
+              a: 0.1 + Math.random() * 0.3
             });
           }
         }
@@ -1142,69 +1065,35 @@
           var w = canvas.clientWidth;
           var h = canvas.clientHeight;
           ctx.clearRect(0, 0, w, h);
-
-          /* NO milky void wash — only a whisper of depth so glass stays clear */
-          ctx.fillStyle = "rgba(10,14,18,0.06)";
+          ctx.fillStyle = "rgba(10,14,18,0.04)";
           ctx.fillRect(0, 0, w, h);
-
-          var lightX = w * (0.18 + 0.04 * Math.sin(ts * 0.00035));
-          var lightY = h * (0.08 + 0.03 * Math.cos(ts * 0.00028));
-
           ctx.textAlign = "center";
 
           for (var L = 0; L < layers.length; L++) {
             var layer = layers[L];
-            var parallax = (lightX - w * 0.5) * (1 - layer.depth) * 0.04;
             ctx.font = layer.size + "px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
-
             for (var i = 0; i < layer.cols.length; i++) {
               var c = layer.cols[i];
               c.y += c.speed * dt;
-              var sway = Math.sin(ts * 0.0006 + c.phase) * (2.2 + layer.depth * 2);
-              var step = 12 + layer.depth * 2;
+              var sway = Math.sin(ts * 0.0006 + c.phase) * (2 + layer.depth * 2);
+              var step = 13;
               var total = c.glyphs.length * step;
               if (c.y - total > h + 20) {
                 c.y = -20 - Math.random() * h * 0.3;
-                c.speed = (10 + Math.random() * 22) * layer.speedMul;
-                c.accent = Math.random() < 0.14;
-                if (Math.random() < 0.3) {
-                  for (var r = 0; r < c.glyphs.length; r++) c.glyphs[r] = randGlyph();
-                }
-                c.tag = Math.random() < 0.12 ? TAGS[(Math.random() * TAGS.length) | 0] : null;
+                c.speed = (8 + Math.random() * 18) * layer.speedMul;
               }
-              var cx = c.x + sway + parallax;
+              var cx = c.x + sway;
               for (var j = 0; j < c.glyphs.length; j++) {
                 var gy = c.y - j * step;
                 if (gy < -14 || gy > h + 14) continue;
                 var fade = 1 - j / c.glyphs.length;
-                /* light catch: brighter near specular highlight */
-                var dx = cx - lightX;
-                var dy = gy - lightY;
-                var dist = Math.sqrt(dx * dx + dy * dy);
-                var catchL = Math.max(0, 1 - dist / (w * 0.55));
-                var baseA = layer.alpha * fade * (0.55 + 0.45 * catchL);
-
-                if (c.accent && j === 0) {
-                  ctx.fillStyle = "rgba(192,248,0," + (baseA * 1.15).toFixed(3) + ")";
-                  ctx.shadowColor = "rgba(192,248,0,0.35)";
-                  ctx.shadowBlur = 6 * layer.depth;
-                } else if (catchL > 0.55 && j < 2) {
-                  /* refractive fringe near specular */
-                  ctx.fillStyle = "rgba(180,220,255," + (baseA * 1.05).toFixed(3) + ")";
-                  ctx.shadowColor = "rgba(126,200,255,0.25)";
-                  ctx.shadowBlur = 4 * layer.depth;
+                var baseA = layer.alpha * fade;
+                if (j === 0) {
+                  ctx.fillStyle = "rgba(192,248,0," + (baseA * 1.1).toFixed(3) + ")";
                 } else {
                   ctx.fillStyle = "rgba(190,210,220," + baseA.toFixed(3) + ")";
-                  ctx.shadowBlur = 0;
                 }
                 ctx.fillText(c.glyphs[j], cx, gy);
-                ctx.shadowBlur = 0;
-              }
-              if (c.tag && layer.depth > 0.6) {
-                ctx.fillStyle = "rgba(192,248,0," + (0.12 * layer.alpha * 2).toFixed(3) + ")";
-                ctx.font = (layer.size - 1) + "px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
-                ctx.fillText(c.tag, cx, c.y + 14);
-                ctx.font = layer.size + "px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
               }
             }
           }
@@ -1216,31 +1105,13 @@
             if (p.x < -4 || p.x > w + 4 || p.y < -4 || p.y > h + 4) {
               p.x = Math.random() * w;
               p.y = h + 4;
-              p.vy = -8 - Math.random() * 14;
-              p.vx = -8 + Math.random() * 16;
-              p.chroma = Math.random();
+              p.vy = -6 - Math.random() * 12;
             }
-            var col = p.chroma < 0.33
-              ? "rgba(192,248,0,"
-              : p.chroma < 0.66
-                ? "rgba(126,200,255,"
-                : "rgba(255,255,255,";
             ctx.beginPath();
-            ctx.fillStyle = col + p.a.toFixed(3) + ")";
+            ctx.fillStyle = "rgba(192,248,0," + p.a.toFixed(3) + ")";
             ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
             ctx.fill();
           }
-
-          /* slow hash ribbon drifting through the glass */
-          if (!canvas._ribbon || ts - (canvas._ribbonAt || 0) > 2200) {
-            canvas._ribbon = "0x" + randHex(40);
-            canvas._ribbonAt = ts;
-          }
-          ctx.fillStyle = "rgba(170,200,220,0.10)";
-          ctx.font = "9px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
-          ctx.textAlign = "left";
-          var ribbonY = ((ts * 0.016) % (h + 40)) - 20;
-          ctx.fillText(canvas._ribbon, 10, ribbonY);
 
           requestAnimationFrame(tick);
         }
