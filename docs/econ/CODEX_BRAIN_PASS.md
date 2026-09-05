@@ -2,7 +2,7 @@
 
 ## Re-review timestamp
 Date: 2026-09-05 ~02:55 America/New_York. Model: gpt-6-astra (high). Mode: brain-only, no patches.
-Branch: `fix/gv-spusd-guards` @ `b3f0fed`.
+Branch: `fix/gv-spusd-guards` @ `ef87976`+ (bonds skeleton pending commit).
 Note: Codex read-only sandbox blocked independent file probes; verdict based on progress contracts below + prior closed proofs as reported.
 
 ### Prior P0 status (closed vs open/partial)
@@ -19,13 +19,13 @@ Note: Codex read-only sandbox blocked independent file probes; verdict based on 
 - PARTIAL -- Fed single-minter enforcement implemented; live market still has distinct embedded V.
 - PARTIAL -- House raw-gV gate + HouseLp/HouseSwap wgV wiring landed; live Uni v4 deploy/bootstrap and PUSD rebase accounting remain open.
 - OPEN -- Self-issued PUSD/V inventory does not establish exogenous dollar backing or par redemption.
-- OPEN -- Executable bonds lack completed inventory, vesting, capacity and valuation prerequisites.
+- PARTIAL -- BondMarket gated skeleton: inventory/capacity/haircut/enabled=false; live enable still blocked on valuation + stock handling.
 
 ### Remaining P0/P1 merge blockers (max 12)
 - [P0] Live one-token migration: replace/migrate gen-4 `0x47Ac...` embedded V and retarget consumers; distinct V addresses cannot be treated as fungible.
 - [P1] HouseLp/HouseSwap Solidity equity wiring to wgV + PairConfig gate landed; still need live pairConfig deploy, Rust deploy ABI/bootstrap wgV, Permit2/PM e2e, PUSD rebase settlement.
 - [P1] Pool-held PUSD: define and prove rebase settlement/allocation for House and `$PUSD`/USDG pools.
-- [P0] Bond execution: keep disabled until payout inventory, vesting/rebase ownership, per-asset capacity, haircuts and reliable RFV valuation are enforced.
+- [P0] Bond execution: `BondMarket` gate landed (disabled/capacity0 default; inventory-only payout). Keep live tabs disabled until reliable RFV valuation + stock closure handling; vesting claim path is inventory transfer only.
 - [P0] External backing / solvency: sink-level cross-branch floor accounting landed; exogenous USDG (or equivalent) backing and true dollar solvency still not established by nominal PUSD RFV.
 
 ### MERGE_REC
@@ -35,6 +35,19 @@ Note: Codex read-only sandbox blocked independent file probes; verdict based on 
 Date: 2026-09-05 (America/New_York). Model: gpt-6-astra, high effort. Mode: brain-only, no patches.
 Branches in scope: `feat/bonds-ux-map`, `fix/pusdloop-routing-gaps`.
 
+
+
+## Progress - BondMarket gated skeleton (executable partial)
+
+Date: 2026-09-05 (America/New_York). Branch: `fix/gv-spusd-guards`.
+
+- `contracts/BondMarket.sol`: `BondAssetTag` ETH/USDG/STOCKS; quote discount+vesting; `bond()` pulls exogenous asset to treasury/RFV sink; pays gV/wgV **from pre-funded inventory only** (no mint); reverts on disabled / capacity 0 / CAP / INV; haircut + Fed `priceWad`; `enabled` default false.
+- Vesting: reserved payout until `claim` after unlock — transfer from bond book, not Fed mint.
+- Proofs: `BondMarketTest` (`test_disabled_market_reverts`, `test_enabled_with_inventory_succeeds_without_minting_fed_supply`, `test_capacity_respected`, `test_haircut_reduces_credited_and_payout`, inventory + ETH/STOCKS gated defaults).
+- Docs: `BONDS.md` aligned to gated reality (not a fake open market).
+
+- [partial] Bonds executable framework gated; do **not** enable live tabs until valuation oracles + stock handling land.
+- [remaining] Reliable RFV valuation; stock closure/corporate-action; optional rebase-ownership polish if payout is live rebasing gV.
 
 ## Progress — Oliver LTV (P0 fix #1)
 
@@ -71,7 +84,7 @@ Date: 2026-09-05 (America/New_York). Branch: `fix/gv-spusd-guards` (from `fix/ol
 - [done] Oliver oracle freshness + conservative credit rate + feed jump clamp (P0 fix #4). Stale rate blocks borrow/withdrawV/liq sizing. See Progress - P0 fix #4.
 - [done] Oliver bad-debt absorb + stub Fed backstop (P0 fix #4). gV/wgV collateral still unimplemented / needs redemption-aware valuation (out of slice).
 - [partial] Oliver auto-remit is try/catch isolated (`remitReserveFromAccrue`); sink revert no longer freezes repay/withdraw/liq. `remitReserve` now `_requireLtv(owner)` after exit. Lithe auto-remit isolation still open.
-- [merge-blocker] Executable bonds must remain gated until payout inventory, vesting/rebase ownership, per-asset capacity, haircuts and reliable valuation are defined; stocks additionally need market-closure and corporate-action handling. Discounts against manipulable equity prices can overissue gV claims for inadequate RFV.
+- [partial] BondMarket skeleton enforces inventory/capacity/haircut/`enabled` gate (proofs: BondMarketTest). Live enable still blocked: reliable valuation + stock market-closure/corporate-action; discounts against manipulable prices can overissue if Fed opens early.
 - [confusion] Keep ETH/USDG/stock bonds visible and printer mechanics hidden; never hide execution availability, vesting, capacity or loss exposure. gV already earns rebases, contradicting "claim gV, then stake"; TVL must exclude recursive double counting, and YOTC must disclose costs and conditional yield assumptions.
 - [done] `market_abi.rs` dual-probe + cache only on conclusive detect; RPC miss fails open / re-probes (P0 fix #3). Inventory fences + mint unify still need deploy-specific verification.
 - [done] `market_abi.rs` tracked + wired through mint/redeem/rate paths (P0 fix #3). Frontend TVL/YOTC bundle validation still separate.
