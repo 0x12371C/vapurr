@@ -37,5 +37,6 @@ One surplus pool feeds both liquid sPUSD NAV and CD coupon. CDs are **not** a se
 ### Out of scope this sketch
 
 - House fee carve sketch: `HouseFeeRemit.sol` (creditFees -> RemittanceSink). Live Uni v4 skim hook still open.
-- Live deploy / frontend Bonds-adjacent CD UI.
-- Variable floating CD rates.
+- Live deploy / wired deposit+claim UI (visual stub on `vapurr://bonds` `#spusd-cd` landed 2026-09-05).
+- Variable floating CD rates.
+

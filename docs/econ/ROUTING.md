@@ -53,7 +53,7 @@ Cash peg trust is the **`$PUSD` / USDG** book (and other exogenous cash legs) - 
 - House leg: **wgV locked** (wstETH pattern) - see HOUSE_PAIR.md. Do not pair raw rebasing gV in AMM.
 - Fed LOLR policy for Oliver bad debt
 - Bond capacity / when not to bond
-- BondMarket gated skeleton + HouseFeeRemit sketch landed (P1 live enable / Uni skim still open) Â· sPUSD CD sketch landed (UI open)
+- BondMarket gated skeleton + HouseFeeRemit sketch landed (P1 live enable / Uni skim still open) · sPUSD CD sketch + Bonds `#spusd-cd` UI stub landed (live wire open)
 - `$PUSD`/USDG pool params / fee / tick ranges (P1) - names locked in `PUSD_LIQUIDITY.md`
 
 ## Market V redeem fence (2026-09-05)

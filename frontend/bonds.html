@@ -400,6 +400,35 @@
     html[data-theme="light"] .panel {
       background: color-mix(in srgb, var(--color-steel) 88%, transparent);
     }
+    .cd-grid {
+      display: grid;
+      grid-template-columns: 1.1fr 1fr 1fr;
+      gap: 10px;
+      margin-top: 14px;
+    }
+    @media (max-width: 720px) {
+      .cd-grid { grid-template-columns: 1fr; }
+    }
+    .cd-card {
+      padding: 14px 14px 12px;
+      border-radius: 14px;
+      background: color-mix(in srgb, var(--color-void) 40%, transparent);
+      border: 1px solid color-mix(in srgb, var(--color-snow) 8%, transparent);
+    }
+    .cd-card.focus {
+      border-color: color-mix(in srgb, var(--color-lime) 40%, transparent);
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-lime) 22%, transparent);
+    }
+    .cd-card .mono { color: var(--color-lime); margin-bottom: 6px; }
+    .cd-card b { display: block; font-size: 16px; margin-bottom: 4px; }
+    .cd-card p { color: var(--color-muted); font-size: 12px; line-height: 1.4; margin: 0 0 10px; }
+    .cd-card .row {
+      display: flex; justify-content: space-between; gap: 8px;
+      font-size: 12px; margin-top: 4px;
+    }
+    .cd-card .row .k { color: var(--color-muted); }
+    .cd-card .row .v { font-weight: 600; font-variant-numeric: tabular-nums; }
+
   </style>
 </head>
 <body>
@@ -446,7 +475,7 @@
         <div class="chips">
           <span class="chip on">$PUSD</span>
           <span class="chip on">USDG</span>
-          <span class="chip">sPUSD</span>
+          <span class="chip on">sPUSD</span>
         </div>
         <div class="mini"><span class="k">exog. depth - example</span><span class="v">$4.2M</span></div>
       </button>
@@ -497,6 +526,41 @@
         <div class="sub">Tight spend float · exogenous</div>
       </div>
     </div>
+    <div class="panel" id="spusd-cd" aria-label="sPUSD CD stub">
+      <div class="mono">cash · sPUSD CD <span class="example-pill">UI stub</span></div>
+      <h2>Save liquid. Lock a CD.</h2>
+      <p class="lede">Same surplus pool after the runway floor. <b>Liquid sPUSD</b> exits on demand. <b>CDs</b> lock for a term, earn a higher coupon from surplus only, and pay a <b>break fee</b> back into surplus on early exit. No V inflation into savings.</p>
+      <div class="cd-grid">
+        <div class="cd-card focus">
+          <div class="mono">liquid</div>
+          <b>sPUSD</b>
+          <p>Base yield. On-demand exit. ERC-4626-style claim on remittance after floor.</p>
+          <div class="row"><span class="k">exit</span><span class="v">anytime</span></div>
+          <div class="row"><span class="k">source</span><span class="v">surplus only</span></div>
+        </div>
+        <div class="cd-card">
+          <div class="mono">30d CD · example</div>
+          <b>Lock 30d</b>
+          <p>Higher coupon share of the same pool. Underfunded maturity pays principal first — never mints.</p>
+          <div class="row"><span class="k">coupon</span><span class="v">4.0%</span></div>
+          <div class="row"><span class="k">break fee</span><span class="v">1.0%</span></div>
+        </div>
+        <div class="cd-card">
+          <div class="mono">90d CD · example</div>
+          <b>Lock 90d</b>
+          <p>Longer vest, higher coupon bps. Break fee stays in the savings/RFV path.</p>
+          <div class="row"><span class="k">coupon</span><span class="v">6.5%</span></div>
+          <div class="row"><span class="k">break fee</span><span class="v">2.0%</span></div>
+        </div>
+      </div>
+      <div class="actions" style="margin-top:14px">
+        <button class="btn" type="button" disabled title="SpusdCd sketch — live UI P1">Open CD</button>
+        <button class="btn-ghost" type="button" data-go="vapurr://pusd">Cash / $PUSD</button>
+        <button class="btn-ghost" type="button" data-go="#bonds">Bonds desk</button>
+      </div>
+      <p class="note"><b>UI stub</b> — numbers are labeled examples. Contract sketch is <code>SpusdCd.sol</code> (break fee to surplus, coupon from remittance only). Live deposit/claim wiring still open.</p>
+    </div>
+
     <div class="panel" id="bonds">
       <div class="mono">bonds · v1 assets <span class="example-pill">Example quotes</span></div>
       <h2>Bond in. Wait. Claim gV.</h2>
