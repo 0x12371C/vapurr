@@ -155,4 +155,66 @@ contract RunwayRfvTest is Test {
         assertEq(market.yieldReserve(), reserve / 2, "floor retained in Lithe");
         assertEq(pusd.balanceOf(address(sink)), sent, "sink credited once");
     }
+
+    /// Liq that collects accrued interest must realize pending reserve the same way repay does,
+    /// so remittable surplus grows and the book stays solvent.
+    function test_liq_with_accrued_interest_realizes_reserve() public {
+        vm.prank(supplier);
+        loop.supply(20_000 ether);
+
+        // Size like OliverOracleBadDebt: 10k V + 8k debt so 0.5x feed is liquidatable.
+        vapurr.transfer(borrower, 10_000 ether);
+        vm.startPrank(borrower);
+        vapurr.approve(address(loop), type(uint256).max);
+        loop.depositV(10_000 ether);
+        loop.borrow(8_000 ether);
+        vm.stopPrank();
+
+        loop.setRemittance(address(sink), address(runway), false);
+
+        vm.warp(block.timestamp + 365 days);
+        loop.accrue();
+
+        uint256 pendingBefore = loop.pendingReserve();
+        assertGt(pendingBefore, 0, "fee pending after accrue");
+        assertEq(loop.realizedReserve(), 0, "unpaid not yet realized");
+        assertEq(loop.realizedRemittable(), 0, "unpaid interest not remittable");
+
+        // Crash collat: 10k V * 0.5 = 5k; LLTV 90% => max 4.5k < debt => LIQ.
+        // Heartbeat also refreshes oracle freshness after the warp.
+        market.feed(5e17);
+
+        address keeper = address(0x1111);
+        vm.startPrank(supplier);
+        pusd.transfer(keeper, 20_000 ether);
+        vm.stopPrank();
+
+        uint256 realizedBefore = loop.realizedReserve();
+        vm.startPrank(keeper);
+        pusd.approve(address(loop), type(uint256).max);
+        loop.liquidate(borrower, 5_000 ether);
+        vm.stopPrank();
+
+        uint256 realizedAfter = loop.realizedReserve();
+        assertGt(realizedAfter, realizedBefore, "liq realizes fee cash");
+        assertLt(loop.pendingReserve(), pendingBefore, "pending burned into realized");
+        assertGt(loop.realizedRemittable(), 0, "liq interest remittable surplus");
+
+        // Book still works: supplier claim backed; remit moves only realized surplus.
+        PusdLoop.Snap memory s = loop.snapshot(supplier);
+        assertGe(s.cash + s.totalBorrowAssets_, s.supplied, "user claim backed after liq");
+
+        uint256 free = loop.realizedRemittable();
+        runway.setFloor(free / 2);
+        uint256 sent = loop.remitReserve(type(uint256).max / 4);
+        assertEq(sent, free - free / 2, "remit surplus above floor after liq realize");
+        assertEq(pusd.balanceOf(address(sink)), sent, "sink got liq-realized surplus");
+
+        PusdLoop.Snap memory afterRemit = loop.snapshot(supplier);
+        assertGe(
+            afterRemit.cash + afterRemit.totalBorrowAssets_,
+            afterRemit.supplied,
+            "user claim still backed after remit"
+        );
+    }
 }

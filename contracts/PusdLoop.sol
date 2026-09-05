@@ -329,12 +329,14 @@ contract PusdLoop {
             supplyShares[msg.sender] = sHave - sSh;
             totalSupplyShares -= sSh;
             if (dSh == dHave) {
+                _realizeFromRepay(debt);
                 totalBorrowAssets -= debt;
                 borrowShares[msg.sender] = 0;
                 totalBorrowShares -= dHave;
                 repaid += debt;
                 break;
             }
+            _realizeFromRepay(pay);
             borrowShares[msg.sender] = dHave - dSh;
             totalBorrowShares -= dSh;
             totalBorrowAssets -= pay;
@@ -426,6 +428,8 @@ contract PusdLoop {
     }
 
     function _burnDebt(address u, uint256 got, uint256 debt) internal {
+        // Same interest-first path as repay: cash covering debt realizes pending fees.
+        _realizeFromRepay(got);
         uint256 dSh = _debtSharesForAssets(got);
         uint256 dHave = borrowShares[u];
         if (dSh > dHave || got == debt) {
