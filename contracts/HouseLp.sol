@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.24;
 
-/// House book: Uniswap v4 concentrated $VAPURR / $PUSD only.
+/// House book: Uniswap v4 concentrated liquidity.
+/// CANON pair = wgV / $PUSD (see docs/econ/HOUSE_PAIR.md + HousePairConfig).
+/// LIVE GAP: this contract still seeds market.vapurr() / market.pusd() - not yet wgV.
+/// Call HousePairConfig.requireHousePair before initializePool when rewiring.
 /// NFT position to the owner. No USDG. No ETH. No WETH. No hooks.
 
 interface IERC20 {

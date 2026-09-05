@@ -33,7 +33,7 @@ Date: 2026-09-05 (America/New_York). Branch: `fix/gv-spusd-guards` (from `fix/ol
 - [done] `gVAPURR.stake` settles via `accrue()` before share mint (see Progress — P0 fix #2).
 - [done] Lithe single-count: burn fee inventory on drip before index expand (P0 fix #3). Remit spends remaining inventory only.
 - [done] `computeSwap` clamps inverted CP spread; redeem/arb no longer false-THIN when inventory present (P0 fix #3).
-- [attack] Wrapping gV fixes only one House leg: PUSD itself rebases. Both wgV/PUSD and PUSD/USDG require explicit handling of pool-held PUSD rebases; ordinary swap accounting cannot be assumed to allocate those gains correctly.
+- [partial] Wrapping gV fixes only the House **equity** leg (PairConfig now rejects raw gV). Naked `$PUSD` still rebases (Lithe index); pool-held PUSD rebase accounting remains **P1** for wgV/PUSD and PUSD/USDG.
 - [done] `SPUSD` / `wgVAPURR` virtual+dead shares + min deposit/wrap (see Progress — P0 fix #2). Dust remittance skim bounded; CD time-locks still TODO for full skim resistance.
 - [P0-bug] Self-issued PUSD reserves and V inventory do not establish exogenous dollar backing. The minimum 2% V swap spread is not ~par USDG redemption; a nominal PUSD runway floor cannot establish dollar solvency, and Lithe drip can consume the supposedly retained reserve.
 - [done] Oliver oracle freshness + conservative credit rate + feed jump clamp (P0 fix #4). Stale rate blocks borrow/withdrawV/liq sizing. See Progress - P0 fix #4.
@@ -85,5 +85,22 @@ Date: 2026-09-05 (America/New_York). Branch: fix/gv-spusd-guards.
 
 - [done] Shared runway floor + realized-only Oliver remit. Proofs: `RunwayRfvTest`.
 - [done] Liq / unwind / `_burnDebt` (incl. backstop cover) call `_realizeFromRepay` same as `repay`; interest collected on liq becomes remittable surplus. Proof: `test_liq_with_accrued_interest_realizes_reserve`. [remaining] Branch-local `surplus(floor)` still per-pool; sink-level floor cleaner. Cross-branch treasury cash aggregation still open.
+
+
+
+## Progress - House rebase-safe pairing gate (practical slice)
+
+Date: 2026-09-05 (America/New_York). Branch: `fix/gv-spusd-guards`.
+
+- Hardened `docs/econ/HOUSE_PAIR.md`: invariant that raw gV is never a House pool currency; factory must call PairConfig before init; wrap fixes equity leg only.
+- `contracts/HousePairConfig.sol` + thin `HousePairFactory`: `requireHouseEquity` / `requireHousePair` revert `RawGvNotHouseEquity` on raw gV; accept only `{wgV, $PUSD}`.
+- Proofs: `HousePairGuardTest` (`test_raw_gV_not_accepted_as_house_equity`, `test_raw_gV_not_accepted_in_house_pair`, `test_factory_rejects_raw_gV_pool`, `test_wgV_pusd_accepted_as_house_pair`).
+- Verified: naked `$PUSD` **is** rebasing (`PusdToken` shares x Lithe index). **sPUSD** is the vault. Pool-held PUSD rebase accounting = **P1** (not closed by wgV wrap).
+- `HouseLp` / `HouseSwap` headers document LIVE GAP (still `market.vapurr()`/`pusd()`).
+
+- [done] House PairConfig/factory gate + docs invariant + raw-gV rejection proofs.
+- [P1] Pool-held `$PUSD` Lithe-index rebase accounting (House + `$PUSD`/USDG books). Ordinary Uni v4 reserves do not allocate drip gains to LPs.
+- [blocked-live-v4] Full House rewire: equity currency = wgV address (not market.vapurr); call PairConfig before initializePool/seed; PositionManager/Permit2 wiring for wgV; hook or settle path for rebasing PUSD; end-to-end fork tests against live Uni v4 PM.
+
 
 MERGE_REC: hold — solvency bugs, split mint authority and incomplete ABI integration block merge.

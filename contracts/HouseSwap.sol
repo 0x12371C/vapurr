@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.24;
 
-/// Exact-in swap on the house Uniswap v4 $VAPURR / $PUSD pool only.
+/// Exact-in swap on the house Uniswap v4 pool.
+/// CANON pair = wgV / $PUSD (HOUSE_PAIR.md). LIVE GAP: still wires market.vapurr()/pusd().
+/// $PUSD is shares*index (rebasing); settle hair below is interim - full pool rebase accounting is P1.
 
 interface IERC20 {
     function transfer(address, uint256) external returns (bool);
@@ -72,7 +74,7 @@ contract HouseSwap {
         require(amountIn > 0, "TINY");
         IERC20 inn = sellV ? vapurr : pusd;
         IERC20 outt = sellV ? pusd : vapurr;
-        // $PUSD is shares×index. Pull then swap the balance we actually got.
+        // $PUSD is shares*index. Pull then swap the balance we actually got.
         uint256 before = inn.balanceOf(address(this));
         require(inn.transferFrom(msg.sender, address(this), amountIn), "PULL");
         uint256 got = inn.balanceOf(address(this)) - before;
