@@ -5,7 +5,7 @@ import "./Remittance.sol";
 
 /// Liquid sPUSD — minimal ERC-4626-style vault over $PUSD.
 /// Receives branch remittance (yield credit) without minting new shares (NAV rises).
-/// Time-lock CD tranches: TODO — see docs/econ/SPUSD.md.
+/// Shared surplus allocation via SavingsRouter; term savings in SpusdCd. See docs/econ/SPUSD.md.
 /// Donation guards: virtual shares + dead shares + min deposit.
 
 contract SPUSD is IRemittance {

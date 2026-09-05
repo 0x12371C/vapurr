@@ -85,7 +85,7 @@ If product copy says "earn V by browsing", the nerds' reading is: **pro-rata / p
 | Lithe `swapPusdToV` | **NO** — inventory unwrap | redeemer (burns `$PUSD`, takes extant V) |
 | Bonds claim | **NO** — inventory transfer | bond claimer (pre-funded gV/wgV) |
 
-Flat 3.5%/yr is **linear in time** on the gV index (`shares` fixed; `balance = shares * index / DEC`). It is not continuous-compound marketing APY, and it is not Oliver leverage.
+The current gV code applies **350 bps annualized per settlement interval** to current supply. Repeated settlements compound (one annual interval: 3.5%; frequent intervals: about 3.562%). `accrue()` is permissionless; `rebase()` is the policy-only alias. This is equity issuance, separate from Oliver leverage and cash earnings.
 
 ---
 
@@ -222,10 +222,14 @@ Proofs: `RunwayRfv.t.sol`, `HouseFeeRemit.t.sol`, `FeeAttribution.t.sol`, Lithe/
 | Equity + stream | `GvFed.sol` (`gVAPURR`, `BrowserStream`) |
 | Bonds | `BondMarket.sol` |
 
-Suggested wire for tagged TVL: `setRemittance(FeeAttribution)` on branches; `FeeAttribution.register(branch, Source)`; sink `setForward(sPUSD)`.
+Suggested wire for tagged TVL: `setRemittance(FeeAttribution)` on branches; `FeeAttribution.register(branch, Source)`; sink `setForward(SavingsRouter)` for shared liquid/CD allocation, or direct `setForward(sPUSD)` for liquid only. SavingsRouter starts disabled; see `SPUSD.md` for wiring and funded coupon rules.
 
 ---
 
 ## STATUS one-liner
 
 Earnings = House + Lithe + Oliver **realized** `$PUSD` -> **FeeAttribution** -> **RemittanceSink** (runway) -> sPUSD/CD; V inflation = gV 3.5% only; BrowserStream 50k/3y **global** treasury transfer; leverage = Oliver ~6x LTV banking; flat-V/no-bond stress forbids mint-to-redeem and circular RFV.
+
+## 2026-09-05 source review and savings implementation
+
+See [STACK_ECON_REVIEW_2026-09-05.md](STACK_ECON_REVIEW_2026-09-05.md) for the source/release map, self-loop economics, and remaining provenance/solvency gaps. SavingsRouter now splits post-floor surplus between liquid sPUSD and CD coupon cash. CD terms are fixed at entry; underfunded coupons share available cash in proportion to all open targets, including unmatured positions. Targets are contingent; closing extinguishes any unpaid portion. Source integration is tested, not deployed. The 6x label describes gross claims/debt; loop() does not add cash or multiply underlying Lithe earnings.

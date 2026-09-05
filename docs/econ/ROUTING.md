@@ -65,10 +65,15 @@ Cash peg trust is the **`$PUSD` / USDG** book (and other exogenous cash legs) - 
 
 ## Shared runway + realized remittance (2026-09-05)
 
-One `RemittanceSink` consolidates branch RFV cash; one `RunwayFloor` is enforced **at the sink** on `accountedRfv` (not as dual local pools on Oliver/Lithe). Branches remit **all realized** surplus into that sink; `forwardSurplus` cannot drain below the shared floor. Unpaid accrued interest and depositor principal are **not** exogenous RFV (circular if counted as both RFV and a user claim). Oliver: `pendingReserve`->`realizedReserve` on repay/liq, then remit realized (sole-owner cash OK). Lithe: inventory-backed `yieldReserve` remits in full to the same sink. See `RunwayRfv.t.sol` (`test_two_branches_remit_one_sink_floor`).
+One `RemittanceSink` consolidates branch RFV cash; one `RunwayFloor` is enforced **at the sink** on `accountedRfv` (not as dual local pools on Oliver/Lithe). Branches remit **all realized** surplus into that sink; `forwardSurplus` cannot drain below the shared floor. Unpaid accrued interest and depositor principal are **not** exogenous RFV (circular if counted as both RFV and a user claim). Oliver: `pendingReserve`->`realizedReserve` on repay/liq, then remit realized (sole-owner cash OK). Lithe: inventory-backed `yieldReserve` remits in full to the same sink. See `RunwayRfv.t.sol` (`test_two_branches_remit_one_sink_floor`).
+
 
 Tagged remits (UI/TVL "who paid"): wire branches through `FeeAttribution` (House/Lithe/Oliver) before `RemittanceSink`. Direct sink remits remain valid but unattributed. See `EARNINGS_ENGINE.md` + `FeeAttribution.t.sol`.
 
 ## Lithe remittance (2026-09-05)
 
 `PusdMarket` (Lithe) remits realized `yieldReserve` to the same `IRemittance` / `RemittanceSink` path as Oliver (`setRemittance` / `remitSurplus`). Floor retain is sink-level (`ITreasuryRfv`); branches do not hold a second local floor. Holder drip (9% APY cap) still runs on accrue; remittance feeds sink -> sPUSD so branch fees can hit the savings path later. See `PUSD_LIQUIDITY.md` for exogenous peg books; remittance does not replace those. **Gap:** sink-held nominal $PUSD is still not exogenous USDG backing.
+
+## 2026-09-05 - shared savings allocation
+
+RemittanceSink -> SavingsRouter -> SPUSD / SpusdCd now implements the shared surplus split. The router starts disabled, accepts only its configured sink, checks matching assets, and cannot pierce the sink runway floor. Its CD allocation bps is a share of future receipts, not an APY. CD coupon targets and break fees are fixed per position; underfunding is proportional across open targets. Local tests are green; live deploy/address-book/IPC remains open. See [SPUSD.md](SPUSD.md) and [STACK_ECON_REVIEW_2026-09-05.md](STACK_ECON_REVIEW_2026-09-05.md).

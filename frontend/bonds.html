@@ -554,7 +554,7 @@
     <div class="panel" id="spusd-cd" aria-label="sPUSD CD stub">
       <div class="mono">cash · sPUSD CD <span class="example-pill">UI stub</span></div>
       <h2>Save liquid. Lock a CD.</h2>
-      <p class="lede">Same surplus pool after the runway floor. <b>Liquid sPUSD</b> exits on demand. <b>CDs</b> lock for a term, earn a higher coupon from surplus only, and pay a <b>break fee</b> back into surplus on early exit. No V inflation into savings.</p>
+      <p class="lede">Same surplus pool after the runway floor. <b>Liquid sPUSD</b> exits on demand. <b>CDs</b> lock for a term with a target coupon funded by surplus. Early exit pays the <b>break fee</b> agreed when you deposit. No V inflation into savings.</p>
       <div class="cd-grid">
         <div class="cd-card focus">
           <div class="mono">liquid</div>
@@ -566,15 +566,15 @@
         <div class="cd-card">
           <div class="mono">30d CD · example</div>
           <b>Lock 30d</b>
-          <p>Higher coupon share of the same pool. Underfunded maturity pays principal first — never mints.</p>
-          <div class="row"><span class="k">coupon</span><span class="v">4.0%</span></div>
+          <p>Target for the full term. Your principal stays in cash; coupon payouts depend on shared surplus.</p>
+          <div class="row"><span class="k">target / term</span><span class="v">4.0%</span></div>
           <div class="row"><span class="k">break fee</span><span class="v">1.0%</span></div>
         </div>
         <div class="cd-card">
           <div class="mono">90d CD · example</div>
           <b>Lock 90d</b>
-          <p>Longer vest, higher coupon bps. Break fee stays in the savings/RFV path.</p>
-          <div class="row"><span class="k">coupon</span><span class="v">6.5%</span></div>
+          <p>Target for the full term. If surplus is short, open coupon targets share the available funds proportionally.</p>
+          <div class="row"><span class="k">target / term</span><span class="v">6.5%</span></div>
           <div class="row"><span class="k">break fee</span><span class="v">2.0%</span></div>
         </div>
       </div>
@@ -583,7 +583,7 @@
         <button class="btn-ghost" type="button" data-go="vapurr://pusd">Cash / $PUSD</button>
         <button class="btn-ghost" type="button" data-go="#bonds">Bonds desk</button>
       </div>
-      <p class="note"><b>UI stub</b> — numbers are labeled examples. Contract sketch is <code>SpusdCd.sol</code> (break fee to surplus, coupon from remittance only). Live deposit/claim wiring still open.</p>
+      <p class="note"><b>UI stub</b> — numbers are labeled examples. Example coupons are per term, not annual rates or guaranteed payouts. Terms are fixed when deposited. Closing settles the position; unpaid coupon targets do not carry forward. Live deposit/claim wiring still open.</p>
     </div>
 
     <div class="panel" id="bonds">
