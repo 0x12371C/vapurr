@@ -13,6 +13,7 @@ Milestone: **pre-v1** — ship bar is [`V1.md`](V1.md). v1.2 money is **testnet 
 - Contracts: `PusdMarketFedUpgradeable` + `proxy/ERC1967Proxy` (UUPS). `script/TestnetRollout.s.sol` dry-run by default; live broadcast gated on `CONFIRM_TESTNET_DEPLOY=1`.
 - Vanity `MAINNET_MARKET_VANITY` `0xC47f00D61F8379337f9fb42E6DcC695AE2d6EBD2` verified = CREATE(STATUS deployer `0x48043E2C...AeA5`, nonce 0). Prefer nonce-0 CREATE of proxy; CREATE2 salt hunt is secondary (`VanityCreate2Hunt.s.sol`).
 - **Honest:** gen-4 remains live until approved CutoverDeploy. No silent 46630 broadcast in this prep.
+- Seigniorage handoff (docs scrub): Lithe = `marketMinter` (burn/mint); gV = policy 1–9% inflate. Checklist = genesis → `setMarketMinter(Lithe)` → `setMinter(gV)`; **no** Lithe redeem inventory fund. Dry-run only until Relic sets `CONFIRM_TESTNET_DEPLOY`.
 
 ## 2026-09-05 — Launch POL books + DevFundStream (source)
 

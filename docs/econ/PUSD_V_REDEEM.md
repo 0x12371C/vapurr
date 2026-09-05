@@ -6,7 +6,7 @@ Cross-refs: `ROUTING.md`, `MINT_AUTHORITY.md`, `GvFed.sol`, `PusdMarketFed.sol`.
 
 ## Decision
 
-**Terra-style seigniorage — not seigniorage redeem (mint V).**
+**Terra-style seigniorage — redeem mints V (not inventory payout).**
 
 | Path | Must do | Must not |
 |------|---------|----------|

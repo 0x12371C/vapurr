@@ -52,7 +52,7 @@ contract TestnetRollout is Script {
         vm.stopBroadcast();
     }
 
-    function _plan(uint256 rate, address owner_) internal view {
+    function _plan(uint256 rate, address owner_) internal pure {
         console2.log("plan owner:", owner_);
         console2.log("plan lithe rate wad:", rate);
         console2.log("ordered steps (see docs/econ/TESTNET_ROLLOUT.md):");
@@ -62,7 +62,9 @@ contract TestnetRollout is Script {
         console2.log("  4 BondMarket (USDG BondAssetTag only)");
         console2.log("  5 Remittance / SavingsRouter wiring");
         console2.log("  6 LaunchBootstrap: DevFund 200k -> Oliver collateral + V/ETH+V/NVDA+V/AMD");
-        console2.log("  7 House / wgV follow-up (not in factory)");
+        console2.log("  7 Dual-minter: genesis -> setMarketMinter(Lithe) -> setMinter(gV)");
+        console2.log("     (no Lithe redeem inventory fund; seigniorage mint on swapPusdToV)");
+        console2.log("  8 House / wgV follow-up (not in factory)");
         console2.log("HONEST: gen-4 remains live on 46630 until approved cutover.");
     }
 
@@ -82,8 +84,12 @@ contract TestnetRollout is Script {
         // BondMarket constructor args are environment-specific - wire post-plan.
         // Remittance / DevFund / pairs: LaunchBootstrap companion (parallel track).
 
+        // Dual printers (match CanonicalLitheFactory): setMarketMinter while deployer
+        // still holds policy minter. Genesis mint + DevFund allocation must complete
+        // before setMinter(gV); seigniorage Lithe needs no redeem V inventory fund.
+        v.setMarketMinter(proxy);
         policy.setOwner(owner_);
-        // Leave V minter with deployer until genesis mint + DevFund allocation, then setMinter(gV).
+        // Leave policy minter with deployer until genesis mint + DevFund allocation, then setMinter(gV).
 
         console2.log("deployed V", address(v));
         console2.log("deployed policy", address(policy));

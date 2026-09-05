@@ -43,7 +43,7 @@ Execute in order. Record each address in `docs/STATUS.md` only after a successfu
   - **Preferred vanity land (path A):** STATUS deployer **nonce 0** CREATE of the proxy → exact vanity (no salt)
   - **CREATE2 (path B):** salt-hunt with fixed `initCodeHash` — `script/VanityCreate2Hunt.s.sol`
 - [ ] Verify proxy `owner`, `vapurr`, `pusd`, `litheVersion()==1`
-- [ ] Fund Lithe V inventory (bootstrap slice)
+- [ ] No Lithe redeem V inventory fund (seigniorage: `swapPusdToV` mints via `marketMinter`; see §8 handoff)
 
 ### 3. Oliver (`PusdLoop`)
 
@@ -80,7 +80,11 @@ Execute in order. Record each address in `docs/STATUS.md` only after a successfu
 
 ### 8. Minter handoff
 
-- [ ] `canonicalV.setMinter(gV)` — gV policy inflate path (Lithe seigniorage is the other printer)
+- [ ] Dual-minter handoff (match `CanonicalLitheFactory` / `MINT_AUTHORITY.md`):
+  - Genesis mint complete (converter inventory + bootstrap float + DevFund 200k) **before** policy handoff
+  - `canonicalV.setMarketMinter(Lithe)` — Lithe seigniorage printer (while deployer still holds policy minter)
+  - `canonicalV.setMinter(gV)` — gV policy inflate 1–9%
+  - No Lithe redeem inventory fund — redeem mints V via `marketMinter`
 - [ ] Policy owner = rollout owner
 - [ ] Snapshot desk ABI (`snapshot(address)` 12 words) against proxy
 
@@ -136,6 +140,27 @@ forge test --match-contract PusdMarketFedProxyTest -vv
 **Recommendation for staged 46630 rollout:** use path A on a fresh vanity-capable key if mainnet deployer nonce is reserved/spent; keep CREATE2 hunt script for mainnet land when impl bytecode is frozen.
 
 ---
+
+---
+
+## Dry-run notes (prep — no live addresses)
+
+Captured from `forge script script/TestnetRollout.s.sol:TestnetRollout -vv` (CONFIRM unset).
+
+Planned order (script `_plan` / checklist):
+
+1. Fed V + RebasePolicy + gV (dynamic 1–9%)
+2. Lithe impl + ERC1967Proxy (UUPS) — prefer vanity `0xC47f…EBD2`
+3. Oliver (`PusdLoop`) behind market proxy
+4. BondMarket (USDG BondAssetTag only)
+5. Remittance / SavingsRouter wiring
+6. LaunchBootstrap: DevFund 200k → Oliver collateral + V/ETH+V/NVDA+V/AMD
+7. Dual-minter handoff: genesis → `setMarketMinter(Lithe)` → `setMinter(gV)` (no Lithe redeem inventory)
+8. House / wgV follow-up (not in factory)
+
+HONEST: gen-4 remains live on 46630 until Relic-approved CutoverDeploy. Do not invent live gen-5 addresses here.
+
+**Last dry-run:** `forge script script/TestnetRollout.s.sol:TestnetRollout -vv` — exit 0, `CONFIRM_TESTNET_DEPLOY 0`, no broadcast. Plan owner defaulted to forge script sender; vanity target logged; dual-minter step 7 present in plan logs.
 
 ## Related
 

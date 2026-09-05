@@ -30,7 +30,7 @@ Bonds are a **first-class visible surface** (see `BONDS.md` + `vapurr://bonds`).
 
 ## Hard walls
 
-1. **Only Fed prints V** - **dynamic 1–9%/yr** rebase to gV stakers from bond-market utilization (mid ~3.5% when unbound). Browse never funded by this mint. See `POLICY_RATE.md`.
+1. **Dual V printers** — Lithe holds `marketMinter` (Terra-style seigniorage: burn V→mint `$PUSD`, burn `$PUSD`→mint V). gV is policy minter with **dynamic 1–9%/yr** rebase to stakers from bond-market utilization (mid ~3.5% when unbound). Browse never funded by either mint. See `POLICY_RATE.md` + `MINT_AUTHORITY.md`.
 2. **BrowserStream** - **50k $VAPURR / 3y** from **already-minted treasury** (float migration). No USD cap (intentional convexity). Claim: install_id + KYC.
 2b. **DevFundStream** - **200k $VAPURR / 4y** genesis mint; unlocked V auto-locks as Oliver collateral; $PUSD-only draw; expansion-aware. See `DEV_FUND.md`.
 3. **$PUSD** - forced product float; mint/redeem ~**par** for social trust (**this** is the peg story). Not an equity lottery. USDG is **bond-in RFV only** - never a `$PUSD`/USDG depth/peg pool.
