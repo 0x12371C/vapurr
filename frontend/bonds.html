@@ -289,84 +289,6 @@
     .flow .node span { display: block; margin-top: 4px; color: var(--color-muted); font-size: 11px; line-height: 1.35; }
 
 
-    /* capital strip (empty / not configured; no fabricated metrics) */
-    .strip {
-      display: grid;
-      grid-template-columns: auto 1fr 1fr 1.2fr;
-      gap: 10px;
-      margin: 0 0 22px;
-      padding: 14px 16px;
-      border-radius: var(--radius-panel, 18px);
-      background: var(--glass-bg, color-mix(in srgb, var(--color-steel) 50%, transparent));
-      backdrop-filter: var(--glass-blur, blur(24px) saturate(1.5));
-      -webkit-backdrop-filter: var(--glass-blur, blur(24px) saturate(1.5));
-      border: 1px solid color-mix(in srgb, var(--color-lime) 26%, transparent);
-      align-items: center;
-    }
-    @media (max-width: 720px) {
-      .strip { grid-template-columns: 1fr 1fr; }
-      .strip .ex-tag { grid-column: 1 / -1; }
-    }
-    .strip .ex-tag {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      height: 28px;
-      padding: 0 10px;
-      border-radius: 999px;
-      border: 1px dashed color-mix(in srgb, var(--color-lime) 45%, transparent);
-      color: var(--color-lime);
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      white-space: nowrap;
-      background: color-mix(in srgb, var(--color-void) 35%, transparent);
-    }
-    .strip .metric .mono { color: var(--color-muted); font-size: 11px; }
-    .strip .metric .val {
-      margin-top: 2px;
-      font-size: 26px;
-      font-weight: 600;
-      letter-spacing: -0.04em;
-      font-variant-numeric: tabular-nums;
-      line-height: 1.1;
-    }
-    .strip .metric .val em {
-      font-style: normal;
-      font-size: 13px;
-      color: var(--color-muted);
-      font-weight: 600;
-      margin-left: 3px;
-    }
-    .strip .metric .sub {
-      margin-top: 3px;
-      color: var(--color-muted);
-      font-size: 11px;
-      line-height: 1.35;
-    }
-    .strip .blend {
-      padding: 10px 12px;
-      border-radius: 12px;
-      background: color-mix(in srgb, var(--color-void) 40%, transparent);
-      border: 1px solid color-mix(in srgb, var(--color-snow) 8%, transparent);
-    }
-    .strip .blend .mono { color: var(--color-lime); }
-    .strip .bars { display: flex; gap: 4px; margin-top: 8px; height: 8px; border-radius: 999px; overflow: hidden; }
-    .strip .bars span { display: block; height: 100%; }
-    .strip .bars .cash { background: var(--color-lime); flex: 4.2; }
-    .strip .bars .bonds { background: color-mix(in srgb, var(--color-lime) 55%, var(--color-forest)); flex: 3.1; }
-    .strip .bars .house { background: color-mix(in srgb, var(--color-lime) 30%, var(--color-forest)); flex: 2.8; }
-    .strip .bars .equity { background: var(--color-forest); flex: 2.3; }
-    .strip .legend {
-      margin-top: 6px;
-      display: flex; flex-wrap: wrap; gap: 8px 10px;
-      color: var(--color-muted); font-size: 10px;
-    }
-    .strip .legend b { color: var(--color-snow); font-weight: 600; }
-    html[data-theme="light"] .strip {
-      background: color-mix(in srgb, var(--color-steel) 90%, transparent);
-    }
 
     .lane .mini {
       margin-top: 12px;
@@ -449,7 +371,7 @@
 
 
     /* defi-surface bonds polish */
-    .lane, .panel, .depth, .strip, .cd-card, .step {
+    .lane, .panel, .depth, .cd-card, .step {
       transition:
         transform 0.2s var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1)),
         border-color 0.18s ease,
@@ -475,11 +397,6 @@
       border-radius: 14px;
       border: 1px solid color-mix(in srgb, var(--color-snow) 12%, transparent);
     }
-    .strip .ex-tag {
-      opacity: 1;
-      visibility: visible;
-      z-index: 1;
-    }
     .cd-card:hover {
       border-color: color-mix(in srgb, var(--color-lime) 28%, transparent);
       transform: translateY(-1px);
@@ -503,7 +420,6 @@
       border-color: color-mix(in srgb, var(--color-lime) 45%, transparent);
       box-shadow: var(--shadow-lime);
     }
-    .strip { margin: 0 0 26px; padding: 16px 18px; gap: 12px; }
     .cd-grid { gap: 12px; margin-top: 4px; }
     .cd-card { padding: 16px 16px 14px; }
     .panel { margin-top: 16px; }
@@ -540,7 +456,7 @@
           <span class="chip on">USDG</span>
           <span class="chip on">sPUSD</span>
         </div>
-        <div class="mini"><span class="k">exog. depth</span><span class="v">—</span></div>
+        <div class="mini"><span class="k">exog. depth</span><span class="v">not configured</span></div>
       </button>
       <button class="lane" type="button" data-go="vapurr://stake" data-lane="equity">
         <span class="mono">02 · Equity</span>
@@ -551,7 +467,7 @@
           <span class="chip">stake</span>
           <span class="chip">wgV</span>
         </div>
-        <div class="mini"><span class="k">rebase</span><span class="v">—</span></div>
+        <div class="mini"><span class="k">rebase</span><span class="v">not configured</span></div>
       </button>
       <button class="lane focus" type="button" data-go="#bonds" data-lane="bonds">
         <span class="mono">03 · Bonds</span>
@@ -562,7 +478,7 @@
           <span class="chip on">USDG</span>
           <span class="chip on">stocks</span>
         </div>
-        <div class="mini"><span class="k">RFV in</span><span class="v">—</span></div>
+        <div class="mini"><span class="k">RFV in</span><span class="v">not configured</span></div>
       </button>
       <button class="lane" type="button" data-go="vapurr://house" data-lane="house">
         <span class="mono">04 · House</span>
@@ -572,7 +488,7 @@
           <span class="chip on">wgV</span>
           <span class="chip on">$PUSD</span>
         </div>
-        <div class="mini"><span class="k">desk depth</span><span class="v">—</span></div>
+        <div class="mini"><span class="k">desk depth</span><span class="v">not configured</span></div>
       </button>
     </div>
 
@@ -605,15 +521,15 @@
           <div class="mono">30d CD</div>
           <b>Lock 30d</b>
           <p>Target for the full term. Your principal stays in cash; coupon payouts depend on shared surplus.</p>
-          <div class="row"><span class="k">target / term</span><span class="v">—</span></div>
-          <div class="row"><span class="k">break fee</span><span class="v">—</span></div>
+          <div class="row"><span class="k">target / term</span><span class="v">not configured</span></div>
+          <div class="row"><span class="k">break fee</span><span class="v">not configured</span></div>
         </div>
         <div class="cd-card">
           <div class="mono">90d CD</div>
           <b>Lock 90d</b>
           <p>Target for the full term. If surplus is short, open coupon targets share the available funds proportionally.</p>
-          <div class="row"><span class="k">target / term</span><span class="v">—</span></div>
-          <div class="row"><span class="k">break fee</span><span class="v">—</span></div>
+          <div class="row"><span class="k">target / term</span><span class="v">not configured</span></div>
+          <div class="row"><span class="k">break fee</span><span class="v">not configured</span></div>
         </div>
       </div>
       <div class="actions" style="margin-top:14px; flex-wrap:wrap; gap:10px; align-items:center">
@@ -623,7 +539,7 @@
         <button class="btn-ghost" type="button" data-go="#bonds">Bonds desk</button>
       </div>
       <div id="cd-err" role="alert" style="display:none;margin-top:10px;padding:10px 12px;border-radius:10px;border:1px solid color-mix(in srgb,#f87171 45%,transparent);color:#fecaca;font-size:13px;line-height:1.4"></div>
-      <p class="note"><b>Rates</b> — coupon targets and break fees show only from live chain reads. Until SpusdCd is in the address book they stay as <b>—</b> (not quotes). Open CD is live-by-default; capacity and haircuts show as params, not a hidden button.</p>
+      <p class="note"><b>Rates</b> — coupon targets and break fees show only from live chain reads. Until SpusdCd is in the address book they stay <b>not configured</b> (not quotes). Open CD is live-by-default; capacity and haircuts show as params, not a hidden button.</p>
     </div>
 
     <div class="panel" id="bonds">
@@ -643,7 +559,7 @@
 
       <div class="gate-banner on" id="gate-banner" role="status" aria-live="polite">
         <div class="mono">market · params</div>
-        <b>Open</b> — capacity, oracle, and haircut are params on this tab (not a hide-the-button gate).
+        <b>Open</b> — capacity, oracle, and haircut show when BondMarket is wired (not a hide-the-button gate).
         <span id="gate-why"></span>
       </div>
 
@@ -655,10 +571,12 @@
         <div class="stat">
           <div class="mono">discount</div>
           <div class="val" id="q-discount">—</div>
+          <div class="sub" style="color:var(--color-muted);font-size:11px;margin-top:4px">not configured</div>
         </div>
         <div class="stat">
           <div class="mono">wait</div>
           <div class="val" id="q-wait">—</div>
+          <div class="sub" style="color:var(--color-muted);font-size:11px;margin-top:4px">not configured</div>
         </div>
       </div>
 
