@@ -1,150 +1,59 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8"/>
-  <title>DeFi</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>DeFi · VAPURR</title>
   <link rel="stylesheet" href="/tokens.css"/>
   <link rel="stylesheet" href="/chrome.css"/>
-  <link rel="stylesheet" href="/defi-surface.css"/>
-  <style>
-    html, body { height: 100%; }
-    body {
-      overflow: auto;
-      position: relative;
-      background: var(--color-void);
-    }
-    .aura {
-      position: fixed; inset: 0; z-index: 0;
-      pointer-events: none; overflow: hidden;
-    }
-    .aura canvas { width: 100%; height: 100%; display: block; }
-    .wrap {
-      max-width: 640px;
-      margin: 0 auto;
-      padding: 40px 22px 96px;
-      position: relative;
-      z-index: 1;
-    }
-    .defi-hero h1 {
-      font-size: clamp(52px, 11vw, 76px);
-      letter-spacing: -0.055em;
-      line-height: 0.9;
-    }
-    .grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
-    @media (max-width: 520px) {
-      .grid { grid-template-columns: 1fr; }
-    }
-    .door {
-      min-height: 132px;
-      padding: 18px 18px 16px;
-      border-radius: 20px;
-    }
-    .door.span {
-      grid-column: 1 / -1;
-      min-height: 110px;
-      flex-direction: row;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-    }
-    .door.span .copy { min-width: 0; }
-    .door.span .copy b { margin-top: 8px; }
-    .door.span .arrow {
-      flex-shrink: 0;
-      width: 36px; height: 36px;
-      border-radius: 50%;
-      display: grid; place-items: center;
-      border: 1px solid color-mix(in srgb, var(--color-lime) 35%, transparent);
-      color: var(--color-lime);
-      font-size: 18px;
-      font-weight: 600;
-    }
-  </style>
+  <link rel="stylesheet" href="/defi-flow.css"/>
 </head>
-<body>
-  <div class="aura" aria-hidden="true"><canvas id="shader"></canvas></div>
-  <div class="wrap">
-    <div class="defi-hero">
-      <div class="mono">defi</div>
-      <h1>On chain.</h1>
-      <p class="defi-lede">Swap, cash, bonds, and the house desk — one surface. Live quotes. Sign on this device.</p>
-    </div>
-
-    <div class="mono defi-sec">core</div>
-    <div class="grid">
-      <button class="door glass-panel" type="button" data-go="vapurr://swap">
-        <span class="mono">01 · Swap</span>
-        <b>Swap</b>
-        <span class="hint">Full route. House kickback in $VAPURR. Simulate, then sign.</span>
-      </button>
-      <button class="door glass-panel" type="button" data-go="vapurr://pusd">
-        <span class="mono">02 · Cash</span>
-        <b>$PUSD / Oliver</b>
-        <span class="hint">The dollar rail. Seigniorage mint/redeem (burn V ↔ mint P), save, and Oliver credit — not inventory.</span>
-      </button>
-      <button class="door glass-panel" type="button" data-go="vapurr://bonds">
-        <span class="mono">03 · Bonds</span>
-        <b>Bonds</b>
-        <span class="hint">ETH · USDG · stocks. Discount gV after a wait. CDs live by default.</span>
-      </button>
-      <button class="door glass-panel" type="button" data-go="vapurr://house">
-        <span class="mono">04 · House</span>
-        <b>House</b>
-        <span class="hint">wgV / $PUSD desk. Equity meets cash — not peg defense.</span>
-      </button>
-    </div>
-
-    <div class="mono defi-sec">more</div>
-    <div class="grid">
-      <button class="door glass-panel" type="button" data-go="vapurr://stake">
-        <span class="mono">Equity</span>
-        <b>Stake</b>
-        <span class="hint">Hold gV. Fed 1-9%/yr is additional policy inflate — not the sole PUSD/V printer. Wrap to wgV before House.</span>
-      </button>
-      <button class="door glass-panel" type="button" data-go="vapurr://bridge">
-        <span class="mono">Bridge</span>
-        <b>Bridge</b>
-        <span class="hint">Into Robinhood Chain. Best simulated net. Quote, then sign.</span>
-      </button>
-      <button class="door glass-panel" type="button" data-go="vapurr://vapurrbid">
-        <span class="mono">Bid</span>
-        <b>vapurrbid</b>
-        <span class="hint">Pay $PUSD. Take the rank.</span>
-      </button>
-      <button class="door glass-panel" type="button" data-go="vapurr://pns">
-        <span class="mono">PNS</span>
-        <b>.hood</b>
-        <span class="hint">One name. Yours.</span>
-      </button>
-      <button class="door glass-panel span" type="button" data-go="vapurr://scan?tab=liq">
-        <div class="copy">
-          <span class="mono">Scan</span>
-          <b>Liquidity</b>
-          <span class="hint">Chain map. House book is VAPURR/PUSD only.</span>
+<body class="finance-ui" data-desk="overview">
+  <div class="finance-shell">
+    <div data-finance-nav></div>
+    <main id="main">
+      <header class="flow-heading">
+        <div><p class="eyebrow">YOUR MONEY, IN MOTION</p><h1>Make your<br/><em>next move.</em></h1></div>
+        <p>One connected economy.<br/>Choose where you want to go.</p>
+      </header>
+      <section class="journey" aria-label="Explore economic flows">
+        <div class="journey-map">
+          <div class="section-line"><span class="eyebrow">THE FLOW</span><span class="map-caption">Explore a route ↙</span></div>
+          <div class="intent-list" role="group" aria-label="Choose a flow">
+            <button type="button" data-flow="mint" aria-pressed="true"><span data-icon="exchange"></span>Mint / redeem</button>
+            <button type="button" data-flow="supply" aria-pressed="false"><span data-icon="save"></span>Supply</button>
+            <button type="button" data-flow="borrow" aria-pressed="false"><span data-icon="borrow"></span>Borrow</button>
+            <button type="button" data-flow="bond" aria-pressed="false"><span data-icon="clock"></span>Bond</button>
+            <button type="button" data-flow="trade" aria-pressed="false"><span data-icon="trade"></span>Trade</button>
+          </div>
+          <div class="route-art" role="img" aria-label="VAPURR through Lithe to PUSD" id="route-art">
+            <svg class="route-wires" viewBox="0 0 620 240" preserveAspectRatio="none" aria-hidden="true"><path d="M80 120H235Q250 120 250 100V55Q250 35 270 35H350Q370 35 370 55V100Q370 120 385 120H540"/><path d="M80 120H540" class="wire-main"/><path d="M80 120H235Q250 120 250 140V185Q250 205 270 205H350Q370 205 370 185V140Q370 120 385 120H540"/></svg>
+            <div class="route-token"><span class="coin" id="flow-in-icon">V</span><b id="flow-in">VAPURR</b><small id="flow-in-note">You exchange</small></div>
+            <div class="route-engine"><span data-icon="exchange" id="flow-icon"></span><strong id="flow-engine">Lithe</strong><span id="flow-engine-note">Mint ↔ redeem</span></div>
+            <div class="route-token"><span class="coin coin-out" id="flow-out-icon">P</span><b id="flow-out">PUSD</b><small id="flow-out-note">You receive</small></div>
+          </div>
+          <div class="route-foot"><span><span class="tiny-dot"></span>Economic route</span><span>Review → Sign → Receive</span></div>
         </div>
-        <span class="arrow" aria-hidden="true">→</span>
-      </button>
-      <button class="door glass-panel span" type="button" data-go="vapurr://ketcharts">
-        <div class="copy">
-          <span class="mono">Charts</span>
-          <b>Ketcharts</b>
-          <span class="hint">ETH BTC SOL. Live candles.</span>
+        <aside class="journey-action" aria-live="polite">
+          <span class="step-index" id="flow-number">01 / 05</span>
+          <div><p class="eyebrow" id="flow-label">CASH · LITHE</p><h2 id="flow-title">VAPURR<br/>meets PUSD.</h2><p id="flow-description">Mint PUSD. Redeem back to VAPURR.</p></div>
+          <div class="action-bottom"><div class="flow-term"><span id="flow-term-key">At exchange</span><b id="flow-term-value">Oracle + spread</b></div><button type="button" class="flow-primary" id="flow-open" data-go="vapurr://lithe">Open Lithe <span aria-hidden="true">↗</span></button></div>
+        </aside>
+      </section>
+      <section class="finance-tools" aria-label="More ways to use VAPURR">
+        <div class="section-line"><h2>Your toolkit</h2><span class="eyebrow">ALL CONNECTED</span></div>
+        <div class="tool-grid">
+          <button type="button" data-go="vapurr://swap"><span data-icon="exchange"></span><span><b>Swap</b><small>Find your route</small></span><span class="tool-arrow">↗</span></button>
+          <button type="button" data-go="vapurr://bonds"><span data-icon="save"></span><span><b>Savings</b><small>Liquid or a term</small></span><span class="tool-arrow">↗</span></button>
+          <button type="button" data-go="vapurr://stake"><span data-icon="layers"></span><span><b>Equity</b><small>Stake & wrap</small></span><span class="tool-arrow">↗</span></button>
+          <button type="button" data-go="vapurr://bridge"><span data-icon="bridge"></span><span><b>Bridge</b><small>Bring assets in</small></span><span class="tool-arrow">↗</span></button>
         </div>
-        <span class="arrow" aria-hidden="true">→</span>
-      </button>
-    </div>
+        <div class="utility-links"><button data-go="vapurr://scan?tab=liq"><span data-icon="nodes"></span>Liquidity</button><button data-go="vapurr://ketcharts"><span data-icon="chart"></span>Charts</button><button data-go="vapurr://vapurrbid">vapurrbid ↗</button><button data-go="vapurr://pns">.hood ↗</button></div>
+      </section>
+    </main>
+    <footer class="finance-footer"><span>VAPURR ECONOMY</span><span>Browse. Own. Spend.</span></footer>
   </div>
   <script src="/ipc.js"></script>
-  <script src="/shader.js"></script>
-  <script>
-    if (window.startShader) startShader(document.getElementById("shader"));
-    document.querySelectorAll("[data-go]").forEach(function (el) {
-      el.onclick = function () { vapurr.go(el.getAttribute("data-go")); };
-    });
-  </script>
+  <script src="/defi-flow.js"></script>
 </body>
 </html>

@@ -1,7 +1,8 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Bonds / Routing</title>
   <link rel="stylesheet" href="/tokens.css"/>
   <link rel="stylesheet" href="/chrome.css"/>
@@ -429,110 +430,53 @@
     .hero { margin-bottom: 26px; }
 
   </style>
+  <link rel="stylesheet" href="/defi-flow.css"/>
 </head>
-<body>
-  <div class="aura" aria-hidden="true"><canvas id="shader"></canvas></div>
+<body class="finance-ui" data-desk="savings">
   <div class="wrap">
-    <div class="hero defi-hero">
-      <div class="mono">routing · product map</div>
-      <h1>Cash. Equity.<br/>Bonds. House.</h1>
-      <p class="lede">Four doors normals actually use. <b>Bonds</b> turn outside assets into protocol RFV — you get <b>gV at a discount</b> after a wait.</p>
-    </div>
-
-    <div class="defi-empty" id="capital-strip" aria-label="Capital metrics">
-      <div class="mono">capital</div>
-      <b>Not configured</b>
-      <span>TVL, effective YOTC, and capital mix appear only from live chain reads. Address book / RPC not wired for these surfaces yet.</span>
-    </div>
-
-    <div class="mono map-label">product map</div>
-    <div class="map" role="navigation" aria-label="Product map">
-      <button class="lane" type="button" data-go="vapurr://pusd" data-lane="cash">
-        <span class="mono">01 · Cash</span>
-        <b class="title">Cash</b>
-        <span class="hint">Spend and save. <b>$PUSD</b> is the dollar rail. <b>sPUSD</b> is savings after runway. <b>USDG</b> is bond/treasury intake — not a cash market here.</span>
-        <div class="chips">
-          <span class="chip on">$PUSD</span>
-          <span class="chip on">sPUSD</span>
-        </div>
-        <div class="mini"><span class="k">dollar rail</span><span class="v">$PUSD</span></div>
-      </button>
-      <button class="lane" type="button" data-go="vapurr://stake" data-lane="equity">
-        <span class="mono">02 · Equity</span>
-        <b class="title">Equity</b>
-        <span class="hint">Hold <b>gV</b>. Fed <b>dynamic 1-9%/yr</b> is <b>additional</b> policy inflate on equity (bond util; mid ~3.5% unbound) — not the sole PUSD/V printer. Wrap to <b>wgV</b> before House.</span>
-        <div class="chips">
-          <span class="chip on">gV</span>
-          <span class="chip">stake</span>
-          <span class="chip">wgV</span>
-        </div>
-        <div class="mini"><span class="k">rebase</span><span class="v">not configured</span></div>
-      </button>
-      <button class="lane focus" type="button" data-go="#bonds" data-lane="bonds">
-        <span class="mono">03 · Bonds</span>
-        <b class="title">Bonds</b>
-        <span class="hint">Park <b>ETH</b>, <b>USDG</b>, or a <b>major stock</b>. Wait. Claim discounted <b>gV</b>.</span>
-        <div class="chips">
-          <span class="chip on">ETH</span>
-          <span class="chip on">USDG</span>
-          <span class="chip on">stocks</span>
-        </div>
-        <div class="mini"><span class="k">RFV in</span><span class="v">not configured</span></div>
-      </button>
-      <button class="lane" type="button" data-go="vapurr://house" data-lane="house">
-        <span class="mono">04 · House</span>
-        <b class="title">House</b>
-        <span class="hint">Interbank desk. Equity meets cash as <b>wgV / $PUSD</b> — equity market, not peg defense.</span>
-        <div class="chips">
-          <span class="chip on">wgV</span>
-          <span class="chip on">$PUSD</span>
-        </div>
-        <div class="mini"><span class="k">desk depth</span><span class="v">not configured</span></div>
-      </button>
-    </div>
-
-
+    <div data-finance-nav></div>
+    <header class="flow-heading savings-intro"><div><p class="eyebrow">TIME, ON YOUR TERMS</p><h1>Save cash.<br/><em>Build equity.</em></h1></div><p>Choose liquidity or a longer horizon.</p></header>
+    <div class="capital-status" id="capital-strip" role="status"><span class="tiny-dot"></span>Market terms awaiting connection</div>
+    <div class="savings-layout">
     <div class="panel" id="spusd-cd" aria-label="sPUSD CD">
       <div class="mono">cash · sPUSD CD</div>
-      <h2>Save liquid. Lock a CD.</h2>
-      <p class="lede">Same surplus pool after the runway floor. <b>Liquid sPUSD</b> exits on demand. <b>CDs</b> lock for a term with a target coupon funded by surplus. Early exit pays the <b>break fee</b> agreed when you deposit. No V inflation into savings.</p>
+      <h2>Choose your horizon.</h2>
+      <p class="lede">PUSD savings. Yield comes from available surplus.</p>
       <div class="cd-grid">
-        <div class="cd-card focus">
+        <div class="cd-card"><span data-icon="save"></span>
           <div class="mono">liquid</div>
           <b>sPUSD</b>
-          <p>Base yield. On-demand exit. ERC-4626-style claim on remittance after floor.</p>
+          <p>Access your savings on demand.</p>
           <div class="row"><span class="k">exit</span><span class="v">anytime</span></div>
           <div class="row"><span class="k">source</span><span class="v">surplus only</span></div>
         </div>
-        <div class="cd-card">
+        <div class="cd-card"><span data-icon="clock"></span>
           <div class="mono">30d CD</div>
-          <b>Lock 30d</b>
-          <p>Target for the full term. Your principal stays in cash; coupon payouts depend on shared surplus.</p>
-          <div class="row"><span class="k">target / term</span><span class="v">not configured</span></div>
-          <div class="row"><span class="k">break fee</span><span class="v">not configured</span></div>
+          <b>30 days</b>
+          <p>A fixed term. A variable, surplus-funded coupon.</p>
+          <div class="row"><span class="k">target / term</span><span class="v">—</span></div>
+          <div class="row"><span class="k">break fee</span><span class="v">—</span></div>
         </div>
-        <div class="cd-card">
+        <div class="cd-card"><span data-icon="lock"></span>
           <div class="mono">90d CD</div>
-          <b>Lock 90d</b>
-          <p>Target for the full term. If surplus is short, open coupon targets share the available funds proportionally.</p>
-          <div class="row"><span class="k">target / term</span><span class="v">not configured</span></div>
-          <div class="row"><span class="k">break fee</span><span class="v">not configured</span></div>
+          <b>90 days</b>
+          <p>A longer term. Coupon depends on shared surplus.</p>
+          <div class="row"><span class="k">target / term</span><span class="v">—</span></div>
+          <div class="row"><span class="k">break fee</span><span class="v">—</span></div>
         </div>
       </div>
       <div class="actions" style="margin-top:14px; flex-wrap:wrap; gap:10px; align-items:center">
         <input id="cd-amt" type="text" inputmode="decimal" placeholder="Amount $PUSD" aria-label="CD principal" style="flex:1 1 140px;min-width:120px;max-width:220px;padding:12px 14px;border-radius:12px;border:1px solid color-mix(in srgb, var(--color-snow) 12%, transparent);background:color-mix(in srgb, var(--color-void) 55%, transparent);color:var(--color-snow);font-size:15px"/>
         <button class="btn" type="button" id="cd-cta" title="Open SpusdCd position">Open CD</button>
-        <button class="btn-ghost" type="button" data-go="vapurr://pusd">Cash / $PUSD</button>
-        <button class="btn-ghost" type="button" data-go="#bonds">Bonds desk</button>
       </div>
       <div id="cd-err" role="alert" style="display:none;margin-top:10px;padding:10px 12px;border-radius:10px;border:1px solid color-mix(in srgb,#f87171 45%,transparent);color:#fecaca;font-size:13px;line-height:1.4"></div>
-      <p class="note"><b>Rates</b> — coupon targets and break fees show only from live chain reads. Until SpusdCd is in the address book they stay <b>not configured</b> (not quotes). Open CD is live-by-default; capacity and haircuts show as params, not a hidden button.</p>
+      <details class="flow-details"><summary>Yield &amp; early exit</summary><p>CD coupons depend on available surplus. Early withdrawal pays the break fee agreed at deposit. Terms appear when the savings market is connected.</p></details>
     </div>
 
     <div class="panel" id="bonds">
       <div class="mono">bonds · v1 assets</div>
-      <h2>Bond in. Wait. Claim gV.</h2>
-      <p class="lede">Pick an asset. See discount and wait up front. Bonded value goes to <b>Fed / Treasury RFV</b>. You get equity later — not a second dollar.</p>
+      <h2>Turn assets into equity.</h2>
+      <p class="lede">Deposit an asset. Claim gV after vesting.</p>
 
       <div class="tabs" role="tablist" aria-label="Bond assets">
         <button class="tab on" type="button" data-asset="ETH" role="tab" aria-selected="true">ETH</button>
@@ -544,10 +488,7 @@
         <button class="tab" type="button" data-asset="PLTR" role="tab" aria-selected="false">PLTR</button>
       </div>
 
-      <div class="gate-banner on" id="gate-banner" role="status" aria-live="polite">
-        <div class="mono">market · params</div>
-        <b>Open</b> — capacity, oracle, and haircut show when BondMarket is wired (not a hide-the-button gate).
-        <span id="gate-why"></span>
+      <div class="gate-banner on" id="gate-banner" role="status" aria-live="polite"><span>Terms awaiting connection.</span><span id="gate-why"></span>
       </div>
 
       <div class="quote" aria-live="polite" id="bond-quote">
@@ -558,71 +499,47 @@
         <div class="stat">
           <div class="mono">discount</div>
           <div class="val" id="q-discount">—</div>
-          <div class="sub" style="color:var(--color-muted);font-size:11px;margin-top:4px">not configured</div>
+          <div class="sub" style="color:var(--color-muted);font-size:11px;margin-top:4px">Awaiting terms</div>
         </div>
         <div class="stat">
           <div class="mono">wait</div>
           <div class="val" id="q-wait">—</div>
-          <div class="sub" style="color:var(--color-muted);font-size:11px;margin-top:4px">not configured</div>
+          <div class="sub" style="color:var(--color-muted);font-size:11px;margin-top:4px">Awaiting terms</div>
         </div>
       </div>
 
       <div class="steps">
         <div class="step">
-          <div class="mono">step 1</div>
-          <b>Bond the asset</b>
-          <p>Send ETH, USDG, or a listed stock into Bonds. Outside value becomes RFV.</p>
+          <span data-icon="wallet"></span><div class="mono">01</div>
+          <b>Deposit</b>
+          <p>Asset → treasury</p>
         </div>
         <div class="step">
-          <div class="mono">step 2</div>
-          <b>Wait the vest</b>
-          <p>Clock is on the ticket. No instant equity. Copy: wait → then claim.</p>
+          <span data-icon="clock"></span><div class="mono">02</div>
+          <b>Vest</b>
+          <p>Hold to maturity</p>
         </div>
         <div class="step">
-          <div class="mono">step 3</div>
+          <span data-icon="layers"></span><div class="mono">03</div>
           <b>Claim gV</b>
-          <p>Receive discounted gV. Stake, or wrap to wgV and trade on House.</p>
+          <p>Receive your equity</p>
         </div>
       </div>
 
       <div class="actions" style="flex-wrap:wrap;gap:10px;align-items:center">
         <input id="bond-amt" type="text" inputmode="decimal" placeholder="Amount" aria-label="Bond asset amount" style="flex:1 1 140px;min-width:120px;max-width:220px;padding:12px 14px;border-radius:12px;border:1px solid color-mix(in srgb, var(--color-snow) 12%, transparent);background:color-mix(in srgb, var(--color-void) 55%, transparent);color:var(--color-snow);font-size:15px"/>
         <button class="btn" type="button" id="bond-cta" title="Open Bond">Open Bond</button>
-        <button class="btn-ghost" type="button" data-go="vapurr://house">Open House</button>
-        <button class="btn-ghost" type="button" data-go="vapurr://stake">Equity desk</button>
-        <button class="btn-ghost" type="button" data-go="vapurr://pusd">Cash / $PUSD</button>
       </div>
       <div id="bond-err" role="alert" style="display:none;margin-top:10px;padding:10px 12px;border-radius:10px;border:1px solid color-mix(in srgb,#f87171 45%,transparent);color:#fecaca;font-size:13px;line-height:1.4"></div>
-      <p class="note"><b>On-chain only</b> — discount, wait, capacity, and haircut show when BondMarket is wired. Until then values stay as <b>—</b> / not configured — never placeholder quotes. Product CTAs are <b>live-by-default</b> (Bond / Open CD). RFV lands in Fed/Treasury; House quotes <b>wgV/$PUSD</b>. <b>$PUSD</b> is the dollar rail; <b>USDG</b> is bond/treasury intake only (BondMarket tab) — not a competing cash/peg market.</p>
+      <details class="flow-details"><summary>Bond terms</summary><p>Discount, vesting, capacity and haircuts come from the connected market. Your deposit funds the treasury. gV becomes claimable after vesting.</p></details>
     </div>
 
-    <div class="flow" aria-label="RFV flow">
-      <div class="node">
-        <div class="mono">in</div>
-        <b>Bond asset</b>
-        <span>ETH · USDG · stocks</span>
-      </div>
-      <div class="node">
-        <div class="mono">treasury</div>
-        <b>Fed RFV</b>
-        <span>Reserves / POL battery</span>
-      </div>
-      <div class="node">
-        <div class="mono">out</div>
-        <b>gV claim</b>
-        <span>Discount after wait</span>
-      </div>
-      <div class="node">
-        <div class="mono">market</div>
-        <b>House</b>
-        <span>wgV / $PUSD</span>
-      </div>
     </div>
+    <footer class="finance-footer"><span>VAPURR ECONOMY</span><span>Browse. Own. Spend.</span></footer>
   </div>
   <script src="/ipc.js"></script>
-  <script src="/shader.js"></script>
   <script>
-    if (window.startShader) startShader(document.getElementById("shader"));
+
 
     // Live-by-default markets. Quotes/capacity/haircut stay "—" until chain reads land.
     // Relic: nothing product-critical stays gated — do not hide Bond/CD behind Unavailable.
@@ -658,10 +575,7 @@
         banner.setAttribute("aria-hidden", "false");
       }
       if (why) {
-        why.textContent = " Params: capacity " + m.capacity
-          + " · oracle " + m.oracle
-          + " · haircut " + m.haircut
-          + " · tag " + m.tag + ".";
+        why.textContent = " Oracle: " + m.oracle + ".";
       }
 
       var cta = document.getElementById("bond-cta");
@@ -737,7 +651,7 @@
       surfaceTxErr(
         "bond-err",
         "Bond tx not configured",
-        "Open Bond is live, but BondMarket is not in the address book on this chain yet. Capacity/oracle/haircut limits still apply on-chain when wired."
+        "Connect a bond market to load terms and create a bond."
       );
     };
 
@@ -754,11 +668,12 @@
       surfaceTxErr(
         "cd-err",
         "CD tx not configured",
-        "Open CD is live, but SpusdCd is not in the address book on this chain yet. Coupon surplus remains a live param — underfunded closes can still fail on-chain."
+        "Connect a savings market to load the term, coupon and early-exit fee."
       );
     };
 
     paintAsset("ETH");
   </script>
+  <script src="/defi-flow.js"></script>
 </body>
 </html>

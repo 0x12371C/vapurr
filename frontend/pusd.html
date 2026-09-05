@@ -1,7 +1,8 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>$PUSD</title>
   <link rel="stylesheet" href="/tokens.css"/>
   <link rel="stylesheet" href="/chrome.css"/>
@@ -584,10 +585,11 @@
     .jump button:hover { transform: translateY(-1px); }
 
   </style>
+  <link rel="stylesheet" href="/defi-flow.css"/>
 </head>
-<body>
-  <div class="globe-layer" aria-hidden="true"><canvas id="globe"></canvas></div>
+<body class="finance-ui" data-desk="cash">
   <div class="wrap">
+    <div data-finance-nav></div>
     <div class="card" id="boot">
       <h2 id="boot-title">Set up $PUSD</h2>
       <p class="note" id="st">This device deploys the market. You receive 1,000,000 $VAPURR.</p>
@@ -603,7 +605,7 @@
           <div class="live"><span class="pip" id="pip"></span><span id="live">…</span></div>
         </div>
         <h1><em>$</em><span id="bal-p">0.00</span></h1>
-        <p class="hero-net">Net Oliver · wallet $PUSD + supplied − debt</p>
+        <p class="hero-net">Net PUSD · wallet + supplied − debt</p>
         <p class="hero-v hero-collat"><b id="bal-collat-v">0</b> $VAPURR collateral</p>
         <p class="hero-v"><b id="bal-v">0.00</b> wallet $VAPURR</p>
         <div class="err-chip" id="snap-err" hidden></div>
@@ -626,39 +628,38 @@
         </div>
       </div>
       <div class="card" id="lithe">
-        <h2>Lithe</h2>
+        <h2>Combined yield</h2>
         <p class="rate"><b id="apy">—</b><span id="earned"></span></p>
-        <p class="say">Every <b>$PUSD</b> earns in place — no claim. Mint spread funds it. Oliver stacks on top. Browse-earn is separate (<code>vapurr://earn</code>).</p>
+        <p class="say">PUSD + Oliver. Rates vary.</p>
       </div>
     </div>
 
     
-    <div class="jump" id="jump" hidden>
-      <button type="button" data-jump="book">Mint</button>
-      <button type="button" data-jump="euler">Oliver</button>
-      <button type="button" data-jump="house">House</button>
-      <button type="button" data-jump="lithe">Lithe</button>
+    <div class="jump" id="jump" role="tablist" aria-label="Choose a desk">
+      <button type="button" data-jump="book" role="tab" aria-controls="book" aria-selected="true">Lithe · Mint / redeem</button>
+      <button type="button" data-jump="euler" role="tab" aria-controls="euler" aria-selected="false">Oliver · Credit</button>
+      <button type="button" data-jump="house" role="tab" aria-controls="house" aria-selected="false">House · Trade</button>
     </div>
     <div class="board" id="board">
-    <div class="card" id="book">
-      <h2>Mint and redeem</h2>
-      <p class="say">Seigniorage: burn <b>$VAPURR</b> → mint <b>$PUSD</b>; redeem burns <b>$PUSD</b> → mint <b>$VAPURR</b>. Not inventory / stocked V. Oracle = first spot of the block. Spread ≥2% funds Lithe. Not USDG.</p>
+    <div class="card" id="book" role="tabpanel" aria-label="Lithe mint and redeem">
+      <h2><span data-icon="exchange"></span>Lithe</h2>
+      <p class="say">Mint PUSD. Redeem back to VAPURR.</p><div class="mini-route" aria-label="VAPURR through Lithe to PUSD"><span>VAPURR</span><b aria-hidden="true">→</b><span><i data-icon="exchange"></i>Lithe</span><b aria-hidden="true">→</b><span>PUSD</span></div><label class="flow-field-label" for="amt">You exchange</label>
       <div class="amt">
-        <input class="field" id="amt" placeholder="0" inputmode="decimal" autocomplete="off"/>
+        <input class="field" id="amt" aria-label="Exchange amount" placeholder="0" inputmode="decimal" autocomplete="off"/>
         <button class="btn-ghost" id="max" type="button" style="height:44px">Max</button>
       </div>
       <div class="have" id="have">0.00 $VAPURR</div>
       <div class="quote" id="quote"></div>
       <button class="btn" id="go" type="button">Mint $PUSD</button>
-      <div class="err" id="book-err"></div>
+      <div class="err" id="book-err" role="alert"></div><details class="flow-details"><summary>Exchange details</summary><p>Oracle-priced mint and redeem. The spread reduces the amount received. Review the estimate before signing.</p></details>
     </div>
 
-    <div class="card" id="euler">
+    <div class="card" id="euler" role="tabpanel" aria-label="Oliver credit">
       <div class="eh">
-        <h2>Oliver</h2>
+        <h2><span data-icon="borrow"></span>Oliver</h2>
         <span class="hint" id="e-hint"></span>
       </div>
-      <p class="say">Isolated <b>$PUSD</b> credit with <b>$VAPURR</b> collateral. <b>Loop</b> is leverage against collateral (virtual shares, capped by vault cash). <b>Withdraw</b> needs real <b>cash</b>. <b>Unwind</b> burns supply vs debt without needing cash. Borrow ≤ <b>85%</b> LTV. Liq under 90% health. Boot <b>150% → 6%</b> as cash fills.</p>
+      <p class="say">Supply cash. Borrow against collateral.</p>
       <div id="e-tick">Supplied $0.00</div>
       <div id="euler-boot">
         <p class="note" id="euler-st">Deploy Oliver after the market is live.</p>
@@ -674,8 +675,9 @@
           <div class="chip"><span>Max</span><b id="e-maxltv">85%</b></div>
           <div class="chip"><span>Health</span><b id="e-hf">∞</b></div>
         </div>
+        <div class="credit-meter" id="credit-meter" role="img" aria-label="Loan to value"><div class="section-line"><span>Borrowing limit</span><span id="credit-meter-label">—</span></div><div class="meter-track"><div class="meter-fill"></div></div></div>
         <div class="have" id="e-have">Supplied 0 · Debt 0 · $VAPURR 0 · Cash 0</div>
-        <div id="e-unwind-bar"><button class="btn" id="e-unwind" type="button">Unwind (burn supply vs debt)</button></div>
+        <div id="e-unwind-bar"><button class="btn" id="e-unwind" type="button">Unwind position</button></div>
         <div class="two" id="e-idle-wd" style="display:none;margin-top:8px">
           <button class="btn-ghost" id="e-wd-p" type="button" style="height:44px;margin-top:0">Withdraw P</button>
           <button class="btn-ghost" id="e-wd-v" type="button" style="height:44px;margin-top:0">Withdraw V</button>
@@ -687,12 +689,12 @@
           <button type="button" data-emode="v">$VAPURR<em id="em-v">collateral</em></button>
         </div>
           <div class="amt">
-            <input class="field" id="e-amt" placeholder="0" inputmode="decimal" autocomplete="off"/>
+            <input class="field" id="e-amt" aria-label="Oliver amount" placeholder="0" inputmode="decimal" autocomplete="off"/>
             <button class="btn-ghost" id="e-max" type="button" style="height:44px">Max</button>
           </div>
           <div id="loop-steps-wrap">
             <span>Steps</span>
-            <input class="field" id="e-steps" value="8" inputmode="numeric" autocomplete="off"/>
+            <input class="field" id="e-steps" aria-label="Loop steps" value="8" inputmode="numeric" autocomplete="off"/>
           </div>
           <div class="have" id="e-pos">0.00 $PUSD</div>
           <div class="quote" id="e-quote">Supply $PUSD.</div>
@@ -700,23 +702,23 @@
             <button class="btn" id="e-go" type="button">Supply $PUSD</button>
             <button class="btn-ghost" id="e-alt" type="button" style="height:48px;margin-top:16px">Withdraw</button>
           </div>
-          <div class="err" id="euler-err"></div>
+          <div class="err" id="euler-err" role="alert"></div><details class="flow-details"><summary>Position &amp; risk</summary><p>Borrowing accrues interest. Higher LTV increases liquidation risk. Loops increase both exposure and debt.</p><p>Withdrawals need available vault cash. Unwind offsets supplied PUSD against debt.</p></details>
       </div>
     </div>
 
-    <div class="card" id="house">
+    <div class="card" id="house" role="tabpanel" aria-label="House trading">
       <div class="eh">
-        <h2>House book</h2>
+        <h2><span data-icon="trade"></span>House</h2>
         <span class="hint" id="h-hint"></span>
       </div>
-      <p class="say"><b>wgV / $PUSD</b> Uni v4 CL — <b>0.30%</b> fee, ±20% around oracle. Equity leg is <b>wgV</b> only (wrap gV first; raw gV never pools). Seed 50/50 after wrap: half treasury, quarter burn→mint $PUSD, rest LP. No USDG. Not peg depth.</p>
+      <p class="say">Wrapped equity ↔ cash.</p><div class="mini-route" aria-label="wgV through House to PUSD"><span>wgV</span><b aria-hidden="true">→</b><span><i data-icon="trade"></i>House</span><b aria-hidden="true">→</b><span>PUSD</span></div>
         <div class="facts">
           <div class="chip"><span>wgV</span><b id="h-v">0.00</b></div>
           <div class="chip"><span>$PUSD</span><b id="h-p">0.00</b></div>
           <div class="chip"><span id="h-treas-lab">Treasury</span><b id="h-treas">0.00</b></div>
           <div class="chip"><span id="h-lpv-lab">LP</span><b id="h-lpv">0.00</b></div>
         </div>
-        <div class="have" id="h-gate">Gate: wrap <b>gV to wgV</b> before Deploy/Seed. Raw $VAPURR / gV is not House equity. Fees skim → RemittanceSink.</div>
+        <div class="have" id="h-gate">Wrap gV to wgV before supplying House.</div>
         <div class="have" id="h-have">Not seeded.</div>
         <div class="have" id="h-stocks"></div>
         <div class="two" id="house-boot-row">
@@ -729,7 +731,7 @@
             <button type="button" data-hmode="p">Sell $PUSD</button>
           </div>
           <div class="amt">
-            <input class="field" id="h-amt" placeholder="0" inputmode="decimal" autocomplete="off"/>
+            <input class="field" id="h-amt" aria-label="House swap amount" placeholder="0" inputmode="decimal" autocomplete="off"/>
           </div>
           <div class="quote" id="h-quote">0.30% fee.</div>
           <button class="btn" id="h-go" type="button">Swap</button>
@@ -739,7 +741,7 @@
 
     <div class="card" id="side">
       <h2>Spend</h2>
-      <p class="say">$PUSD is the dollar this window spends. USDG is not these rails.</p>
+      <p class="say">Put your PUSD to use.</p>
       <div class="spend">
         <button type="button" class="row" id="go-mail">zzzmail <span>0.25¢</span></button>
         <button type="button" class="row" id="go-bid">vapurrbid <span>rank</span></button>
@@ -748,10 +750,7 @@
       </div>
     </div>
 
-    <div class="card" id="more">
-      <div class="eh">
-        <h2>Market</h2>
-      </div>
+    <div class="card" id="more"><details class="flow-details"><summary>Market &amp; contracts</summary>
       <div class="strip">
         <div class="chip"><span>Oracle</span><b id="oracle">—</b></div>
         <div class="chip"><span>Spread</span><b id="spread">2%</b></div>
@@ -768,25 +767,12 @@
         <button type="button" class="row" id="ca-house" hidden><span>House</span><b>—</b></button>
         <button type="button" class="row" id="ca-swap" hidden><span>Swapper</span><b>—</b></button>
       </div>
-    </div>
+    </details></div>
     </div>
   </div>
   <script src="/ipc.js"></script>
   <script src="/sign.js"></script>
-  <script type="importmap">
-  {
-    "imports": {
-      "three": "/vendor/three.webgpu.min.js",
-      "three/webgpu": "/vendor/three.webgpu.min.js",
-      "three/tsl": "/vendor/three.tsl.min.js"
-    }
-  }
-  </script>
-  <script type="module">
-    import { startGlobe } from "/globe.js?v=faucet";
-    startGlobe(document.getElementById("globe"));
-  </script>
-  <script>
+<script>
     var snap = null;
     var waitHash = "";
     var mode = "mint";
@@ -908,6 +894,13 @@
       }
     }
     function setMode(next) {
+      var path = document.querySelector('#book .mini-route');
+      if (path) {
+        var ends = path.querySelectorAll(':scope > span');
+        ends[0].textContent = next === 'mint' ? 'VAPURR' : 'PUSD';
+        ends[2].textContent = next === 'mint' ? 'PUSD' : 'VAPURR';
+        path.setAttribute('aria-label', ends[0].textContent + ' through Lithe to ' + ends[2].textContent);
+      }
       mode = next;
       Array.prototype.forEach.call(document.querySelectorAll("#seg button"), function (b) {
         b.classList.toggle("on", b.getAttribute("data-mode") === mode);
@@ -1039,9 +1032,8 @@
       return base * (1 + (apyPct / 100) * dt / YEAR);
     }
     function fmtBag(x) {
-      if (!(x > 0)) return "0.00";
-      if (x >= 1000) return x.toFixed(4);
-      return x.toFixed(6);
+      if (!Number.isFinite(x)) return "—";
+      return x.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
     function paintTick() {
       if (!tick.t) return;
@@ -1053,10 +1045,10 @@
       if (el) el.textContent = fmtBag(net);
       var earned = net - tick.net0;
       var er = document.getElementById("earned");
-      if (er) er.textContent = earned > 0 ? ("  +$" + earned.toFixed(6)) : "";
+      if (er) er.textContent = earned >= 0.005 ? ("+$" + fmtBag(earned) + " est.") : "";
       var et = document.getElementById("e-tick");
       if (et && tick.sup > 0) {
-        et.textContent = "Supplied $" + fmtBag(sup) + (tick.debt > 0 ? (" · debt $" + fmtBag(debt)) : "") + " · ticking";
+        et.textContent = "Supplied $" + fmtBag(sup) + (tick.debt > 0 ? (" · debt $" + fmtBag(debt)) : "");
       }
     }
     function armTick(s) {
@@ -1323,15 +1315,15 @@
         title: mint ? "Mint $PUSD" : "Redeem $PUSD",
         kicker: "This device signs",
         lede: mint
-          ? "Seigniorage: burn $VAPURR → mint $PUSD (not inventory). Spread funds Lithe. Hash or it failed."
-          : "Seigniorage: burn $PUSD → mint $VAPURR (not inventory unwrap). Spread is not minted back. Hash or it failed.",
+          ? "Exchange VAPURR for PUSD through Lithe."
+          : "Exchange PUSD for VAPURR through Lithe.",
         rows: [
           { k: "Network", v: netLabel() },
           { k: "From", v: (snap && snap.address) || "this device" },
-          { k: mint ? "Burn V" : "Burn P", v: amt },
-          { k: "Path", v: mint ? "seigniorage: burn VAPURR → mint PUSD" : "seigniorage: burn PUSD → mint VAPURR" },
+          { k: "You exchange", v: amt + (mint ? " VAPURR" : " PUSD") },
+          { k: "Estimated receipt", v: document.getElementById("quote").textContent || "—" },
           { k: "Spread", v: spreadPct().toFixed(2) + "%" },
-          { k: "Lithe", v: (snap && snap.apy != null && snap.apy !== "" ? Number(snap.apy).toFixed(2) + "%" : "—") }
+          { k: "Route", v: "Lithe · mint / redeem" }
         ],
         confirmLabel: mint ? "Sign and mint" : "Sign and redeem",
         doneTitle: mint ? "Minted" : "Redeemed",
@@ -1690,7 +1682,7 @@
     }
     if (/lithe/i.test(location.hash + location.search)) {
       setTimeout(function () {
-        var el = document.getElementById("lithe");
+        var el = document.getElementById("book");
         if (el) el.scrollIntoView({ block: "start" });
       }, 80);
     }
@@ -1704,11 +1696,12 @@
       document.body.classList.add("is-live");
     }
     vapurr.send({ cmd: "econ" });
-    setInterval(paintTick, 100);
+    setInterval(paintTick, 1000);
     setInterval(function () {
       if (vapurr.pendingTx) return;
       vapurr.send({ cmd: "econ" });
     }, 8000);
   </script>
+  <script src="/defi-flow.js"></script>
 </body>
 </html>

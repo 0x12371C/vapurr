@@ -1,5 +1,11 @@
 # vapurr status
 
+## 2026-09-05 — DeFi visual flows (source)
+
+`frontend/defi.html` now has an interactive economic route map with icon-led navigation. Lithe mint/redeem, Oliver credit, and House trade use selectable desks in `pusd.html`; savings/bonds use compact horizon cards and deposit → vest → claim steps. Shared `defi-flow.css` / `defi-flow.js` preserve native transaction handlers, show snapshot-driven LTV headroom, support light/dark themes and reduced motion, and keep detailed mechanics expandable. Display balances use two decimals, including negative net positions; transaction amounts retain their original precision.
+
+Validation: `python scripts/verify-defi-ui.py` runs offline in headless Edge with mocked IPC and snapshots, checking three widths, both themes, navigation, form modes, review/rejection, and the credit meter. Screenshots are in ignored `dist/defi-preview/`. Savings/bond terms still require engine/address-book integration; this UI update does not deploy contracts or package a release.
+
 Afternoon board: [SNAPSHOT.md](SNAPSHOT.md) · tracks: [TRACKS.md](TRACKS.md) · graph: [GRAPHIFY.md](GRAPHIFY.md)
 
 Last audited: **2026-09-04** (House lock: `docs/ORG_FLASH.md`).
