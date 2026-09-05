@@ -239,3 +239,32 @@ Genesis on tip: `GENESIS_ALLOCATION.md` + `TestnetRollout` / GenesisTreasury 1.2
 2. Codex review once-failed; no adversarial verdict produced.
 3. Standing locks unchanged (USDG bond-only; no silent 46630).
 
+---
+## Pre-CutoverDeploy brain pass (executor - real)
+Date: 2026-09-05 ~16:16 America/New_York. Model: Grok Bot (executor). Mode: brain-only read of tip; no Codex CLI; no patches.
+Branch: `fix/gv-spusd-guards` @ `685a793` (`685a7934bdc203f432d2307cb665e58718bf7a85`).
+Read: `MINT_AUTHORITY.md`, `GENESIS_ALLOCATION.md`, `GenesisAllocation` / `GenesisTreasury` / `PusdMarketFed` / `IVapurrMinter` / `DevFundStream` / `CanonicalLitheFactory` / `GvFed.VapurrToken`, plus `MintAuthority.t.sol`, `OliverOracleBadDebt.t.sol` (heartbeat), `CanonicalLitheFactory.t.sol`, `GenesisTreasury.t.sol`, `DevFundStream.t.sol`, `BondMarket` / `ExogenousPairRegistry` (USDG).
+
+### 1. MERGE_REC
+**merge** - Tip source matches Relic locks; dual-printer seigniorage + 1.2M genesis carve + NoMarketSell + USDG bond-only are wired and proofed. Live 46630 broadcast remains Relic `CONFIRM_TESTNET_DEPLOY` (not a merge hold).
+
+### 2. CutoverDeploy
+**GO** - Source/lock gate clear for Relic-approved CutoverDeploy. No silent broadcast; dry-run / CONFIRM still required at run time. Replaces prior Codex sandbox / CLI-fail **NO-GO**s.
+
+### 3. P0 (max 8)
+**none** - Verified locks have no open `file:symbol` P0 on tip.
+
+### 4. P1 (max 8)
+1. `docs/econ/TESTNET_ROLLOUT.md` - migrator fork verify vs live gen-4 still **[MANUAL]** before broadcast.
+2. `contracts/test/OliverOracleBadDebt.t.sol:test_swap_does_not_refresh_stale_heartbeat` - proves `PusdMarket`; Fed twin optional (`PusdMarketFed._spot` already omits heartbeat refresh).
+3. `contracts/BondMarket.sol` - live RFV oracles / stock CA still open for safe pricing (inventory-only payout OK).
+4. House follow-up (pairConfig / wgV bootstrap / e2e) post-core cutover - not a core CutoverDeploy blocker.
+5. Exogenous USDG backing / dollar solvency - econ honesty, not factory mint shape.
+
+### 5. Summary (5 lines)
+1. Lithe = `marketMinter` seigniorage; gV = policy minter; `VapurrToken.burn` is marketMinter-only (`MintAuthority.t.sol:test_policy_minter_cannot_burn_holders`).
+2. `PusdMarketFed._spot` / `PusdMarket._spot` do not refresh `rateUpdatedAt`; swap cannot launder stale Oliver credit.
+3. Genesis = exactly 1.2M (1M launch + 200k DevFund); legacy carved from 800k; factory rejects lie/oversize carve.
+4. `GenesisTreasury` / `DevFundStream` -> gV+Oliver / PUSD-only; `withdrawV`/`claimV` revert `NoMarketSell`.
+5. USDG = `BondAssetTag` intake only; `ExogenousPairRegistry` bans USDG as pair asset.
+
