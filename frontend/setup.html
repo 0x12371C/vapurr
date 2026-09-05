@@ -193,7 +193,7 @@
         }).catch(function () { fail("Couldn't open vapurr."); });
         return;
       }
-      go.textContent = "Installing";
+      go.textContent = "Installing…";
       document.getElementById("track").className = "track on";
       var desk = document.getElementById("desk").checked;
       post({ cmd: "setup-install", desktop: desk });
@@ -209,6 +209,7 @@
     api("info").then(function (s) {
       if (s) info = s;
       paint();
+      if (!info.installed) run();
     }).catch(function () { paint(); });
   </script>
 </body>

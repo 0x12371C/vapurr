@@ -16,7 +16,18 @@ impl Client {
     pub(crate) fn euler_snap(&self) -> Value {
         match self.euler_snap_inner() {
             Ok(v) => v,
-            Err(e) => self.euler_base(&e.to_string()),
+            Err(e) => {
+                let msg = e.to_string();
+                let mut v = self.euler_base(&msg);
+                // Vault known but RPC/decode failed: stay live with red error, never silent zeros.
+                if self.live_loop().is_some() {
+                    v["live"] = json!(true);
+                    v["need_deploy"] = json!(false);
+                    v["status"] = json!(format!("snap error: {msg}"));
+                    v["error"] = json!(msg);
+                }
+                v
+            }
         }
     }
 
@@ -187,7 +198,7 @@ impl Client {
             "health": fmt_hf(s.health),
             "vapurr": fmt_tok(s.vapurr_bal),
             "pusd": fmt_tok(s.pusd_bal),
-            "room": fmt_tok(s.room),
+            "room": fmt_tok(s.room.min(s.cash)),
             "boot_kink": fmt_bps(s.boot_bps),
             "flow": fmt_pct_wad(s.flow_wad),
             "cash_target": fmt_tok(s.cash_target),

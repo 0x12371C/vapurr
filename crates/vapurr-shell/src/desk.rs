@@ -196,7 +196,16 @@ impl Desk {
     }
 
     fn legacy_path() -> PathBuf {
-        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../data/desk.json")
+        // env!(CARGO_MANIFEST_DIR) embeds compile-host paths (not remapped).
+        // Dev-only migration from repo data/; release must not leak C:\Users\<builder>.
+        #[cfg(debug_assertions)]
+        {
+            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../data/desk.json")
+        }
+        #[cfg(not(debug_assertions))]
+        {
+            PathBuf::from("data/desk.json")
+        }
     }
 
     pub fn load() -> Self {
@@ -834,7 +843,7 @@ pub fn display_url(raw: &str) -> String {
     if path.is_empty() || path == "/" {
         host.to_string()
     } else if path.len() > 48 {
-        format!("{host}{}…", &path[..48])
+        format!("{host}{}â€¦", &path[..48])
     } else {
         format!("{host}{path}")
     }

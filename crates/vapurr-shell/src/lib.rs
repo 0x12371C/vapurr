@@ -1,5 +1,6 @@
 //! Desk, tabs, and chrome helpers. The window lives in the `vapurr` binary.
 
+pub mod security;
 pub mod desk;
 pub mod tabs;
 

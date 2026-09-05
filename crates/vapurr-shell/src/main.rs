@@ -3,6 +3,7 @@
 
 mod cookies;
 mod crash;
+mod security;
 mod desk;
 mod host;
 mod inject;
@@ -98,6 +99,14 @@ use wry::{MemoryUsageLevel, WebViewBuilderExtWindows, WebViewExtWindows};
 use crate::desk::Desk;
 use crate::host::serve;
 use crate::tabs::TabStrip;
+fn send_reply(proxy: &tao::event_loop::EventLoopProxy<Msg>, document: Option<security::Document>, msg: Msg) -> Result<(), tao::event_loop::EventLoopClosed<Msg>> {
+    proxy.send_event(Msg::Reply(document, Box::new(msg)))
+}
+
+fn js_request_error(message: &str) -> String {
+    let text = serde_json::to_string(message).unwrap();
+    format!("if (window.__walletErr) window.__walletErr({text}); if (window.vapurr && vapurr.finishTx) vapurr.finishTx(false, {{error:{text}}});")
+}
 fn desk_json(desk: &Desk, shield: &vapurr_shield::Shield) -> serde_json::Value {
     let mut v = desk.snapshot();
     if let Some(map) = v.as_object_mut() {
@@ -172,6 +181,7 @@ fn set_dpi() {
 fn main() {
     set_dpi();
     crash::install();
+    setup::ensure_webview2_loader();
     let args: Vec<String> = std::env::args().collect();
     if patch::handle_cli(&args) {
         return;
@@ -241,7 +251,7 @@ fn main() {
     let ipc = {
         let proxy = proxy.clone();
         move |req: wry::http::Request<String>| {
-            if let Some(msg) = parse_ipc(req.body()) {
+            if let Some(msg) = authorized_ipc(&req.uri().to_string(), req.body()) {
                 let _ = proxy.send_event(msg);
             }
         }
@@ -252,7 +262,8 @@ fn main() {
     let mut sidebar_b = WebViewBuilder::with_web_context(&mut web_ctx)
         .with_bounds(side_r)
         .with_background_color((0x0E, 0x0E, 0x0E, 255))
-        .with_custom_protocol("vapurr".into(), serve)
+        .with_asynchronous_custom_protocol("vapurr".into(), host::serve_async)
+        .with_initialization_script(&security::init_script())
         .with_initialization_script(BOOT_JS)
         .with_ipc_handler(ipc.clone())
         .with_url(vapurr_url("sidebar.html"));
@@ -268,7 +279,8 @@ fn main() {
     let mut toolbar_b = WebViewBuilder::with_web_context(&mut web_ctx)
         .with_bounds(bar_r)
         .with_background_color((0x0E, 0x0E, 0x0E, 255))
-        .with_custom_protocol("vapurr".into(), serve)
+        .with_asynchronous_custom_protocol("vapurr".into(), host::serve_async)
+        .with_initialization_script(&security::init_script())
         .with_initialization_script(BOOT_JS)
         .with_ipc_handler(ipc.clone())
         .with_url(vapurr_url("toolbar.html"));
@@ -320,7 +332,8 @@ fn main() {
     let mut page_b = WebViewBuilder::with_web_context(&mut web_ctx)
         .with_bounds(page_r)
         .with_background_color((0x0E, 0x0E, 0x0E, 255))
-        .with_custom_protocol("vapurr".into(), serve)
+        .with_asynchronous_custom_protocol("vapurr".into(), host::serve_async)
+        .with_initialization_script(&security::init_script())
         .with_initialization_script(BOOT_JS)
         .with_ipc_handler(ipc.clone())
         .with_navigation_handler(page_nav)
@@ -349,7 +362,8 @@ fn main() {
     let mut radio_b = WebViewBuilder::with_web_context(&mut web_ctx)
         .with_bounds(radio_r)
         .with_background_color((0x03, 0x03, 0x03, 255))
-        .with_custom_protocol("vapurr".into(), serve)
+        .with_asynchronous_custom_protocol("vapurr".into(), host::serve_async)
+        .with_initialization_script(&security::init_script())
         .with_initialization_script(BOOT_JS)
         .with_ipc_handler(ipc)
         .with_url(vapurr_url("radio.html"));
@@ -394,7 +408,7 @@ fn main() {
     let last_outbid = Rc::new(RefCell::new(serde_json::json!({})));
     let last_ketlist = Rc::new(RefCell::new(serde_json::json!({})));
     let last_wallet = Rc::new(RefCell::new(serde_json::json!({})));
-    let (econ_tx, econ_rx) = mpsc::channel::<vapurr_econ::EconCmd>();
+    let (econ_tx, econ_rx) = security::bound_channel::<vapurr_econ::EconCmd>();
     {
         let proxy = proxy.clone();
         std::thread::Builder::new()
@@ -403,7 +417,7 @@ fn main() {
                 let mut client = vapurr_econ::Client::open();
                 let snap = client.snapshot();
                 let _ = proxy.send_event(Msg::EconSnap(snap));
-                while let Ok(cmd) = econ_rx.recv() {
+                while let Ok((document, cmd)) = econ_rx.recv() {
                     let board = matches!(
                         &cmd,
                         vapurr_econ::EconCmd::Outbid
@@ -418,16 +432,16 @@ fn main() {
                     );
                     match client.run(cmd) {
                         Ok(snap) if board => {
-                            let _ = proxy.send_event(Msg::OutbidSnap(snap));
+                            let _ = send_reply(&proxy, document.clone(), Msg::OutbidSnap(snap));
                         }
                         Ok(snap) if listed => {
-                            let _ = proxy.send_event(Msg::KetListSnap(snap));
+                            let _ = send_reply(&proxy, document.clone(), Msg::KetListSnap(snap));
                         }
                         Ok(snap) => {
-                            let _ = proxy.send_event(Msg::EconSnap(snap));
+                            let _ = send_reply(&proxy, document.clone(), Msg::EconSnap(snap));
                         }
                         Err(fail) => {
-                            let _ = proxy.send_event(Msg::EconErr {
+                            let _ = send_reply(&proxy, document.clone(), Msg::EconErr {
                                 which: fail.which,
                                 msg: fail.msg,
                             });
@@ -437,7 +451,7 @@ fn main() {
             })
             .ok();
     }
-    let (wallet_tx, wallet_rx) = mpsc::channel::<vapurr_wallet::WalletCmd>();
+    let (wallet_tx, wallet_rx) = security::bound_channel::<vapurr_wallet::WalletCmd>();
     {
         let proxy = proxy.clone();
         std::thread::Builder::new()
@@ -446,13 +460,13 @@ fn main() {
                 let mut client = vapurr_wallet::WalletDesk::open();
                 let snap = client.snap();
                 let _ = proxy.send_event(Msg::WalletSnap(snap));
-                while let Ok(cmd) = wallet_rx.recv() {
+                while let Ok((document, cmd)) = wallet_rx.recv() {
                     match client.run(cmd) {
                         Ok(snap) => {
-                            let _ = proxy.send_event(Msg::WalletSnap(snap));
+                            let _ = send_reply(&proxy, document.clone(), Msg::WalletSnap(snap));
                         }
                         Err(e) => {
-                            let _ = proxy.send_event(Msg::WalletErr(e.to_string()));
+                            let _ = send_reply(&proxy, document.clone(), Msg::WalletErr(e.to_string()));
                         }
                     }
                 }
@@ -538,7 +552,7 @@ fn main() {
                 d.prefs.ctrl_scroll_zoom,
             );
             let _ = toolbar.borrow().evaluate_script(&js);
-            let _ = page.borrow().evaluate_script(&js);
+            let _ = security::eval_chrome(&page.borrow(), &js);
             let _ = sidebar.borrow().evaluate_script(&js);
         }
     };
@@ -568,10 +582,10 @@ fn main() {
                 if starred { "true" } else { "false" }
             ));
             let djson = desk_json(&desk.borrow(), &shield);
-            let _ = page.borrow().evaluate_script(&js_set_desk(&djson));
+            let _ = security::eval_chrome(&page.borrow(), &js_set_desk(&djson));
             let boost_on = desk.borrow().prefs.boost;
             let bjs = js_set_boost(boost_on);
-            let _ = page.borrow().evaluate_script(&bjs);
+            let _ = security::eval_chrome(&page.borrow(), &bjs);
             let _ = toolbar.borrow().evaluate_script(&bjs);
             let theme = desk.borrow().prefs.theme.clone();
             let tjs = js_apply_theme(&theme);
@@ -579,22 +593,22 @@ fn main() {
             let _ = toolbar.borrow().evaluate_script(&tjs);
             let _ = radio.borrow().evaluate_script(&tjs);
             if host::is_chrome_url(&url) {
-                let _ = page.borrow().evaluate_script(&tjs);
+                let _ = security::eval_chrome(&page.borrow(), &tjs);
                 let ej = last_econ.borrow().clone();
                 if ej.is_object() && !ej.as_object().map(|o| o.is_empty()).unwrap_or(true) {
-                    let _ = page.borrow().evaluate_script(&js_set_econ(&ej));
+                    let _ = security::eval_chrome(&page.borrow(), &js_set_econ(&ej));
                 }
                 let oj = last_outbid.borrow().clone();
                 if oj.is_object() && !oj.as_object().map(|o| o.is_empty()).unwrap_or(true) {
-                    let _ = page.borrow().evaluate_script(&js_set_outbid(&oj));
+                    let _ = security::eval_chrome(&page.borrow(), &js_set_outbid(&oj));
                 }
                 let kj = last_ketlist.borrow().clone();
                 if kj.is_object() && !kj.as_object().map(|o| o.is_empty()).unwrap_or(true) {
-                    let _ = page.borrow().evaluate_script(&js_set_ketlist(&kj));
+                    let _ = security::eval_chrome(&page.borrow(), &js_set_ketlist(&kj));
                 }
                 let wj = last_wallet.borrow().clone();
                 if wj.is_object() && !wj.as_object().map(|o| o.is_empty()).unwrap_or(true) {
-                    let _ = page.borrow().evaluate_script(&js_set_wallet(&wj));
+                    let _ = security::eval_chrome(&page.borrow(), &js_set_wallet(&wj));
                 }
             }
             paint_zoom();
@@ -605,6 +619,28 @@ fn main() {
 
     event_loop.run(move |event, _, control_flow| {
         *control_flow = ControlFlow::Wait;
+        security::set_document(None);
+        let event = match event {
+            Event::UserEvent(Msg::Ipc(doc, msg)) => {
+                security::set_document(Some(doc));
+                if needs_unlock(&msg) && !vapurr_wallet::is_logged_in() {
+                    let _ = security::eval_chrome(&page.borrow(), &js_request_error("Unlock the wallet first."));
+                    return;
+                }
+                if let Some(text) = confirmation(&msg) {
+                    if !security::confirm(&text) {
+                        let _ = security::eval_chrome(&page.borrow(), &js_request_error("Authorization cancelled."));
+                        return;
+                    }
+                }
+                Event::UserEvent(*msg)
+            }
+            Event::UserEvent(Msg::Reply(doc, msg)) => {
+                security::set_document(doc);
+                Event::UserEvent(*msg)
+            }
+            other => other,
+        };
         match event {
             Event::UserEvent(Msg::Go(url)) => {
                 let url = resolve_nav(&url);
@@ -623,7 +659,7 @@ fn main() {
                 paint_chrome();
             }
             Event::UserEvent(Msg::Back) => {
-                // Drop the RefMut before the next borrow — 2021 if-let keeps scrutinee temps alive.
+                // Drop the RefMut before the next borrow â€” 2021 if-let keeps scrutinee temps alive.
                 let url = tabs.borrow_mut().back();
                 if let Some(url) = url {
                     tabs.borrow_mut().suppress = true;
@@ -890,13 +926,13 @@ fn main() {
             }
             Event::UserEvent(Msg::Blobs) => {
                 let snap = vault.borrow().snapshot();
-                let _ = page.borrow().evaluate_script(&js_set_blobs(&snap));
+                let _ = security::eval_chrome(&page.borrow(), &js_set_blobs(&snap));
             }
             Event::UserEvent(Msg::BlobSnap) => {
                 snap_desk(&desk.borrow(), &vault);
                 vault.borrow_mut().preload();
                 let snap = vault.borrow().snapshot();
-                let _ = page.borrow().evaluate_script(&js_set_blobs(&snap));
+                let _ = security::eval_chrome(&page.borrow(), &js_set_blobs(&snap));
             }
             Event::UserEvent(Msg::Boost) => {
                 let on = !desk.borrow().prefs.boost;
@@ -911,16 +947,16 @@ fn main() {
                 let _ = toolbar.borrow().evaluate_script(&bjs);
                 let url = tabs.borrow().current().url().to_string();
                 if host::is_chrome_url(&url) {
-                    let _ = page.borrow().evaluate_script(&bjs);
+                    let _ = security::eval_chrome(&page.borrow(), &bjs);
                 }
                 if on {
                     snap_desk(&desk.borrow(), &vault);
                     vault.borrow_mut().preload();
                     if host::is_chrome_url(&url) {
-                        let _ = page.borrow().evaluate_script(&js_boost_warm(&urls));
+                        let _ = security::eval_chrome(&page.borrow(), &js_boost_warm(&urls));
                     }
                 } else {
-                    let _ = page.borrow().evaluate_script(
+                    let _ = security::eval_chrome(&page.borrow(), 
                         "window.__vapurrBoostClear && window.__vapurrBoostClear()",
                     );
                 }
@@ -935,9 +971,9 @@ fn main() {
                 let js = js_on_boost(on, &snap, &hosts);
                 let _ = toolbar.borrow().evaluate_script(&js);
                 if host::is_chrome_url(&url) {
-                    let _ = page.borrow().evaluate_script(&js);
+                    let _ = security::eval_chrome(&page.borrow(), &js);
                     if url.contains("memory.html") {
-                        let _ = page.borrow().evaluate_script(&js_set_blobs(&snap));
+                        let _ = security::eval_chrome(&page.borrow(), &js_set_blobs(&snap));
                     }
                 }
                 paint_chrome();
@@ -1001,7 +1037,7 @@ fn main() {
                         "window.__onPatch && window.__onPatch({})",
                         serde_json::json!({ "ok": false, "error": e })
                     );
-                    let _ = page.borrow().evaluate_script(&js);
+                    let _ = security::eval_chrome(&page.borrow(), &js);
                 }
             },
             Event::UserEvent(Msg::Logout) => {
@@ -1019,26 +1055,26 @@ fn main() {
                         host::adopt_wallet_address(a);
                     }
                 }
-                let _ = page.borrow().evaluate_script(&js_set_wallet(&snap));
+                let _ = security::eval_chrome(&page.borrow(), &js_set_wallet(&snap));
             }
             Event::UserEvent(Msg::WalletErr(msg)) => {
                 let js = format!(
                     "window.__walletErr && window.__walletErr({})",
                     serde_json::to_string(&msg).unwrap_or_else(|_| "\"failed\"".into())
                 );
-                let _ = page.borrow().evaluate_script(&js);
+                let _ = security::eval_chrome(&page.borrow(), &js);
             }
             Event::UserEvent(Msg::ZzzmailSend { to, body, asset }) => {
                 let snap = host::zzzmail_send_json(&to, &body, &asset);
-                let _ = page.borrow().evaluate_script(&js_set_mail(&snap));
+                let _ = security::eval_chrome(&page.borrow(), &js_set_mail(&snap));
             }
             Event::UserEvent(Msg::ZzzmailInbox) => {
                 let snap = host::zzzmail_inbox_json();
-                let _ = page.borrow().evaluate_script(&js_set_mail(&snap));
+                let _ = security::eval_chrome(&page.borrow(), &js_set_mail(&snap));
             }
             Event::UserEvent(Msg::ZzzmailHood { name }) => {
                 let snap = host::zzzmail_hood_register_json(&name);
-                let _ = page.borrow().evaluate_script(&js_set_mail(&snap));
+                let _ = security::eval_chrome(&page.borrow(), &js_set_mail(&snap));
             }
             Event::UserEvent(Msg::Econ) => {
                 let _ = econ_tx.send(vapurr_econ::EconCmd::Snap);
@@ -1057,10 +1093,10 @@ fn main() {
             }
             Event::UserEvent(Msg::EconSnap(snap)) => {
                 *last_econ.borrow_mut() = snap.clone();
-                let _ = page.borrow().evaluate_script(&js_set_econ(&snap));
+                let _ = security::eval_chrome(&page.borrow(), &js_set_econ(&snap));
             }
             Event::UserEvent(Msg::EconErr { which, msg }) => {
-                let _ = page.borrow().evaluate_script(&js_econ_err(&which, &msg));
+                let _ = security::eval_chrome(&page.borrow(), &js_econ_err(&which, &msg));
             }
             Event::UserEvent(Msg::Outbid) => {
                 let _ = econ_tx.send(vapurr_econ::EconCmd::Outbid);
@@ -1114,15 +1150,15 @@ fn main() {
             }
             Event::UserEvent(Msg::OutbidSnap(snap)) => {
                 *last_outbid.borrow_mut() = snap.clone();
-                let _ = page.borrow().evaluate_script(&js_set_outbid(&snap));
+                let _ = security::eval_chrome(&page.borrow(), &js_set_outbid(&snap));
             }
             Event::UserEvent(Msg::KetListSnap(snap)) => {
                 *last_ketlist.borrow_mut() = snap.clone();
-                let _ = page.borrow().evaluate_script(&js_set_ketlist(&snap));
+                let _ = security::eval_chrome(&page.borrow(), &js_set_ketlist(&snap));
             }
             Event::UserEvent(Msg::Desk) => {
                 let djson = desk_json(&desk.borrow(), &shield);
-                let _ = page.borrow().evaluate_script(&js_set_desk(&djson));
+                let _ = security::eval_chrome(&page.borrow(), &js_set_desk(&djson));
                 let url = tabs.borrow().current().url().to_string();
                 if url.contains("cookies.html") {
                     cookies::push(&page.borrow(), &url);
@@ -1135,14 +1171,14 @@ fn main() {
                 if wants_wallet_snap(&url) {
                     let wj = last_wallet.borrow().clone();
                     if wj.is_object() && !wj.as_object().map(|o| o.is_empty()).unwrap_or(true) {
-                        let _ = page.borrow().evaluate_script(&js_set_wallet(&wj));
+                        let _ = security::eval_chrome(&page.borrow(), &js_set_wallet(&wj));
                     }
                     let _ = wallet_tx.send(vapurr_wallet::WalletCmd::Snap);
                 }
                 if url.contains("ketcharts.html") {
                     let kj = last_ketlist.borrow().clone();
                     if kj.is_object() && !kj.as_object().map(|o| o.is_empty()).unwrap_or(true) {
-                        let _ = page.borrow().evaluate_script(&js_set_ketlist(&kj));
+                        let _ = security::eval_chrome(&page.borrow(), &js_set_ketlist(&kj));
                     }
                     let _ = econ_tx.send(vapurr_econ::EconCmd::KetList);
                 }
@@ -1175,26 +1211,26 @@ fn main() {
                 desk.borrow_mut().record_nav(&url, &title);
                 inject_faucet(&page.borrow(), &url);
                 inject_shield(&page.borrow(), &shield, &url);
-                if url.contains("vapurr.localhost") {
+                if security::is_chrome_url(&url) {
                     let snap = last_chain.borrow().clone();
                     if !snap.is_empty() {
-                        let _ = page.borrow().evaluate_script(&js_set_chain(&snap));
+                        let _ = security::eval_chrome(&page.borrow(), &js_set_chain(&snap));
                         let _ = toolbar.borrow().evaluate_script(&js_set_chain(&snap));
                     }
                     let djson = desk_json(&desk.borrow(), &shield);
-                    let _ = page.borrow().evaluate_script(&js_set_desk(&djson));
+                    let _ = security::eval_chrome(&page.borrow(), &js_set_desk(&djson));
                     if url.contains("memory.html") {
                         let snap = vault.borrow().snapshot();
-                        let _ = page.borrow().evaluate_script(&js_set_blobs(&snap));
+                        let _ = security::eval_chrome(&page.borrow(), &js_set_blobs(&snap));
                     }
                     if url.contains("zzzmail.html") || url.contains("zmail.html") {
                         let snap = host::zzzmail_inbox_json();
-                        let _ = page.borrow().evaluate_script(&js_set_mail(&snap));
+                        let _ = security::eval_chrome(&page.borrow(), &js_set_mail(&snap));
                     }
                     if wants_wallet_snap(&url) {
                         let wj = last_wallet.borrow().clone();
                         if wj.is_object() && !wj.as_object().map(|o| o.is_empty()).unwrap_or(true) {
-                            let _ = page.borrow().evaluate_script(&js_set_wallet(&wj));
+                            let _ = security::eval_chrome(&page.borrow(), &js_set_wallet(&wj));
                         }
                         let _ = wallet_tx.send(vapurr_wallet::WalletCmd::Snap);
                     }
@@ -1207,7 +1243,7 @@ fn main() {
                 }
                 if desk.borrow().prefs.boost && host::is_chrome_url(&url) {
                     let urls = boost_targets(&desk.borrow());
-                    let _ = page.borrow().evaluate_script(&js_boost_warm(&urls));
+                    let _ = security::eval_chrome(&page.borrow(), &js_boost_warm(&urls));
                 }
                 paint_chrome();
             }
@@ -1216,7 +1252,7 @@ fn main() {
                 let js = js_set_chain(&json);
                 let url = tabs.borrow().current().url().to_string();
                 if host::is_chrome_url(&url) {
-                    let _ = page.borrow().evaluate_script(&js);
+                    let _ = security::eval_chrome(&page.borrow(), &js);
                 }
                 let _ = toolbar.borrow().evaluate_script(&js);
             }
@@ -1311,8 +1347,8 @@ mod tests {
         assert_eq!(pane_url("honkit"), vapurr_url("ketbook.html"));
         assert_eq!(pane_url("lithe"), vapurr_url("pusd.html"));
         assert_eq!(pane_url("pusd"), vapurr_url("pusd.html"));
-        assert_eq!(pane_url("euler"), vapurr_url("pusd.html?tab=euler"));
-        assert_eq!(pane_url("loop"), vapurr_url("pusd.html?tab=euler"));
+        assert_eq!(pane_url("euler"), vapurr_url("pusd.html?tab=oliver"));
+        assert_eq!(pane_url("loop"), vapurr_url("pusd.html?tab=oliver"));
         assert_eq!(pane_url("ketpay"), vapurr_url("pay.html"));
         assert_eq!(pane_url("pay"), vapurr_url("pay.html"));
         assert_ne!(pane_url("404"), vapurr_url("pay.html"));

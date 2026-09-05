@@ -1,4 +1,4 @@
-[workspace]
+﻿[workspace]
 resolver = "2"
 members = [
     "crates/vapurr-rhc",
@@ -18,11 +18,11 @@ members = [
 ]
 
 [workspace.package]
-version = "1.1.4"
+version = "1.1.9"
 edition = "2021"
 license = "MIT"
 authors = ["vapurr"]
-description = "vapurr — the on-chain browser"
+description = "vapurr Ã¢â‚¬â€ the on-chain browser"
 
 [workspace.dependencies]
 base64 = "0.22"

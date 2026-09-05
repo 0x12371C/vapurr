@@ -14,9 +14,11 @@ use vapurr_rhc::{self as rhc, USDG};
 pub mod desk;
 mod import;
 mod session;
+mod keystore;
+pub mod transactions;
 pub mod tx;
 pub use desk::{parse_units, Desk as WalletDesk, WalletCmd};
-pub use session::{has_key, is_logged_in, logout, peek_address, status as login_status};
+pub use session::{require_unlocked, has_key, is_logged_in, logout, peek_address, status as login_status};
 pub use tx::{
     abi_addr, abi_u256, decode_abi_string, decode_dyn_string, decode_hex_bytes, decode_word_addr,
     decode_word_u128, encode_fn, encode_fn_addr, encode_fn_addr_addr, encode_fn_addr_u256,
@@ -60,18 +62,14 @@ impl DeviceKey {
         Self { signing, address }
     }
 
-    pub fn load() -> Option<Self> {
-        let bytes = std::fs::read(device_key_path()).ok()?;
-        Self::from_secret(&bytes)
+    pub fn load_result() -> Result<Option<Self>, WalletError> {
+        let record = keystore::load()?;
+        Ok(record.and_then(|r| Self::from_secret(&r.key)))
     }
-
-    pub fn load_or_create() -> Self {
-        if let Some(k) = Self::load() {
-            return k;
-        }
-        let k = Self::generate();
-        let _ = k.save();
-        k
+    pub fn load() -> Option<Self> { Self::load_result().ok().flatten() }
+    pub fn load_or_create() -> Result<Self, WalletError> {
+        if let Some(key) = Self::load_result()? { return Ok(key); }
+        let key = Self::generate(); key.save()?; Ok(key)
     }
 
     pub(crate) fn from_secret(bytes: &[u8]) -> Option<Self> {
@@ -85,14 +83,7 @@ impl DeviceKey {
         Some(Self { signing, address })
     }
 
-    pub(crate) fn save(&self) -> Result<(), WalletError> {
-        let path = device_key_path();
-        if let Some(dir) = path.parent() {
-            std::fs::create_dir_all(dir).map_err(|_| WalletError::Io)?;
-        }
-        let raw = self.secret_bytes()?;
-        std::fs::write(&path, raw).map_err(|_| WalletError::Io)
-    }
+    pub(crate) fn save(&self) -> Result<(), WalletError> { keystore::save(self, None) }
 
     pub(crate) fn secret_bytes(&self) -> Result<[u8; 32], WalletError> {
         let b = self.signing.to_bytes();

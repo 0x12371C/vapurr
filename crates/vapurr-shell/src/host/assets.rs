@@ -9,7 +9,17 @@ use super::*;
 pub(crate) struct Frontend;
 
 pub fn frontend_root() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../frontend")
+    // env!("CARGO_MANIFEST_DIR") embeds the compile-host absolute path and is
+    // NOT covered by --remap-path-prefix. Release serves rust-embed; disk is
+    // a no-op fallback that must not leak C:\Users\<builder>.
+    #[cfg(debug_assertions)]
+    {
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../frontend")
+    }
+    #[cfg(not(debug_assertions))]
+    {
+        PathBuf::from("frontend")
+    }
 }
 
 pub(crate) fn mime(path: &str) -> &'static str {
@@ -84,9 +94,10 @@ pub(crate) fn read_frontend(rel: &str) -> Option<Cow<'static, [u8]>> {
         return None;
     }
     let rel = rel.replace('\\', "/");
-    let file = frontend_root().join(&rel);
-    if let Ok(bytes) = std::fs::read(&file) {
-        return Some(Cow::Owned(bytes));
+    #[cfg(debug_assertions)]
+    {
+        let file = frontend_root().join(&rel);
+        if let Ok(bytes) = std::fs::read(&file) { return Some(Cow::Owned(bytes)); }
     }
     if let Some(f) = Frontend::get(&rel) {
         return Some(f.data);

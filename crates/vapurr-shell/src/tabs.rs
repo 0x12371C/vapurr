@@ -36,7 +36,7 @@ impl Tab {
 
     pub fn is_chrome(&self) -> bool {
         let u = self.url();
-        u.contains("vapurr.localhost") || u.starts_with("vapurr://")
+        crate::security::is_chrome_url(&u)
     }
 }
 
@@ -224,7 +224,7 @@ pub fn chrome_label(url: &str) -> Option<&'static str> {
     if u.contains("fomo.family") {
         return Some("Live Trenches");
     }
-    if !(u.contains("vapurr.localhost") || u.starts_with("vapurr://")) {
+    if !(crate::security::is_chrome_url(&u)) {
         return None;
     }
     let file = u

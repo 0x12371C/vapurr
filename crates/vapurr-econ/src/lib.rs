@@ -34,11 +34,11 @@ pub enum EconError {
     NeedPusd,
     #[error("amount too small")]
     Tiny,
-    #[error("peg paused — book too thin")]
+    #[error("peg paused â€” book too thin")]
     Thin,
     #[error("{0}")]
     Rpc(String),
-    #[error("need ETH for gas — faucet.testnet.chain.robinhood.com")]
+    #[error("need ETH for gas â€” faucet.testnet.chain.robinhood.com")]
     NeedGas,
     #[error("need USDG")]
     NeedUsdg,
@@ -517,7 +517,7 @@ impl Client {
             return Err(EconError::NeedGas);
         }
         let mut bytecode = market_bytecode()?;
-        // constructor(uint256 lunaRate_) — $1 per V at genesis, first-spot oracle
+        // constructor(uint256 lunaRate_) â€” $1 per V at genesis, first-spot oracle
         bytecode.extend_from_slice(&vapurr_wallet::tx::abi_u256(DEC));
         let hash = self.send(None, &bytecode)?;
         let receipt = self.wait(&hash)?;
@@ -555,11 +555,14 @@ impl Client {
     }
 
     pub(crate) fn send(&mut self, to: Option<Address>, data: &[u8]) -> Result<String, EconError> {
+        vapurr_wallet::require_unlocked().map_err(|e| EconError::Rpc(e.to_string()))?;
+        let _signing = vapurr_wallet::transactions::signing_guard().map_err(|e| EconError::Rpc(e.to_string()))?;
         let from = self.key.address.to_hex();
         let eth = self.rpc.eth_balance(&from).map_err(econ_rpc)?;
         if eth == 0 {
             return Err(EconError::NeedGas);
         }
+        vapurr_wallet::transactions::ensure_no_pending(&from, self.chain_id).map_err(|e| EconError::Rpc(e.to_string()))?;
         let nonce = self.rpc.eth_nonce(&from).map_err(econ_rpc)?;
         let gas_price = self.rpc.eth_gas_price().unwrap_or(100_000_000);
         let to_hex = to.map(|a| a.to_hex());
@@ -584,9 +587,11 @@ impl Client {
             .sign_tx(&tx)
             .map_err(|e| EconError::Rpc(e.to_string()))?;
         let hash = self.rpc.eth_send_raw(&hex0x(&raw)).map_err(econ_rpc)?;
+        vapurr_wallet::transactions::record(&hash, self.chain_id, &from, "pending").map_err(|e| EconError::Rpc(e.to_string()))?;
         self.last_tx = hash.clone();
         match self.wait(&hash) {
             Ok(r) => {
+                vapurr_wallet::transactions::record(&hash, self.chain_id, &from, vapurr_wallet::transactions::receipt_status(Some(&r))).map_err(|e| EconError::Rpc(e.to_string()))?;
                 if r.get("status").and_then(|v| v.as_str()).unwrap_or("0x0") != "0x1" {
                     return Err(EconError::Rpc("tx reverted".into()));
                 }
@@ -645,10 +650,10 @@ fn map_revert(r: &str) -> EconError {
         "SYM" | "NAME" | "META" => EconError::BadTicker,
         "FULL" => EconError::Full,
         "LTV" => EconError::Rpc("over 85% LTV".into()),
-        "CASH" => EconError::Rpc("vault cash too thin — unwind or wait".into()),
+        "CASH" => EconError::Rpc("vault cash too thin â€” unwind or wait".into()),
         "LIQ" => EconError::Rpc("not liquidatable".into()),
         "DEBT" => EconError::Rpc("no debt".into()),
-        "STEP" => EconError::Rpc("steps 1–16".into()),
+        "STEP" => EconError::Rpc("steps 1â€“16".into()),
         _ => EconError::Rpc(r.into()),
     }
 }
@@ -692,6 +697,18 @@ pub fn parse_amt(s: &str) -> Result<u128, EconError> {
 }
 
 pub(crate) fn fmt_tok(v: u128) -> String {
+    if v == 0 {
+        return "0.00".into();
+    }
+    // Dust under 0.01 must not round-hide as 0.00 (Oliver cash/supplied).
+    if v < DEC / 100 {
+        let frac = v / (DEC / 1_000_000);
+        let mut s = format!("0.{frac:06}");
+        while s.ends_with('0') && s.len() > 4 {
+            s.pop();
+        }
+        return s;
+    }
     let whole = v / DEC;
     let frac = (v % DEC) / (DEC / 100);
     format!("{whole}.{frac:02}")

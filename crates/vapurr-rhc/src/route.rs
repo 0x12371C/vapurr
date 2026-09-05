@@ -1223,6 +1223,62 @@ fn house_allowance_block(revert: &str) -> bool {
         || r.contains("INSUFFICIENT")
 }
 
+
+#[allow(dead_code)]
+/// `serde_json::json!` panics on u128/i128 outside u64/i64 ("number out of range").
+/// Prefer strings for token-unit ints; keep values that fit in u64 as numbers.
+fn json_u128(n: u128) -> Value {
+    if n <= u64::MAX as u128 {
+        Value::from(n as u64)
+    } else {
+        Value::String(n.to_string())
+    }
+}
+
+#[allow(dead_code)]
+fn json_i128(n: i128) -> Value {
+    if n >= i64::MIN as i128 && n <= i64::MAX as i128 {
+        Value::from(n as i64)
+    } else {
+        Value::String(n.to_string())
+    }
+}
+
+/// Recursively stringify Numbers that do not fit in u64/i64 (e.g. LiFi / arbitrary-precision).
+/// Numbers fine as u64/i64 stay; floats stay.
+fn stringify_oversized_numbers(v: &mut Value) {
+    match v {
+        Value::Number(n) => {
+            if n.as_u64().is_some() || n.as_i64().is_some() {
+                return;
+            }
+            // Integer-like that only exists as string/bignum under arbitrary_precision,
+            // or a pure integer written as f64 beyond exact range — emit decimal string.
+            let s = n.to_string();
+            if !s.contains('.') && !s.contains('e') && !s.contains('E') {
+                *v = Value::String(s);
+            }
+        }
+        Value::Array(a) => {
+            for x in a.iter_mut() {
+                stringify_oversized_numbers(x);
+            }
+        }
+        Value::Object(o) => {
+            for x in o.values_mut() {
+                stringify_oversized_numbers(x);
+            }
+        }
+        _ => {}
+    }
+}
+
+fn safe_tx(tx: &Value) -> Value {
+    let mut v = tx.clone();
+    stringify_oversized_numbers(&mut v);
+    v
+}
+
 fn pack_ranked(req: &QuoteReq, cands: &[Cand], baseline: Option<&Cand>) -> Value {
     let winner = &cands[0];
     let house = winner.tool == "house";
@@ -1294,7 +1350,7 @@ fn pack_ranked(req: &QuoteReq, cands: &[Cand], baseline: Option<&Cand>) -> Value
         },
         "gas_usd": if winner.gas_usd > 0.0 { format!("${:.2}", winner.gas_usd) } else { String::new() },
         "hops": winner.hops,
-        "tx": winner.tx,
+        "tx": safe_tx(&winner.tx),
         "tool": winner.tool,
         "score": score_of(winner, req).to_string(),
         "best": beat_json(req, winner, cands, baseline),
@@ -2167,6 +2223,36 @@ mod tests {
         let huge: i128 = (u128::MAX / 2) as i128;
         let v = serde_json::json!({ "score": huge.to_string() });
         assert_eq!(v["score"].as_str().unwrap(), huge.to_string());
+    }
+
+
+    #[test]
+    fn pack_ranked_survives_huge_net_out_and_gas_price() {
+        let req = test_req();
+        let huge = u128::MAX / 3;
+        let mut c = mock_cand("fat", huge, 0.01, true);
+        c.net_out = huge;
+        c.gross_out = huge;
+        c.to_min_net = huge / 2;
+        c.sim.gas_price = u128::MAX / 5;
+        c.sim.gas = u64::MAX / 7;
+        // LiFi-style tx may carry oversized numeric fields after re-encoding.
+        c.tx = json!({
+            "to": "0xabc",
+            "data": "0x",
+            "chainId": 4663,
+            "gasPrice": u64::MAX,
+            "value": "0x0",
+            "nested": { "amount": u64::MAX },
+        });
+        let v = pack_ranked(&req, &[c], None);
+        assert_eq!(v["ok"], true);
+        assert_eq!(v["to_amount"].as_str().unwrap(), huge.to_string());
+        assert!(v["score"].as_str().is_some(), "score must be string, got {:?}", v["score"]);
+        assert_eq!(v["sim"]["gas_price"].as_str().unwrap(), (u128::MAX / 5).to_string());
+        // Round-trip serialize must not panic.
+        let s = serde_json::to_string(&v).expect("serialize");
+        assert!(s.contains(&huge.to_string()));
     }
 
     #[test]

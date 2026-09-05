@@ -62,3 +62,7 @@ Source of truth: `crates/vapurr-rhc/src/lib.rs`.
 ## License
 
 MIT. See [LICENSE](LICENSE). Vendor notices sit next to the files they cover (`frontend/vendor/`).
+
+## Code signing
+
+Windows releases are intended to be Authenticode-signed via [SignPath Foundation](https://signpath.org/) (OSS). Policy: [`docs/SIGNING.md`](docs/SIGNING.md).

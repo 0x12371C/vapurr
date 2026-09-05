@@ -33,9 +33,10 @@ pub fn js_set(v: &Value) -> String {
 }
 
 pub fn push(page: &WebView, page_url: &str) {
+    if !crate::security::is_chrome_url(page_url) { return; }
     let rows = list(page);
     let snap = snapshot(&rows, page_url);
-    let _ = page.evaluate_script(&js_set(&snap));
+    let _ = crate::security::eval_chrome(page, &js_set(&snap));
 }
 
 #[cfg(windows)]

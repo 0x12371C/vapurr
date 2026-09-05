@@ -69,11 +69,13 @@ fn live_code(rpc: &Rpc, addr: &Address) -> bool {
 }
 
 fn send(key: &DeviceKey, rpc: &Rpc, to: Option<Address>, data: &[u8]) -> Result<String, ZmailError> {
+    let _signing = vapurr_wallet::transactions::signing_guard().map_err(|_| ZmailError::Crypto)?;
     let from = key.address.to_hex();
     let eth = rpc.eth_balance(&from).map_err(|_| ZmailError::NeedGas)?;
     if eth < 100_000_000_000_000 {
         return Err(ZmailError::NeedGas);
     }
+    vapurr_wallet::transactions::ensure_no_pending(&from, rhc::TESTNET_CHAIN_ID).map_err(|_| ZmailError::Rpc)?;
     let nonce = rpc.eth_nonce(&from).map_err(|_| ZmailError::Rpc)?;
     let gas_price = rpc.eth_gas_price().unwrap_or(100_000_000);
     let to_hex = to.map(|a| a.to_hex());
@@ -102,7 +104,9 @@ fn send(key: &DeviceKey, rpc: &Rpc, to: Option<Address>, data: &[u8]) -> Result<
     };
     let raw = key.sign_tx(&tx).map_err(|_| ZmailError::Crypto)?;
     let hash = rpc.eth_send_raw(&hex0x(&raw)).map_err(|e| map_rpc(e))?;
+    vapurr_wallet::transactions::record(&hash, rhc::TESTNET_CHAIN_ID, &from, "pending").map_err(|_| ZmailError::Io)?;
     let receipt = wait(rpc, &hash)?;
+    vapurr_wallet::transactions::record(&hash, rhc::TESTNET_CHAIN_ID, &from, vapurr_wallet::transactions::receipt_status(Some(&receipt))).map_err(|_| ZmailError::Io)?;
     let status = receipt
         .get("status")
         .and_then(|v| v.as_str())
@@ -174,7 +178,7 @@ fn ensure_registry(key: &DeviceKey, rpc: &Rpc) -> Result<(Address, Option<String
 /// Register `label.hood` on testnet. Returns the tx hash.
 /// Does not deploy. One registry — Open first.
 pub fn register(name: &HoodName, x25519: &[u8; 32]) -> Result<String, ZmailError> {
-    let key = DeviceKey::load_or_create();
+    let key = DeviceKey::load_or_create().map_err(|_| ZmailError::Io)?;
     let rpc = rpc();
     let registry = saved_registry().ok_or(ZmailError::Rpc)?;
     if !live_code(&rpc, &registry) {
@@ -276,7 +280,7 @@ fn map_rpc(e: vapurr_rhc::rpc::RpcError) -> ZmailError {
 pub fn set_addr(name: &str, addr: &str) -> Result<String, ZmailError> {
     let name = HoodName::parse(name)?;
     let dest = addr_from_hex(addr).ok_or(ZmailError::BadAddress)?;
-    let key = DeviceKey::load_or_create();
+    let key = DeviceKey::load_or_create().map_err(|_| ZmailError::Io)?;
     let rpc = rpc();
     let registry = saved_registry().ok_or(ZmailError::Rpc)?;
     let node = name.node();
@@ -286,7 +290,7 @@ pub fn set_addr(name: &str, addr: &str) -> Result<String, ZmailError> {
 
 pub fn set_name(name: &str) -> Result<String, ZmailError> {
     let name = HoodName::parse(name)?;
-    let key = DeviceKey::load_or_create();
+    let key = DeviceKey::load_or_create().map_err(|_| ZmailError::Io)?;
     let rpc = rpc();
     let registry = saved_registry().ok_or(ZmailError::Rpc)?;
     let data = encode_fn_str("setName(string)", name.as_str());
@@ -416,7 +420,7 @@ pub fn status_snapshot(addr: &str) -> Value {
 }
 
 pub fn deploy() -> Result<Value, ZmailError> {
-    let key = DeviceKey::load_or_create();
+    let key = DeviceKey::load_or_create().map_err(|_| ZmailError::Io)?;
     let rpc = rpc();
     let (_addr, minted) = ensure_registry(&key, &rpc)?;
     let mut v = status(&key.address.to_hex());
@@ -437,7 +441,7 @@ fn call_reverts(rpc: &Rpc, from: &str, to: &Address, data: &[u8]) -> bool {
 
 /// Live checks: old CA does not own .hood; new registry does; steal reverts.
 pub fn prove_tld() -> Result<Value, ZmailError> {
-    let key = DeviceKey::load_or_create();
+    let key = DeviceKey::load_or_create().map_err(|_| ZmailError::Io)?;
     let rpc = rpc();
     let from = key.address.to_hex();
     let eth = rpc.eth_balance(&from).unwrap_or(0);
@@ -586,7 +590,7 @@ mod tests {
     #[test]
     #[ignore]
     fn live_register_resolve_reverse() {
-        let key = DeviceKey::load_or_create();
+        let key = DeviceKey::load_or_create().expect("test wallet storage");
         let from = key.address.to_hex();
         let rpc = rpc();
         let eth = rpc.eth_balance(&from).expect("balance");

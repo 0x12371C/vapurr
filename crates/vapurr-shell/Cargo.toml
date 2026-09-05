@@ -11,6 +11,7 @@ name = "vapurr"
 path = "src/main.rs"
 
 [dependencies]
+rand.workspace = true
 dpi = "0.1"
 mimalloc = { version = "0.1", default-features = false }
 rust-embed = { version = "8", features = ["interpolate-folder-path", "include-exclude"] }

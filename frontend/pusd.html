@@ -82,7 +82,40 @@
       margin-right: 2px;
       font-weight: 600;
     }
+    .hero-net {
+      margin-top: 6px;
+      color: var(--color-muted);
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+    .hero-collat b {
+      font-size: 22px;
+      letter-spacing: -0.03em;
+    }
+    .err-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: color-mix(in srgb, #ff8a80 18%, transparent);
+      border: 1px solid color-mix(in srgb, #ff8a80 55%, transparent);
+      color: #ff8a80;
+      font-size: 12px;
+      font-weight: 600;
+      max-width: 100%;
+    }
+    .err-chip[hidden] { display: none !important; }
+    #e-unwind-bar {
+      display: none;
+      margin: 10px 0 0;
+    }
+    #e-unwind-bar.on { display: block; }
+    #e-unwind-bar .btn { width: 100%; height: 44px; border-radius: 12px; }
     .hero-v {
+
       margin-top: 8px;
       color: var(--color-muted);
       font-size: 14px;
@@ -494,7 +527,10 @@
           <div class="live"><span class="pip" id="pip"></span><span id="live">…</span></div>
         </div>
         <h1><em>$</em><span id="bal-p">0.00</span></h1>
-        <p class="hero-v"><b id="bal-v">0.00</b> $VAPURR</p>
+        <p class="hero-net">Net Oliver · wallet $PUSD + supplied − debt</p>
+        <p class="hero-v hero-collat"><b id="bal-collat-v">0</b> $VAPURR collateral</p>
+        <p class="hero-v"><b id="bal-v">0.00</b> wallet $VAPURR</p>
+        <div class="err-chip" id="snap-err" hidden></div>
         <span id="index-big" hidden></span>
         <div class="actions" id="acts">
           <div id="seg">
@@ -546,7 +582,7 @@
         <h2>Oliver</h2>
         <span class="hint" id="e-hint"></span>
       </div>
-      <p class="say">Isolated <b>$PUSD</b> credit with <b>$VAPURR</b> collateral. Supply to earn. Borrow up to <b>85%</b> LTV. Loop stacks depth in-vault. Liquidation under 90% health. Boot borrow <b>150% → 6%</b> as real cash fills.</p>
+      <p class="say">Isolated <b>$PUSD</b> credit with <b>$VAPURR</b> collateral. <b>Loop</b> is leverage against collateral (virtual shares, capped by vault cash). <b>Withdraw</b> needs real <b>cash</b>. <b>Unwind</b> burns supply vs debt without needing cash. Borrow ≤ <b>85%</b> LTV. Liq under 90% health. Boot <b>150% → 6%</b> as cash fills.</p>
       <div id="e-tick">Supplied $0.00</div>
       <div id="euler-boot">
         <p class="note" id="euler-st">Deploy Oliver after the market is live.</p>
@@ -558,9 +594,16 @@
           <div class="chip"><span>Util</span><b id="e-util">0%</b></div>
           <div class="chip"><span>Borrow</span><b id="e-bapy">0.00%</b></div>
           <div class="chip"><span>You earn</span><b id="e-sapy">0.00%</b></div>
+          <div class="chip"><span>Your LTV</span><b id="e-ltv">0%</b></div>
+          <div class="chip"><span>Max</span><b id="e-maxltv">85%</b></div>
           <div class="chip"><span>Health</span><b id="e-hf">∞</b></div>
         </div>
         <div class="have" id="e-have">Supplied 0 · Debt 0 · $VAPURR 0 · Cash 0</div>
+        <div id="e-unwind-bar"><button class="btn" id="e-unwind" type="button">Unwind (burn supply vs debt)</button></div>
+        <div class="two" id="e-idle-wd" style="display:none;margin-top:8px">
+          <button class="btn-ghost" id="e-wd-p" type="button" style="height:44px;margin-top:0">Withdraw P</button>
+          <button class="btn-ghost" id="e-wd-v" type="button" style="height:44px;margin-top:0">Withdraw V</button>
+        </div>
         <div class="seg" id="e-seg">
           <button type="button" class="on" data-emode="supply">Supply<em id="em-supply"></em></button>
           <button type="button" data-emode="borrow">Borrow<em id="em-borrow"></em></button>
@@ -682,6 +725,28 @@
       s = String(s || "0");
       if (s.indexOf(".") < 0) return s;
       return s.replace(/0+$/, "").replace(/\.$/, "") || "0";
+    }
+    function fmtCollatV(s) {
+      var x = n(s);
+      if (!(x > 0)) return "0";
+      if (x >= 1) {
+        var whole = Math.floor(x + 1e-9);
+        return String(whole).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+      }
+      return trimNum(String(s));
+    }
+    function showSnapErr(msg) {
+      var el = document.getElementById("snap-err");
+      if (!el) return;
+      msg = String(msg || "").trim();
+      if (!msg) { el.hidden = true; el.textContent = ""; return; }
+      el.hidden = false;
+      el.textContent = msg;
+    }
+    function withdrawPMax(L) {
+      var supplied = n(L.supplied);
+      var cash = n(L.cash);
+      return Math.max(0, Math.min(supplied, cash));
     }
     function isCa(a) {
       a = String(a || "");
@@ -810,33 +875,50 @@
       var inp = document.getElementById("e-amt");
       if (stepsEl) stepsEl.classList.toggle("on", emode === "loop");
       if (emode === "supply") {
-        pos.textContent = (L.pusd || (snap && snap.pusd) || "0.00") + " $PUSD";
+        pos.textContent = (L.pusd || (snap && snap.pusd) || "0.00") + " $PUSD · cash " + (L.cash || "0.00");
         inp.placeholder = "0";
         go.textContent = "Supply $PUSD";
-        alt.textContent = "Withdraw";
-        q.textContent = amt > 0 ? "Supply " + trimNum(amt) + " $PUSD" : "";
+        go.disabled = false;
+        alt.textContent = n(L.debt) > 0 ? "Prefer Unwind" : "Withdraw P";
+        var wmax = withdrawPMax(L);
+        q.textContent = amt > 0
+          ? ("Supply " + trimNum(amt) + " $PUSD")
+          : (n(L.debt) > 0
+            ? "Debt > 0: unwind burns supply vs debt (no cash needed)"
+            : ("Withdraw max " + trimNum(String(wmax)) + " (cash-capped)"));
       } else if (emode === "borrow") {
         pos.textContent = "Room " + (L.room || "0.00");
         inp.placeholder = "0";
         go.textContent = "Borrow $PUSD";
+        go.disabled = false;
         alt.textContent = "Repay";
         q.textContent = amt > 0 ? "Borrow " + trimNum(amt) + " $PUSD" : "85% loan-to-value";
       } else if (emode === "loop") {
-        pos.textContent = (L.pusd || (snap && snap.pusd) || "0.00") + " $PUSD";
+        var room = loopRoom(L);
+        var cur = currentLtvPct(L);
+        var maxPct = maxLtvFrac(L) * 100;
+        var atMax = room <= 0.000001 || (L.live && cur >= maxPct - 0.05);
+        pos.textContent = "Room " + (L.room || room.toFixed(2)) + " · LTV " + cur.toFixed(1) + "% / " + maxPct.toFixed(0) + "%";
         inp.placeholder = "0";
-        go.textContent = "Loop";
-        alt.textContent = "Unwind";
+        go.textContent = atMax ? "At max LTV" : "Loop";
+        go.disabled = !!atMax;
+        alt.textContent = "Unwind (no cash)";
         var steps = parseInt(document.getElementById("e-steps").value, 10) || 8;
         if (steps > 16) steps = 16;
         if (steps < 1) steps = 1;
         var g = loopQuote(amt, 0, steps);
-        q.textContent = "≈ supply " + g.supplied.toFixed(2) + " · debt " + g.debt.toFixed(2);
+        q.textContent = atMax
+          ? "No borrow room — already at " + maxPct.toFixed(0) + "% LTV cap"
+          : ("≈ supply " + g.supplied.toFixed(2) + " · debt " + g.debt.toFixed(2) + " · LTV → ~" + maxPct.toFixed(0) + "%");
       } else {
         pos.textContent = (L.vapurr || (snap && snap.vapurr) || "0.00") + " $VAPURR";
         inp.placeholder = "0";
         go.textContent = "Deposit $VAPURR";
+        go.disabled = false;
         alt.textContent = "Withdraw V";
-        q.textContent = amt > 0 ? "Lock " + trimNum(amt) + " $VAPURR" : "";
+        q.textContent = amt > 0
+          ? "Lock " + trimNum(amt) + " $VAPURR"
+          : (n(L.collat_v) > 0 ? ("Collateral " + fmtCollatV(L.collat_v) + " V") : "");
       }
     }
     function setEmode(next) {
@@ -916,6 +998,33 @@
       tick.lastTx = tx;
       paintTick();
     }
+
+    function maxLtvFrac(L) {
+      var ltv = n(L.ltv) / 100;
+      if (!(ltv > 0) || ltv >= 1) ltv = 0.85;
+      return ltv;
+    }
+    function currentLtvPct(L) {
+      var debt = n(L.debt);
+      var collat = n(L.collat_value);
+      if (!(collat > 0)) {
+        var px = n(L.px);
+        if (!(px > 0) && snap) px = n(snap.price);
+        collat = n(L.supplied) + n(L.collat_v) * (px > 0 ? px : 0);
+      }
+      if (!(collat > 0)) return 0;
+      return Math.max(0, Math.min(999, (debt / collat) * 100));
+    }
+    function loopRoom(L) {
+      var room = n(L.room);
+      if (room > 0) return room;
+      var px = n(L.px);
+      if (!(px > 0) && snap) px = n(snap.price);
+      var collat = n(L.collat_value);
+      if (!(collat > 0)) collat = n(L.supplied) + n(L.collat_v) * (px > 0 ? px : 0);
+      var maxD = collat * maxLtvFrac(L);
+      return Math.max(0, maxD - n(L.debt));
+    }
     function paintEuler(s) {
       var L = (s && s.loop) || {};
       var live = !!L.live;
@@ -945,6 +1054,15 @@
       if (et && !tick.sup) et.textContent = live ? ("Supplied $" + (L.supplied || "0.00") + " · " + y.user.toFixed(2) + "%") : "Supplied $0.00";
       var hf = n(L.health);
       document.getElementById("e-hf").textContent = (!L.live || n(L.debt) <= 0 || hf >= 50) ? "∞" : hf.toFixed(2);
+      var ltvEl = document.getElementById("e-ltv");
+      var maxEl = document.getElementById("e-maxltv");
+      var cur = currentLtvPct(L);
+      var maxPct = maxLtvFrac(L) * 100;
+      if (ltvEl) {
+        ltvEl.textContent = (!L.live ? "—" : (cur.toFixed(1) + "%"));
+        ltvEl.style.color = (L.live && cur >= maxPct - 0.15) ? "var(--color-lime)" : "";
+      }
+      if (maxEl) maxEl.textContent = maxPct.toFixed(0) + "%";
       var hint = document.getElementById("e-hint");
       if (hint) {
         hint.textContent = live ? "live" : "";
@@ -952,9 +1070,30 @@
       document.getElementById("e-have").textContent =
         "Supplied " + (L.supplied || "0.00") +
         " · Debt " + (L.debt || "0.00") +
-        " · $VAPURR " + (L.collat_v || "0.00") +
+        " · $VAPURR " + fmtCollatV(L.collat_v || "0") +
         " · Cash " + (L.cash || "0.00") +
         (y.boot > 0 ? (" · boot " + y.boot.toFixed(0) + "% → 6%") : "");
+      var uw = document.getElementById("e-unwind-bar");
+      if (uw) uw.classList.toggle("on", live && n(L.debt) > 0);
+      var idle = document.getElementById("e-idle-wd");
+      if (idle) {
+        var showIdle = live && n(L.debt) <= 0 && (n(L.collat_v) > 0 || n(L.supplied) > 0);
+        idle.style.display = showIdle ? "grid" : "none";
+        var wdP = document.getElementById("e-wd-p");
+        var wdV = document.getElementById("e-wd-v");
+        if (wdP) {
+          wdP.disabled = !(n(L.supplied) > 0 && withdrawPMax(L) > 0);
+          wdP.title = withdrawPMax(L) > 0
+            ? ("Max " + trimNum(String(withdrawPMax(L))) + " (cash-capped)")
+            : "Needs vault cash to withdraw P";
+        }
+        if (wdV) wdV.disabled = !(n(L.collat_v) > 0);
+      }
+      var eer = document.getElementById("euler-err");
+      if (eer && L.error) {
+        eer.textContent = L.error;
+        showSnapErr("Oliver snap: " + L.error);
+      }
       quoteEuler();
     }
     function paint(s) {
@@ -971,9 +1110,17 @@
       var canCopy = live && isCa(s.market);
       if (liveBox) liveBox.classList.toggle("go", canCopy);
       liveEl.title = canCopy ? "Copy market" : "";
-      document.getElementById("bal-p").textContent = trimNum(s.pusd || "0.00");
+      var L0 = (s && s.loop) || {};
+      var net0 = n(s.pusd) + n(L0.supplied) - n(L0.debt);
+      document.getElementById("bal-p").textContent = fmtBag(net0);
       armTick(s);
+      var cv = document.getElementById("bal-collat-v");
+      if (cv) cv.textContent = fmtCollatV(L0.collat_v || "0");
       document.getElementById("bal-v").textContent = trimNum(s.vapurr || "0.00");
+      var serr = L0.error || s.error || "";
+      if (L0.live && serr) showSnapErr("Oliver snap: " + serr);
+      else if (!L0.live && serr && /snap|rpc|decode|vault/i.test(String(serr))) showSnapErr(String(serr));
+      else showSnapErr("");
       var px = n(s.price);
       document.getElementById("oracle").textContent = px > 0 ? trimNum(s.price) : "—";
       document.getElementById("spread").textContent = spreadPct().toFixed(2) + "%";
@@ -1194,12 +1341,21 @@
     document.getElementById("e-max").onclick = function () {
       var L = loopSnap();
       var v = "0";
-      if (emode === "supply" || emode === "loop") v = L.pusd || (snap && snap.pusd) || "0";
+      if (emode === "supply") {
+        // Max for withdraw path is cash-capped; supply path uses wallet P.
+        // Prefer wallet when filling supply; alt uses same field for withdraw.
+        v = L.pusd || (snap && snap.pusd) || "0";
+        if (n(v) <= 0 && n(L.supplied) > 0) v = String(withdrawPMax(L));
+      } else if (emode === "loop") v = L.pusd || (snap && snap.pusd) || "0";
       else if (emode === "borrow") {
         var room = n(L.room);
         var cash = n(L.cash);
         v = String(Math.max(0, Math.min(room, cash)));
-      } else v = L.vapurr || (snap && snap.vapurr) || "0";
+      } else {
+        // Deposit uses wallet V; withdraw-V alt uses collat (never > collat).
+        v = L.vapurr || (snap && snap.vapurr) || "0";
+        if (n(v) <= 0 && n(L.collat_v) > 0) v = String(n(L.collat_v));
+      }
       document.getElementById("e-amt").value = trimNum(v);
       quoteEuler();
     };
@@ -1208,11 +1364,11 @@
       var steps = document.getElementById("e-steps").value.trim() || "8";
       var L = loopSnap();
       if (emode === "loop") {
-        eulerOp("loop", amt, steps, "Loop $PUSD", "Oliver: recursive supply and borrow under 85% LTV. Depth stays in the vault. Hash or it failed.", [
+        eulerOp("loop", amt, steps, "Loop $PUSD", "Oliver: leverage against collateral. Virtual share mint, each step capped by vault cash. Hash or it failed.", [
           { k: "Network", v: netLabel() },
           { k: "$PUSD in", v: amt || "0" },
           { k: "Steps", v: steps },
-          { k: "LTV", v: (L.ltv || "85.00") + "%" }
+          { k: "Your LTV to max", v: currentLtvPct(L).toFixed(1) + "% / " + (L.ltv || "85.00") + "%" }
         ]);
         return;
       }
@@ -1229,7 +1385,7 @@
         eulerOp("borrow", amt, "", "Borrow $PUSD", "Oliver: borrow against $VAPURR and supplied $PUSD. 85% LTV. Hash or it failed.", [
           { k: "Network", v: netLabel() },
           { k: "Borrow", v: amt + " $PUSD" },
-          { k: "LTV", v: (L.ltv || "85.00") + "%" }
+          { k: "Your LTV to max", v: currentLtvPct(L).toFixed(1) + "% / " + (L.ltv || "85.00") + "%" }
         ]);
       } else {
         eulerOp("depositV", amt, "", "Deposit $VAPURR", "Oliver: lock $VAPURR as collateral. No USDG. Hash or it failed.", [
@@ -1254,9 +1410,20 @@
         return;
       }
       if (emode === "supply") {
-        eulerOp("withdraw", amt, "", "Withdraw $PUSD", "Pull supplied $PUSD. Needs vault cash. Must stay under 85% LTV.", [
+        var L2 = loopSnap();
+        if (n(L2.debt) > 0) {
+          document.getElementById("euler-err").textContent = "Debt > 0: use Unwind (no cash needed)";
+          return;
+        }
+        var cap = withdrawPMax(L2);
+        if (n(amt) > cap + 1e-12) {
+          document.getElementById("euler-err").textContent = "Max withdraw " + trimNum(String(cap)) + " (vault cash)";
+          return;
+        }
+        eulerOp("withdraw", amt, "", "Withdraw $PUSD", "Pull supplied $PUSD. Needs vault cash. Never more than cash. Must stay under 85% LTV.", [
           { k: "Network", v: netLabel() },
-          { k: "Withdraw", v: amt + " $PUSD" }
+          { k: "Withdraw", v: amt + " $PUSD" },
+          { k: "Cash cap", v: trimNum(String(cap)) }
         ]);
       } else if (emode === "borrow") {
         eulerOp("repay", amt, "", "Repay $PUSD", "Pay down vault debt. Hash or it failed.", [
@@ -1373,6 +1540,43 @@
         waitHash = (snap && snap.tx) || "";
         vapurr.send({ cmd: "econ-house-bootstrap" });
       });
+    };
+    document.getElementById("e-unwind").onclick = function () {
+      var steps = document.getElementById("e-steps").value.trim() || "8";
+      eulerOp("unwind", "", steps, "Unwind", "Burn supplied $PUSD against debt. No vault cash needed. Hash or it failed.", [
+        { k: "Network", v: netLabel() },
+        { k: "Steps", v: steps },
+        { k: "Note", v: "prefer over withdraw while debt > 0" }
+      ]);
+    };
+    document.getElementById("e-wd-p").onclick = function () {
+      var L = loopSnap();
+      var cap = withdrawPMax(L);
+      if (!(cap > 0)) {
+        document.getElementById("euler-err").textContent = "No cash to withdraw P";
+        return;
+      }
+      document.getElementById("e-amt").value = trimNum(String(cap));
+      setEmode("supply");
+      eulerOp("withdraw", trimNum(String(cap)), "", "Withdraw $PUSD", "Pull supplied $PUSD. Cash-capped. Hash or it failed.", [
+        { k: "Network", v: netLabel() },
+        { k: "Withdraw", v: trimNum(String(cap)) + " $PUSD" },
+        { k: "Cash", v: (L.cash || "0") }
+      ]);
+    };
+    document.getElementById("e-wd-v").onclick = function () {
+      var L = loopSnap();
+      var cv = n(L.collat_v);
+      if (!(cv > 0)) {
+        document.getElementById("euler-err").textContent = "No V collateral";
+        return;
+      }
+      document.getElementById("e-amt").value = trimNum(String(cv));
+      setEmode("v");
+      eulerOp("withdrawV", trimNum(String(cv)), "", "Withdraw $VAPURR", "Unlock $VAPURR collateral. Must stay under 85% LTV.", [
+        { k: "Network", v: netLabel() },
+        { k: "Unlock", v: fmtCollatV(L.collat_v) + " $VAPURR" }
+      ]);
     };
     document.getElementById("euler-deploy").onclick = function () {
       if (vapurr.pendingTx) return;

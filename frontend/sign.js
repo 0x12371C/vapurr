@@ -185,6 +185,25 @@
     var url = extra.txUrl || extra.tx_url || "";
     if (!url && tx) url = g.vapurr.txUrl(tx, spec.explorer || extra.explorer);
     var already = !!extra.already && !tx;
+    if (tx && extra.tx_status !== "confirmed" && extra.tx_status !== "reverted") {
+      var chain = Number(extra.tx_chain_id || 46630);
+      var attempts = 0;
+      function checkReceipt() {
+        if (++attempts > 120) return;
+        fetch("/wallet/api/transaction/" + chain + "/" + encodeURIComponent(tx), { cache: "no-store" })
+          .then(function (r) { return r.json(); }).then(function (res) {
+            if (res.tx_status === "confirmed" || res.tx_status === "reverted") {
+              g.vapurr.showTx({ ok: res.tx_status === "confirmed", title: res.tx_status === "confirmed" ? (spec.doneTitle || "Confirmed") : "Transaction reverted", tx: tx, txUrl: url, rows: spec.rows || [], lede: res.tx_status === "confirmed" ? "Confirmed on chain." : "The chain reverted this transaction. Network gas may have been spent." });
+            } else { setTimeout(checkReceipt, 5000); }
+          }).catch(function () { setTimeout(checkReceipt, 5000); });
+      }
+      setTimeout(checkReceipt, 3000);
+      return g.vapurr.showTx({ ok: false, title: "Pending confirmation", tx: tx, txUrl: url, rows: spec.rows || [], lede: "Submitted to the network. Payment is not confirmed. Do not send it again while its receipt is pending." });
+    }
+    if (extra.tx_status === "reverted") {
+      ok = false;
+      extra.error = "The chain reverted this transaction. Network gas may have been spent.";
+    }
     return g.vapurr.showTx({
       ok: !!ok,
       title: extra.title || (ok ? (already ? "Already on chain" : (spec.doneTitle || "Sent")) : (spec.failTitle || "Not sent")),

@@ -11,6 +11,26 @@ pub fn serve(
     let query = req.uri().query().unwrap_or("");
     let rel = path.trim_start_matches('/');
     let rel = if rel.is_empty() { "home.html" } else { rel };
+    if rel.contains("/api") {
+        if !crate::security::api_authorized(&req) {
+            return worker::error(403, "Untrusted API caller");
+        }
+        if req.body().len() > 256 * 1024 { return worker::error(413, "Request too large"); }
+        let mutation = worker::is_mutation(rel);
+        if (mutation && req.method() != Method::POST) || (!mutation && req.method() != Method::GET) {
+            return worker::error(405, "Method not allowed");
+        }
+        if mutation {
+            if !vapurr_wallet::is_logged_in() { return worker::error(401, "Unlock the wallet first"); }
+            let v: serde_json::Value = serde_json::from_slice(req.body()).unwrap_or_default();
+            let detail = ["name", "addr", "to", "asset"].iter().filter_map(|k| {
+                v.get(k).and_then(|x| x.as_str()).map(|s| format!("{k}: {s}"))
+            }).collect::<Vec<_>>().join("\n");
+            if !crate::security::confirm(&format!("Authorize {rel}?\n{detail}\nThis uses your device wallet. PNS transactions pay network gas; mail signs a postage voucher.")) {
+                return worker::error(403, "Authorization cancelled");
+            }
+        }
+    }
     if let Some(resp) = zzzmail_api(
         rel.split('?').next().unwrap_or(rel),
         req.method(),
@@ -19,6 +39,14 @@ pub fn serve(
         return resp;
     }
     // Custom-protocol query strings vanish. Keep a path-stuffed `?…` for Scan.
+    if let Some(rest) = rel.strip_prefix("wallet/api/transaction/") {
+        if let Some((chain, hash)) = rest.split_once('/') {
+            if let Ok(chain) = chain.parse::<u64>() {
+                return json_body(vapurr_wallet::transactions::status_json(chain, hash));
+            }
+        }
+        return worker::error(400, "Invalid transaction lookup");
+    }
     if let Some(kind_raw) = rel.strip_prefix("scan/api/") {
         let kind_raw = kind_raw.trim_end_matches('/');
         let (kind, stuffed) = match kind_raw.split_once('?') {
@@ -43,7 +71,7 @@ pub fn serve(
         };
         return Response::builder()
             .header(CONTENT_TYPE, "application/json; charset=utf-8")
-            .header("Access-Control-Allow-Origin", "*")
+            .header("Access-Control-Allow-Origin", crate::security::CHROME_ORIGIN)
             .header("Cache-Control", "no-store")
             .body(Cow::Owned(stamped.into_bytes()))
             .unwrap();
@@ -58,7 +86,7 @@ pub fn serve(
         let body = vapurr_fomo::trenches_json(kind, q);
         return Response::builder()
             .header(CONTENT_TYPE, "application/json; charset=utf-8")
-            .header("Access-Control-Allow-Origin", "*")
+            .header("Access-Control-Allow-Origin", crate::security::CHROME_ORIGIN)
             .header("Cache-Control", "no-store")
             .body(Cow::Owned(body.into_bytes()))
             .unwrap();
@@ -83,7 +111,7 @@ pub fn serve(
         let body = vapurr_fomo::desk_json();
         return Response::builder()
             .header(CONTENT_TYPE, "application/json; charset=utf-8")
-            .header("Access-Control-Allow-Origin", "*")
+            .header("Access-Control-Allow-Origin", crate::security::CHROME_ORIGIN)
             .header("Cache-Control", "no-store")
             .body(Cow::Owned(body.into_bytes()))
             .unwrap();
@@ -92,7 +120,7 @@ pub fn serve(
         let body = vapurr_fomo::trenches_json("", query);
         return Response::builder()
             .header(CONTENT_TYPE, "application/json; charset=utf-8")
-            .header("Access-Control-Allow-Origin", "*")
+            .header("Access-Control-Allow-Origin", crate::security::CHROME_ORIGIN)
             .header("Cache-Control", "no-store")
             .body(Cow::Owned(body.into_bytes()))
             .unwrap();
@@ -101,7 +129,7 @@ pub fn serve(
         let body = vapurr_rhc::liq::snapshot_json();
         return Response::builder()
             .header(CONTENT_TYPE, "application/json; charset=utf-8")
-            .header("Access-Control-Allow-Origin", "*")
+            .header("Access-Control-Allow-Origin", crate::security::CHROME_ORIGIN)
             .header("Cache-Control", "no-store")
             .body(Cow::Owned(body.into_bytes()))
             .unwrap();
@@ -117,7 +145,7 @@ pub fn serve(
         };
         return Response::builder()
             .header(CONTENT_TYPE, "application/json; charset=utf-8")
-            .header("Access-Control-Allow-Origin", "*")
+            .header("Access-Control-Allow-Origin", crate::security::CHROME_ORIGIN)
             .header("Cache-Control", "no-store")
             .body(Cow::Owned(body.into_bytes()))
             .unwrap();
@@ -126,7 +154,7 @@ pub fn serve(
         let body = vapurr_rhc::route::quote_json(query);
         return Response::builder()
             .header(CONTENT_TYPE, "application/json; charset=utf-8")
-            .header("Access-Control-Allow-Origin", "*")
+            .header("Access-Control-Allow-Origin", crate::security::CHROME_ORIGIN)
             .header("Cache-Control", "no-store")
             .body(Cow::Owned(body.into_bytes()))
             .unwrap();
@@ -135,7 +163,7 @@ pub fn serve(
         let body = vapurr_rhc::route::tokens_json(query);
         return Response::builder()
             .header(CONTENT_TYPE, "application/json; charset=utf-8")
-            .header("Access-Control-Allow-Origin", "*")
+            .header("Access-Control-Allow-Origin", crate::security::CHROME_ORIGIN)
             .header("Cache-Control", "no-store")
             .body(Cow::Owned(body.into_bytes()))
             .unwrap();
@@ -151,10 +179,13 @@ pub fn serve(
     if let Some(bytes) = read_frontend(rel) {
         let mut b = Response::builder()
             .header(CONTENT_TYPE, mime(rel))
-            .header("Access-Control-Allow-Origin", "*")
+            .header("Access-Control-Allow-Origin", crate::security::CHROME_ORIGIN)
             .header("Cache-Control", cache_control(rel));
         if rel.ends_with(".html") {
             b = b.header("Link", HTML_PRELOAD);
+            b = b.header("Content-Security-Policy", "frame-ancestors 'self'; object-src 'none'; base-uri 'self'")
+                .header("X-Frame-Options", "SAMEORIGIN")
+                .header("X-Content-Type-Options", "nosniff");
         }
         return b.body(bytes).unwrap();
     }

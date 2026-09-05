@@ -1126,7 +1126,7 @@
         sending = false;
         saveRecent(document.getElementById("send-to").value.trim());
         closeSheets();
-        vapurr.finishTx(true, { tx: s.tx, txUrl: s.tx_url });
+        vapurr.finishTx(s.tx_status === "confirmed", { tx: s.tx, txUrl: s.tx_url, tx_status: s.tx_status, tx_chain_id: s.tx_chain_id });
       }
     };
     window.__walletErr = function (msg) {
@@ -1156,7 +1156,7 @@
     window.__setEcon = function (s) {
       if (!vapurr.pendingTx) return;
       if (s && s.tx && s.tx !== waitHash) {
-        vapurr.finishTx(true, { tx: s.tx, txUrl: s.tx_url });
+        vapurr.finishTx(s.tx_status === "confirmed", { tx: s.tx, txUrl: s.tx_url, tx_status: s.tx_status, tx_chain_id: s.tx_chain_id });
         vapurr.send({ cmd: "wallet" });
       }
     };

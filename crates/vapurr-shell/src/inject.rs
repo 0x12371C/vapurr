@@ -175,7 +175,7 @@ pub(crate) fn wallet_is_bag(v: &serde_json::Value) -> bool {
 }
 
 pub(crate) fn wants_wallet_snap(url: &str) -> bool {
-    url.contains("wallet.html") || url.contains("pay.html") || url.contains("swap.html") || url.contains("bridge.html")
+    matches!(crate::security::chrome_path(url).as_deref(), Some("/wallet.html" | "/pay.html" | "/swap.html" | "/bridge.html"))
 }
 
 pub(crate) fn is_faucet_host(url: &str) -> bool {
@@ -525,6 +525,7 @@ window.addEventListener("pageshow", function (e) {
 window.__vapurrReady = true;
 function __vapurrPost(msg) {
   try {
+    msg.document = window.__vapurrDocument;
     var p = JSON.stringify(msg);
     if (window.ipc && window.ipc.postMessage) window.ipc.postMessage(p);
     else if (window.chrome && window.chrome.webview) window.chrome.webview.postMessage(p);

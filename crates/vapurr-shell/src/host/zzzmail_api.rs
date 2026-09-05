@@ -18,7 +18,7 @@ pub(crate) fn office() -> MutexGuard<'static, vapurr_zmail::PostOffice> {
 pub(crate) fn json_body(v: serde_json::Value) -> Response<Cow<'static, [u8]>> {
     Response::builder()
         .header(CONTENT_TYPE, "application/json; charset=utf-8")
-        .header("Access-Control-Allow-Origin", "*")
+        .header("Access-Control-Allow-Origin", crate::security::CHROME_ORIGIN)
         .header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
         .header("Access-Control-Allow-Headers", "content-type")
         .header("Cache-Control", "no-store")

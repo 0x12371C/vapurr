@@ -12,7 +12,7 @@ pub fn set_live_url(url: &str) {
 }
 
 pub fn is_chrome_url(url: &str) -> bool {
-    url.contains("vapurr.localhost") || url.starts_with("vapurr://")
+    crate::security::is_chrome_url(url)
 }
 
 /// WalletConnect / mobile-wallet deep links. Robinhood Wallet is a phone app —
@@ -51,7 +51,7 @@ pub fn allow_new_window(url: &str) -> bool {
     }
     let u = url.trim();
     u.is_empty()
-        || (u.len() >= 11 && u[..11].eq_ignore_ascii_case("about:blank"))
+        || (u.len() >= 11 && u.get(..11).map(|p| p.eq_ignore_ascii_case("about:blank")).unwrap_or(false))
         || u.starts_with("https:")
         || u.starts_with("http:")
         || u.starts_with("blob:")

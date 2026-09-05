@@ -13,6 +13,8 @@ mod pns;
 mod routes;
 mod wv;
 mod zzzmail_api;
+mod worker;
+pub use worker::serve_async;
 
 pub(crate) use assets::*;
 pub(crate) use pns::*;

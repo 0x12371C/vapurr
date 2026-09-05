@@ -1,6 +1,8 @@
 (function (g) {
   function send(msg) {
-    var payload = typeof msg === "string" ? msg : JSON.stringify(msg);
+    if (typeof msg === "string") { try { msg = JSON.parse(msg); } catch (_) { return false; } }
+    msg.document = g.__vapurrDocument;
+    var payload = JSON.stringify(msg);
     try {
       if (g.ipc && g.ipc.postMessage) {
         g.ipc.postMessage(payload);

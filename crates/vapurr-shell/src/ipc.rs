@@ -1,5 +1,7 @@
 #[derive(Clone)]
 pub(crate) enum Msg {
+    Ipc(crate::security::Document, Box<Msg>),
+    Reply(Option<crate::security::Document>, Box<Msg>),
     Go(String),
     Home,
     Back,
@@ -141,6 +143,71 @@ pub(crate) enum Msg {
     ZzzmailHood {
         name: String,
     },
+}
+
+pub(crate) fn authorized_ipc(source: &str, body: &str) -> Option<Msg> {
+    if body.len() > 256 * 1024 { return None; }
+    let msg = parse_ipc(body)?;
+    if !crate::security::is_chrome_url(source) {
+        // Page keyboard shortcuts and cosmetic selectors carry no private authority.
+        return matches!(&msg, Msg::ShieldDom { .. } | Msg::Back | Msg::Forward | Msg::Reload |
+            Msg::FocusUrl | Msg::ShowFind | Msg::ZoomIn | Msg::ZoomOut | Msg::ZoomReset |
+            Msg::NewTab | Msg::CloseTab(_) | Msg::SelectTabAt(_) | Msg::CycleTab { .. })
+            .then_some(msg);
+    }
+    let path = crate::security::chrome_path(source)?;
+    let allowed = match &msg {
+        Msg::WalletExportKey | Msg::WalletRevealSeed => matches!(path.as_str(), "/wallet.html" | "/settings.html"),
+        Msg::WalletSend { .. } => matches!(path.as_str(), "/wallet.html" | "/pay.html"),
+        Msg::WalletExec { .. } => matches!(path.as_str(), "/swap.html" | "/bridge.html"),
+        Msg::LoginCreate | Msg::LoginContinue | Msg::LoginRestore { .. } => path == "/login.html",
+        Msg::WalletImport { .. } => matches!(path.as_str(), "/wallet.html" | "/settings.html" | "/login.html"),
+        Msg::EconMint(_) | Msg::EconRedeem(_) | Msg::EconDeploy | Msg::EconSeed { .. } |
+        Msg::LoopDeploy | Msg::LoopOp { .. } | Msg::HouseDeploy | Msg::HouseSeed { .. } |
+        Msg::HouseBootstrap | Msg::HouseSwap { .. } => path == "/pusd.html",
+        Msg::OutbidBid { .. } | Msg::OutbidDeploy => path == "/vapurrbid.html",
+        Msg::KetListPay { .. } | Msg::KetListDeploy => path == "/ketcharts.html",
+        Msg::ZzzmailSend { .. } | Msg::ZzzmailHood { .. } => path == "/zzzmail.html",
+        Msg::PatchApply => path == "/settings.html",
+        _ => true,
+    };
+    if !allowed { return None; }
+    let v: serde_json::Value = serde_json::from_str(body).ok()?;
+    let token = v.get("document")?.as_str()?;
+    if token.len() != 36 || !token.bytes().all(|b| b.is_ascii_hexdigit() || b == b'-') { return None; }
+    Some(Msg::Ipc(crate::security::Document { url: source.into(), token: token.into() }, Box::new(msg)))
+}
+
+pub(crate) fn confirmation(msg: &Msg) -> Option<String> {
+    let text = match msg {
+        Msg::WalletSend { asset, to, amt } => format!("Send {amt} {asset} to {to}?\nThis authorizes a transaction from your device wallet."),
+        Msg::WalletExec { to, data, value, chain_id, .. } => {
+            use sha2::{Digest, Sha256};
+            format!("Sign a contract transaction?\nChain: {chain_id}\nTo: {to}\nNative value (wei, hex): {value}\nCall selector: {}\nCall SHA-256: {:x}", data.get(..10).unwrap_or(data), Sha256::digest(data.as_bytes()))
+        }
+        Msg::WalletRevealSeed => "Reveal the wallet recovery phrase in the wallet page? Anyone with these words can spend your funds.".into(),
+        Msg::WalletExportKey => "Export the wallet private key into the wallet page? Anyone with this key can spend your funds.".into(),
+        Msg::LoginContinue => "Unlock this device wallet for this browser session? Transactions and secret exports still require authorization.".into(),
+        Msg::LoginCreate => "Create a new wallet on this device? Save your existing wallet recovery material before replacing it.".into(),
+        Msg::LoginRestore { .. } | Msg::WalletImport { .. } => "Replace this device wallet with the imported wallet? Save your existing recovery material first.".into(),
+        Msg::EconMint(a) => format!("Burn {a} VAPURR to mint PUSD?"),
+        Msg::EconRedeem(a) => format!("Burn {a} PUSD to mint VAPURR?"),
+        Msg::LoopOp { op, amt, steps } => format!("Authorize Oliver vault operation: {op}\nAmount: {amt}\nSteps: {steps}"),
+        Msg::HouseSeed { vapurr, pusd } => format!("Deposit {vapurr} VAPURR and {pusd} PUSD into House liquidity?"),
+        Msg::HouseSwap { sell_v, amt } => format!("Swap {amt} {} through House?", if *sell_v { "VAPURR" } else { "PUSD" }),
+        Msg::OutbidBid { url, amt, .. } => format!("Pay {amt} PUSD to rank {url}?"),
+        Msg::KetListPay { token, amt, .. } => format!("Pay {amt} PUSD to list {token}?"),
+        Msg::EconDeploy | Msg::LoopDeploy | Msg::HouseDeploy | Msg::OutbidDeploy | Msg::KetListDeploy => "Deploy a contract using this device wallet and pay network gas?".into(),
+        Msg::HouseBootstrap | Msg::EconSeed { .. } => "Authorize liquidity bootstrap using this device wallet?".into(),
+        Msg::ZzzmailSend { to, asset, .. } => format!("Send encrypted mail to {to} and sign a postage voucher in {asset}?"),
+        Msg::ZzzmailHood { name } => format!("Register {name} with this device wallet and pay network gas?"),
+        _ => return None,
+    };
+    Some(text)
+}
+
+pub(crate) fn needs_unlock(msg: &Msg) -> bool {
+    confirmation(msg).is_some() && !matches!(msg, Msg::LoginContinue | Msg::LoginCreate | Msg::LoginRestore { .. } | Msg::WalletImport { .. })
 }
 
 pub(crate) fn parse_ipc(body: &str) -> Option<Msg> {

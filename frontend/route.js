@@ -76,7 +76,7 @@
       paintBals();
       if (sending && s.tx && s.tx !== waitHash) {
         sending = false;
-        if (vapurr.finishTx) vapurr.finishTx(true, { tx: s.tx, txUrl: s.tx_url });
+        if (vapurr.finishTx) vapurr.finishTx(s.tx_status === "confirmed", { tx: s.tx, txUrl: s.tx_url, tx_status: s.tx_status, tx_chain_id: s.tx_chain_id });
         debounce();
       }
       if (changed) debounce();
@@ -89,7 +89,7 @@
       if (!sending && !vapurr.pendingTx) return;
       if (s && s.tx && s.tx !== waitHash) {
         sending = false;
-        if (vapurr.finishTx) vapurr.finishTx(true, { tx: s.tx, txUrl: s.tx_url });
+        if (vapurr.finishTx) vapurr.finishTx(s.tx_status === "confirmed", { tx: s.tx, txUrl: s.tx_url, tx_status: s.tx_status, tx_chain_id: s.tx_chain_id });
       }
     };
     window.__econErr = function (which, msg) {

@@ -545,7 +545,7 @@
         cache: "no-store"
       }).then(function (r) { return r.json(); }).then(function (res) {
         if (res && res.error === "unknown") {
-          return fetch("/zzzmail/api/hood/register/" + encodeURIComponent(label), { cache: "no-store" })
+          return fetch("/zzzmail/api/hood/register/" + encodeURIComponent(label), { method: "POST", cache: "no-store" })
             .then(function (r) { return r.json(); });
         }
         return res;

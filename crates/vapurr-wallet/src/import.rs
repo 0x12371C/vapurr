@@ -25,7 +25,6 @@ pub fn import_text(raw: &str) -> Result<DeviceKey, WalletError> {
         hex_sk(s)?
     };
     let key = DeviceKey::from_secret(&sk).ok_or(WalletError::Fail("bad key".into()))?;
-    key.save()?;
     Ok(key)
 }
 

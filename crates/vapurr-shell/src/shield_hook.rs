@@ -51,7 +51,7 @@ pub fn attach(page: &wry::WebView, shield: Arc<Shield>, page_url: Arc<std::sync:
                 let mut uri = PWSTR::null();
                 req.Uri(&mut uri)?;
                 let uri = take_pwstr(uri);
-                if uri.contains("vapurr.localhost") || uri.starts_with("vapurr:") {
+                if crate::security::is_chrome_url(&uri) {
                     return Ok(());
                 }
                 let mut ctx = COREWEBVIEW2_WEB_RESOURCE_CONTEXT_ALL;

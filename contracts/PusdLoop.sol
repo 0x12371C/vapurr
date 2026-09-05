@@ -5,7 +5,7 @@ pragma solidity ^0.8.24;
 /// Credit asset is $PUSD only. Collateral is $VAPURR plus supplied $PUSD.
 /// Supply P, borrow P, loop under LTV. Utilization IRM. Liquidations.
 /// No USDG. No ETH. No WETH. Lithe still drips on vault-held $PUSD.
-/// Loop is recursive supply/borrow in one tx — new $PUSD depth, not a rented book.
+/// Loop is recursive supply/borrow in one tx — virtual share mint, capped by vault cash (no invented depth).
 
 interface IERC20 {
     function balanceOf(address) external view returns (uint256);
@@ -34,7 +34,7 @@ contract PusdLoop {
     uint256 public constant BOOT_SLOPE1 = 15e17;
     uint256 public constant SLOPE2 = 1e18;
     /// $PUSD cash at which boot slope has fully faded to BASE_SLOPE1.
-    /// Looping does not raise cash — only real supply / Lithe drip does.
+    /// Looping does not raise cash â€” only real supply / Lithe drip does.
     uint256 public constant BOOT_CASH = 100_000 * DEC;
     uint256 public constant MAX_STEPS = 16;
 
@@ -165,7 +165,8 @@ contract PusdLoop {
         emit Repay(msg.sender, got, sh);
     }
 
-    /// Recursive supply/borrow. Tokens never leave; utilization rises; new PUSD depth.
+    /// Recursive supply/borrow. Tokens never leave; utilization rises.
+    /// Looping still virtual share mint but cannot invent depth past cash.
     function loop(uint256 pusdIn, uint256 steps) external lock {
         _accrue();
         require(steps <= MAX_STEPS, "STEP");
@@ -175,6 +176,8 @@ contract PusdLoop {
         }
         for (uint256 i = 0; i < steps; i++) {
             uint256 room = _room(msg.sender);
+            uint256 cash = pusd.balanceOf(address(this));
+            if (room > cash) room = cash;
             room = (room * 999) / 1000;
             if (room < 1e12) break;
             uint256 dSh = _debtSharesFromAssets(room);
@@ -387,7 +390,7 @@ contract PusdLoop {
     }
 
     /// Borrow rate. Wild while cash is thin. Fades to 6% kink as real $PUSD shows up.
-    /// Recursive loop does not raise cash — only exogenous supply / Lithe does.
+    /// Recursive loop does not raise cash â€” only exogenous supply / Lithe does.
     function _irm(uint256 borrows, uint256 assets, uint256 cash) internal pure returns (uint256) {
         if (assets == 0 || borrows == 0) return 0;
         uint256 s1 = _slope1(cash);

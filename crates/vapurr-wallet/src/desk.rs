@@ -152,6 +152,7 @@ pub struct Desk {
     rpc: Rpc,
     key: DeviceKey,
     last_tx: String,
+    last_tx_chain: u64,
     chain_id: u64,
     explorer: String,
     rpc_url: String,
@@ -170,6 +171,7 @@ impl Desk {
             rpc: n.rpc,
             key: DeviceKey::load().unwrap_or_else(DeviceKey::generate),
             last_tx: String::new(),
+            last_tx_chain: n.chain_id,
             chain_id: n.chain_id,
             explorer: n.explorer,
             rpc_url: n.rpc_url,
@@ -198,6 +200,10 @@ impl Desk {
 
     pub fn run(&mut self, cmd: WalletCmd) -> Result<Value, WalletError> {
         self.reload_net();
+        if matches!(&cmd, WalletCmd::Send { .. } | WalletCmd::Exec { .. } | WalletCmd::RevealSeed | WalletCmd::ExportKey) {
+            crate::require_unlocked()?;
+            self.key = DeviceKey::load_result()?.ok_or_else(|| WalletError::Fail("No wallet on this PC".into()))?;
+        }
         match cmd {
             WalletCmd::Snap => Ok(self.snap()),
             WalletCmd::Send { asset, to, amt } => self.send(&asset, &to, &amt),
@@ -263,6 +269,9 @@ impl Desk {
     pub fn snap(&self) -> Value {
         let logged_in = crate::session::is_logged_in();
         let has_key = crate::session::has_key();
+        if has_key && DeviceKey::load_result().ok().flatten().is_none() {
+            return json!({"ok":false,"has_key":true,"logged_in":false,"assets":[],"address":"","error":"Wallet storage could not be opened. Restore access to the encrypted wallet; no new key was created."});
+        }
         if !has_key {
             return json!({
                 "ok": true,
@@ -357,11 +366,16 @@ impl Desk {
             token_bal(&self.rpc, WETH, &from).unwrap_or(0)
         };
         let loop_pos = loop_pos(&self.rpc, &self.loop_vault, self.key.address);
+        if !loop_pos.err.is_empty() && err.is_empty() {
+            err = loop_pos.err.clone();
+        }
         let nonce = self.rpc.eth_nonce(&from).unwrap_or(0);
         let usdg_s = fmt_units(usdg, USDG_DECIMALS);
         let pusd_s = fmt_units(pusd, 18);
         let supplied_s = fmt_units(loop_pos.supplied, 18);
         let debt_s = fmt_units(loop_pos.debt, 18);
+        let collat_v_s = fmt_units(loop_pos.collat_v, 18);
+        let loop_cash_s = fmt_units(loop_pos.cash, 18);
         let vapurr_s = fmt_units(vapurr, 18);
         let eth_s = fmt_units(eth, 18);
         let weth_s = fmt_units(weth, 18);
@@ -380,7 +394,7 @@ impl Desk {
                 false,
             ));
         }
-        if loop_pos.supplied > 0 || loop_pos.debt > 0 {
+        if loop_pos.supplied > 0 || loop_pos.debt > 0 || loop_pos.collat_v > 0 || !loop_pos.err.is_empty() {
             assets.push(asset(
                 "pusd-loop",
                 "PUSD",
@@ -388,6 +402,19 @@ impl Desk {
                 &supplied_s,
                 loop_pos.supplied,
                 true,
+                &self.loop_vault,
+                18,
+                true,
+            ));
+        }
+        if loop_pos.collat_v > 0 {
+            assets.push(asset(
+                "oliver-v",
+                "VAPURR",
+                "Oliver collateral",
+                &collat_v_s,
+                loop_pos.collat_v,
+                false,
                 &self.loop_vault,
                 18,
                 true,
@@ -440,7 +467,7 @@ impl Desk {
             ));
         }
         let total = fmt_usd_bag(pusd, loop_pos.supplied, loop_pos.debt, usdg);
-        json!({
+        let mut result = json!({
             "ok": err.is_empty(),
             "live": err.is_empty(),
             "logged_in": logged_in,
@@ -462,6 +489,9 @@ impl Desk {
             "pusd_token": self.pusd,
             "pusd_supplied": supplied_s,
             "pusd_debt": debt_s,
+            "collat_v": collat_v_s,
+            "loop_cash": loop_cash_s,
+            "loop_error": loop_pos.err,
             "loop": self.loop_vault,
             "vapurr": vapurr_s,
             "vapurr_raw": vapurr.to_string(),
@@ -480,10 +510,24 @@ impl Desk {
             "total_usd": total,
             "signer": "device",
             "has_seed": crate::session::has_seed(),
-        })
+        });
+        let chain = if self.last_tx.is_empty() { self.chain_id } else { self.last_tx_chain };
+        match crate::transactions::latest(&self.key.address.to_hex(), chain) {
+            Ok(Some(tx)) => {
+                let tx = crate::transactions::refresh(tx);
+                result["tx"] = json!(tx.hash);
+                result["tx_status"] = json!(tx.status);
+                result["tx_chain_id"] = json!(tx.chain_id);
+                result["tx_url"] = json!(format!("vapurr://scan?q={}", tx.hash));
+            }
+            Ok(None) => { result["tx_status"] = json!("none"); }
+            Err(e) => { result["tx_status"] = json!("unknown"); result["error"] = json!(e.to_string()); }
+        }
+        result
     }
 
     pub fn send(&mut self, asset: &str, to: &str, amt: &str) -> Result<Value, WalletError> {
+        crate::require_unlocked()?;
         let to = dest_addr(to)?;
         if to.0 == self.key.address.0 {
             return Err(WalletError::Fail("that is this device".into()));
@@ -530,7 +574,7 @@ impl Desk {
                     return Err(WalletError::Fail("enter an amount".into()));
                 }
                 let token = addr_from_hex(&self.vapurr).ok_or_else(|| {
-                    WalletError::Fail("no $VAPURR on this net — deploy the market".into())
+                    WalletError::Fail("no $VAPURR on this net ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â deploy the market".into())
                 })?;
                 self.send_token(token, to, value)?
             }
@@ -544,6 +588,7 @@ impl Desk {
             _ => return Err(WalletError::Fail("pick VAPURR, PUSD, USDG, or ETH".into())),
         };
         self.last_tx = hash;
+        self.last_tx_chain = self.chain_id;
         Ok(self.snap())
     }
 
@@ -574,15 +619,16 @@ impl Desk {
         chain_id: u64,
         gas: u64,
     ) -> Result<Value, WalletError> {
+        let _signing = crate::transactions::signing_guard()?;
         let rpc_url = rhc::rpc_http(chain_id).ok_or_else(|| {
             WalletError::Fail("unsupported chain".into())
         })?;
         let to_addr = addr_from_hex(to).ok_or_else(|| WalletError::Fail("bad to".into()))?;
-        let data_b = decode_hex_bytes(data).unwrap_or_else(|_| Vec::new());
+        let data_b = decode_hex_bytes(data).map_err(|_| WalletError::Fail("Invalid transaction data".into()))?;
         if data_b.is_empty() && value.trim().is_empty() {
             return Err(WalletError::Fail("empty route tx".into()));
         }
-        let value_n = parse_hex_u128(value);
+        let value_n = crate::parse_hex_u128(value)?;
         let rpc = Rpc::at(rpc_url);
         let from = self.key.address.to_hex();
         let eth = rpc.eth_balance(&from).map_err(rpc_err)?;
@@ -594,16 +640,13 @@ impl Desk {
         if eth < value_n.saturating_add(floor / 4) {
             return Err(WalletError::Fail("not enough ETH for gas".into()));
         }
+        crate::transactions::ensure_no_pending(&from, chain_id)?;
         let nonce = rpc.eth_nonce(&from).map_err(rpc_err)?;
         let gas_price = rpc.eth_gas_price().unwrap_or(100_000_000);
         let to_hex = to_addr.to_hex();
         let data_hex = hex0x(&data_b);
-        let est = if gas > 21_000 {
-            gas
-        } else {
-            rpc.eth_estimate_gas_value(&from, Some(&to_hex), &data_hex, value_n)
-                .unwrap_or(220_000)
-        };
+        let _ = gas;
+        let est = rpc.eth_estimate_gas_value(&from, Some(&to_hex), &data_hex, value_n).map_err(rpc_err)?;
         let gas_use = est.saturating_mul(13) / 10;
         let tx = Tx {
             chain_id,
@@ -617,9 +660,11 @@ impl Desk {
         };
         let raw = self.key.sign_tx(&tx)?;
         let hash = rpc.eth_send_raw(&hex0x(&raw)).map_err(rpc_err)?;
+        crate::transactions::record(&hash, chain_id, &from, "pending")?;
         for _ in 0..80 {
             match rpc.eth_receipt(&hash) {
                 Ok(Some(r)) => {
+                    crate::transactions::record(&hash, chain_id, &from, crate::transactions::receipt_status(Some(&r)))?;
                     if r.get("status").and_then(|v| v.as_str()).unwrap_or("0x0") != "0x1" {
                         return Err(WalletError::Fail("tx reverted".into()));
                     }
@@ -629,6 +674,7 @@ impl Desk {
             }
         }
         self.last_tx = hash.clone();
+        self.last_tx_chain = chain_id;
         let mut snap = self.snap();
         snap["tx"] = json!(hash);
         snap["tx_url"] = json!(if chain_id == rhc::CHAIN_ID || chain_id == rhc::TESTNET_CHAIN_ID
@@ -647,7 +693,9 @@ impl Desk {
         value: u128,
         data: &[u8],
     ) -> Result<String, WalletError> {
+        let _signing = crate::transactions::signing_guard()?;
         let from = self.key.address.to_hex();
+        crate::transactions::ensure_no_pending(&from, self.chain_id)?;
         let nonce = self.rpc.eth_nonce(&from).map_err(rpc_err)?;
         let gas_price = self.rpc.eth_gas_price().unwrap_or(100_000_000);
         let to_hex = to.map(|a| a.to_hex());
@@ -676,9 +724,11 @@ impl Desk {
         };
         let raw = self.key.sign_tx(&tx)?;
         let hash = self.rpc.eth_send_raw(&hex0x(&raw)).map_err(rpc_err)?;
+        crate::transactions::record(&hash, self.chain_id, &from, "pending")?;
         for _ in 0..80 {
             match self.rpc.eth_receipt(&hash) {
                 Ok(Some(r)) => {
+                    crate::transactions::record(&hash, self.chain_id, &from, crate::transactions::receipt_status(Some(&r)))?;
                     if r.get("status").and_then(|v| v.as_str()).unwrap_or("0x0") != "0x1" {
                         return Err(WalletError::Fail("tx reverted".into()));
                     }
@@ -922,68 +972,92 @@ fn token_bal(rpc: &Rpc, token: &str, holder: &str) -> Result<u128, WalletError> 
 struct LoopPos {
     supplied: u128,
     debt: u128,
+    collat_v: u128,
+    cash: u128,
+    room: u128,
     apy_bps: u128,
+    err: String,
 }
 
-/// `PusdLoop.snapshot` ABI: 20 words. supplied @ 9, debt @ 11, supply APY bps @ 5.
-fn decode_loop_pos(bytes: &[u8]) -> LoopPos {
+/// `PusdLoop.snapshot` ABI: cash@0 room@19; supplied@9 collat_v@10 debt@11; supply APY bps@5.
+fn decode_loop_pos(bytes: &[u8]) -> Result<LoopPos, String> {
     if bytes.len() < 20 * 32 {
-        return LoopPos {
-            supplied: 0,
-            debt: 0,
-            apy_bps: 0,
-        };
+        return Err("vault snapshot decode".into());
     }
-    LoopPos {
+    let cash = decode_word_u128(bytes, 0).unwrap_or(0);
+    let room = decode_word_u128(bytes, 19).unwrap_or(0);
+    Ok(LoopPos {
         supplied: decode_word_u128(bytes, 9).unwrap_or(0),
         debt: decode_word_u128(bytes, 11).unwrap_or(0),
+        collat_v: decode_word_u128(bytes, 10).unwrap_or(0),
+        cash,
+        room: room.min(cash),
         apy_bps: decode_word_u128(bytes, 5).unwrap_or(0),
-    }
+        err: String::new(),
+    })
 }
 
 fn loop_pos(rpc: &Rpc, vault: &str, holder: Address) -> LoopPos {
+    let empty = |err: String| LoopPos {
+        supplied: 0,
+        debt: 0,
+        collat_v: 0,
+        cash: 0,
+        room: 0,
+        apy_bps: 0,
+        err,
+    };
     if vault.is_empty() {
-        return LoopPos {
-            supplied: 0,
-            debt: 0,
-            apy_bps: 0,
-        };
+        return empty(String::new());
     }
     let data = hex0x(&encode_fn_addr("snapshot(address)", holder));
     let raw = match rpc.eth_call(&holder.to_hex(), Some(vault), &data) {
         Ok(s) => s,
-        Err(_) => {
-            return LoopPos {
-                supplied: 0,
-                debt: 0,
-                apy_bps: 0,
-            }
-        }
+        Err(e) => return empty(format!("Oliver RPC: {e}")),
     };
     let bytes = match decode_hex_bytes(&raw) {
         Ok(b) => b,
-        Err(_) => {
-            return LoopPos {
-                supplied: 0,
-                debt: 0,
-                apy_bps: 0,
-            }
-        }
+        Err(_) => return empty("Oliver decode".into()),
     };
-    decode_loop_pos(&bytes)
+    match decode_loop_pos(&bytes) {
+        Ok(p) => p,
+        Err(e) => empty(e),
+    }
 }
 
 fn loop_hint(p: &LoopPos) -> String {
-    let mut h = "Oliver supplied".to_string();
-    if p.apy_bps > 0 {
-        h.push_str(" · ");
+    if !p.err.is_empty() {
+        return format!("Oliver error | {}", p.err);
+    }
+    let mut h = "Oliver".to_string();
+    if p.collat_v > 0 {
+        h.push_str(" | ");
+        h.push_str(&fmt_units(p.collat_v, 18));
+        h.push_str(" V collat");
+    }
+    if p.supplied > 0 {
+        h.push_str(" | supplied");
+        if p.apy_bps > 0 {
+            h.push(' ');
+            h.push_str(&fmt_apy_bps(p.apy_bps));
+            h.push_str(" APY");
+        }
+    } else if p.apy_bps > 0 {
+        h.push_str(" | ");
         h.push_str(&fmt_apy_bps(p.apy_bps));
         h.push_str(" APY");
     }
     if p.debt > 0 {
-        h.push_str(" · ");
+        h.push_str(" | ");
         h.push_str(&fmt_units(p.debt, 18));
-        h.push_str(" debt");
+        h.push_str(" debt | prefer unwind");
+    }
+    if p.debt == 0 && (p.collat_v > 0 || p.supplied > 0) {
+        h.push_str(" | withdraw needs cash");
+        if p.supplied > p.room && p.room > 0 {
+            h.push_str(" | room ");
+            h.push_str(&fmt_units(p.room, 18));
+        }
     }
     h
 }
@@ -1203,19 +1277,29 @@ mod tests {
         let mut bytes = vec![0u8; 20 * 32];
         let supplied = 7 * 10u128.pow(18);
         let debt = 3 * 10u128.pow(18);
+        let collat = 485_846 * 10u128.pow(18);
+        let cash = 10u128.pow(15); // 0.001
         let apy = 412u128;
+        bytes[0 * 32 + 16..0 * 32 + 32].copy_from_slice(&cash.to_be_bytes());
         bytes[5 * 32 + 16..5 * 32 + 32].copy_from_slice(&apy.to_be_bytes());
         bytes[9 * 32 + 16..9 * 32 + 32].copy_from_slice(&supplied.to_be_bytes());
+        bytes[10 * 32 + 16..10 * 32 + 32].copy_from_slice(&collat.to_be_bytes());
         bytes[11 * 32 + 16..11 * 32 + 32].copy_from_slice(&debt.to_be_bytes());
-        let p = super::decode_loop_pos(&bytes);
+        bytes[19 * 32 + 16..19 * 32 + 32].copy_from_slice(&(5 * 10u128.pow(18)).to_be_bytes());
+        let p = super::decode_loop_pos(&bytes).unwrap();
         assert_eq!(p.supplied, supplied);
         assert_eq!(p.debt, debt);
+        assert_eq!(p.collat_v, collat);
+        assert_eq!(p.cash, cash);
+        assert_eq!(p.room, cash); // room capped to cash
         assert_eq!(p.apy_bps, apy);
         let h = super::loop_hint(&p);
-        assert!(h.contains("Supplied in Loop"), "{h}");
+        assert!(h.contains("Oliver"), "{h}");
+        assert!(h.contains("V collat"), "{h}");
         assert!(h.contains("4.12% APY"), "{h}");
         assert!(h.contains("3 debt"), "{h}");
-        assert_eq!(super::decode_loop_pos(&[]).supplied, 0);
+        assert!(h.contains("prefer unwind"), "{h}");
+        assert!(super::decode_loop_pos(&[]).is_err());
     }
 
     #[test]

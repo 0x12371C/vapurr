@@ -20,3 +20,13 @@ Also reserved:
 
 ## Why the 10:28 zip was fat
 Earlier packs effectively carried trailer weight (STATUS noted rust-embedded trailers). Exclude is now explicit; next House pack re-logs sha/size.
+
+
+## Windows download
+
+Public file at `https://thesecretlab.app/vapurr/vapurr-windows.zip` must be **pack.ps1 output only** (`dist/vapurr/` tree zipped with root folder `vapurr/`).
+
+- Required contents: `Install vapurr.exe`, `WebView2Loader.dll`, `LICENSE.txt`, `README.txt`, `VERSION.txt`, `manifest.json`.
+- Path-gate in `pack.ps1` is required before ship — refuse any exe that still contains `C:\Users\<builder>`.
+- Never upload loose `frontend/` trees, mingw runtime DLLs (libgcc/libstdc/libwinpthread), debug builds, or channel copies that skip the gate.
+- Prefer `dist/vapurr-windows.zip` (copy of `vapurr-$ver-windows-x64.zip`) for the TSL replace.

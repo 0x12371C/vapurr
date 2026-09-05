@@ -23,6 +23,11 @@ use crate::crash;
 use crate::host;
 use crate::{app_icon, fatal, paint_caption};
 
+#[cfg(windows)]
+mod webview2_loader_bytes {
+    include!(concat!(env!("OUT_DIR"), "/webview2_loader_bytes.rs"));
+}
+
 const SETUP_VER: &str = env!("CARGO_PKG_VERSION");
 const AUMID_SETUP: &str = "vapurr.Setup";
 
@@ -346,12 +351,26 @@ fn do_install(desktop: bool) -> Result<PathBuf, String> {
         std::fs::copy(&me, &target).map_err(|e| format!("copy exe: {e}"))?;
         crash::log("copied exe");
     }
+    let dest_dll = dest.join("WebView2Loader.dll");
     let loader = current_dir().join("WebView2Loader.dll");
     if loader.is_file() {
-        std::fs::copy(&loader, dest.join("WebView2Loader.dll"))
-            .map_err(|e| format!("copy loader: {e}"))?;
+        std::fs::copy(&loader, &dest_dll).map_err(|e| format!("copy loader: {e}"))?;
     } else {
-        crash::log("no WebView2Loader.dll beside installer — using system runtime");
+        #[cfg(windows)]
+        {
+            let bytes = webview2_loader_bytes::BYTES;
+            if !bytes.is_empty() {
+                std::fs::write(&dest_dll, bytes)
+                    .map_err(|e| format!("write embedded loader: {e}"))?;
+                crash::log("wrote embedded WebView2Loader.dll into install dir");
+            } else {
+                crash::log("no WebView2Loader.dll beside installer - using system runtime");
+            }
+        }
+        #[cfg(not(windows))]
+        {
+            crash::log("no WebView2Loader.dll beside installer - using system runtime");
+        }
     }
     copy_beside("VERSION.txt", &dest);
     copy_beside("LICENSE.txt", &dest);
@@ -564,7 +583,74 @@ fn center_window(window: &tao::window::Window) {
     window.set_outer_position(PhysicalPosition::new(x, y));
 }
 
+
+/// Drop WebView2Loader.dll beside this exe (embedded at build). If the folder
+/// is not writable, copy exe+dll to %TEMP%\vapurr-setup\ and relaunch.
+#[cfg(windows)]
+pub fn ensure_webview2_loader() {
+    const BYTES: &[u8] = webview2_loader_bytes::BYTES;
+    if BYTES.is_empty() {
+        crash::log("embedded WebView2Loader.dll empty");
+        return;
+    }
+    let Ok(exe) = std::env::current_exe() else {
+        return;
+    };
+    let Some(dir) = exe.parent() else {
+        return;
+    };
+    let dll = dir.join("WebView2Loader.dll");
+    if dll.is_file() {
+        return;
+    }
+    match std::fs::write(&dll, BYTES) {
+        Ok(()) => {
+            crash::log("wrote WebView2Loader.dll beside exe");
+            return;
+        }
+        Err(e) => crash::log(&format!("write loader beside exe: {e}")),
+    }
+    let temp = std::env::temp_dir().join("vapurr-setup");
+    if let Err(e) = std::fs::create_dir_all(&temp) {
+        crash::log(&format!("temp setup dir: {e}"));
+        return;
+    }
+    let name = exe
+        .file_name()
+        .map(|s| s.to_os_string())
+        .unwrap_or_else(|| std::ffi::OsString::from("vapurr-setup.exe"));
+    let new_exe = temp.join(&name);
+    let new_dll = temp.join("WebView2Loader.dll");
+    if let Err(e) = std::fs::write(&new_dll, BYTES) {
+        crash::log(&format!("temp loader write: {e}"));
+        return;
+    }
+    if let Err(e) = std::fs::copy(&exe, &new_exe) {
+        crash::log(&format!("temp exe copy: {e}"));
+        return;
+    }
+    let mut cmd = format!("\"{}\"", new_exe.display());
+    for a in std::env::args().skip(1) {
+        cmd.push(' ');
+        if a.chars().any(|c| c.is_whitespace()) {
+            cmd.push('"');
+            cmd.push_str(&a);
+            cmd.push('"');
+        } else {
+            cmd.push_str(&a);
+        }
+    }
+    crash::log(&format!("relaunch from {}", new_exe.display()));
+    if spawn_process(&new_exe, &cmd, &temp, false).is_ok() {
+        std::process::exit(0);
+    }
+}
+
+#[cfg(not(windows))]
+pub fn ensure_webview2_loader() {}
+
 pub fn run() {
+    ensure_webview2_loader();
     crash::log("setup");
     set_aumid(AUMID_SETUP);
     let mut event_loop_b = EventLoopBuilder::<Msg>::with_user_event();
