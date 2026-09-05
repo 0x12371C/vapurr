@@ -9,3 +9,13 @@
 - **branch:** `fix/gv-spusd-guards`; dirty `IVapurrMinter.sol` WIP left uncommitted (dual marketMinter contradicts `MINT_AUTHORITY.md` single-minter + encoding noise)
 - **build slice:** policy-rate copy honesty — `frontend/bonds.html`, `docs/econ/HOUSE_PAIR.md`, `docs/econ/MINT_AUTHORITY.md` now say dynamic **1-9%/yr** (mid ~3.5% unbound) instead of flat 3.5%
 
+
+## 2026-09-05 14:02 ET - hourly watch
+
+- **justin:** online
+- **Programs:** DisplayVersion **1.1.9**; FileVersion **1.1.9** @ `C:\Users\jfren\AppData\Local\Programs\vapurr\vapurr.exe`; **NotSigned** (signing still P0 ship blocker)
+- **dist:** `vapurr-1.1.9-windows-x64.zip` / `vapurr-setup.exe` refreshed ~13:21 ET; rev `f68dfd3`
+- **channel:** local AppData `channel/manifest.json` = **1.1.9** rev `f68dfd3`; `thesecretlab.app/vapurr/channel/manifest.json` still **404**
+- **workers:** KFX / PayId / Bind idle (no organizer windows; Bind `install_id` file present, PID gone). No new grok/powershell organizer spawns.
+- **branch:** `fix/gv-spusd-guards` ahead 1; only untracked smoke/headcheck leftovers
+- **build slice:** honesty-scrub `docs/econ/PUSDLOOP_ROUTING_GAPS.md` — HouseFeeRemit + SpusdCd moved to Landed; Oliver collateral/LOLR + live savings IPC + House Uni v4 remain Still-open. commit `1d5f591`
