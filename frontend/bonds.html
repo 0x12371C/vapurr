@@ -450,13 +450,12 @@
       <button class="lane" type="button" data-go="vapurr://pusd" data-lane="cash">
         <span class="mono">01 · Cash</span>
         <b class="title">Cash</b>
-        <span class="hint">Spend and save. <b>$PUSD</b> is the dollar rail. Tight float sits on <b>$PUSD/USDG</b>. <b>sPUSD</b> is savings after runway.</span>
+        <span class="hint">Spend and save. <b>$PUSD</b> is the dollar rail. <b>sPUSD</b> is savings after runway. <b>USDG</b> is bond/treasury intake — not a cash market here.</span>
         <div class="chips">
           <span class="chip on">$PUSD</span>
-          <span class="chip on">USDG</span>
           <span class="chip on">sPUSD</span>
         </div>
-        <div class="mini"><span class="k">exog. depth</span><span class="v">not configured</span></div>
+        <div class="mini"><span class="k">dollar rail</span><span class="v">$PUSD</span></div>
       </button>
       <button class="lane" type="button" data-go="vapurr://stake" data-lane="equity">
         <span class="mono">02 · Equity</span>
@@ -493,19 +492,6 @@
     </div>
 
 
-    <div class="depth" id="cash-depth" aria-label="Cash depth">
-      <div>
-        <div class="mono">cash · exogenous depth</div>
-        <h2>$PUSD stays tight vs USDG</h2>
-        <p>The dollar rail is deep against <b>outside</b> money — primary book <b>$PUSD / USDG</b>. House <b>wgV/$PUSD</b> is the equity desk, not peg defense. Bond inflows thicken RFV; float trust is exit depth.</p>
-      </div>
-            <div class="pair">
-        <div class="mono">primary book</div>
-        <div class="book">$PUSD / USDG</div>
-        <div class="sub">Tight spend float · exogenous</div>
-        <div class="sub" id="usdg-pool-params">fee <b>0.05%</b> | range <b>+/-1% par</b> | <b>proposed</b> (not live)</div>
-      </div>
-    </div>
     <div class="panel" id="spusd-cd" aria-label="sPUSD CD">
       <div class="mono">cash · sPUSD CD</div>
       <h2>Save liquid. Lock a CD.</h2>
@@ -607,7 +593,7 @@
         <button class="btn-ghost" type="button" data-go="vapurr://pusd">Cash / $PUSD</button>
       </div>
       <div id="bond-err" role="alert" style="display:none;margin-top:10px;padding:10px 12px;border-radius:10px;border:1px solid color-mix(in srgb,#f87171 45%,transparent);color:#fecaca;font-size:13px;line-height:1.4"></div>
-      <p class="note"><b>On-chain only</b> — discount, wait, capacity, and haircut show when BondMarket is wired. Until then values stay as <b>—</b> / not configured — never placeholder quotes. Product CTAs are <b>live-by-default</b> (Bond / Open CD). RFV lands in Fed/Treasury; House quotes <b>wgV/$PUSD</b>. Cash peg depth is exogenous <b>$PUSD/USDG</b>.</p>
+      <p class="note"><b>On-chain only</b> — discount, wait, capacity, and haircut show when BondMarket is wired. Until then values stay as <b>—</b> / not configured — never placeholder quotes. Product CTAs are <b>live-by-default</b> (Bond / Open CD). RFV lands in Fed/Treasury; House quotes <b>wgV/$PUSD</b>. <b>$PUSD</b> is the dollar rail; <b>USDG</b> is bond/treasury intake only (BondMarket tab) — not a competing cash/peg market.</p>
     </div>
 
     <div class="flow" aria-label="RFV flow">
