@@ -58,4 +58,5 @@ Uni v4 LP fees stay with LPs. Protocol carve (ops / hook / swapper skim) lands a
 - creditFees pulls inventory only (never mints).
 - emitSurplus requires a wired sink; empty reserve reverts TINY.
 - Proofs: contracts/test/HouseFeeRemit.t.sol (credit+remit, empty, partial, unset sink).
-- Still open: live Uni v4 hook / swapper skim wiring into creditFees; deploy + Rust bootstrap.
+- Skim adapter sketch: `contracts/HouseUniSkim.sol` — authorized hook/owner `skimToCredit` pulls realized $PUSD inventory into `HouseFeeRemit.creditFees` (never mints). Proofs: `HouseUniSkimTest` 4/4 (skim→remit sink, stranger AUTH, zero TINY, owner path).
+- Still open: full Uni v4 `IHooks` / swapper integration + deploy + Rust bootstrap (adapter is the inventory bridge only).
