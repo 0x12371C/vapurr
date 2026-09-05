@@ -7,7 +7,15 @@
   <link rel="stylesheet" href="/defi-surface.css"/>
   <style>
     body { overflow: auto; }
-    .wrap { max-width: 560px; margin: 0 auto; padding: 40px 24px 72px; }
+    .wrap { max-width: 560px; margin: 0 auto; padding: 40px 24px 96px; }
+    .hero-earn { margin-bottom: 8px; }
+    .hero-earn .mono { color: var(--color-lime); margin-bottom: 10px; }
+    .hero-earn h1 {
+      font-size: clamp(36px, 7vw, 48px);
+      font-weight: 600;
+      letter-spacing: -0.045em;
+      line-height: 1.02;
+    }
     .row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
     .switch {
       width: 44px; height: 24px; border-radius: 999px;
@@ -24,13 +32,21 @@
     .lede b { color: var(--color-snow); font-weight: 600; }
     .amt { font-size: 32px; font-weight: 600; margin: 4px 0 2px; }
     .ticket {
-      background: var(--color-steel);
-      border: 1px solid color-mix(in srgb, var(--color-snow) 8%, transparent);
-      border-radius: 14px;
+      background: var(--glass-bg, color-mix(in srgb, var(--color-steel) 50%, transparent));
+      backdrop-filter: var(--glass-blur, blur(24px) saturate(1.5));
+      -webkit-backdrop-filter: var(--glass-blur, blur(24px) saturate(1.5));
+      border: 1px solid var(--glass-border, color-mix(in srgb, var(--color-snow) 8%, transparent));
+      border-radius: var(--radius-panel, 18px);
       padding: 16px 18px;
       margin-top: 12px;
+      box-shadow: 0 14px 40px color-mix(in srgb, #000 14%, transparent);
+      transition: border-color 0.18s ease, transform 0.18s var(--ease-out, ease), box-shadow 0.18s ease;
     }
-    .ticket.open { border-color: var(--color-lime); }
+    .ticket:hover {
+      border-color: color-mix(in srgb, var(--color-snow) 14%, transparent);
+      transform: translateY(-1px);
+    }
+    .ticket.open { border-color: var(--color-lime); box-shadow: var(--shadow-lime); }
     .ticket .head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
     .ticket .head b { font-size: 15px; }
     .pill {
@@ -51,14 +67,31 @@
       word-break: break-all; margin-top: 8px;
     }
     .hash button { margin-left: 8px; }
-    .empty { color: var(--color-muted); font-size: 13px; margin-top: 16px; }
+    .empty {
+      color: var(--color-muted); font-size: 13px; margin-top: 16px;
+      padding: 20px 16px; text-align: center; line-height: 1.5;
+      border-radius: var(--radius-tile, 14px);
+      border: 1px dashed color-mix(in srgb, var(--color-snow) 14%, transparent);
+      background: color-mix(in srgb, var(--color-void) 32%, transparent);
+    }
     .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+    .actions .btn { height: 48px; min-width: 128px; border-radius: 14px; }
+    .actions .btn-ghost {
+      height: 48px; padding: 0 16px; border-radius: 14px;
+      border: 1px solid color-mix(in srgb, var(--color-snow) 12%, transparent);
+    }
+    html[data-theme="light"] .ticket {
+      background: color-mix(in srgb, var(--color-steel) 88%, transparent);
+      box-shadow: var(--shadow-soft);
+    }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <div class="mono" style="color:var(--color-lime);margin-bottom:8px">EARN</div>
-    <h1>Browsing receipts</h1>
+    <div class="hero-earn">
+      <div class="mono">EARN</div>
+      <h1>Browsing receipts</h1>
+    </div>
     <p class="lede">Opt in and we keep <b>host</b>, <b>HTTPS</b>, and <b>time</b>. No path, query, cookies, or keystrokes. A receipt is a sealed window — not a visit counter.</p>
     <div class="ticket">
       <div class="row">

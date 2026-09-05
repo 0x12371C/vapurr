@@ -25,20 +25,20 @@
       position: relative;
       z-index: 1;
     }
-    .hero { margin-bottom: 32px; }
-    .hero .mono { color: var(--color-lime); margin-bottom: 12px; }
+    .hero { margin-bottom: 28px; }
+    .hero .mono { color: var(--color-lime); margin-bottom: 10px; }
     .hero h1 {
-      font-size: clamp(52px, 11vw, 76px);
+      font-size: clamp(48px, 10vw, 72px);
       font-weight: 600;
-      letter-spacing: -0.055em;
-      line-height: 0.9;
+      letter-spacing: -0.05em;
+      line-height: 0.94;
     }
     .lede {
-      margin-top: 14px;
+      margin-top: 12px;
       color: var(--color-muted);
       font-size: 15px;
       line-height: 1.5;
-      max-width: 32em;
+      max-width: 34em;
     }
     .lede b { color: var(--color-snow); font-weight: 600; }
     .grid {
@@ -54,11 +54,11 @@
       height: auto;
       min-height: 132px;
       padding: 18px 18px 16px;
-      border-radius: 20px;
-      background: color-mix(in srgb, var(--color-steel) 50%, transparent);
-      backdrop-filter: blur(24px) saturate(1.5);
-      -webkit-backdrop-filter: blur(24px) saturate(1.5);
-      border: 1px solid color-mix(in srgb, var(--color-snow) 8%, transparent);
+      border-radius: var(--radius-panel, 18px);
+      background: var(--glass-bg, color-mix(in srgb, var(--color-steel) 50%, transparent));
+      backdrop-filter: var(--glass-blur, blur(24px) saturate(1.5));
+      -webkit-backdrop-filter: var(--glass-blur, blur(24px) saturate(1.5));
+      border: 1px solid var(--glass-border, color-mix(in srgb, var(--color-snow) 8%, transparent));
       color: inherit;
       display: flex;
       flex-direction: column;

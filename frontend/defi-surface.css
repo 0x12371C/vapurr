@@ -92,3 +92,65 @@ html[data-theme="light"] .glass-panel {
 html[data-theme="light"] .defi-empty {
   background: color-mix(in srgb, var(--color-steel) 55%, transparent);
 }
+
+
+/* Product surface rhythm — additive */
+.btn.go,
+.card .btn:not(.btn-ghost),
+.panel .btn:not(.btn-ghost),
+.actions .btn:not(.btn-ghost),
+.ticket + .btn,
+.wrap > .btn.go {
+  height: 48px;
+  min-height: 48px;
+  border-radius: 14px;
+}
+
+.glass,
+.panel-glass,
+.glass-panel {
+  border-radius: var(--radius-panel, 18px);
+}
+
+.defi-empty {
+  border-radius: var(--radius-tile, 14px);
+}
+
+/* Focus rings for DeFi interactive chrome */
+.door:focus-visible,
+.lane:focus-visible,
+.tab:focus-visible,
+.tok:focus-visible,
+.flip:focus-visible,
+.act:focus-visible,
+.cd-card:focus-visible,
+.asset:focus-visible,
+.max:focus-visible {
+  outline: none;
+  border-color: color-mix(in srgb, var(--color-lime) 45%, transparent);
+  box-shadow: var(--shadow-lime, 0 0 0 1px color-mix(in srgb, var(--color-lime) 35%, transparent));
+}
+
+/* Shared field focus for product amount inputs */
+.field:focus-visible,
+input.amt:focus-visible,
+#bond-amt:focus-visible,
+#cd-amt:focus-visible {
+  outline: none;
+  border-color: var(--color-lime);
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--color-lime) 22%, transparent),
+    0 0 18px color-mix(in srgb, var(--color-lime) 12%, transparent);
+}
+
+/* Soft lift for product doors / lanes when pages omit local hover */
+.door:hover,
+.lane:hover {
+  will-change: transform;
+}
+
+html[data-theme="light"] .glass,
+html[data-theme="light"] .glass-panel,
+html[data-theme="light"] .panel-glass {
+  box-shadow: var(--shadow-soft);
+}

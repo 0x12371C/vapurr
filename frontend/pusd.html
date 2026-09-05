@@ -114,7 +114,7 @@
       margin: 10px 0 0;
     }
     #e-unwind-bar.on { display: block; }
-    #e-unwind-bar .btn { width: 100%; height: 44px; border-radius: 12px; }
+    #e-unwind-bar .btn { width: 100%; height: 48px; border-radius: 14px; }
     .hero-v {
 
       margin-top: 8px;
@@ -232,11 +232,16 @@
     .act:active { transform: scale(0.94); }
     .card {
       padding: 18px 18px 16px;
-      border-radius: 18px;
-      background: color-mix(in srgb, var(--color-steel) 58%, transparent);
-      backdrop-filter: blur(24px) saturate(1.5);
-      -webkit-backdrop-filter: blur(24px) saturate(1.5);
-      border: 1px solid color-mix(in srgb, var(--color-snow) 8%, transparent);
+      border-radius: var(--radius-panel, 18px);
+      background: var(--glass-bg, color-mix(in srgb, var(--color-steel) 50%, transparent));
+      backdrop-filter: var(--glass-blur, blur(24px) saturate(1.5));
+      -webkit-backdrop-filter: var(--glass-blur, blur(24px) saturate(1.5));
+      border: 1px solid var(--glass-border, color-mix(in srgb, var(--color-snow) 8%, transparent));
+      box-shadow: 0 16px 44px color-mix(in srgb, #000 16%, transparent);
+      transition:
+        border-color 0.18s ease,
+        transform 0.2s var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1)),
+        box-shadow 0.2s ease;
     }
     .card h2 {
       font-size: 20px;
@@ -282,7 +287,7 @@
       letter-spacing: -0.02em;
       min-height: 1.2em;
     }
-    .card .btn { width: 100%; margin-top: 16px; height: 50px; border-radius: 14px; font-size: 16px; }
+    .card .btn { width: 100%; margin-top: 16px; height: 48px; border-radius: 14px; font-size: 15px; }
     .err { color: #ff8a80; font-size: 13px; min-height: 16px; margin-top: 8px; }
     .sec {
       margin: 28px 4px 8px;
@@ -290,12 +295,12 @@
       font-weight: 600;
     }
     .glass {
-      border-radius: 16px;
+      border-radius: var(--radius-panel, 18px);
       overflow: hidden;
-      background: color-mix(in srgb, var(--color-steel) 58%, transparent);
-      backdrop-filter: blur(22px) saturate(1.45);
-      -webkit-backdrop-filter: blur(22px) saturate(1.45);
-      border: 1px solid color-mix(in srgb, var(--color-snow) 8%, transparent);
+      background: var(--glass-bg, color-mix(in srgb, var(--color-steel) 50%, transparent));
+      backdrop-filter: var(--glass-blur, blur(24px) saturate(1.5));
+      -webkit-backdrop-filter: var(--glass-blur, blur(24px) saturate(1.5));
+      border: 1px solid var(--glass-border, color-mix(in srgb, var(--color-snow) 8%, transparent));
     }
     .row {
       display: flex;
@@ -427,7 +432,7 @@
     .two .btn,
     .two .btn-ghost {
       margin-top: 12px;
-      height: 50px;
+      height: 48px;
       width: 100%;
     }
     #loop-steps-wrap { display: none; margin-top: 8px; }
@@ -534,7 +539,7 @@
     #euler .btn-ghost,
     #house .btn-ghost,
     .two .btn-ghost {
-      height: 50px;
+      height: 48px;
       border: 1px solid color-mix(in srgb, var(--color-snow) 12%, transparent);
       border-radius: 14px;
     }
@@ -673,7 +678,7 @@
           <div class="quote" id="e-quote">Supply $PUSD.</div>
           <div class="two">
             <button class="btn" id="e-go" type="button">Supply $PUSD</button>
-            <button class="btn-ghost" id="e-alt" type="button" style="height:50px;margin-top:16px">Withdraw</button>
+            <button class="btn-ghost" id="e-alt" type="button" style="height:48px;margin-top:16px">Withdraw</button>
           </div>
           <div class="err" id="euler-err"></div>
       </div>
