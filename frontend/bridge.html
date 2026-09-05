@@ -62,7 +62,12 @@
       </div>
       <div class="quote" id="route"><div class="empty">Enter an amount.</div></div>
     </div>
-    <button class="btn go" type="button" id="go" disabled>Bridge</button>
+    <button class="btn go slide-hold" type="button" id="go" disabled aria-label="Bridge">
+      <span class="sh-fill" aria-hidden="true"></span>
+      <span class="sh-knob" aria-hidden="true"><svg class="sh-chev" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      <span class="sh-lab">Bridge</span>
+      <span class="sh-hint" aria-hidden="true">slide or hold</span>
+    </button>
   </div>
   <script src="/ipc.js"></script>
   <script src="/sign.js"></script>

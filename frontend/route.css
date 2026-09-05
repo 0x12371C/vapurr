@@ -504,3 +504,20 @@ html[data-theme="light"] .chip {
   background: color-mix(in srgb, var(--color-steel) 84%, transparent);
 }
 html[data-theme="light"] .flip { background: var(--color-void); }
+
+/* slide-hold primary CTA (shared with chrome.css component) */
+.go.slide-hold {
+  width: 100%;
+  height: 52px;
+  margin-top: 14px;
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.go.slide-hold:disabled { opacity: 0.4; box-shadow: none; }
+@media (prefers-reduced-motion: reduce) {
+  .sim-board[data-state="wait"] .pip,
+  .tnode.wait .dot,
+  .trace.skel span { animation: none !important; }
+}

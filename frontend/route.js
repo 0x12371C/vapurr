@@ -343,8 +343,13 @@
           "<div class='note'>" + esc(msg || "Enter an amount. We simulate on this device before you sign.") + "</div>";
       }
       if (go) {
-        go.disabled = true;
-        go.textContent = mode === "bridge" ? "Bridge" : "Swap";
+        if (go._slideHold) {
+          go._slideHold.setDisabled(true);
+          go._slideHold.setLabel(mode === "bridge" ? "Bridge" : "Swap");
+        } else {
+          go.disabled = true;
+          go.textContent = mode === "bridge" ? "Bridge" : "Swap";
+        }
       }
     }
     function paintQuote(q) {
@@ -446,10 +451,16 @@
       byId("q-note").textContent = note;
       if (altHtml) byId("q-alts").innerHTML = altHtml;
       var canApprove = !!(q.needs_approve && q.approve && q.approve.to && q.approve.data);
-      go.disabled = sending || !(q.payable || canApprove);
-      go.textContent = canApprove && !q.payable
+      var goLab = canApprove && !q.payable
         ? ("Approve " + prettySym(q.from_symbol))
         : (mode === "bridge" ? "Bridge" : "Swap");
+      if (go._slideHold) {
+        go._slideHold.setDisabled(sending || !(q.payable || canApprove));
+        go._slideHold.setLabel(goLab);
+      } else {
+        go.disabled = sending || !(q.payable || canApprove);
+        go.textContent = goLab;
+      }
     }
     function tokBal(tok) {
       if (!snap || !tok) return null;
@@ -569,7 +580,7 @@
       };
     }
     if (byId("tok-dim")) byId("tok-dim").onclick = function () { byId("tok-sheet").hidden = true; };
-    byId("go").onclick = function () {
+    function doGo() {
       if (sending) return;
       if (!vapurr.beginTx) return;
       if (!quote || !quote.ok) return;
@@ -635,8 +646,12 @@
           gas: (quote.sim && quote.sim.gas) || 0
         });
       });
-    };
-
+    }
+    if (vapurr.bindSlideHold) {
+      vapurr.bindSlideHold(byId("go"), { onConfirm: doGo, label: mode === "bridge" ? "Bridge" : "Swap" });
+    } else {
+      byId("go").onclick = doGo;
+    }
     paintIdle();
     api("tokens").then(function (d) {
       tokens = d.tokens || [];
