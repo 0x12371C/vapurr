@@ -25,22 +25,11 @@
       position: relative;
       z-index: 1;
     }
-    .hero { margin-bottom: 28px; }
-    .hero .mono { color: var(--color-lime); margin-bottom: 10px; }
-    .hero h1 {
-      font-size: clamp(48px, 10vw, 72px);
-      font-weight: 600;
-      letter-spacing: -0.05em;
-      line-height: 0.94;
+    .defi-hero h1 {
+      font-size: clamp(52px, 11vw, 76px);
+      letter-spacing: -0.055em;
+      line-height: 0.9;
     }
-    .lede {
-      margin-top: 12px;
-      color: var(--color-muted);
-      font-size: 15px;
-      line-height: 1.5;
-      max-width: 34em;
-    }
-    .lede b { color: var(--color-snow); font-weight: 600; }
     .grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -50,50 +39,9 @@
       .grid { grid-template-columns: 1fr; }
     }
     .door {
-      text-align: left;
-      height: auto;
       min-height: 132px;
       padding: 18px 18px 16px;
-      border-radius: var(--radius-panel, 18px);
-      background: var(--glass-bg, color-mix(in srgb, var(--color-steel) 50%, transparent));
-      backdrop-filter: var(--glass-blur, blur(24px) saturate(1.5));
-      -webkit-backdrop-filter: var(--glass-blur, blur(24px) saturate(1.5));
-      border: 1px solid var(--glass-border, color-mix(in srgb, var(--color-snow) 8%, transparent));
-      color: inherit;
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 0;
-      box-shadow: 0 14px 40px color-mix(in srgb, #000 18%, transparent);
-      transition:
-        transform 0.2s var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1)),
-        border-color 0.18s ease,
-        background 0.18s ease,
-        box-shadow 0.2s ease;
-    }
-    .door:hover {
-      background: color-mix(in srgb, var(--color-forest) 52%, transparent);
-      border-color: color-mix(in srgb, var(--color-lime) 32%, transparent);
-      transform: translateY(-3px);
-      box-shadow:
-        0 20px 48px color-mix(in srgb, #000 28%, transparent),
-        0 0 0 1px color-mix(in srgb, var(--color-lime) 18%, transparent);
-    }
-    .door:active { transform: translateY(-1px) scale(0.99); }
-    .door .mono { color: var(--color-lime); }
-    .door b {
-      display: block;
-      margin-top: 10px;
-      font-size: 24px;
-      font-weight: 600;
-      letter-spacing: -0.035em;
-    }
-    .door .hint {
-      margin-top: 8px;
-      color: var(--color-muted);
-      font-size: 12px;
-      line-height: 1.45;
-      max-width: 26em;
+      border-radius: 20px;
     }
     .door.span {
       grid-column: 1 / -1;
@@ -104,6 +52,7 @@
       gap: 16px;
     }
     .door.span .copy { min-width: 0; }
+    .door.span .copy b { margin-top: 8px; }
     .door.span .arrow {
       flex-shrink: 0;
       width: 36px; height: 36px;
@@ -114,73 +63,64 @@
       font-size: 18px;
       font-weight: 600;
     }
-    .sec {
-      margin: 28px 2px 12px;
-      color: var(--color-lime);
-      letter-spacing: 0.14em;
-    }
-    html[data-theme="light"] .door {
-      background: color-mix(in srgb, var(--color-steel) 84%, transparent);
-      box-shadow: var(--shadow-soft);
-    }
   </style>
 </head>
 <body>
   <div class="aura" aria-hidden="true"><canvas id="shader"></canvas></div>
   <div class="wrap">
-    <div class="hero">
+    <div class="defi-hero">
       <div class="mono">defi</div>
       <h1>On chain.</h1>
-      <p class="lede">Swap, cash, bonds, and the house desk — one surface. Live quotes. Sign on this device.</p>
+      <p class="defi-lede">Swap, cash, bonds, and the house desk — one surface. Live quotes. Sign on this device.</p>
     </div>
 
-    <div class="mono sec">core</div>
+    <div class="mono defi-sec">core</div>
     <div class="grid">
-      <button class="door" type="button" data-go="vapurr://swap">
+      <button class="door glass-panel" type="button" data-go="vapurr://swap">
         <span class="mono">01 · Swap</span>
         <b>Swap</b>
         <span class="hint">Full route. House kickback in $VAPURR. Simulate, then sign.</span>
       </button>
-      <button class="door" type="button" data-go="vapurr://pusd">
+      <button class="door glass-panel" type="button" data-go="vapurr://pusd">
         <span class="mono">02 · Cash</span>
         <b>$PUSD / Oliver</b>
         <span class="hint">The dollar rail. Mint, save, and Oliver credit in one place.</span>
       </button>
-      <button class="door" type="button" data-go="vapurr://bonds">
+      <button class="door glass-panel" type="button" data-go="vapurr://bonds">
         <span class="mono">03 · Bonds</span>
         <b>Bonds</b>
         <span class="hint">ETH · USDG · stocks. Discount gV after a wait. CDs live by default.</span>
       </button>
-      <button class="door" type="button" data-go="vapurr://house">
+      <button class="door glass-panel" type="button" data-go="vapurr://house">
         <span class="mono">04 · House</span>
         <b>House</b>
         <span class="hint">wgV / $PUSD desk. Equity meets cash — not peg defense.</span>
       </button>
     </div>
 
-    <div class="mono sec">more</div>
+    <div class="mono defi-sec">more</div>
     <div class="grid">
-      <button class="door" type="button" data-go="vapurr://stake">
+      <button class="door glass-panel" type="button" data-go="vapurr://stake">
         <span class="mono">Equity</span>
         <b>Stake</b>
         <span class="hint">Hold gV. Fed rebase. Wrap to wgV before House.</span>
       </button>
-      <button class="door" type="button" data-go="vapurr://bridge">
+      <button class="door glass-panel" type="button" data-go="vapurr://bridge">
         <span class="mono">Bridge</span>
         <b>Bridge</b>
         <span class="hint">Into Robinhood Chain. Best simulated net. Quote, then sign.</span>
       </button>
-      <button class="door" type="button" data-go="vapurr://vapurrbid">
+      <button class="door glass-panel" type="button" data-go="vapurr://vapurrbid">
         <span class="mono">Bid</span>
         <b>vapurrbid</b>
         <span class="hint">Pay $PUSD. Take the rank.</span>
       </button>
-      <button class="door" type="button" data-go="vapurr://pns">
+      <button class="door glass-panel" type="button" data-go="vapurr://pns">
         <span class="mono">PNS</span>
         <b>.hood</b>
         <span class="hint">One name. Yours.</span>
       </button>
-      <button class="door span" type="button" data-go="vapurr://scan?tab=liq">
+      <button class="door glass-panel span" type="button" data-go="vapurr://scan?tab=liq">
         <div class="copy">
           <span class="mono">Scan</span>
           <b>Liquidity</b>
@@ -188,7 +128,7 @@
         </div>
         <span class="arrow" aria-hidden="true">→</span>
       </button>
-      <button class="door span" type="button" data-go="vapurr://ketcharts">
+      <button class="door glass-panel span" type="button" data-go="vapurr://ketcharts">
         <div class="copy">
           <span class="mono">Charts</span>
           <b>Ketcharts</b>

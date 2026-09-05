@@ -328,8 +328,13 @@
       background: var(--glass-bg, color-mix(in srgb, var(--color-steel) 50%, transparent));
       backdrop-filter: var(--glass-blur, blur(24px) saturate(1.5));
       -webkit-backdrop-filter: var(--glass-blur, blur(24px) saturate(1.5));
+      border: 1px solid var(--glass-border, color-mix(in srgb, var(--color-snow) 8%, transparent));
       box-shadow: 0 14px 40px color-mix(in srgb, #000 16%, transparent);
       transition: border-color 0.18s ease, box-shadow 0.2s ease;
+    }
+    .who, .banner, .icon-btn {
+      backdrop-filter: blur(18px) saturate(1.35);
+      -webkit-backdrop-filter: blur(18px) saturate(1.35);
     }
     .empty {
       padding: 32px 20px;
@@ -349,14 +354,18 @@
       box-shadow: 0 0 0 6px color-mix(in srgb, var(--color-lime) 6%, transparent);
     }
     .panel .btn {
+      height: 48px;
       letter-spacing: 0.02em;
       box-shadow: 0 10px 28px color-mix(in srgb, var(--color-lime) 16%, transparent);
     }
     .panel .btn.ghost,
     .panel .ghost {
+      height: 48px;
       box-shadow: none;
       border: 1px solid color-mix(in srgb, var(--color-snow) 12%, transparent);
     }
+    .asset:hover { background: color-mix(in srgb, var(--color-forest) 48%, transparent); }
+    .sec { margin: 4px 4px 10px; letter-spacing: 0.01em; }
 
   </style>
 </head>
