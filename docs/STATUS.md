@@ -89,7 +89,7 @@ Source-landed successor book (MarketCfg GEN 5). **Live 46630 remains gen-4** unt
 |---|---|
 | Live 46630 market (gen-4) | **Still gen-4 live** (embedded-V Lithe). Gen-5 cutover is source-only until CutoverDeploy. Market `0x47Aca529…3617` · V `0xD4b36DDe…7585` · P `0xBe71EF3e…E42e`. Retired `0x447F…` do not count. |
 | KetPay settle | `pay.html` signs `wallet-send` `$PUSD` on 46630. Wallet refuses `$PUSD`/`$VAPURR` on 4663. `PayRouter` ignores `eip155:4663`. |
-| Postage | `mail_postage` extra.token = canonical testnet `$PUSD` / `$VAPURR`. Still a gasless voucher (no relayer). |
+| Postage | `mail_postage` extra.token = canonical testnet `$PUSD` / `$VAPURR`. **VapurrForwarder + `vapurr-relay` source-landed** (`docs/RELAY.md`, `6385b67`) -- not deployed/live; postage still voucher until Relic enables forwarder+relay on 46630. |
 | vapurrbid | Live `$PUSD` pay-to-rank on the testnet book. |
 | Ketcharts listing | `$PUSD` pay-to-list. `TESTNET_KETLIST` empty until this device deploys `KetList.sol`. |
 | Not v1.2 | Servo, Rain, live zer0ID issuer, mainnet `$PUSD`. |
@@ -137,7 +137,7 @@ Source-landed successor book (MarketCfg GEN 5). **Live 46630 remains gen-4** unt
 - FetcherEngine as the user's browser.
 - egui chrome (`vapurr-ui`) — unused by the binary.
 - Live Rain card. zer0ID issuer (Secret Lab) is required for browse-earn payout; chrome does not fake Proven. No secrets in tree.
-- KetPay / `$PUSD` spend on **mainnet 4663**. Testnet 46630 settlement is v1.2. zzzmail postage still a voucher until a relayer posts it.
+- KetPay / `$PUSD` spend on **mainnet 4663**. Testnet 46630 settlement is v1.2. zzzmail postage still a voucher until live `VapurrForwarder` + `vapurr-relay` post it (`docs/RELAY.md` source-only).
 - One site-process per eTLD+1 with freeze (`vapurr-core` types only).
 
 ## Brand tokens that are on screen

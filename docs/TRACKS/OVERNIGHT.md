@@ -205,3 +205,13 @@
 - **workers:** KFX **idle** (grok 21016 / ps 20776); PayId **idle** (grok 9228 / ps 20492); Bind **idle** (PID gone) - no respawn. Extra grok windows present - not watch-spawned. No new organizer procs.
 - **branch:** `pack/d59912d` @ `0c9d575`
 - **build slice:** committed **swap/bridge execution safety** sitting dirty after pack 1.1.10 — House book BOM + on-chain wgV/pusd/fee verify, drop phantom rebates, native single-use route_id through shell/wallet, UI stale-quote/review invalidation. Prove: `vapurr-rhc` route tests 22/22 (+1 ignored RPC), `verify-route-safety.py` PASS. Still open P1: Oliver gV/wgV collateral wire, live CD/BondMarket ABI after deploy, House Uni v4 e2e / remittance live enable, SignPath.
+
+## 2026-09-06 ~12:13 ET - hourly watch
+
+- **justin:** online
+- **Programs:** VERSION **1.1.14** (sha `F5897A8BEC53`, rev `e590ef3`); Programs `manifest.json` **1.1.13** (same rev, different sha/size); **NotSigned** (signing still P0 ship blocker; Relic: unsigned OK for build/test)
+- **dist/channel:** dist pack artifacts still **1.1.10**; `thesecretlab.app/vapurr/channel/manifest.json` still **404**; local repo `channel/manifest.json` missing
+- **workers:** KFX **idle** (grok 21016 / ps 20776); PayId **idle** (grok 9228 / ps 20492); Bind **idle** (PID gone) - no respawn. Extra grok windows present (graphify etc) - not watch-spawned. No new organizer procs.
+- **branch:** `pack/d59912d` @ `6385b67` (+ this slice)
+- **build slice:** honesty-scrub STATUS postage + TRACKS build row for **VapurrForwarder / vapurr-relay** source (`docs/RELAY.md`) and Programs **1.1.14** / manifest **1.1.13** mismatch. Postage stays voucher until live enable. Still open P1: Oliver gV/wgV collateral wire, live CD/BondMarket ABI after deploy, House Uni v4 e2e / remittance live enable, SignPath, live relay deploy.
+
