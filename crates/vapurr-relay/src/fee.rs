@@ -2,61 +2,85 @@
 //!
 //! Batching amortizes ONE fixed per-transaction base cost across many
 //! requests instead of paying it once per request — that's the entire
-//! mechanism, no external compute-offload service involved. But it isn't
-//! free: `VapurrForwarder._runFields` does real per-item work (ecrecover,
-//! a nonce SLOAD+SSTORE, the external CALL, an event) that a plain
-//! self-submitted tx wouldn't pay.
+//! mechanism, no external compute-offload service involved.
 //!
-//! `FORWARDER_PER_ITEM_OVERHEAD_GAS` below has been optimized once already
-//! — EIP-2098 compact signatures (saves ~130 gas/item of calldata) and a
-//! trimmed `Executed` event (one indexed topic instead of two, `gasUsed`
-//! dropped — saves ~375 gas/item) — bringing the estimate from ~13,000 down
-//! to ~12,200. Both are real, shipped, and still an *estimate*: ecrecover
-//! (3,000, a fixed precompile cost — not optimizable) + ~2,100 cold SLOAD +
-//! ~2,900 warm-nonzero SSTORE for the nonce (this pair is the actual floor:
-//! shrinking it means weakening replay protection, not writing better
-//! code) + ~2,600 cold CALL to the target contract + ~1,518 for the
-//! trimmed LOG + slack. Until it's replaced with a real RHC testnet
-//! measurement (submit a batch, read `gasUsed` off the tx receipt), do not
-//! treat any percentage this module reports as a marketing number.
+//! **Every constant below is a REAL measurement**, not a formula guess —
+//! deployed to RHC testnet (chain 46630) and run for real on 2026-09-06;
+//! see docs/RELAY.md's testnet log for the deployed address, tx hashes,
+//! and the scripts that produced these numbers. The formula-estimate
+//! version of this module (EVM opcode arithmetic, ~12,200 gas/item) is
+//! gone — it was closer than nothing, but real numbers beat it outright,
+//! and one of them overturned an assumption this whole module had been
+//! carrying: **RHC's base transaction cost is 25,732 gas, not Ethereum
+//! mainnet's 21,000.** Everything downstream that assumed 21,000 was
+//! wrong by construction, independent of anything about this contract.
 //!
-//! **One more optimization exists that needed no code change at all**: if
-//! a batch's requests concentrate on a handful of target contracts (very
-//! plausible for vapurr — most traffic hits PusdMarket, a payment router,
-//! a handful of others), EIP-2929 warms an address on its FIRST access
-//! per transaction and every later access in the same tx costs ~100 gas
-//! instead of 2,600, automatically, regardless of item order. That's not
-//! something to implement — it already happens for whatever a real batch's
-//! composition turns out to be. The constant below stays at the
-//! conservative all-cold assumption; see `overhead_with_target_reuse` for
-//! how much better a concentrated batch could realistically do.
+//! **The other real finding, bigger than any contract optimization
+//! could have been**: a signer's FIRST use of this forwarder costs
+//! dramatically more than their second. `nonces[from]` going from 0 to 1
+//! is a full zero-to-nonzero SSTORE (~20,000 gas); going from 1 to 2 (or
+//! any nonzero to nonzero) is ~2,900. That ~17,400-gas gap showed up
+//! directly in the testnet run: a fresh signer's forwarded item costs
+//! ~38,000 marginal gas; the same signer's SECOND forwarded item costs
+//! ~20,600. **A first-time user's forwarded transaction costs MORE gas
+//! than that user just submitting it themselves would have** — batching
+//! a first-timer is never a discount, at any batch size, on this chain.
+//! Batching only pays for itself with REPEAT signers, and even then the
+//! break-even fee is around 80% of solo cost for a cheap forwarded call,
+//! not 50% — see the worked numbers below.
 //!
-//! **Where the wall actually is.** ecrecover + the nonce SLOAD/SSTORE pair
-//! — signature verification and replay protection, the two things this
-//! contract cannot skip without becoming insecure — already cost ~8,000
-//! gas per item, which is 38% of the 21,000 being saved by NOT paying a
-//! separate base tx. That number is a floor for ANY forwarder built this
-//! way (independent nonce + independent ecrecover per item), not a
-//! reflection of how well this one is written. Worked example at
-//! `FORWARDER_PER_ITEM_OVERHEAD_GAS ≈ 12,200`: break-even for a 60,000-gas
-//! forwarded call moves from 91.2% (pre-optimization) to about 89.1% — real,
-//! and nowhere near enough to make a 50%-off promise solvent. Crossing that
-//! requires a different cryptographic scheme (signature aggregation —
-//! verify one aggregate signature for the whole batch instead of N
-//! separate ecrecovers — which means users signing with something other
-//! than the secp256k1 keys their wallets already have, a materially
-//! bigger project) or abandoning percentage-of-savings pricing for a flat
-//! fee that isn't trying to be a rebate at all.
+//! **One more real lever needs no code change**: if a batch's requests
+//! concentrate on a handful of target contracts (plausible for vapurr —
+//! most traffic hits PusdMarket, a payment router, a handful of others),
+//! EIP-2929 warms an address on first access and every later access in
+//! the same tx costs ~100 gas instead of ~2,600, automatically, regardless
+//! of item order. `overhead_with_target_reuse` models this against the
+//! conservative (first-time-user) default.
+//!
+//! **Where the wall actually is, restated with real numbers**: ecrecover
+//! + the nonce SLOAD/SSTORE pair is signature verification and replay
+//! protection — the two things this contract cannot skip without
+//! becoming insecure. For a repeat user that's already ~5,900 gas before
+//! anything else; for a first-timer it's ~23,000. Crossing further than
+//! optimization or real measurement can needs a different cryptographic
+//! scheme (signature aggregation — verify one aggregate signature for
+//! the whole batch instead of N separate ecrecovers, meaning users sign
+//! with something other than the secp256k1 keys their wallets already
+//! have) or a flat fee that isn't trying to be a percentage rebate at all.
 
-pub const EVM_BASE_TX_GAS: u64 = 21_000;
-/// TODO(calibrate): replace with a real measurement from RHC testnet.
-/// Was 13,000 before EIP-2098 compact sigs + the trimmed `Executed` event
-/// (see the module doc for the full breakdown of both).
-pub const FORWARDER_PER_ITEM_OVERHEAD_GAS: u64 = 12_200;
-/// The floor: ecrecover + the nonce SLOAD/SSTORE pair, the two costs no
-/// version of this forwarder can shed without weakening security. Every
-/// other cost (the CALL, the event, calldata padding) can shrink toward
-/// zero under favorable conditions; this one cannot.
+/// Real, measured: a plain, empty-calldata, zero-value transfer to a
+/// never-touched address, on RHC testnet. NOT Ethereum mainnet's 21,000 —
+/// this is what self-submitting actually costs on this chain.
+pub const EVM_BASE_TX_GAS: u64 = 25_732;
+
+/// Real, measured: the batch-size-INDEPENDENT part of one `executeBatch`
+/// call — the transaction's own intrinsic cost, the ABI head's fixed
+/// offset words, loop/dispatch setup. Distinct from `EVM_BASE_TX_GAS` on
+/// purpose: a batch call costs more up front than a plain transfer does,
+/// before any item's own work is counted at all.
+pub const BATCH_FIXED_GAS: u64 = 43_143;
+
+/// Real, measured: marginal gas for one more item whose SIGNER has never
+/// used this forwarder before. This is the conservative default —
+/// correct to use for a GAS LIMIT you're setting before you know who's
+/// actually in the batch, since under-provisioning here can revert the
+/// whole batch. For pricing a batch you already know is all repeat
+/// signers, use `MARGINAL_GAS_REPEAT_USER` instead — it is NOT
+/// interchangeable with this one; the ~17,400-gas gap between them is
+/// the module's central finding.
+pub const FORWARDER_PER_ITEM_OVERHEAD_GAS: u64 = 38_035;
+
+/// Real, measured: marginal gas for one more item from a signer who has
+/// used this forwarder before (their nonce slot is already nonzero).
+/// Never use this for a gas limit on a batch whose composition you don't
+/// actually know — only for pricing/reporting once you do.
+pub const MARGINAL_GAS_REPEAT_USER: u64 = 20_582;
+
+/// The theoretical floor for a REPEAT signer (ecrecover + a warm-nonzero
+/// nonce SLOAD/SSTORE) — close to, but not identical to, what got
+/// measured (`MARGINAL_GAS_REPEAT_USER` also includes calldata and the
+/// external CALL). Kept as a sanity bound, not a substitute for the real
+/// number above.
 pub const CRYPTO_VERIFICATION_FLOOR_GAS: u64 = 3_000 + 2_100 + 2_900;
 
 #[derive(Clone, Debug, serde::Serialize)]
@@ -75,13 +99,24 @@ pub struct SavingsEstimate {
 /// `call_gas` is each forwarded call's OWN execution gas (the `gas` field
 /// of its ForwardRequest, or a fresher `eth_estimateGas` if you have one) —
 /// not including any transaction-level overhead, which this function adds.
+/// Uses the conservative first-time-signer overhead; call
+/// `estimate_savings_with_overhead` directly with `MARGINAL_GAS_REPEAT_USER`
+/// to model a batch of known-repeat signers instead.
 pub fn estimate_savings(call_gas: &[u64]) -> SavingsEstimate {
+    estimate_savings_with_overhead(call_gas, FORWARDER_PER_ITEM_OVERHEAD_GAS)
+}
+
+/// Same as `estimate_savings`, with the per-item marginal overhead
+/// supplied explicitly — `FORWARDER_PER_ITEM_OVERHEAD_GAS` (first-time
+/// signers) or `MARGINAL_GAS_REPEAT_USER` (repeat signers) are the two
+/// real, measured choices; anything else is back to guessing.
+pub fn estimate_savings_with_overhead(call_gas: &[u64], per_item_overhead: u64) -> SavingsEstimate {
     let n = call_gas.len();
     let solo_total_gas: u64 = call_gas.iter().map(|g| EVM_BASE_TX_GAS.saturating_add(*g)).sum();
-    let batch_total_gas: u64 = EVM_BASE_TX_GAS
+    let batch_total_gas: u64 = BATCH_FIXED_GAS
         + call_gas
             .iter()
-            .map(|g| g.saturating_add(FORWARDER_PER_ITEM_OVERHEAD_GAS))
+            .map(|g| g.saturating_add(per_item_overhead))
             .sum::<u64>();
     let saved_gas = solo_total_gas as i64 - batch_total_gas as i64;
     let saved_bps = if solo_total_gas == 0 { 0 } else { saved_gas * 10_000 / solo_total_gas as i64 };
@@ -145,10 +180,38 @@ mod tests {
         assert!(est.saved_gas < 0, "a batch of one should cost MORE than self-submitting, not less");
     }
 
+    /// The central real-world finding: a first-time signer is not just
+    /// "a batch of one is a subsidy" — batching them is unprofitable at
+    /// realistic batch sizes too, because their nonce write alone
+    /// (~38,035 gas marginal) costs more than the ~25,732 gas they'd
+    /// have saved by not paying their own base tx. No batch size fixes a
+    /// per-item loss.
     #[test]
-    fn savings_turn_positive_at_realistic_batch_sizes() {
-        let est = estimate_savings(&[50_000; 8]);
-        assert!(est.saved_gas > 0, "an 8-request batch should beat 8 solo submissions");
+    fn first_time_signers_never_pay_for_themselves_even_at_scale() {
+        let est = estimate_savings(&[50_000; 24]); // default overhead = first-time signer
+        assert!(
+            est.saved_gas < 0,
+            "batching first-time signers should stay a net loss regardless of batch size — \
+             their marginal overhead alone already exceeds what one base tx saves"
+        );
+    }
+
+    /// The other half of the same finding: REPEAT signers are a
+    /// genuinely different, much better case — batching them turns
+    /// profitable at a realistic batch size (real break-even is ~9 items
+    /// for a 50,000-gas call; 16 is comfortably past it).
+    #[test]
+    fn repeat_signers_turn_profitable_at_realistic_batch_sizes() {
+        let est = estimate_savings_with_overhead(&[50_000; 16], MARGINAL_GAS_REPEAT_USER);
+        assert!(est.saved_gas > 0, "a 16-item batch of REPEAT signers should beat 16 solo submissions");
+    }
+
+    /// Regression guard on the module's central number: if this ever
+    /// creeps back down near the old formula's 21,000/12,200 split,
+    /// something reintroduced the assumption a real testnet run disproved.
+    #[test]
+    fn fresh_vs_repeat_gap_matches_the_testnet_measurement() {
+        assert_eq!(FORWARDER_PER_ITEM_OVERHEAD_GAS - MARGINAL_GAS_REPEAT_USER, 17_453);
     }
 
     #[test]
@@ -194,7 +257,7 @@ mod tests {
 
     #[test]
     fn fifty_percent_fee_is_never_worse_than_self_pay() {
-        let solo = 71_000u64; // 21_000 + 50_000
+        let solo = 71_000u64; // an arbitrary example solo cost — not derived from the module's own constants
         let fee = user_fee_gas(solo, 5_000);
         assert!(fee <= solo / 2 + 1);
     }

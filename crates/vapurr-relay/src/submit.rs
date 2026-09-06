@@ -129,14 +129,16 @@ pub async fn submit_batch(cfg: &Config, batch: &[PendingRequest]) -> Result<Subm
     Ok(SubmitOutcome { tx_hash, accepted_ids, rejected, measured_batch_gas: simulated_gas })
 }
 
-/// Sum of each item's own call gas plus the forwarder's per-item overhead,
-/// plus the outer transaction's base cost, plus 20% headroom — an
-/// out-of-gas partway through `executeBatch`'s loop unwinds the WHOLE
-/// batch (it is not one of the contract's own per-item failure paths), so
-/// under-estimating here is a real "everyone's request gets dropped"
-/// failure mode, not just a wasted-gas one.
+/// Sum of each item's own call gas plus the forwarder's per-item overhead
+/// (the conservative first-time-signer number — correct here, since gas
+/// LIMITS must not assume every signer in an upcoming batch is a cheaper
+/// repeat one), plus the batch's real measured fixed cost, plus 20%
+/// headroom — an out-of-gas partway through `executeBatch`'s loop unwinds
+/// the WHOLE batch (it is not one of the contract's own per-item failure
+/// paths), so under-estimating here is a real "everyone's request gets
+/// dropped" failure mode, not just a wasted-gas one.
 fn batch_gas_limit(items: &[BatchItem]) -> u64 {
-    let base: u64 = 21_000 + items.iter().map(|i| i.gas + FORWARDER_PER_ITEM_OVERHEAD_GAS).sum::<u64>();
+    let base: u64 = fee::BATCH_FIXED_GAS + items.iter().map(|i| i.gas + FORWARDER_PER_ITEM_OVERHEAD_GAS).sum::<u64>();
     base + base / 5
 }
 

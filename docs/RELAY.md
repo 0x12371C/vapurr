@@ -69,7 +69,38 @@ EnvironmentFile=/etc/vapurr-relay/env
   The natural integration is vapurr-pay's existing x402/KetPay rail
   (charge in `$PUSD`), but that's a separate change.
 
-## The honest gas-savings math
+## Real testnet run (2026-09-06)
+
+Deployed and actually exercised on RHC testnet (chain 46630), not just
+compiled:
+
+- Forwarder: `0xB6e4b7BC8eDF13832E9298d4D7707289067794C0`
+- Relayer/owner (throwaway — key was generated for this test, printed in
+  chat, and must never be reused): `0xA727C7447bE598CAdCCeD018a62765CdD494Ed96`
+- Deploy tx: `0x3ddd1ad03efc4b077020b8fd711c20d2832c8e819812ff8114c93da0e34e313` (1,236,812 gas)
+- A real `executeBatch` tx: `0xf5e04145598106bdb5e292937c2879414c5b42f848852e0ab10e90fe6178748` — an unfunded, freshly-generated wallet signed an EIP-712 `ForwardRequest` off-chain, never touched gas, and the relayer's tx moved it on-chain. `forwarder.verify()` confirmed the signature valid on-chain before submission; the deployed contract's own `DOMAIN_SEPARATOR()` matched the locally-computed one exactly.
+- Three more findings, all from real receipts, not estimates:
+  1. **RHC's base tx cost is 25,732 gas, not Ethereum mainnet's 21,000** — measured from a plain empty-calldata transfer. Every constant in `fee.rs` that assumed 21,000 was wrong by construction, independent of anything about this contract.
+  2. **A first-time signer's nonce write costs ~38,035 gas marginal; the same signer's second use costs ~20,582.** The ~17,453-gas gap is exactly the zero-to-nonzero vs. nonzero-to-nonzero SSTORE difference, isolated cleanly by running the same signer through the forwarder three times in a row (63,725 / 63,834 gas — stable after the first use).
+  3. **A first-time user's forwarded transaction costs more gas than they'd have paid self-submitting.** Not "a batch of one is a subsidy" — a first-timer is *never* profitable to batch, at any batch size, on this chain. Batching only pays off for repeat signers, and even then the real break-even fee is around 80% of solo cost for a cheap forwarded call.
+
+`fee.rs`'s constants are now these real numbers directly —
+`FORWARDER_PER_ITEM_OVERHEAD_GAS` (38,035, the conservative first-time
+default) and `MARGINAL_GAS_REPEAT_USER` (20,582) — not a formula. The
+opcode-arithmetic estimate this section used to describe (~12,200) is
+gone; it was a reasonable guess and it was wrong, materially, in a
+direction that made things look better than reality.
+
+**What this run didn't test**: a forwarded call with real execution cost
+(everything above targeted a no-code address with empty calldata, to
+isolate the forwarder's own overhead from any callee's). A real
+PusdMarket swap or similar would add its own gas on top — the per-item
+overhead numbers above stay valid regardless (they're about the nonce
+slot and signature check, not the target), but `avg_call_gas` in the
+calculator/quote endpoint still needs a number from a real forwarded
+action, not this run's ~0.
+
+## The honest gas-savings math (superseded by the real run above — kept for the optimization history)
 
 `FORWARDER_PER_ITEM_OVERHEAD_GAS` in `fee.rs` is a rough EVM-opcode
 estimate, not a measurement, currently **12,200 gas** — down from an
