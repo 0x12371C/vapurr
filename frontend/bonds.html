@@ -603,6 +603,9 @@
           sessionNote = m.session === "closed"
             ? " Session: valuation paused (Fed freeze / killswitch) — CTA stays; on-tx may revert."
             : " Session: open (stub) — corp-action / close = Fed setValuation or setEnabled, not a gray tab.";
+        } else if (m.tag === "ETH" || m.tag === "USDG") {
+          // No equity calendar — oracle/valuation ops only (see BONDS.md ETH/USDG Fed ops).
+          sessionNote = " Valuation: 24/7 (no session clock) — stale/jump = Fed setValuation or setEnabled; CTA stays.";
         }
         why.textContent = " Oracle: " + m.oracle + "." + sessionNote;
       }
