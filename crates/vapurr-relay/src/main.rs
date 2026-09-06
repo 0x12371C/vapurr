@@ -20,6 +20,7 @@ mod error;
 mod fee;
 mod queue;
 mod signer;
+mod simulate;
 mod submit;
 
 use std::sync::Arc;

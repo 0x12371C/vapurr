@@ -20,6 +20,12 @@ pub struct PendingRequest {
     pub req: ForwardRequest,
     pub sig: Vec<u8>,
     pub received_at: Instant,
+    /// Real `eth_estimateGas` result for this exact call submitted solo,
+    /// from `simulate::solo_call_gas` at submit time. `None` when that
+    /// simulation failed (RPC hiccup) — callers fall back to
+    /// `req.gas` (client-declared) rather than blocking the submission
+    /// on it; see api.rs's `submit` handler.
+    pub solo_gas: Option<u64>,
 }
 
 #[derive(Default)]
@@ -42,10 +48,10 @@ impl Queue {
         Arc::new(Self { inner: Mutex::new(Inner::default()), notify: Notify::new() })
     }
 
-    pub async fn enqueue(&self, id: String, req: ForwardRequest, sig: Vec<u8>) {
+    pub async fn enqueue(&self, id: String, req: ForwardRequest, sig: Vec<u8>, solo_gas: Option<u64>) {
         let mut g = self.inner.lock().await;
         g.status.insert(id.clone(), RequestStatus::Pending);
-        g.pending.push(PendingRequest { id, req, sig, received_at: Instant::now() });
+        g.pending.push(PendingRequest { id, req, sig, received_at: Instant::now(), solo_gas });
         drop(g);
         self.notify.notify_one();
     }

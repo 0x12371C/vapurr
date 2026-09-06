@@ -12,6 +12,7 @@ use crate::config::Config;
 use crate::eip712::ForwardRequest;
 use crate::fee;
 use crate::queue::Queue;
+use crate::simulate;
 
 pub struct AppState {
     pub config: Config,
@@ -64,13 +65,24 @@ async fn submit(State(state): State<Arc<AppState>>, Json(body): Json<SubmitBody>
         return (StatusCode::BAD_REQUEST, Json(json!({"error": "validUntil is already in the past"}))).into_response();
     }
 
+    // A real eth_estimateGas for this exact call, right now — replaces
+    // fee.rs's flat avgCallGas guess with what this specific request
+    // actually costs. Best-effort: a simulation failure (RPC hiccup)
+    // falls back to the client-declared `req.gas` rather than blocking a
+    // gasless submission over a pricing nicety. This does add one RPC
+    // round trip to this endpoint's latency — a deliberate trade for data
+    // quality, since the endpoint is already async/enqueue-only.
+    let solo_gas = simulate::solo_call_gas(&state.config.rpc_url, body.req.from, body.req.to, &body.req.data)
+        .await
+        .ok();
+
     // Cheap, quick check now; the batch submitter re-verifies the actual
     // signature before anything goes on-chain.
     let id = uuid_like();
-    state.queue.enqueue(id.clone(), body.req, sig).await;
+    state.queue.enqueue(id.clone(), body.req, sig, solo_gas).await;
     state.queue.notify.notify_one();
 
-    (StatusCode::ACCEPTED, Json(json!({ "id": id }))).into_response()
+    (StatusCode::ACCEPTED, Json(json!({ "id": id, "simulatedGas": solo_gas }))).into_response()
 }
 
 async fn status(State(state): State<Arc<AppState>>, Path(id): Path<String>) -> impl IntoResponse {

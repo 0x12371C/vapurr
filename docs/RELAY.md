@@ -124,6 +124,56 @@ already produce), or pricing this as a flat fee that isn't trying to be a
 percentage rebate on a savings pool that's smaller than the discount
 being promised against it.
 
+## Real numbers instead of the formula, wherever one's available
+
+`FORWARDER_PER_ITEM_OVERHEAD_GAS` is a formula guess for *planning* —
+pricing decisions before any request exists, the `/relay/quote` endpoint,
+the standalone calculator. The running relayer doesn't have to guess once
+a request exists to actually simulate:
+
+- **`POST /relay/submit`** runs a real `eth_estimateGas` for the request's
+  exact `(from, to, data)` the moment it arrives (`simulate::solo_call_gas`)
+  and stores it on the queued item. That's the real "what would self-
+  paying have cost," not the flat `avgCallGas` assumption.
+- **Before every batch submission**, `submit_batch` simulates the actual
+  constructed `executeBatch` calldata (`simulate::batch_call_gas`) to get
+  this specific batch's real gas requirement, and uses that (plus a 10%
+  margin for gas-price/state drift between simulation and inclusion) as
+  the transaction's gas limit — replacing the formula's blinder 20% margin
+  with a much tighter one, because a simulated number isn't a guess.
+- Every batch's *real* economics — `fee::measured_savings` against the
+  simulated total — are logged (`tracing::info!`) at submission time, so
+  whether pricing is actually working is observable from day one, not
+  something to infer from the formula.
+
+Both simulation calls are best-effort: a failed one (RPC hiccup, node
+briefly unreachable) falls back to the formula rather than blocking a
+submission — see `simulate.rs`'s module doc. This doesn't require
+anything beyond the RPC node already being called elsewhere in this
+crate; hooking it up to vapurr's own scan/explorer infra for historical
+analysis (average measured overhead over the last N days, not just the
+most recent batch) is a natural next step this pass doesn't build.
+
+**What this doesn't fix**: simulation tells you the REAL number instead
+of a guessed one — it can't make the crypto-verification floor smaller.
+If the real measured overhead comes back near 12,200 (or higher), the
+"where the wall is" section above still applies; simulation just replaces
+"probably" with "confirmed."
+
+## Private mempool routing?
+
+Would not touch anything in the section above — ecrecover and the nonce
+SLOAD/SSTORE cost the same EVM gas regardless of how a transaction
+reaches the block it lands in. What private order flow (a private relay,
+direct-to-builder submission) actually buys, if RHC has a public mempool
+with competing searchers at all: MEV protection for what's *inside* a
+forwarded call — e.g. a swap sitting in a public mempool is sandwichable,
+private submission closes that off — and a guarantee against paying for a
+transaction that reverts, which `simulate::batch_call_gas` above already
+covers most of client-side. Whether either matters depends on whether RHC
+even has that dynamic (a single-sequencer app-chain might not); that's
+unconfirmed, not assumed either way here.
+
 ## Flow
 
 1. Client builds a `ForwardRequest { from, to, value, gas, nonce, data, validUntil }`.

@@ -88,6 +88,20 @@ pub fn estimate_savings(call_gas: &[u64]) -> SavingsEstimate {
     SavingsEstimate { batch_size: n, solo_total_gas, batch_total_gas, saved_gas, saved_bps }
 }
 
+/// The same shape as `estimate_savings`, built from REAL numbers instead
+/// of the formula guess: `solo_gas` from `simulate::solo_call_gas` per
+/// item, and `batch_total_gas_measured` from `simulate::batch_call_gas`
+/// on the actual constructed calldata. Prefer this whenever both are
+/// available — it isn't an estimate, it's what the batch actually costs
+/// (as of the moment it was simulated; real inclusion can still vary).
+pub fn measured_savings(solo_gas: &[u64], batch_total_gas_measured: u64) -> SavingsEstimate {
+    let n = solo_gas.len();
+    let solo_total_gas: u64 = solo_gas.iter().map(|g| EVM_BASE_TX_GAS.saturating_add(*g)).sum();
+    let saved_gas = solo_total_gas as i64 - batch_total_gas_measured as i64;
+    let saved_bps = if solo_total_gas == 0 { 0 } else { saved_gas * 10_000 / solo_total_gas as i64 };
+    SavingsEstimate { batch_size: n, solo_total_gas, batch_total_gas: batch_total_gas_measured, saved_gas, saved_bps }
+}
+
 /// What to charge a user for sponsorship, in the same gas units as
 /// `call_gas` (convert to a token amount at whatever gas price / oracle
 /// rate is current — not this module's job). `fee_bps` is the fraction of
@@ -135,6 +149,19 @@ mod tests {
     fn savings_turn_positive_at_realistic_batch_sizes() {
         let est = estimate_savings(&[50_000; 8]);
         assert!(est.saved_gas > 0, "an 8-request batch should beat 8 solo submissions");
+    }
+
+    #[test]
+    fn measured_savings_matches_formula_when_inputs_agree() {
+        // If a "measured" batch total happens to equal exactly what the
+        // formula would have predicted for the same call gas, the two
+        // functions must agree — they're describing the same quantity two
+        // different ways, not two different quantities.
+        let call_gas = [50_000u64; 6];
+        let formula = estimate_savings(&call_gas);
+        let measured = measured_savings(&call_gas, formula.batch_total_gas);
+        assert_eq!(formula.solo_total_gas, measured.solo_total_gas);
+        assert_eq!(formula.saved_gas, measured.saved_gas);
     }
 
     #[test]
