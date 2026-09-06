@@ -196,3 +196,12 @@
 - **branch:** `pack/d59912d` (+ this slice)
 - **build slice:** NeedSavings / NeedBondMarket honesty UI on frontend/bonds.html - #cd-book-note + #bond-book-note follow snap.savings/bonds.configured; capital strip CA status; CTA errors name Need*; __setEcon + econ poll. Docs SPUSD/BONDS scrubbed. Still open P1: Oliver gV/wgV collateral wire, live CD/BondMarket ABI after deploy, House Uni v4 e2e / remittance live enable, SignPath.
 
+
+## 2026-09-06 ~11:08 ET - hourly watch
+
+- **justin:** online
+- **Programs:** DisplayVersion **1.1.11**; FileVersion **1.1.11** @ `C:\Users\jfren\AppData\Local\Programs\vapurr\vapurr.exe`; sha `26EC8DE3AB1F`; **NotSigned** (signing still P0 ship blocker; Relic: unsigned OK for build/test)
+- **dist/channel:** AppData channel manifest **1.1.12** rev `8770b23` sha256 `cde147a41437...`; Programs exe != channel copy; `thesecretlab.app/vapurr/channel/manifest.json` still **404**; local repo `channel/manifest.json` missing
+- **workers:** KFX **idle** (grok 21016 / ps 20776); PayId **idle** (grok 9228 / ps 20492); Bind **idle** (PID gone) - no respawn. Extra grok windows present - not watch-spawned. No new organizer procs.
+- **branch:** `pack/d59912d` @ `0c9d575`
+- **build slice:** committed **swap/bridge execution safety** sitting dirty after pack 1.1.10 — House book BOM + on-chain wgV/pusd/fee verify, drop phantom rebates, native single-use route_id through shell/wallet, UI stale-quote/review invalidation. Prove: `vapurr-rhc` route tests 22/22 (+1 ignored RPC), `verify-route-safety.py` PASS. Still open P1: Oliver gV/wgV collateral wire, live CD/BondMarket ABI after deploy, House Uni v4 e2e / remittance live enable, SignPath.
