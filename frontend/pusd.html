@@ -722,6 +722,7 @@
         <div class="have" id="h-gate">Wrap gV to wgV before supplying House.</div>
         <div class="have" id="h-fee-note">Protocol fee carve remits House / Lithe / Oliver through FeeAttribution into RemittanceSink. Book empty (NeedRemittance) until Relic fills CAs. LP fees stay with LPs. Live Uni v4 skim e2e still open.</div>
         <div class="facts" id="h-attrib" aria-label="FeeAttribution who paid"><div class="chip"><span>House</span><b id="h-attrib-house">—</b></div><div class="chip"><span>Lithe</span><b id="h-attrib-lithe">—</b></div><div class="chip"><span>Oliver</span><b id="h-attrib-oliver">—</b></div></div>
+        <div class="facts" id="h-remit-book" aria-label="Remittance destination address book"><div class="chip"><span>FeeRemit</span><b id="h-remit-fee">—</b></div><div class="chip"><span>UniSkim</span><b id="h-remit-skim">—</b></div><div class="chip"><span>FeeAttr</span><b id="h-remit-attr">—</b></div><div class="chip"><span>Sink</span><b id="h-remit-sink">—</b></div></div>
         <div class="have" id="h-have">Not seeded.</div>
         <div class="have" id="h-stocks"></div>
         <div class="two" id="house-boot-row">
@@ -1301,6 +1302,19 @@
       if (ah) ah.textContent = "—";
       if (al) al.textContent = "—";
       if (ao) ao.textContent = "—";
+      // Destination CAs from remittance_book_snap; empty book stays NeedRemittance-honest.
+      var rf = document.getElementById("h-remit-fee");
+      var rsk = document.getElementById("h-remit-skim");
+      var ra = document.getElementById("h-remit-attr");
+      var rk = document.getElementById("h-remit-sink");
+      function remitCa(v) {
+        var s = shortCa(v);
+        return (s && s !== "—" && s !== "-") ? s : "NeedRemittance";
+      }
+      if (rf) rf.textContent = remitCa(R.house_fee_remit);
+      if (rsk) rsk.textContent = remitCa(R.house_uni_skim);
+      if (ra) ra.textContent = remitCa(R.fee_attribution);
+      if (rk) rk.textContent = remitCa(R.remittance_sink);
       if (feeNote) {
         if (R.configured) {
           feeNote.textContent = "FeeAttribution book live — source share reads still open. LP fees stay with LPs.";

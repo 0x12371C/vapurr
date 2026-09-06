@@ -1,5 +1,5 @@
-﻿
-## 2026-09-05 13:12 ET â€” hourly watch
+
+## 2026-09-05 13:12 ET — hourly watch
 
 - **justin:** online
 - **Programs:** DisplayVersion **1.1.1** (stale registry); FileVersion **1.1.9** @ `C:\Users\jfren\AppData\Local\Programs\vapurr\vapurr.exe`; **NotSigned** (signing still P0 ship blocker)
@@ -7,7 +7,7 @@
 - **channel:** local TSL `channel/manifest.json` still missing; www SSL trust fail on this host; `thesecretlab.app/vapurr/channel/manifest.json` 404
 - **workers:** KFX / PayId / Bind idle (Bind PID gone). No new grok/powershell organizer spawns.
 - **branch:** `fix/gv-spusd-guards`; dirty `IVapurrMinter.sol` WIP left uncommitted (dual marketMinter contradicts `MINT_AUTHORITY.md` single-minter + encoding noise)
-- **build slice:** policy-rate copy honesty â€” `frontend/bonds.html`, `docs/econ/HOUSE_PAIR.md`, `docs/econ/MINT_AUTHORITY.md` now say dynamic **1-9%/yr** (mid ~3.5% unbound) instead of flat 3.5%
+- **build slice:** policy-rate copy honesty — `frontend/bonds.html`, `docs/econ/HOUSE_PAIR.md`, `docs/econ/MINT_AUTHORITY.md` now say dynamic **1-9%/yr** (mid ~3.5% unbound) instead of flat 3.5%
 
 
 ## 2026-09-05 14:02 ET - hourly watch
@@ -18,34 +18,34 @@
 - **channel:** local AppData `channel/manifest.json` = **1.1.9** rev `f68dfd3`; `thesecretlab.app/vapurr/channel/manifest.json` still **404**
 - **workers:** KFX / PayId / Bind idle (no organizer windows; Bind `install_id` file present, PID gone). No new grok/powershell organizer spawns.
 - **branch:** `fix/gv-spusd-guards` ahead 1; only untracked smoke/headcheck leftovers
-- **build slice:** honesty-scrub `docs/econ/PUSDLOOP_ROUTING_GAPS.md` â€” HouseFeeRemit + SpusdCd moved to Landed; Oliver collateral/LOLR + live savings IPC + House Uni v4 remain Still-open. commit `1d5f591`
+- **build slice:** honesty-scrub `docs/econ/PUSDLOOP_ROUTING_GAPS.md` — HouseFeeRemit + SpusdCd moved to Landed; Oliver collateral/LOLR + live savings IPC + House Uni v4 remain Still-open. commit `1d5f591`
 
 ## 2026-09-05 15:10 ET - hourly watch
 
 - **justin:** online
 - **Programs:** DisplayVersion **1.1.9**; FileVersion **1.1.9** sha A326B9F22518 @ 13:21 ET; **NotSigned** (signing still P0 ship blocker; Relic: unsigned OK for build/test)
 - **dist/channel:** AppData channel manifest **1.1.9** rev 68dfd3; 	hesecretlab.app/vapurr/channel/manifest.json still **404**
-- **workers:** KFX **idle** (21016); PayId **idle** (9228); Bind **idle** (PID gone) â€” no respawn. Extra grok 18356 = graphify inbox (not watch-spawned). No new organizer procs.
+- **workers:** KFX **idle** (21016); PayId **idle** (9228); Bind **idle** (PID gone) — no respawn. Extra grok 18356 = graphify inbox (not watch-spawned). No new organizer procs.
 - **branch:** ix/gv-spusd-guards @ 85b88cd (+ this docs scrub); left dirty TESTNET_ROLLOUT.md binary encoding + untracked smoke/headcheck alone
-- **build slice:** honesty-scrub PUSDLOOP_ROUTING_GAPS.md + ROUTING.md â€” Oliver bsorbBadDebt / optional IFedBackstop + oracle heartbeat moved to Landed (still-open was stale). Forge OliverOracleBadDebt 10/10. Still open: gV/wgV collateral type, live savings IPC, House Uni v4 e2e, LOLR policy funding.
+- **build slice:** honesty-scrub PUSDLOOP_ROUTING_GAPS.md + ROUTING.md — Oliver AbsorbBadDebt / optional IFedBackstop + oracle heartbeat moved to Landed (still-open was stale). Forge OliverOracleBadDebt 10/10. Still open: gV/wgV collateral type, live savings IPC, House Uni v4 e2e, LOLR policy funding.
 
 ## 2026-09-05 16:11 ET - hourly watch
 
 - **justin:** online
 - **Programs:** DisplayVersion **1.1.9**; FileVersion **1.1.9** @ `C:\Users\jfren\AppData\Local\Programs\vapurr\vapurr.exe` (~16:10 ET pack); **NotSigned** (signing still P0 ship blocker; Relic: unsigned OK for build/test)
 - **dist/channel:** AppData Programs channel manifest **1.1.9** rev `27dacce`; `thesecretlab.app/vapurr/channel/manifest.json` still **404**
-- **workers:** KFX **idle** (21016); PayId **idle** (9228); Bind **idle** (PID gone) â€” no respawn. Extra grok windows present (housekeeping/relaunch/graphify) â€” not watch-spawned. No new organizer procs.
+- **workers:** KFX **idle** (21016); PayId **idle** (9228); Bind **idle** (PID gone) — no respawn. Extra grok windows present (housekeeping/relaunch/graphify) — not watch-spawned. No new organizer procs.
 - **branch:** `fix/gv-spusd-guards` @ `685a793` (ahead 1); left untracked smoke/headcheck/cutover-verdict alone
-- **build slice:** finish clear-glass lock pad â€” `frontend/lock.html` backdrop blur forced to **0** (specular rim only). commit `685a793`. Still open P1: Oliver gV/wgV collateral type, savings IPC/address-book, House Uni v4 e2e.
+- **build slice:** finish clear-glass lock pad — `frontend/lock.html` backdrop blur forced to **0** (specular rim only). commit `685a793`. Still open P1: Oliver gV/wgV collateral type, savings IPC/address-book, House Uni v4 e2e.
 
 ## 2026-09-05 18:02 ET - hourly watch
 
 - **justin:** online
 - **Programs:** DisplayVersion **1.1.9**; FileVersion **1.1.9** @ `C:\Users\jfren\AppData\Local\Programs\vapurr\vapurr.exe` (~17:47 ET pack); **NotSigned** (signing still P0 ship blocker; Relic: unsigned OK for build/test)
 - **dist/channel:** AppData channel manifest **1.1.9** rev `41df999`; `thesecretlab.app/vapurr/channel/manifest.json` still **404**
-- **workers:** KFX **idle** (21016); PayId **idle** (9228); Bind **idle** (PID gone) â€” no respawn. Extra grok windows present (graphify/housekeeping) â€” not watch-spawned. No new organizer procs.
+- **workers:** KFX **idle** (21016); PayId **idle** (9228); Bind **idle** (PID gone) — no respawn. Extra grok windows present (graphify/housekeeping) — not watch-spawned. No new organizer procs.
 - **branch:** `pack/d59912d` @ `41df999` (+ this slice)
-- **build slice:** frontend routing visuals stub on `bonds.html` â€” Cash/Equity/Bonds/House strip + ASCII-clean middot/arrow/emdash labels. Still open P1: Oliver gV/wgV collateral, savings IPC/address-book, House Uni v4 e2e.
+- **build slice:** frontend routing visuals stub on `bonds.html` — Cash/Equity/Bonds/House strip + ASCII-clean middot/arrow/emdash labels. Still open P1: Oliver gV/wgV collateral, savings IPC/address-book, House Uni v4 e2e.
 
 ## 2026-09-05 19:10 ET - hourly watch
 
@@ -93,7 +93,7 @@
 - **dist/channel:** AppData channel manifest **1.1.9** rev `ecf74db` sha256 `5c0781603729...`; `thesecretlab.app/vapurr/channel/manifest.json` still **404**; local repo `channel/manifest.json` missing
 - **workers:** KFX **idle** (21016); PayId **idle** (9228); Bind **idle** (PID gone) - no respawn. Extra grok windows present (graphify/housekeeping/gh-auth) - not watch-spawned. No new organizer procs.
 - **branch:** `pack/d59912d` (+ this slice)
-- **build slice:** BONDS **ETH/USDG Fed ops** table in `docs/econ/BONDS.md` (oracle stale/jump, haircut/capacity, USDG intake pause â€” no equity calendar) + ETH/USDG valuation note on `frontend/bonds.html`. Still open P1: Oliver gV/wgV collateral wire, savings IPC/address-book, House Uni v4 e2e, SignPath, auto session-calendar wire.
+- **build slice:** BONDS **ETH/USDG Fed ops** table in `docs/econ/BONDS.md` (oracle stale/jump, haircut/capacity, USDG intake pause — no equity calendar) + ETH/USDG valuation note on `frontend/bonds.html`. Still open P1: Oliver gV/wgV collateral wire, savings IPC/address-book, House Uni v4 e2e, SignPath, auto session-calendar wire.
 
 ## 2026-09-06 00:03 ET - hourly watch
 
@@ -204,7 +204,7 @@
 - **dist/channel:** AppData channel manifest **1.1.12** rev `8770b23` sha256 `cde147a41437...`; Programs exe != channel copy; `thesecretlab.app/vapurr/channel/manifest.json` still **404**; local repo `channel/manifest.json` missing
 - **workers:** KFX **idle** (grok 21016 / ps 20776); PayId **idle** (grok 9228 / ps 20492); Bind **idle** (PID gone) - no respawn. Extra grok windows present - not watch-spawned. No new organizer procs.
 - **branch:** `pack/d59912d` @ `0c9d575`
-- **build slice:** committed **swap/bridge execution safety** sitting dirty after pack 1.1.10 â€” House book BOM + on-chain wgV/pusd/fee verify, drop phantom rebates, native single-use route_id through shell/wallet, UI stale-quote/review invalidation. Prove: `vapurr-rhc` route tests 22/22 (+1 ignored RPC), `verify-route-safety.py` PASS. Still open P1: Oliver gV/wgV collateral wire, live CD/BondMarket ABI after deploy, House Uni v4 e2e / remittance live enable, SignPath.
+- **build slice:** committed **swap/bridge execution safety** sitting dirty after pack 1.1.10 — House book BOM + on-chain wgV/pusd/fee verify, drop phantom rebates, native single-use route_id through shell/wallet, UI stale-quote/review invalidation. Prove: `vapurr-rhc` route tests 22/22 (+1 ignored RPC), `verify-route-safety.py` PASS. Still open P1: Oliver gV/wgV collateral wire, live CD/BondMarket ABI after deploy, House Uni v4 e2e / remittance live enable, SignPath.
 
 ## 2026-09-06 ~12:13 ET - hourly watch
 
@@ -220,10 +220,10 @@
 
 - **justin:** online
 - **Programs:** VERSION **1.1.14** (sha `F5897A8BEC53`, rev `e590ef3`); Programs `manifest.json` **1.1.13** (same rev, different sha/size); **NotSigned** (signing still P0 ship blocker; Relic: unsigned OK for build/test)
-- **dist/channel:** AppData channel **1.1.14** (sha `f5897a8bec53...`); **TSL channel restored** â€” `https://thesecretlab.app/vapurr/channel/manifest.json` **200** at **1.1.13** (rev `e590ef3`, sha `324286bf6f68...`); local repo `channel/manifest.json` missing; dist pack artifacts still **1.1.10**
+- **dist/channel:** AppData channel **1.1.14** (sha `f5897a8bec53...`); **TSL channel restored** — `https://thesecretlab.app/vapurr/channel/manifest.json` **200** at **1.1.13** (rev `e590ef3`, sha `324286bf6f68...`); local repo `channel/manifest.json` missing; dist pack artifacts still **1.1.10**
 - **workers:** KFX **idle** (grok 21016 / ps 20776); PayId **idle** (grok 9228 / ps 20492); Bind **idle** (PID gone) - no respawn. Extra grok windows present (graphify 18356, bare grok, House title, gh-auth 15672) - not watch-spawned. No new organizer procs.
 - **branch:** `pack/d59912d` @ `71ae5f7` (+ this slice)
-- **build slice:** TRACKS honesty â€” TSL channel no longer 404; record live **1.1.13** public channel vs Programs/AppData **1.1.14** / Programs manifest **1.1.13** mismatch. Preferred Fed UI stubs (BONDS ETH/USDG/stocks, routing-visual, feeâ†’remittance, sPUSD CD, wgV House notes) already landed prior hours; remaining P1 are Relic-gated deploys (Oliver gV/wgV collateral, live CD/BondMarket ABI, House Uni v4 e2e / remittance enable, SignPath, relay live). Still open P1: same + promote TSL channel to 1.1.14 after signed pack.
+- **build slice:** TRACKS honesty — TSL channel no longer 404; record live **1.1.13** public channel vs Programs/AppData **1.1.14** / Programs manifest **1.1.13** mismatch. Preferred Fed UI stubs (BONDS ETH/USDG/stocks, routing-visual, fee→remittance, sPUSD CD, wgV House notes) already landed prior hours; remaining P1 are Relic-gated deploys (Oliver gV/wgV collateral, live CD/BondMarket ABI, House Uni v4 e2e / remittance enable, SignPath, relay live). Still open P1: same + promote TSL channel to 1.1.14 after signed pack.
 
 
 ## 2026-09-06 ~14:10 ET - hourly watch
@@ -274,3 +274,12 @@
 - **branch:** `pack/d59912d` @ `e274aba` (+ this slice)
 - **build slice:** gasless quote honesty — `/relay/quote` `soloCostGas` used textbook **21_000**; aligned to `fee::EVM_BASE_TX_GAS` (**25_732**) so live quote matches `gasless.html` FALLBACK + fee.rs. Prove: `fee::tests::quote_solo_cost_*` + `fee::` 9/9 ok; `scripts/verify-gasless.py` PASS. Left dirty `docs/STATUS.md` RFV worker notes alone. Still open P1: Oliver gV/wgV collateral, live CD/BondMarket ABI, House Uni v4 e2e / remittance live enable, SignPath, promote TSL after signed pack.
 
+## 2026-09-06 ~19:14 ET - hourly watch
+
+- **justin:** online
+- **Programs:** VERSION **1.1.17** (sha 93A4AAE04C7C, rev e590ef3); Uninstall DisplayVersion still stale **1.1.9**; **NotSigned** (signing still P0 ship blocker; Relic: unsigned OK for build/test)
+- **dist/channel:** AppData channel **1.1.17** (same sha/rev); AppData VERSION.txt lag **1.1.11**; **TSL channel fetch FAIL** again - TLS cert expired (SEC_E_CERT_EXPIRED) on 	hesecretlab.app/vapurr/channel/manifest.json (was 200 / 1.1.13 at 18:14); local repo channel/manifest.json missing; dist/Cargo still **1.1.10**
+- **workers:** KFX **idle** (grok 21016); PayId **idle** (grok 9228); Bind **idle** (PID gone) - no respawn. Extra grok windows present (graphify 18356, bare groks, gh-auth 15672) - not watch-spawned. No new organizer procs.
+- **branch:** pack/d59912d (+ this slice)
+- **build slice:** House **remittance destination address-book** UI - paint FeeRemit / UniSkim / FeeAttr / Sink chips from snap.remittance (
+emittance_book_snap); empty CAs show NeedRemittance (no live remit enable). Prove: scripts/verify-remittance-book.py PASS. Still open P1: Oliver gV/wgV collateral, live CD/BondMarket ABI, House Uni v4 e2e / remittance live enable, SignPath, promote TSL after signed pack + renew TSL TLS cert.
