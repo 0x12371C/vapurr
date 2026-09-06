@@ -175,6 +175,19 @@ mod tests {
     use super::*;
 
     #[test]
+    fn quote_solo_cost_uses_measured_rhc_base_not_textbook_21000() {
+        // /relay/quote exampleFirstRequest.soloCostGas must use this constant
+        // (see api.rs). Textbook 21_000 would understate self-pay on RHC and
+        // desync the gasless.html FALLBACK.
+        assert_eq!(EVM_BASE_TX_GAS, 25_732);
+        let call_gas = 60_000u64;
+        let solo = EVM_BASE_TX_GAS.saturating_add(call_gas);
+        assert_eq!(solo, 85_732);
+        let fee_95 = user_fee_gas(solo, 9_500);
+        assert_eq!(fee_95, (solo as u128 * 9_500 / 10_000) as u64);
+    }
+
+    #[test]
     fn lone_request_is_a_subsidy_not_a_saving() {
         let est = estimate_savings(&[50_000]);
         assert!(est.saved_gas < 0, "a batch of one should cost MORE than self-submitting, not less");

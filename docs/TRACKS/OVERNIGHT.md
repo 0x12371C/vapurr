@@ -264,3 +264,13 @@
 - **workers:** KFX **idle** (grok 21016 / ps 20776); PayId **idle** (grok 9228 / ps 20492); Bind **idle** (PID gone) - no respawn. Extra grok windows present (graphify 18356, bare groks, gh-auth 15672) - not watch-spawned. No new organizer procs.
 - **branch:** `pack/d59912d` @ `c90f07f` (+ this docs slice)
 - **build slice:** route-catalog honesty - drop duplicate mock mUSDG from HouseBook/swap symbols/token icons; verify-route-catalog.py --verify assert single USDG 0x7e95...802f PASS. Preferred Fed UI stubs already landed; remaining P1 Relic-gated (Oliver gV/wgV collateral, live CD/BondMarket ABI, House Uni v4 e2e / remittance enable, SignPath, promote TSL after signed pack + renew TSL TLS cert).
+
+## 2026-09-06 ~18:14 ET - hourly watch
+
+- **justin:** online
+- **Programs:** VERSION **1.1.17** (sha `93A4AAE04C7C`, rev `e590ef3` @ 17:55 ET); AppData channel **1.1.17** (same sha/rev); **NotSigned** (signing still P0 ship blocker; Relic: unsigned OK for build/test)
+- **dist/channel:** Programs==AppData **1.1.17**; **TSL channel TLS restored** — `thesecretlab.app/vapurr/channel/manifest.json` **200** at **1.1.13** (rev `e590ef3`, sha `324286bf6f68...`); local repo `channel/manifest.json` missing; dist/Cargo still **1.1.10**
+- **workers:** KFX **idle** (grok 21016); PayId **idle** (grok 9228); Bind **idle** (PID gone) - no respawn. Extra grok windows present (graphify 18356, bare groks, gh-auth 15672) - not watch-spawned. No new organizer procs.
+- **branch:** `pack/d59912d` @ `e274aba` (+ this slice)
+- **build slice:** gasless quote honesty — `/relay/quote` `soloCostGas` used textbook **21_000**; aligned to `fee::EVM_BASE_TX_GAS` (**25_732**) so live quote matches `gasless.html` FALLBACK + fee.rs. Prove: `fee::tests::quote_solo_cost_*` + `fee::` 9/9 ok; `scripts/verify-gasless.py` PASS. Left dirty `docs/STATUS.md` RFV worker notes alone. Still open P1: Oliver gV/wgV collateral, live CD/BondMarket ABI, House Uni v4 e2e / remittance live enable, SignPath, promote TSL after signed pack.
+

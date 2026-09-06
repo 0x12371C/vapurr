@@ -130,7 +130,9 @@ async fn quote(State(state): State<Arc<AppState>>, Query(params): Query<QuotePar
     }
 
     let estimate = fee::estimate_savings(&values);
-    let solo_cost = 21_000 + values[0];
+    // RHC measured intrinsic (fee::EVM_BASE_TX_GAS = 25_732), not the
+    // textbook 21_000 — must match estimate_savings / gasless.html FALLBACK.
+    let solo_cost = fee::EVM_BASE_TX_GAS.saturating_add(values[0]);
     let user_fee = fee::user_fee_gas(solo_cost, state.config.user_fee_bps);
 
     Json(json!({
