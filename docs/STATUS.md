@@ -1,5 +1,11 @@
 ﻿# vapurr status
 
+## 2026-09-06 ~17:08 ET - route catalog USDG scrub + TSL TLS down
+
+- Dropped duplicate mock mUSDG from HouseBook / swap symbols / token icons; verify-route-catalog.py --verify asserts single USDG 0x7e95...802f PASS (`c90f07f` on pack/d59912d).
+- Programs + AppData channel still **1.1.15** NotSigned; TSL public channel fetch now fails with **expired TLS cert** (SEC_E_CERT_EXPIRED) - was 1.1.13 earlier today.
+- Signing remains P0 ship blocker. No pack this hour.
+
 ## 2026-09-06 ~16:09 ET — SNAPSHOT honesty + channel skew
 
 Refreshed `docs/SNAPSHOT.md` off stale 2026-09-04 / **1.1.4** board:
@@ -220,3 +226,4 @@ Or `cargo +stable-x86_64-pc-windows-gnu run -p vapurr-shell --release` (`target\
 - Relic: nothing product-critical stays gated. `frontend/bonds.html` Open Bond / Open CD live-by-default; capacity/oracle/haircut are params.
 - `BondMarket` comments + tests ship enabled-with-capacity; `SavingsRouter` enabled by default (owner killswitch).
 - Docs: `BONDS.md` scrubbed from gated-until posture to live-with-caps.
+
