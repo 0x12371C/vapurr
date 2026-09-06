@@ -41,6 +41,13 @@ Revert class: `RawGvNotHouseEquity` if either Uni currency is raw gV.
 - Full Uni v4 `IHooks` / swapper integration beyond HouseUniSkim inventory bridge
 - Pool-held `$PUSD` Lithe-index rebase allocation to LPs (**P1** — wgV fixes equity leg only)
 
+
+## Oliver collateral boundary (2026-09-05)
+
+House equity = **wgV only**. Oliver credit collateral today = **$VAPURR only** (UI + vault). Accepting gV or wgV as Oliver collateral is a **separate Relic go** — not implied by the House wrap path.
+
+UI honesty: `frontend/pusd.html` Oliver tab `#e-collat-note` states live collateral is $VAPURR; House tab keeps wrap-first / wgV book labels.
+
 ## Do not
 
 - Pair raw gV or raw `$VAPURR` as House equity once staking is live
