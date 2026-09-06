@@ -68,6 +68,9 @@ pub(crate) fn pane_url(id: &str) -> String {
         "card" => "card.html",
         "zzzmail" | "zmail" | "mail" => "zzzmail.html",
         "id" => "id.html",
+        // NOTE: "gas"/"gwei" are already claimed below (explorer.html?tab=gas) —
+        // don't add them here too, or that arm becomes unreachable.
+        "gasless" | "savings" => "gasless.html",
         "shield" | "adblock" => "shield.html",
         "swap" => "swap.html",
         "defi" | "finance" => "defi.html",

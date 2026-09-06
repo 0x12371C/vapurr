@@ -26,6 +26,7 @@ If you add a `vapurr://` id, add a row here in the same change.
 | `card` | | `card.html` | parked â€” not on the rail or Wallet for now |
 | `zzzmail` | `zmail`, `mail` | `zzzmail.html` | glass inbox. `.hood` names (ENS-shaped). Seal â†’ CID pin â†’ 0.25Â¢ gasless postage. `zmail.html` is a redirect stub |
 | `id` | | `id.html` | zer0ID. Start KYC opens https://www.thesecretlab.app/kyc. Does not fake Proven. Not Shield |
+| `gasless` | `savings` | `gasless.html` | Preview of sponsored/batched transactions via `VapurrForwarder` — real testnet-measured numbers, live from this device's relayer (`http://127.0.0.1:8792`) if reachable, a labeled fallback if not. Not yet the default payment path — KetPay still signs and pays directly. |
 | `defi` | `finance` | `defi.html` | House DeFi hub â€” Swap, Bridge, PUSD, vapurrbid, PNS, Liquidity. Rail button. |
 | `swap` | | `swap.html` | Simulate, review, sign. Deployed wgV/PUSD House, exact approvals, expiring native quote IDs. No synthetic rebate. |
 | `stake` | `pusd`, `vapurr`, `mint`, `lithe`, `euler`, `loop`, `house`, `lp` | `pusd.html` | $VAPURR / $PUSD desk. **Lithe** is 9% on $PUSD. Vault `?tab=euler`. House Uni v4 CL `?tab=house`. CAs in `vapurr-rhc`. |

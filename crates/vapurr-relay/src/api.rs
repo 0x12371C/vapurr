@@ -7,6 +7,7 @@ use axum::routing::{get, post};
 use axum::Router;
 use serde::Deserialize;
 use serde_json::json;
+use tower_http::cors::CorsLayer;
 
 use crate::config::Config;
 use crate::eip712::ForwardRequest;
@@ -26,6 +27,13 @@ pub fn router(state: Arc<AppState>) -> Router {
         .route("/relay/status/:id", get(status))
         .route("/relay/quote", get(quote))
         .with_state(state)
+        // Permissive on purpose: this binds to 127.0.0.1 for a chrome page
+        // (http://vapurr.localhost) to call directly, and nothing here is
+        // cookie/session-authenticated — the real authorization boundary
+        // is the EIP-712 signature itself, which an origin header can't
+        // forge either way. Restrict this if the bind address ever
+        // changes to something reachable off the local machine.
+        .layer(CorsLayer::permissive())
 }
 
 async fn health(State(state): State<Arc<AppState>>) -> impl IntoResponse {
