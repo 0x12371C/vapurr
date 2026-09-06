@@ -98,7 +98,9 @@
     var host = document.querySelector('[data-finance-nav]');
     if (!host) return null;
     var desk = document.body.dataset.desk || '';
-    if (desk !== 'cash' && desk !== 'savings') return document.getElementById('routing-visual');
+    // Product map on Cash/Bonds plus Swap/Bridge/Overview so route desks share the same visual stub.
+    var mapDesks = { cash:1, savings:1, swap:1, bridge:1, overview:1 };
+    if (!mapDesks[desk]) return document.getElementById('routing-visual');
     var nav = document.getElementById('routing-visual');
     if (!nav) {
       nav = document.createElement('nav');

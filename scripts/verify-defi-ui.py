@@ -72,6 +72,8 @@ def main():
                 page.locator('#e-ltv').evaluate("el=>el.textContent='42.5%'")
                 page.locator('#e-maxltv').evaluate("el=>el.textContent='85%'")
                 page.wait_for_function("document.querySelector('.meter-fill').style.width==='50%'")
+            if name in ('defi','pusd','bonds','swap','bridge'):
+                assert page.locator('#routing-visual').count() >= 1, (name, 'missing routing-visual')
             if name=='defi':
                 for flow,engine,url in [('mint','Lithe','vapurr://lithe'),('supply','Oliver','vapurr://oliver'),('borrow','Oliver','vapurr://oliver'),('bond','Bonds','vapurr://bonds'),('trade','House','vapurr://house')]:
                     page.locator('[data-flow='+flow+']').click()
@@ -85,6 +87,10 @@ def main():
             if name in ('swap','bridge'):
                 assert page.locator('[data-finance-back]').is_visible()
                 assert page.locator('.route-cross').is_visible()
+                # Shared product map visual stub (ROUTING.md) on route desks too.
+                assert page.locator('#routing-visual').is_visible()
+                lanes = page.locator('#routing-visual [data-lane]').evaluate_all('els=>els.map(e=>e.dataset.lane)')
+                assert lanes == ['cash','equity','bonds','house'], (name, lanes)
                 # Empty stack falls back to DeFi home (not a dead end).
                 page.locator('[data-finance-back]').click()
                 assert page.evaluate('window.__messages.at(-1).url')=='vapurr://defi'
@@ -97,6 +103,9 @@ def main():
                 assert page.evaluate('window.__messages.at(-1).url')==other
                 page.locator('.route-cross [data-go="vapurr://defi"]').click()
                 assert page.evaluate('window.__messages.at(-1).url')=='vapurr://defi'
+                # Lane click after stack tests so empty-back stays honest.
+                page.locator('#routing-visual [data-lane=house]').click()
+                assert page.evaluate('window.__messages.at(-1).url')=='vapurr://house'
                 # Router is offline in this smoke; never invent a quote.
                 assert page.locator('#go').is_disabled()
             if name=='bonds':
