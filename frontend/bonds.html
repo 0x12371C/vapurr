@@ -600,6 +600,33 @@
       }
       return "";
     }
+
+    // ETH/USDG valuation Fed-ops advisories (stale / jump / intake pause). Empty = none. Banner-only - never gray-gate CTAs.
+    // When address-book reads land, fill from BondMarket enabled/priceWad heartbeat; until then manual Fed notes only.
+    var CRYPTO_BOND_FED_OPS = {
+      // Example shape (kept empty for ship): "ETH": { stale: true, note: "heartbeat miss" }
+      // "USDG": { jump: true, note: "circuit" }
+      // "USDG": { intakePause: true, note: "Fed paused USDG bond intake" }
+    };
+
+    function valuationFedOpsNote(asset) {
+      var op = CRYPTO_BOND_FED_OPS[asset];
+      if (!op) return "";
+      if (op.stale) {
+        return " Fed ops: oracle stale/heartbeat" + (op.note ? " (" + op.note + ")" : "") + " - CTA stays; on-tx may revert until Fed setValuation/setEnabled clears.";
+      }
+      if (op.jump) {
+        return " Fed ops: oracle jump/circuit" + (op.note ? " (" + op.note + ")" : "") + " - valuation paused advisory; CTA stays; Fed setEnabled/setValuation.";
+      }
+      if (op.intakePause) {
+        return " Fed ops: intake pause" + (op.note ? " (" + op.note + ")" : "") + " - tab stays; USDG remains BondAssetTag-only; CTA stays.";
+      }
+      if (op.note) {
+        return " Fed ops: " + op.note + " - CTA stays.";
+      }
+      return "";
+    }
+
     function equitySessionNow(when) {
       var d = when || new Date();
       var parts;
@@ -702,6 +729,7 @@
         } else if (m.tag === "ETH" || m.tag === "USDG") {
           // No equity calendar - oracle/valuation ops only (see BONDS.md ETH/USDG Fed ops).
           sessionNote = " Valuation: 24/7 (no session clock) â€” stale/jump = Fed setValuation or setEnabled; CTA stays.";
+          sessionNote += valuationFedOpsNote(asset);
         }
         why.textContent = " Oracle: " + m.oracle + "." + sessionNote;
       }
