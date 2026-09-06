@@ -10,7 +10,7 @@ the gV equity rebase. A nominal PUSD claim is not a guaranteed USDG redemption.
 House / Lithe / Oliver
     -> FeeAttribution
     -> RemittanceSink [one RunwayFloor]
-    -> SavingsRouter [disabled by default]
+    -> SavingsRouter [enabled by default; owner killswitch]
          -> SPUSD.receiveRemittance       [liquid share NAV]
          -> SpusdCd.receiveRemittance     [CD coupon budget]
 ```
@@ -20,7 +20,7 @@ adds the missing allocation between the two products. It only accepts calls
 from its immutable sink and verifies that both receivers use the same asset.
 
 - `setAllocation(enabled, cdBps)` sets the CD share of FUTURE surplus receipts.
-  `cdBps` is not an interest rate. Deployment starts disabled with a zero CD share.
+  `cdBps` is not an interest rate. Constructor starts **enabled** with `cdBps = 2500` (25% of post-floor surplus to CD); owner `setAllocation(false, ...)` is the killswitch.
 - `sink.forwardSurplus(0)` forwards only cash above the shared floor.
   No new floor, minting, borrowing, or depositor-principal transfer is introduced.
 - A nonzero liquid allocation requires live liquid shares beyond the dead shares.
@@ -29,8 +29,7 @@ from its immutable sink and verifies that both receivers use the same asset.
   allocation. The cash stays at the sink. Receiver allowances are cleared after use.
 - `totalReceived`, `totalLiquid`, and `totalCd` record received token balances.
   Rebasing-token transfer rounding can leave small residual inventory in the router.
-- The split is an operator policy, not a demonstrated sustainable rate. No particular
-  split is enabled by this change.
+- The split is an operator policy, not a demonstrated sustainable rate. Defaults are live-by-default for ship posture; change them with `setAllocation`.
 
 ## CD terms and settlement
 
@@ -83,12 +82,16 @@ it is not a deployment performed by this change.
 5. Set the sink's forward receiver to the router.
 6. Seed genuine liquid savings before any allocation with a nonzero liquid leg,
    or use an explicitly selected all-CD allocation to pre-fund coupons.
-7. Select a split and enable the router. Call forwardSurplus from the sink owner.
+7. Confirm or tune `setAllocation` (default enabled @ 25% CD). Call forwardSurplus from the sink owner.
 8. Read position terms and previewClose before requesting any CD close transaction.
 
-SavingsRouter is not in the Rust address book or wallet IPC yet. The Bonds/CD
-surface stays disabled. Existing deployments cannot acquire these source changes;
-new contracts and reviewed wiring are required.
+## UI sketch (2026-09-05)
+
+`frontend/bonds.html` `#spusd-cd` is a **live CTA stub** (Open CD + amount), same posture as Open Bond:
+actionable controls, clear on-tx / not-configured error when address-book / IPC is missing.
+Do not gray-gate or hide the CD surface. Term / coupon / break-fee rows stay placeholder until a savings market is connected (`econ-cd-open`).
+
+**Still open:** SavingsRouter / SpusdCd not in Rust address book or wallet IPC yet; reviewed wiring required for live terms. Existing deployments do not pick up source-only changes automatically.
 
 ## Validation
 

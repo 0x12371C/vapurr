@@ -55,3 +55,12 @@
 - **workers:** KFX **idle** (21016); PayId **idle** (9228); Bind **idle** (PID gone) - no respawn. Extra grok windows present (graphify/housekeeping) - not watch-spawned. No new organizer procs.
 - **branch:** `pack/d59912d` @ `c09b9b9` (+ this slice)
 - **build slice:** House fee->remittance UI note on `frontend/pusd.html` House tab (`#h-fee-note`) + ASCII mini-route; TRACKS build row synced to channel rev `586d9d0`. Still open P1: Oliver gV/wgV collateral, savings IPC/address-book, House Uni v4 e2e, SignPath.
+
+## 2026-09-05 20:02 ET - hourly watch
+
+- **justin:** online
+- **Programs:** DisplayVersion **1.1.9**; FileVersion **1.1.9** @ `C:\Users\jfren\AppData\Local\Programs\vapurr\vapurr.exe` (~19:09 ET); sha `D9A53426BB079950...`; **NotSigned** (signing still P0 ship blocker; Relic: unsigned OK for build/test)
+- **dist/channel:** AppData channel manifest **1.1.9** rev `586d9d0`; `thesecretlab.app/vapurr/channel/manifest.json` still **404**
+- **workers:** KFX **idle** (21016); PayId **idle** (9228); Bind **idle** (PID gone) - no respawn. Extra grok windows present (graphify/housekeeping) - not watch-spawned. No new organizer procs.
+- **branch:** `pack/d59912d` @ `8f3c348` (+ this slice)
+- **build slice:** honesty-scrub `docs/econ/SPUSD.md` sPUSD CD sketch - SavingsRouter live-by-default (enabled + cdBps 2500) matches contract; UI `#spusd-cd` live CTA stub documented; dropped stale "surface stays disabled". Still open P1: Oliver gV/wgV collateral, savings IPC/address-book, House Uni v4 e2e, SignPath.
