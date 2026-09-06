@@ -85,11 +85,25 @@ Pointing rule: Bonds → **Fed/Treasury RFV**. Equity after claim → **gV / wgV
 - Hide: RFV internals · Fed printer · rebase math
 - Banned: external protocol brand names — vapurr-native symbols only
 
+## Stock session / corporate-action (Fed ops)
+
+STOCKS tabs stay **visible and actionable** (same live-by-default rule as ETH / USDG). Session and corp-action are **valuation / killswitch policy**, not UI gray-gates.
+
+| Event | Fed action | User-facing |
+|-------|------------|-------------|
+| **Regular session closed** (nights / weekends / holidays) | Prefer `setValuation` freeze (hold last good `priceWad`) or `setEnabled(false)` on `BondAssetTag.STOCKS` until open | CTA stays; on-tx may revert `CLOSED` / misprice — surface the error, do not invent overnight marks |
+| **Halt / circuit breaker** | Same as session closed until Fed clears | Honest banner copy once address-book reads land ("valuation paused") |
+| **Corporate action** (split, merger, special dividend, ticker change) | Pause market (`setEnabled(false)`), reset wrapper/`priceWad`/`haircutBps`, then re-enable | No auto-repricing in the client; Fed publishes new terms |
+
+ETH / USDG do **not** use the equity session calendar. USDG remains BondAssetTag-only RFV intake (no `$PUSD`/USDG pool).
+
+**Still open eng:** reliable RFV oracles + automatic session calendar wire into UI banner; until then stub `session` on stock tabs is illustrative only.
+
 ## Status
 
 - **`BondMarket`:** quote + `bond`/`claim`, inventory fund, capacity, haircut; ship **enabled with sane capacity**. Killswitch via `setEnabled(false)`.
 - **UI:** `frontend/bonds.html` — live-by-default tabs; Open Bond / Open CD CTAs actionable; example labels remain on placeholder numbers. Address-book wire still open — missing market address surfaces a clear on-tx error, not a gray gate.
-- **Still open:** reliable RFV valuation oracles; stock market-closure / corporate-action handling; live UI↔BondMarket reads once addresses land.
+- **Still open:** reliable RFV valuation oracles; automatic session-calendar wire into UI banner (policy table above); live UI↔BondMarket reads once addresses land.
 - **sPUSD CD:** `SpusdCd.sol` open live (no disabled flag). `SavingsRouter` enabled by default; owner may `setAllocation(false, ...)`.
 
 ## Policy rate signal

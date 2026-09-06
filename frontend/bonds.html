@@ -565,13 +565,15 @@
     // Live-by-default markets. Quotes/capacity/haircut stay "-" until chain reads land.
     // Relic: nothing product-critical stays gated - do not hide Bond/CD behind Unavailable.
     var MARKET = {
-      ETH:  { enabled: true, capacity: "-", oracle: "ETH/USD", haircut: "-", tag: "ETH" },
-      USDG: { enabled: true, capacity: "-", oracle: "USDG", haircut: "-", tag: "USDG" },
-      AMZN: { enabled: true, capacity: "-", oracle: "AMZN", haircut: "-", tag: "STOCKS" },
-      TSLA: { enabled: true, capacity: "-", oracle: "TSLA", haircut: "-", tag: "STOCKS" },
-      AMD:  { enabled: true, capacity: "-", oracle: "AMD", haircut: "-", tag: "STOCKS" },
-      NFLX: { enabled: true, capacity: "-", oracle: "NFLX", haircut: "-", tag: "STOCKS" },
-      PLTR: { enabled: true, capacity: "-", oracle: "PLTR", haircut: "-", tag: "STOCKS" }
+      // session: illustrative only until BondMarket address-book + calendar wire.
+      // STOCKS closed/corp-action => Fed setValuation/setEnabled — CTA stays (no gray-gate).
+      ETH:  { enabled: true, capacity: "-", oracle: "ETH/USD", haircut: "-", tag: "ETH", session: "n/a" },
+      USDG: { enabled: true, capacity: "-", oracle: "USDG", haircut: "-", tag: "USDG", session: "n/a" },
+      AMZN: { enabled: true, capacity: "-", oracle: "AMZN", haircut: "-", tag: "STOCKS", session: "open" },
+      TSLA: { enabled: true, capacity: "-", oracle: "TSLA", haircut: "-", tag: "STOCKS", session: "open" },
+      AMD:  { enabled: true, capacity: "-", oracle: "AMD", haircut: "-", tag: "STOCKS", session: "open" },
+      NFLX: { enabled: true, capacity: "-", oracle: "NFLX", haircut: "-", tag: "STOCKS", session: "open" },
+      PLTR: { enabled: true, capacity: "-", oracle: "PLTR", haircut: "-", tag: "STOCKS", session: "open" }
     };
 
     function marketFor(asset) {
@@ -596,7 +598,13 @@
         banner.setAttribute("aria-hidden", "false");
       }
       if (why) {
-        why.textContent = " Oracle: " + m.oracle + ".";
+        var sessionNote = "";
+        if (m.tag === "STOCKS") {
+          sessionNote = m.session === "closed"
+            ? " Session: valuation paused (Fed freeze / killswitch) — CTA stays; on-tx may revert."
+            : " Session: open (stub) — corp-action / close = Fed setValuation or setEnabled, not a gray tab.";
+        }
+        why.textContent = " Oracle: " + m.oracle + "." + sessionNote;
       }
 
       var cta = document.getElementById("bond-cta");

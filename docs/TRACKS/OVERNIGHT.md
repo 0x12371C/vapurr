@@ -64,3 +64,13 @@
 - **workers:** KFX **idle** (21016); PayId **idle** (9228); Bind **idle** (PID gone) - no respawn. Extra grok windows present (graphify/housekeeping) - not watch-spawned. No new organizer procs.
 - **branch:** `pack/d59912d` @ `8f3c348` (+ this slice)
 - **build slice:** honesty-scrub `docs/econ/SPUSD.md` sPUSD CD sketch - SavingsRouter live-by-default (enabled + cdBps 2500) matches contract; UI `#spusd-cd` live CTA stub documented; dropped stale "surface stays disabled". Still open P1: Oliver gV/wgV collateral, savings IPC/address-book, House Uni v4 e2e, SignPath.
+
+## 2026-09-05 21:11 ET - hourly watch
+
+- **justin:** online
+- **Programs:** DisplayVersion **1.1.9**; FileVersion **1.1.9** @ `C:\Users\jfren\AppData\Local\Programs\vapurr\vapurr.exe`; sha `5C0781603729`; **NotSigned** (signing still P0 ship blocker; Relic: unsigned OK for build/test)
+- **dist/channel:** AppData channel manifest **1.1.9** rev `ecf74db` sha256 `5c0781603729...`; `thesecretlab.app/vapurr/channel/manifest.json` still **404**
+- **workers:** KFX **idle** (21016); PayId **idle** (9228); Bind **idle** (PID gone) - no respawn. Extra grok 18356 present (graphify/housekeeping) - not watch-spawned. No new organizer procs.
+- **branch:** `pack/d59912d` (+ this slice)
+- **build slice:** BONDS stock session / corporate-action Fed ops table in `docs/econ/BONDS.md` + illustrative `session` stub on STOCKS tabs in `frontend/bonds.html` (CTA stays; close/corp-action = setValuation/setEnabled, not gray-gate). Still open P1: Oliver gV/wgV collateral, savings IPC/address-book, House Uni v4 e2e, SignPath, auto session-calendar wire.
+
