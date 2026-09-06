@@ -82,7 +82,68 @@
     ].map(function(item){ return '<button data-go="'+item[2]+'"'+(item[0]===desk?' aria-current="page"':'')+'>'+item[1]+'</button>'; }).join('')+'</div><button class="finance-wallet" data-go="vapurr://wallet">'+icon('wallet')+'Wallet</button></nav>';
   }
 
-  document.querySelectorAll('[data-finance-back]').forEach(function(el) {
+    /* Product map visual stub (ROUTING.md Cash/Equity/Bonds/House) */
+  var LANE_GO = { cash: 'vapurr://lithe', equity: 'vapurr://bonds', bonds: 'vapurr://bonds', house: 'vapurr://house' };
+  function routingHereLane() {
+    var desk = document.body.dataset.desk || '';
+    if (desk === 'savings') return 'bonds';
+    if (desk === 'cash') {
+      var active = document.body.dataset.activeDesk || '';
+      if (active === 'house' || /house/i.test(location.hash + location.search)) return 'house';
+      return 'cash';
+    }
+    return '';
+  }
+  function ensureRoutingVisual() {
+    var host = document.querySelector('[data-finance-nav]');
+    if (!host) return null;
+    var desk = document.body.dataset.desk || '';
+    if (desk !== 'cash' && desk !== 'savings') return document.getElementById('routing-visual');
+    var nav = document.getElementById('routing-visual');
+    if (!nav) {
+      nav = document.createElement('nav');
+      nav.className = 'routing-visual';
+      nav.id = 'routing-visual';
+      nav.setAttribute('aria-label', 'Product map');
+      nav.innerHTML = [
+        '<button type="button" class="rv-lane" data-lane="cash" data-go="vapurr://lithe"><b>Cash</b><em>$PUSD / sPUSD</em></button>',
+        '<span class="rv-sep" aria-hidden="true">/</span>',
+        '<button type="button" class="rv-lane" data-lane="equity" data-go="vapurr://bonds"><b>Equity</b><em>gV / wgV</em></button>',
+        '<span class="rv-sep" aria-hidden="true">/</span>',
+        '<button type="button" class="rv-lane" data-lane="bonds" data-go="vapurr://bonds"><b>Bonds</b><em>ETH / USDG / stocks</em></button>',
+        '<span class="rv-sep" aria-hidden="true">/</span>',
+        '<button type="button" class="rv-lane" data-lane="house" data-go="vapurr://house"><b>House</b><em>wgV / $PUSD</em></button>'
+      ].join('');
+      if (host.nextSibling) host.parentNode.insertBefore(nav, host.nextSibling);
+      else host.parentNode.appendChild(nav);
+    }
+    return nav;
+  }
+  function paintRoutingVisual() {
+    var nav = ensureRoutingVisual();
+    if (!nav) return;
+    var here = routingHereLane();
+    nav.querySelectorAll('.rv-lane').forEach(function (lane) {
+      var on = here && lane.dataset.lane === here;
+      if (on) lane.classList.add('is-here'); else lane.classList.remove('is-here');
+      if (!lane.getAttribute('data-go') && LANE_GO[lane.dataset.lane]) {
+        lane.setAttribute('data-go', LANE_GO[lane.dataset.lane]);
+      }
+      if (lane.tagName === 'SPAN') {
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = lane.className;
+        btn.dataset.lane = lane.dataset.lane;
+        if (lane.dataset.go) btn.dataset.go = lane.dataset.go;
+        else if (LANE_GO[lane.dataset.lane]) btn.dataset.go = LANE_GO[lane.dataset.lane];
+        btn.innerHTML = lane.innerHTML;
+        lane.parentNode.replaceChild(btn, lane);
+      }
+    });
+  }
+  paintRoutingVisual();
+
+document.querySelectorAll('[data-finance-back]').forEach(function(el) {
     el.addEventListener('click', function(){ financeBack(); });
   });
 
@@ -109,6 +170,7 @@
       if(button.dataset.go==='vapurr://'+deskName) button.setAttribute('aria-current','page');
       else button.removeAttribute('aria-current');
     });
+    if (typeof paintRoutingVisual === 'function') paintRoutingVisual();
     if(focus) {
       history.replaceState(null,'','#'+deskName);
       var chrome=document.querySelector('[data-finance-nav]');
