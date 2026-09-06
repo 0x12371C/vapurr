@@ -142,11 +142,37 @@ pub(crate) fn is_hub(p: &PoolRow) -> bool {
 
 
 pub(crate) fn prune_idx(idx: &mut PoolIdx) {
-    if idx.pools.len() <= MAX_INDEX {
-        return;
+    // House Uni v4 is not a USDG/WETH hub — pin it so MAX_INDEX prune cannot drop V/PUSD.
+    let house: Vec<PoolRow> = idx
+        .pools
+        .iter()
+        .filter(|p| super::house::is_house_pool(&p.address))
+        .cloned()
+        .collect();
+    if idx.pools.len() > MAX_INDEX {
+        idx.pools.sort_by(|a, b| {
+            let score = |p: &PoolRow| -> u8 {
+                if super::house::is_house_pool(&p.address) {
+                    2
+                } else if is_hub(p) {
+                    1
+                } else {
+                    0
+                }
+            };
+            score(b).cmp(&score(a))
+        });
+        idx.pools.truncate(MAX_INDEX);
     }
-    idx.pools.sort_by(|a, b| is_hub(b).cmp(&is_hub(a)));
-    idx.pools.truncate(MAX_INDEX);
+    for h in house {
+        if !idx
+            .pools
+            .iter()
+            .any(|p| p.address.eq_ignore_ascii_case(&h.address))
+        {
+            idx.pools.insert(0, h);
+        }
+    }
 }
 
 

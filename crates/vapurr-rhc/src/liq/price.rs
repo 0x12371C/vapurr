@@ -2,9 +2,14 @@ use super::*;
 
 
 pub(crate) fn price_pools(rpc: &Rpc, rows: &[PoolRow]) -> Vec<Value> {
+    let mut house: Vec<&PoolRow> = Vec::new();
     let mut chosen: Vec<&PoolRow> = Vec::new();
     let mut rest: Vec<&PoolRow> = Vec::new();
     for p in rows {
+        if super::house::is_house_pool(&p.address) {
+            house.push(p);
+            continue;
+        }
         let hub = p.token0.eq_ignore_ascii_case(USDG)
             || p.token1.eq_ignore_ascii_case(USDG)
             || p.token0.eq_ignore_ascii_case(WETH)
@@ -16,7 +21,12 @@ pub(crate) fn price_pools(rpc: &Rpc, rows: &[PoolRow]) -> Vec<Value> {
         }
     }
     chosen.extend(rest);
-    chosen.truncate(MAX_PRICE);
+    let room = MAX_PRICE.saturating_sub(house.len()).max(1);
+    chosen.truncate(room);
+    // House first so tape always carries V/PUSD mid; other hubs keep their own slot0 mids.
+    let mut pinned = house;
+    pinned.append(&mut chosen);
+    let chosen = pinned;
     if chosen.is_empty() {
         return Vec::new();
     }
@@ -183,6 +193,24 @@ pub(crate) fn price_pools(rpc: &Rpc, rows: &[PoolRow]) -> Vec<Value> {
         let bv = b.get("reserve_usd").and_then(|x| x.as_f64()).unwrap_or(0.0);
         bv.partial_cmp(&av).unwrap_or(std::cmp::Ordering::Equal)
     });
+    // Honest pool_mid from priced base when the graph produced a USD mid (non-house).
+    for row in out.iter_mut() {
+        if row.get("pool_mid").and_then(|x| x.as_f64()).is_some() {
+            continue;
+        }
+        let px = row
+            .pointer("/base/price_usd")
+            .and_then(|x| x.as_f64())
+            .unwrap_or(0.0);
+        if let Some(obj) = row.as_object_mut() {
+            if px > 0.0 {
+                obj.insert("pool_mid".into(), json!(px));
+                obj.insert("mid_ok".into(), json!(true));
+            } else {
+                obj.insert("mid_ok".into(), json!(false));
+            }
+        }
+    }
     // House Uni v4: chart pool mid (V USD), never Lithe oracle feed().
     super::house::apply_house_mid(&mut out);
     out.sort_by(|a, b| {

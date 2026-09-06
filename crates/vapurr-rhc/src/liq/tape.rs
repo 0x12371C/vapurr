@@ -301,7 +301,12 @@ pub(crate) fn map_pair(p: &Value) -> Option<Value> {
         .unwrap_or(0.0);
     let pool_mid = p.get("pool_mid").and_then(|x| x.as_f64());
     let mid_ok = p.get("mid_ok").and_then(|x| x.as_bool()).unwrap_or(false);
-    let px = pool_mid.unwrap_or(px);
+    // Prefer real pool mid when ok; never let a zero mid clobber a reserve/slot px.
+    let px = if mid_ok {
+        pool_mid.filter(|m| *m > 0.0).unwrap_or(px)
+    } else {
+        pool_mid.filter(|m| *m > 0.0).unwrap_or(px)
+    };
     Some(json!({
         "pool": pool,
         "token": token,

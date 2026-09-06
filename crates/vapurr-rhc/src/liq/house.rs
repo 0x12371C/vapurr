@@ -90,22 +90,63 @@ pub fn house_v_usd_mid() -> Option<f64> {
     house_mid(&rpc).and_then(|m| m.v_usd)
 }
 
-pub(crate) fn apply_house_mid(rows: &mut [Value]) {
-    let Some(i) = rows.iter().position(|p| {
+pub(crate) fn apply_house_mid(rows: &mut Vec<Value>) {
+    if crate::TESTNET_HOUSE.is_empty() {
+        return;
+    }
+    let house_addr = crate::TESTNET_HOUSE.to_ascii_lowercase();
+    let i = rows.iter().position(|p| {
         p.get("address")
             .and_then(|x| x.as_str())
             .map(is_house_pool)
             .unwrap_or(false)
-    }) else {
-        return;
+    });
+    let i = match i {
+        Some(i) => i,
+        None => {
+            // Inject so prune/price caps cannot erase the House chart pair.
+            rows.insert(
+                0,
+                json!({
+                    "address": house_addr,
+                    "name": "VAPURR / PUSD 0.30%",
+                    "dex": "uniswap v4 house",
+                    "fee": "0.30%",
+                    "base": {
+                        "address": crate::TESTNET_VAPURR.to_ascii_lowercase(),
+                        "symbol": "VAPURR",
+                        "price_usd": 0.0,
+                        "decimals": 18
+                    },
+                    "quote": {
+                        "address": crate::TESTNET_PUSD.to_ascii_lowercase(),
+                        "symbol": "PUSD",
+                        "price_usd": 1.0,
+                        "decimals": 18
+                    },
+                    "reserve_usd": 0.0,
+                    "vol1_usd": 0.0,
+                    "vol6_usd": 0.0,
+                    "vol24_usd": 0.0,
+                    "mcap_usd": 0.0,
+                    "fdv_usd": 0.0,
+                    "change1": "0",
+                    "change24": "0",
+                    "buys24": 0,
+                    "sells24": 0,
+                    "txns24": 0,
+                    "mid_ok": false,
+                }),
+            );
+            0
+        }
     };
     let rpc = Rpc::at_timeout(crate::TESTNET_RPC_HTTP, 8);
-    let Some(mid) = house_mid(&rpc) else {
-        return;
-    };
+    let mid = house_mid(&rpc);
     let v = crate::TESTNET_VAPURR.to_ascii_lowercase();
     let p = crate::TESTNET_PUSD.to_ascii_lowercase();
-    let v_px = mid.v_usd.unwrap_or(0.0);
+    let v_px = mid.as_ref().and_then(|m| m.v_usd).unwrap_or(0.0);
+    let mid_ok = mid.as_ref().and_then(|m| m.v_usd).is_some();
     let (base, quote) = (
         json!({ "address": v, "symbol": "VAPURR", "price_usd": v_px, "decimals": 18 }),
         json!({ "address": p, "symbol": "PUSD", "price_usd": 1.0, "decimals": 18 }),
@@ -116,15 +157,17 @@ pub(crate) fn apply_house_mid(rows: &mut [Value]) {
         obj.insert("name".into(), json!("VAPURR / PUSD 0.30%"));
         obj.insert("dex".into(), json!("uniswap v4 house"));
         obj.insert("fee".into(), json!("0.30%"));
-        obj.insert("pool_id".into(), json!(mid.pool_id));
+        if let Some(m) = mid.as_ref() {
+            obj.insert("pool_id".into(), json!(m.pool_id.clone()));
+            obj.insert("pool_tick".into(), json!(m.tick));
+        }
         obj.insert("pool_mid".into(), json!(v_px));
-        obj.insert("pool_tick".into(), json!(mid.tick));
-        obj.insert("mid_ok".into(), json!(mid.v_usd.is_some()));
+        obj.insert("mid_ok".into(), json!(mid_ok));
         let liq = obj
             .get("reserve_usd")
             .and_then(|x| x.as_f64())
             .unwrap_or(0.0);
-        if liq < 1.0 {
+        if liq < 1.0 && mid_ok {
             obj.insert("reserve_usd".into(), json!(1.0));
         }
     }

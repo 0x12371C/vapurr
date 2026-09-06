@@ -28,6 +28,10 @@ pub(crate) fn fill_swaps(rpc: &Rpc, rows: &mut [Value], head: u64) -> u64 {
         let Some(addr) = p.get("address").and_then(|x| x.as_str()) else {
             continue;
         };
+        // House Uni v4 prints live on HouseSwap (testnet) — do not mix into mainnet v2/v3 log crawl.
+        if super::house::is_house_pool(addr) {
+            continue;
+        }
         let a = addr.to_ascii_lowercase();
         by.insert(a.clone(), i);
         if p.get("dex").and_then(|x| x.as_str()).unwrap_or("").contains("v3") {

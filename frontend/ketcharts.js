@@ -151,7 +151,9 @@
   }
   function preferHouse(rows) {
     var i;
-    for (i = 0; i < (rows || []).length; i++) if (isHousePair(rows[i])) return rows[i];
+    for (i = 0; i < (rows || []).length; i++) {
+      if (isHousePair(rows[i]) && (n(rows[i].px) > 0 || rows[i].mid_ok)) return rows[i];
+    }
     return null;
   }
   function ensureSelected() {
@@ -514,7 +516,8 @@
       name: p.name || (sym + (qsym ? " / " + qsym : "")),
       dex: p.dex || "",
       fee: p.fee || "",
-      px: n(p.pool_mid != null ? p.pool_mid : (p.px != null ? p.px : base.price_usd)),
+      px: n((p.mid_ok && p.pool_mid != null) ? p.pool_mid : (p.pool_mid > 0 ? p.pool_mid : (p.px != null ? p.px : base.price_usd))),
+      mid_ok: !!p.mid_ok,
       chg: n(p.chg),
       vol: n(p.vol != null ? p.vol : p.vol24_usd),
       vol1: n(p.vol1),
@@ -1022,9 +1025,10 @@
     var rows = tab === "majors" ? MAJORS.map(majorRow) : visible();
     var picked = false;
     if (rows.length && (!selected || !poolInRows(selected.pool, rows))) {
-      var pick = preferHouse(rows) || rows[0];
+      var pick = preferHouse(rows);
       var i;
-      if (!isHousePair(pick)) {
+      if (!pick) {
+        pick = rows[0];
         for (i = 0; i < rows.length; i++) {
           if (n(rows[i].px) > 0 || rows[i].source === "binance") { pick = rows[i]; break; }
         }
@@ -2009,6 +2013,18 @@
         if (got) return finish(got);
         return barsFrom(order[1]).then(function (got2) {
           if (got2) return finish(got2);
+          // Real on-chain prints only — never stubBars / Lithe flats.
+          if (String(pool).length === 42) {
+            return fetchJson("/liq/api/trades/" + encodeURIComponent(pool)).then(function (r) {
+              var trades = ((r.json && r.json.trades) || []).map(function (t) {
+                return { time: n(t.time), px: n(t.px), vol: n(t.vol) };
+              }).filter(function (t) { return t.time > 0 && t.px > 0; });
+              var bars = tradesToBars(trades, nspec.ms);
+              if (bars.length > 400) bars = bars.slice(-400);
+              if (bars.length >= 2) return finish({ bars: bars, source: "prints" });
+              return finish({ bars: [], source: "empty" });
+            }).catch(function () { return finish({ bars: [], source: "empty" }); });
+          }
           return finish({ bars: [], source: "empty" });
         });
       });
@@ -2192,7 +2208,8 @@
       bars: spec.fromTrades ? 120 : 400,
       live: !!isBinance && !spec.fromTrades
     };
-    if (data) market.data = data;
+    // Honesty: real bars only. Empty/short must not become Vela data=[] (breaks setMarket for later pairs).
+    if (data && data.length >= 2) market.data = data;
 
     if (chart && chart.setMarket) {
       try {
