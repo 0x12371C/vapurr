@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8"/>
@@ -579,6 +579,27 @@
       "2026-12-24": 13 * 60
     };
 
+    // Per-ticker Fed ops advisories (halt / corp-action). Empty = none. Banner-only - never gray-gate CTAs.
+    // When address-book reads land, fill from BondMarket enabled/priceWad; until then manual Fed notes only.
+    var US_EQUITY_FED_OPS = {
+      // Example shape (kept empty for ship): "AMZN": { halt: true, note: "circuit" }
+      // "TSLA": { corpAction: "split", note: "await Fed reprice" }
+    };
+
+    function equityFedOpsNote(asset) {
+      var op = US_EQUITY_FED_OPS[asset];
+      if (!op) return "";
+      if (op.halt) {
+        return " Fed ops: halt/circuit advisory" + (op.note ? " (" + op.note + ")" : "") + " - CTA stays; on-tx may revert until Fed clears.";
+      }
+      if (op.corpAction) {
+        return " Fed ops: corp-action (" + op.corpAction + ")" + (op.note ? " - " + op.note : "") + " - no auto-reprice; Fed setEnabled/setValuation; CTA stays.";
+      }
+      if (op.note) {
+        return " Fed ops: " + op.note + " - CTA stays.";
+      }
+      return "";
+    }
     function equitySessionNow(when) {
       var d = when || new Date();
       var parts;
@@ -677,8 +698,9 @@
           sessionNote = m.session === "closed"
             ? " Session: closed (" + (m.sessionLabel || "ET calendar") + ") — valuation may be paused; CTA stays; on-tx may revert."
             : " Session: open (" + (m.sessionLabel || "regular ET") + ") — corp-action / halt = Fed setValuation or setEnabled, not a gray tab.";
+          sessionNote += equityFedOpsNote(asset);
         } else if (m.tag === "ETH" || m.tag === "USDG") {
-          // No equity calendar â€” oracle/valuation ops only (see BONDS.md ETH/USDG Fed ops).
+          // No equity calendar - oracle/valuation ops only (see BONDS.md ETH/USDG Fed ops).
           sessionNote = " Valuation: 24/7 (no session clock) â€” stale/jump = Fed setValuation or setEnabled; CTA stays.";
         }
         why.textContent = " Oracle: " + m.oracle + "." + sessionNote;

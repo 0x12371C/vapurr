@@ -24,7 +24,7 @@ That is the whole loop. No essay. No external chain brand words.
 | **Vesting ownership** | Unclaimed payout sits reserved in the bond book until unlock; claim transfers inventory |
 | **Per-asset capacity** | Credited RFV capacity must be > 0; depletes on each bond; oversized bonds revert `CAP` / `CLOSED` |
 | **Haircut** | Conservative cut on asset valuation before discount/face payout |
-| **Valuation** | Fed-set `priceWad` until reliable RFV oracles (stocks: closure / corporate-action still open) |
+| **Valuation** | Fed-set `priceWad` until reliable RFV oracles (STOCKS session/early-close/halt/corp-action Fed-ops tables live; RFV oracle eng still open) |
 | **`enabled` killswitch** | Prefer **true** with non-zero capacity on ship; `setEnabled(false)` is the safety pause |
 
 Oversized, mispriced, or inventory-short bonds **revert on-chain** — UI stays actionable and surfaces the error. Do not gray-gate tabs as Unavailable by default.
@@ -109,13 +109,13 @@ ETH and USDG tabs stay **visible and actionable** 24/7. There is no equity open/
 | **Haircut / capacity retune** | `setHaircutBps` / capacity params live — no UI gate | Quote may show thinner credit; CTA stays |
 | **USDG intake pause** | `setEnabled(false)` on USDG tag only | Tab stays; USDG remains BondAssetTag-only (never a `$PUSD`/USDG pool) |
 
-**Still open eng:** reliable RFV oracles. STOCKS UI banner uses America/New_York regular-session calendar (09:30-16:00 ET + 2026 holiday table + early-close table Jul 2 / Nov 27 / Dec 24 at 13:00 ET); Fed setValuation/setEnabled still owns corp-action/halt — CTA never gray-gated. ETH/USDG `session: n/a` shows valuation-ops copy only.
+**Still open eng:** reliable RFV oracles. STOCKS UI banner uses America/New_York regular-session calendar (09:30-16:00 ET + 2026 holiday table + early-close table Jul 2 / Nov 27 / Dec 24 at 13:00 ET) plus empty `US_EQUITY_FED_OPS` halt/corp-action advisory map (banner-only). Fed setValuation/setEnabled still owns live halt/corp-action - CTA never gray-gated. ETH/USDG `session: n/a` shows valuation-ops copy only.
 
 ## Status
 
 - **`BondMarket`:** quote + `bond`/`claim`, inventory fund, capacity, haircut; ship **enabled with sane capacity**. Killswitch via `setEnabled(false)`.
 - **UI:** `frontend/bonds.html` — live-by-default tabs; Open Bond / Open CD CTAs actionable; example labels remain on placeholder numbers. Address-book wire still open — missing market address surfaces a clear on-tx error, not a gray gate.
-- **Still open:** reliable RFV valuation oracles; live UI↔BondMarket reads once addresses land. STOCKS session banner calendar live (hours/weekend/holiday).
+- **Still open:** reliable RFV valuation oracles; live UI↔BondMarket reads once addresses land. STOCKS session/early-close/Fed-ops advisory banner live (hours/weekend/holiday/early-close + empty halt/corp map).
 - **sPUSD CD:** `SpusdCd.sol` open live (no disabled flag). `SavingsRouter` enabled by default; owner may `setAllocation(false, ...)`.
 
 ## Policy rate signal
