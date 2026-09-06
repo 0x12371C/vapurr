@@ -20,7 +20,6 @@
     enflx: "/tokens/nflx.svg",
     epltr: "/tokens/pltr.svg",
     spusd: "/tokens/pusd.svg",
-    musdg: "/tokens/usdg.png",
     eth: "/tokens/eth.svg",
     weth: "/tokens/weth.svg",
     usdg: "/tokens/usdg.png",

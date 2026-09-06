@@ -16,6 +16,8 @@ def main():
     if '--verify' in sys.argv: command.append('--verify')
     result = subprocess.run(command, capture_output=True, text=True, check=True)
     catalog = json.loads(result.stdout)
+    dollars = [t for t in catalog['tokens'] if 'USDG' in t['symbol'].upper()]
+    assert len(dollars) == 1 and dollars[0]['address'].lower() == '0x7e955252e15c84f5768b83c41a71f9eba181802f'
     OUT.mkdir(parents=True, exist_ok=True)
     (OUT/'catalog.json').write_text(json.dumps(catalog, indent=2), encoding='utf-8')
     security = (ROOT/'crates/vapurr-shell/src/security.js').read_text(encoding='utf-8').replace('__API_TOKEN__', '"test-capability"')

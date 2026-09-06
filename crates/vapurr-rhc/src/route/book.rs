@@ -30,11 +30,6 @@ impl HouseBook {
                 push_tok(&mut out,chain,address,symbol,name,decimals);
             }
         }
-        if chain == TESTNET_CHAIN_ID {
-            if let Some(address) = v["usdg"].as_str().filter(|a| valid_address(a) && !addr_eq(a,TESTNET_USDG)) {
-                push_tok(&mut out,chain,address,"mUSDG","Mock USDG (test only)",6);
-            }
-        }
         out
     }
     fn from_json(v: &Value, chain: u64) -> Option<Self> {
