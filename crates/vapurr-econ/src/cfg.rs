@@ -48,6 +48,15 @@ pub(crate) struct MarketCfg {
     pub(crate) rebase_policy: String,
     #[serde(default)]
     pub(crate) gv: String,
+    /// Liquid sPUSD vault. Empty until Relic signs a savings deploy.
+    #[serde(default)]
+    pub(crate) spusd: String,
+    /// Term CD vault. Empty until Relic signs a savings deploy.
+    #[serde(default)]
+    pub(crate) spusd_cd: String,
+    /// SavingsRouter surplus splitter. Empty until Relic signs a savings deploy.
+    #[serde(default)]
+    pub(crate) savings_router: String,
     #[serde(default)]
     pub(crate) net: String,
 }
@@ -92,6 +101,15 @@ impl MarketCfg {
         }
         if self.house.is_empty() && !rhc::TESTNET_HOUSE.is_empty() {
             self.house = rhc::TESTNET_HOUSE.into();
+        }
+        if self.spusd.is_empty() && !rhc::TESTNET_SPUSD.is_empty() {
+            self.spusd = rhc::TESTNET_SPUSD.into();
+        }
+        if self.spusd_cd.is_empty() && !rhc::TESTNET_SPUSD_CD.is_empty() {
+            self.spusd_cd = rhc::TESTNET_SPUSD_CD.into();
+        }
+        if self.savings_router.is_empty() && !rhc::TESTNET_SAVINGS_ROUTER.is_empty() {
+            self.savings_router = rhc::TESTNET_SAVINGS_ROUTER.into();
         }
         if self.swap.is_empty() || dead_swap(&self.swap) {
             if !rhc::TESTNET_SWAP.is_empty() {
@@ -156,6 +174,9 @@ mod tests {
         assert!(c.outbid.is_empty());
         assert!(c.ketlist.is_empty());
         assert!(c.usdg.is_empty());
+        assert!(c.spusd.is_empty());
+        assert!(c.spusd_cd.is_empty());
+        assert!(c.savings_router.is_empty());
         assert_eq!(rhc::TESTNET_MARKET.len(), 42);
         assert_eq!(rhc::TESTNET_HOUSE.len(), 42);
         assert_eq!(rhc::TESTNET_LOOP.len(), 42);

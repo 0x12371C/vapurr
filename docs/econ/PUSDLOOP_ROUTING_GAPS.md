@@ -30,7 +30,7 @@ Scope: `contracts/PusdLoop.sol` (Oliver), adjacent Lithe/mint paths in `PusdMark
 ## Still open (P1+)
 
 - **Oliver collateral != canon gV/V.** `PusdLoop.depositV` takes raw V only — no gV/wgV collateral type yet.
-- **Live savings deploy.** SavingsRouter / SpusdCd not in Rust address book or wallet IPC yet; Bonds/CD surface stays honest-empty until reviewed wiring.
+- **Live savings deploy.** Address-book slots + `econ-cd-open`/`NeedSavings` landed empty; fill CAs after reviewed deploy. Bonds/CD surface stays honest-empty until then.
 - **House live Uni v4.** pairConfig into HouseLp/HouseSwap, Rust bootstrap wgV, Permit2/PM e2e (`CODEX_BRAIN_PASS.md`).
 
 

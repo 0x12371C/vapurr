@@ -97,6 +97,9 @@ pub(crate) enum Msg {
         sell_v: bool,
         amt: String,
     },
+    EconCdOpen {
+        amt: String,
+    },
     RadioLayout {
         float: bool,
         corner: String,
@@ -419,6 +422,9 @@ pub(crate) fn parse_ipc(body: &str) -> Option<Msg> {
                 .unwrap_or("")
                 .into(),
         }),
+        "econ-cd-open" => Some(Msg::EconCdOpen {
+            amt: v.get("amt").and_then(|x| x.as_str()).unwrap_or("").into(),
+        }),
         "radio-layout" => Some(Msg::RadioLayout {
             float: v.get("mode").and_then(|x| x.as_str()) == Some("float"),
             corner: v
@@ -551,4 +557,13 @@ mod tests {
             _ => panic!("swap"),
         }
     }
+
+    #[test]
+    fn parses_econ_cd_open() {
+        match parse_ipc(r#"{"cmd":"econ-cd-open","amt":"25"}"#).expect("cd") {
+            Msg::EconCdOpen { amt } => assert_eq!(amt, "25"),
+            _ => panic!("cd"),
+        }
+    }
+
 }

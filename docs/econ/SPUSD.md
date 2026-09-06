@@ -91,7 +91,7 @@ it is not a deployment performed by this change.
 actionable controls, clear on-tx / not-configured error when address-book / IPC is missing.
 Do not gray-gate or hide the CD surface. Term / coupon / break-fee rows stay placeholder until a savings market is connected (`econ-cd-open`).
 
-**Still open:** SavingsRouter / SpusdCd not in Rust address book or wallet IPC yet; reviewed wiring required for live terms. Existing deployments do not pick up source-only changes automatically.
+**Address book / IPC (2026-09-06):** empty slots landed in apurr-rhc (TESTNET_SPUSD, TESTNET_SPUSD_CD, TESTNET_SAVINGS_ROUTER) + MarketCfg (spusd / spusd_cd / savings_router) and snap under savings. econ-cd-open parses and returns **NeedSavings** until Relic fills CAs after a reviewed deploy. Live open/ABI still open; existing deployments do not pick up source-only changes automatically.
 
 ## Validation
 

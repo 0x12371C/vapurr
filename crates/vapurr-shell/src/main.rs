@@ -1287,6 +1287,9 @@ fn main() {
             Event::UserEvent(Msg::HouseSwap { sell_v, amt }) => {
                 let _ = econ_tx.send(vapurr_econ::EconCmd::HouseSwap { sell_v, amt });
             }
+            Event::UserEvent(Msg::EconCdOpen { amt }) => {
+                let _ = econ_tx.send(vapurr_econ::EconCmd::CdOpen { amt });
+            }
             Event::UserEvent(Msg::OutbidSnap(snap)) => {
                 *last_outbid.borrow_mut() = snap.clone();
                 let _ = security::eval_chrome(&page.borrow(), &js_set_outbid(&snap));

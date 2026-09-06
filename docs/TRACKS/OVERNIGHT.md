@@ -104,3 +104,13 @@
 - **branch:** `pack/d59912d` (+ this slice)
 - **build slice:** frontend **routing visuals stub** - shared `#routing-visual` product map (Cash / Equity / Bonds / House) via `defi-flow.js` + `defi-flow.css` on Cash (`pusd.html` inject) and Bonds (existing markup upgraded to clickable lanes); highlight follows desk; ROUTING.md note. Still open P1: Oliver gV/wgV collateral wire, savings IPC/address-book, House Uni v4 e2e, SignPath, auto session-calendar wire.
 
+
+## 2026-09-06 01:04 ET - hourly watch
+
+- **justin:** online
+- **Programs:** DisplayVersion **1.1.9**; FileVersion **1.1.9** @ `C:\Users\jfren\AppData\Local\Programs\vapurr\vapurr.exe`; sha `5C0781603729`; **NotSigned** (signing still P0 ship blocker; Relic: unsigned OK for build/test)
+- **dist/channel:** AppData channel manifest **1.1.9** rev `ecf74db` sha256 `5c0781603729...`; `thesecretlab.app/vapurr/channel/manifest.json` still **404**; local repo `channel/manifest.json` missing
+- **workers:** KFX **idle** (21016); PayId **idle** (9228); Bind **idle** (PID gone) - no respawn. Extra grok windows present (graphify/housekeeping) - not watch-spawned. No new organizer procs.
+- **branch:** `pack/d59912d` (+ this slice)
+- **build slice:** savings address-book / IPC stub - empty `TESTNET_SPUSD` / `TESTNET_SPUSD_CD` / `TESTNET_SAVINGS_ROUTER` + `MarketCfg` fields + snap `savings`; `econ-cd-open` -> `NeedSavings` until Relic fills CAs. Tests: rhc book, cfg adopt, `cd_open_needs_savings_book`, `parses_econ_cd_open`. Still open P1: Oliver gV/wgV collateral wire, live CD open ABI after deploy, House Uni v4 e2e, SignPath, auto session-calendar wire.
+

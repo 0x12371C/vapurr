@@ -37,6 +37,12 @@ pub const TESTNET_LOOP: &str = "0x89E17eefa58B99d025145970c0FBAe7768a14521";
 pub const TESTNET_SWAP: &str = "0x6304419b838Efb12D0Cdf931dd9579c5b4084dD2";
 /// House Uniswap v4 CL (`HouseLp.sol`) $VAPURR / $PUSD. Seeded 2026-09-04.
 pub const TESTNET_HOUSE: &str = "0x667bFcAF9D3Ee809336788Bf52511D35AE9C1bf7";
+/// Liquid sPUSD vault (`SPUSD.sol`). Empty until reviewed savings deploy.
+pub const TESTNET_SPUSD: &str = "";
+/// Term CD vault (`SpusdCd.sol`). Empty until reviewed savings deploy.
+pub const TESTNET_SPUSD_CD: &str = "";
+/// Shared surplus splitter (`SavingsRouter.sol`). Empty until reviewed savings deploy.
+pub const TESTNET_SAVINGS_ROUTER: &str = "";
 /// Official testnet stock tokens. Ops liquidity — not the house book.
 pub const TESTNET_TSLA: &str = "0xC9f9c86933092BbbfFF3CCb4b105A4A94bf3Bd4E";
 pub const TESTNET_AMD: &str = "0x71178BAc73cBeb415514eB542a8995b82669778d";
@@ -237,6 +243,9 @@ mod tests {
         assert_eq!(TESTNET_LOOP.len(), 42);
         assert_eq!(TESTNET_SWAP.len(), 42);
         assert!(TESTNET_KETLIST.is_empty());
+        assert!(TESTNET_SPUSD.is_empty());
+        assert!(TESTNET_SPUSD_CD.is_empty());
+        assert!(TESTNET_SAVINGS_ROUTER.is_empty());
         assert_eq!(TESTNET_HOUSE.len(), 42);
         assert!(VAPURR_LOOP.is_empty());
         assert_eq!(TESTNET_STOCKS.len(), 5);

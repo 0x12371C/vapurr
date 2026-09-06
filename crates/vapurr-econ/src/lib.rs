@@ -68,6 +68,8 @@ pub enum EconError {
     NeedHouse,
     #[error("house swap is not on chain yet")]
     NeedSwap,
+    #[error("savings market is not on chain yet")]
+    NeedSavings,
     #[error("tx pending {0}")]
     Pending(String),
 }
@@ -123,6 +125,10 @@ pub enum EconCmd {
         amt: String,
     },
     Pulse,
+    /// Open an sPUSD CD. Fails clearly until savings CAs are set.
+    CdOpen {
+        amt: String,
+    },
 }
 
 pub struct Client {
@@ -187,6 +193,7 @@ impl Client {
             | EconCmd::HouseBootstrap
             | EconCmd::HouseSwap { .. } => "house",
             EconCmd::SwapDeploy | EconCmd::SwapReplace | EconCmd::Pulse => "pulse",
+            EconCmd::CdOpen { .. } => "cd",
         };
         match self.run_inner(cmd) {
             Ok(v) => Ok(v),
@@ -273,6 +280,7 @@ impl Client {
                 Ok(self.snapshot())
             }
             EconCmd::Pulse => self.pulse(),
+            EconCmd::CdOpen { amt } => self.cd_open(&amt),
         }
     }
 
@@ -290,6 +298,7 @@ impl Client {
         };
         v["loop"] = self.euler_snap();
         v["house"] = self.house_snap();
+        v["savings"] = self.savings_book_snap();
         v
     }
 
@@ -381,7 +390,30 @@ impl Client {
         })
     }
 
-    pub(crate) fn live_market(&self) -> Option<Address> {
+    pub(crate) fn cd_open(&mut self, amt: &str) -> Result<Value, EconError> {
+        let _ = parse_amt(amt)?;
+        if self.cfg.spusd_cd.is_empty()
+            || self.cfg.spusd.is_empty()
+            || self.cfg.savings_router.is_empty()
+        {
+            return Err(EconError::NeedSavings);
+        }
+        // Live open path lands after Relic reviews the savings deploy + IPC ABI.
+        Err(EconError::NeedSavings)
+    }
+
+    pub(crate) fn savings_book_snap(&self) -> Value {
+        json!({
+            "spusd": self.cfg.spusd,
+            "spusd_cd": self.cfg.spusd_cd,
+            "savings_router": self.cfg.savings_router,
+            "configured": !(self.cfg.spusd.is_empty()
+                || self.cfg.spusd_cd.is_empty()
+                || self.cfg.savings_router.is_empty()),
+        })
+    }
+
+        pub(crate) fn live_market(&self) -> Option<Address> {
         self.live_ca(&self.cfg.market)
     }
 
@@ -851,5 +883,21 @@ mod tests {
         assert_eq!(p.0, pusd);
         assert!(vapurr_wallet::tx::decode_word_addr(&bytes, 12).is_none());
         assert_eq!(fmt_bps(900), "9.00");
+    }
+}
+
+
+#[cfg(test)]
+mod savings_ipc_tests {
+    use super::*;
+
+    #[test]
+    fn cd_open_needs_savings_book() {
+        let mut c = Client::open();
+        c.cfg.spusd.clear();
+        c.cfg.spusd_cd.clear();
+        c.cfg.savings_router.clear();
+        let err = c.cd_open("10").unwrap_err();
+        assert!(matches!(err, EconError::NeedSavings));
     }
 }
