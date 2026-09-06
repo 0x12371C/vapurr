@@ -225,3 +225,12 @@
 - **branch:** `pack/d59912d` @ `71ae5f7` (+ this slice)
 - **build slice:** TRACKS honesty — TSL channel no longer 404; record live **1.1.13** public channel vs Programs/AppData **1.1.14** / Programs manifest **1.1.13** mismatch. Preferred Fed UI stubs (BONDS ETH/USDG/stocks, routing-visual, fee→remittance, sPUSD CD, wgV House notes) already landed prior hours; remaining P1 are Relic-gated deploys (Oliver gV/wgV collateral, live CD/BondMarket ABI, House Uni v4 e2e / remittance enable, SignPath, relay live). Still open P1: same + promote TSL channel to 1.1.14 after signed pack.
 
+
+## 2026-09-06 ~14:10 ET - hourly watch
+
+- **justin:** online
+- **Programs:** VERSION **1.1.15** (sha `F7436BF66BCC`, rev `e590ef3` @ 13:46 ET); **NotSigned** (signing still P0 ship blocker; Relic: unsigned OK for build/test)
+- **dist/channel:** AppData channel **1.1.15** (sha `f7436bf66bcc...`, same rev); **TSL channel** still **1.1.13** (rev `e590ef3`, sha `324286bf6f68...`) at `thesecretlab.app/vapurr/channel/manifest.json`; local repo `channel/manifest.json` missing; dist pack artifacts still **1.1.10**
+- **workers:** KFX **idle** (grok 21016); PayId **idle** (grok 9228); Bind **idle** (`install_id` present, PID gone) - no respawn. Extra grok windows present (graphify / bare / gh-auth) - not watch-spawned. No new organizer procs.
+- **branch:** `pack/d59912d` @ `b11f168` (+ this docs slice); left dirty `Cargo.lock` + `crates/vapurr-relay/src/fee.rs` alone (worker WIP, not this watch)
+- **build slice:** TRACKS honesty - Programs/AppData promoted to **1.1.15** (same rev `e590ef3` as prior 1.1.14, new sha/size); TSL public still **1.1.13**. Preferred Fed UI stubs already landed; remaining P1 Relic-gated (Oliver gV/wgV collateral, live CD/BondMarket ABI, House Uni v4 e2e / remittance enable, SignPath, relay live, promote TSL after signed pack). Watch-only aside from TRACKS row.
