@@ -994,10 +994,13 @@ fn main() {
                 paint_chrome();
             }
             Event::UserEvent(Msg::EarnSubmit) => {
-                let proven = vapurr_id::load_verified(&Desk::profile_dir())
-                    .as_ref()
-                    .map(vapurr_id::payout_ready)
-                    .unwrap_or(false);
+                let proven = vapurr_id::load_verified(
+                    &Desk::profile_dir(),
+                    &vapurr_id::trusted_issuers_from_env(),
+                )
+                .as_ref()
+                .map(vapurr_id::payout_ready)
+                .unwrap_or(false);
                 let _ = desk.borrow_mut().submit(proven);
                 snap_desk(&desk.borrow(), &vault);
                 paint_chrome();

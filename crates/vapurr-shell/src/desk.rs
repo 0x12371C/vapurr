@@ -682,7 +682,7 @@ impl Desk {
             .unwrap_or_else(|_| ".".into());
         let pending = format!("{:.3}", self.pending_usdg_minor as f64 / 1_000_000.0);
         let paid = format!("{:.3}", self.paid_usdg_minor as f64 / 1_000_000.0);
-        let kyc = vapurr_id::load_verified(&Self::profile_dir());
+        let kyc = vapurr_id::load_verified(&Self::profile_dir(), &vapurr_id::trusted_issuers_from_env());
         let install_id = fs::read_to_string(Self::profile_dir().join("install_id"))
             .ok()
             .map(|s| s.trim().to_string())
