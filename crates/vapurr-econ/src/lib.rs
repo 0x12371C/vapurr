@@ -70,6 +70,8 @@ pub enum EconError {
     NeedSwap,
     #[error("savings market is not on chain yet")]
     NeedSavings,
+    #[error("house fee remittance book is not on chain yet")]
+    NeedRemittance,
     #[error("tx pending {0}")]
     Pending(String),
 }
@@ -127,6 +129,10 @@ pub enum EconCmd {
     Pulse,
     /// Open an sPUSD CD. Fails clearly until savings CAs are set.
     CdOpen {
+        amt: String,
+    },
+    /// Credit/remit House protocol fees. Fails clearly until remittance CAs are set.
+    HouseFeeRemit {
         amt: String,
     },
 }
@@ -194,6 +200,7 @@ impl Client {
             | EconCmd::HouseSwap { .. } => "house",
             EconCmd::SwapDeploy | EconCmd::SwapReplace | EconCmd::Pulse => "pulse",
             EconCmd::CdOpen { .. } => "cd",
+            EconCmd::HouseFeeRemit { .. } => "house-fee",
         };
         match self.run_inner(cmd) {
             Ok(v) => Ok(v),
@@ -281,6 +288,7 @@ impl Client {
             }
             EconCmd::Pulse => self.pulse(),
             EconCmd::CdOpen { amt } => self.cd_open(&amt),
+            EconCmd::HouseFeeRemit { amt } => self.house_fee_remit(&amt),
         }
     }
 
@@ -299,6 +307,7 @@ impl Client {
         v["loop"] = self.euler_snap();
         v["house"] = self.house_snap();
         v["savings"] = self.savings_book_snap();
+        v["remittance"] = self.remittance_book_snap();
         v
     }
 
@@ -410,6 +419,32 @@ impl Client {
             "configured": !(self.cfg.spusd.is_empty()
                 || self.cfg.spusd_cd.is_empty()
                 || self.cfg.savings_router.is_empty()),
+        })
+    }
+
+    pub(crate) fn house_fee_remit(&mut self, amt: &str) -> Result<Value, EconError> {
+        let _ = parse_amt(amt)?;
+        if self.cfg.house_fee_remit.is_empty()
+            || self.cfg.house_uni_skim.is_empty()
+            || self.cfg.fee_attribution.is_empty()
+            || self.cfg.remittance_sink.is_empty()
+        {
+            return Err(EconError::NeedRemittance);
+        }
+        // Live credit/remit path lands after Relic reviews remittance deploy + IPC ABI.
+        Err(EconError::NeedRemittance)
+    }
+
+    pub(crate) fn remittance_book_snap(&self) -> Value {
+        json!({
+            "house_fee_remit": self.cfg.house_fee_remit,
+            "house_uni_skim": self.cfg.house_uni_skim,
+            "fee_attribution": self.cfg.fee_attribution,
+            "remittance_sink": self.cfg.remittance_sink,
+            "configured": !(self.cfg.house_fee_remit.is_empty()
+                || self.cfg.house_uni_skim.is_empty()
+                || self.cfg.fee_attribution.is_empty()
+                || self.cfg.remittance_sink.is_empty()),
         })
     }
 
@@ -899,5 +934,21 @@ mod savings_ipc_tests {
         c.cfg.savings_router.clear();
         let err = c.cd_open("10").unwrap_err();
         assert!(matches!(err, EconError::NeedSavings));
+    }
+}
+
+#[cfg(test)]
+mod remittance_ipc_tests {
+    use super::*;
+
+    #[test]
+    fn house_fee_remit_needs_remittance_book() {
+        let mut c = Client::open();
+        c.cfg.house_fee_remit.clear();
+        c.cfg.house_uni_skim.clear();
+        c.cfg.fee_attribution.clear();
+        c.cfg.remittance_sink.clear();
+        let err = c.house_fee_remit("10").unwrap_err();
+        assert!(matches!(err, EconError::NeedRemittance));
     }
 }

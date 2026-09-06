@@ -57,6 +57,18 @@ pub(crate) struct MarketCfg {
     /// SavingsRouter surplus splitter. Empty until Relic signs a savings deploy.
     #[serde(default)]
     pub(crate) savings_router: String,
+    /// HouseFeeRemit credit. Empty until Relic signs a remittance deploy.
+    #[serde(default)]
+    pub(crate) house_fee_remit: String,
+    /// HouseUniSkim adapter. Empty until Relic signs a remittance deploy.
+    #[serde(default)]
+    pub(crate) house_uni_skim: String,
+    /// FeeAttribution source ledger. Empty until Relic signs a remittance deploy.
+    #[serde(default)]
+    pub(crate) fee_attribution: String,
+    /// RemittanceSink runway. Empty until Relic signs a remittance deploy.
+    #[serde(default)]
+    pub(crate) remittance_sink: String,
     #[serde(default)]
     pub(crate) net: String,
 }
@@ -110,6 +122,18 @@ impl MarketCfg {
         }
         if self.savings_router.is_empty() && !rhc::TESTNET_SAVINGS_ROUTER.is_empty() {
             self.savings_router = rhc::TESTNET_SAVINGS_ROUTER.into();
+        }
+        if self.house_fee_remit.is_empty() && !rhc::TESTNET_HOUSE_FEE_REMIT.is_empty() {
+            self.house_fee_remit = rhc::TESTNET_HOUSE_FEE_REMIT.into();
+        }
+        if self.house_uni_skim.is_empty() && !rhc::TESTNET_HOUSE_UNI_SKIM.is_empty() {
+            self.house_uni_skim = rhc::TESTNET_HOUSE_UNI_SKIM.into();
+        }
+        if self.fee_attribution.is_empty() && !rhc::TESTNET_FEE_ATTRIBUTION.is_empty() {
+            self.fee_attribution = rhc::TESTNET_FEE_ATTRIBUTION.into();
+        }
+        if self.remittance_sink.is_empty() && !rhc::TESTNET_REMITTANCE_SINK.is_empty() {
+            self.remittance_sink = rhc::TESTNET_REMITTANCE_SINK.into();
         }
         if self.swap.is_empty() || dead_swap(&self.swap) {
             if !rhc::TESTNET_SWAP.is_empty() {
@@ -177,6 +201,10 @@ mod tests {
         assert!(c.spusd.is_empty());
         assert!(c.spusd_cd.is_empty());
         assert!(c.savings_router.is_empty());
+        assert!(c.house_fee_remit.is_empty());
+        assert!(c.house_uni_skim.is_empty());
+        assert!(c.fee_attribution.is_empty());
+        assert!(c.remittance_sink.is_empty());
         assert_eq!(rhc::TESTNET_MARKET.len(), 42);
         assert_eq!(rhc::TESTNET_HOUSE.len(), 42);
         assert_eq!(rhc::TESTNET_LOOP.len(), 42);

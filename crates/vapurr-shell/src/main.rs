@@ -1290,6 +1290,9 @@ fn main() {
             Event::UserEvent(Msg::EconCdOpen { amt }) => {
                 let _ = econ_tx.send(vapurr_econ::EconCmd::CdOpen { amt });
             }
+            Event::UserEvent(Msg::EconHouseFeeRemit { amt }) => {
+                let _ = econ_tx.send(vapurr_econ::EconCmd::HouseFeeRemit { amt });
+            }
             Event::UserEvent(Msg::OutbidSnap(snap)) => {
                 *last_outbid.borrow_mut() = snap.clone();
                 let _ = security::eval_chrome(&page.borrow(), &js_set_outbid(&snap));

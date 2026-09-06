@@ -100,6 +100,9 @@ pub(crate) enum Msg {
     EconCdOpen {
         amt: String,
     },
+    EconHouseFeeRemit {
+        amt: String,
+    },
     RadioLayout {
         float: bool,
         corner: String,
@@ -425,6 +428,9 @@ pub(crate) fn parse_ipc(body: &str) -> Option<Msg> {
         "econ-cd-open" => Some(Msg::EconCdOpen {
             amt: v.get("amt").and_then(|x| x.as_str()).unwrap_or("").into(),
         }),
+        "econ-house-fee-remit" => Some(Msg::EconHouseFeeRemit {
+            amt: v.get("amt").and_then(|x| x.as_str()).unwrap_or("").into(),
+        }),
         "radio-layout" => Some(Msg::RadioLayout {
             float: v.get("mode").and_then(|x| x.as_str()) == Some("float"),
             corner: v
@@ -563,6 +569,14 @@ mod tests {
         match parse_ipc(r#"{"cmd":"econ-cd-open","amt":"25"}"#).expect("cd") {
             Msg::EconCdOpen { amt } => assert_eq!(amt, "25"),
             _ => panic!("cd"),
+        }
+    }
+
+    #[test]
+    fn parses_econ_house_fee_remit() {
+        match parse_ipc(r#"{"cmd":"econ-house-fee-remit","amt":"10"}"#).expect("remit") {
+            Msg::EconHouseFeeRemit { amt } => assert_eq!(amt, "10"),
+            _ => panic!("remit"),
         }
     }
 

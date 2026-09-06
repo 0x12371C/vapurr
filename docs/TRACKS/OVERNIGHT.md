@@ -114,3 +114,12 @@
 - **branch:** `pack/d59912d` (+ this slice)
 - **build slice:** savings address-book / IPC stub - empty `TESTNET_SPUSD` / `TESTNET_SPUSD_CD` / `TESTNET_SAVINGS_ROUTER` + `MarketCfg` fields + snap `savings`; `econ-cd-open` -> `NeedSavings` until Relic fills CAs. Tests: rhc book, cfg adopt, `cd_open_needs_savings_book`, `parses_econ_cd_open`. Still open P1: Oliver gV/wgV collateral wire, live CD open ABI after deploy, House Uni v4 e2e, SignPath, auto session-calendar wire.
 
+
+## 2026-09-06 ~02:06 ET - hourly watch
+
+- **justin:** online
+- **Programs:** DisplayVersion **1.1.9**; FileVersion **1.1.9** @ `C:\Users\jfren\AppData\Local\Programs\vapurr\vapurr.exe`; sha `5C0781603729`; **NotSigned** (signing still P0 ship blocker; Relic: unsigned OK for build/test)
+- **dist/channel:** AppData channel manifest **1.1.9** rev `ecf74db` sha256 `5c0781603729...`; `thesecretlab.app/vapurr/channel/manifest.json` still **404**; local repo `channel/manifest.json` missing
+- **workers:** KFX **idle** (20776); PayId **idle** (20492); Bind **idle** (PID gone) - no respawn. No new organizer procs.
+- **branch:** `pack/d59912d` (+ this slice)
+- **build slice:** House fee remittance address-book / IPC stub - empty `TESTNET_HOUSE_FEE_REMIT` / `TESTNET_HOUSE_UNI_SKIM` / `TESTNET_FEE_ATTRIBUTION` / `TESTNET_REMITTANCE_SINK` + `MarketCfg` fields + snap `remittance`; `econ-house-fee-remit` -> `NeedRemittance` until Relic fills CAs. Tests: rhc book, cfg adopt, `house_fee_remit_needs_remittance_book`, `parses_econ_house_fee_remit`. Still open P1: Oliver gV/wgV collateral wire, live CD open ABI after deploy, House Uni v4 e2e / remittance live enable, SignPath, auto session-calendar wire.

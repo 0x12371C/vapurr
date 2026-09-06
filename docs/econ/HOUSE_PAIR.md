@@ -62,6 +62,10 @@ Uni v4 LP fees stay with LPs. Protocol carve (ops / hook / swapper skim) lands a
 - Skim adapter sketch: `contracts/HouseUniSkim.sol` â€” authorized hook/owner `skimToCredit` pulls realized $PUSD inventory into `HouseFeeRemit.creditFees` (never mints). Proofs: `HouseUniSkimTest` 4/4 (skimâ†’remit sink, stranger AUTH, zero TINY, owner path).
 - Still open: full Uni v4 `IHooks` / swapper integration + deploy + Rust bootstrap (adapter is the inventory bridge only).
 
+## Address book / IPC (2026-09-06)
+
+Client remittance book slots are empty until Relic deploys: `TESTNET_HOUSE_FEE_REMIT`, `TESTNET_HOUSE_UNI_SKIM`, `TESTNET_FEE_ATTRIBUTION`, `TESTNET_REMITTANCE_SINK` + MarketCfg fields; snap under `remittance`. `econ-house-fee-remit` returns **NeedRemittance** until those CAs are filled. Contract sketches (`HouseFeeRemit` / `HouseUniSkim` / `FeeAttribution` / RemittanceSink) exist; P1 live enable + Uni v4 e2e still open.
+
 ## Operator notes
 
 Short ops checklist: [WGV_HOUSE.md](WGV_HOUSE.md) (wrap path, green/open, do-nots).

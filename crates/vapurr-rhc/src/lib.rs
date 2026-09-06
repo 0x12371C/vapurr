@@ -43,6 +43,14 @@ pub const TESTNET_SPUSD: &str = "";
 pub const TESTNET_SPUSD_CD: &str = "";
 /// Shared surplus splitter (`SavingsRouter.sol`). Empty until reviewed savings deploy.
 pub const TESTNET_SAVINGS_ROUTER: &str = "";
+/// House fee carve credit (`HouseFeeRemit.sol`). Empty until Relic remittance deploy.
+pub const TESTNET_HOUSE_FEE_REMIT: &str = "";
+/// Uni skim adapter (`HouseUniSkim.sol`). Empty until Relic remittance deploy.
+pub const TESTNET_HOUSE_UNI_SKIM: &str = "";
+/// Source ledger (`FeeAttribution.sol`). Empty until Relic remittance deploy.
+pub const TESTNET_FEE_ATTRIBUTION: &str = "";
+/// Shared runway sink (`RemittanceSink` in Remittance.sol). Empty until Relic remittance deploy.
+pub const TESTNET_REMITTANCE_SINK: &str = "";
 /// Official testnet stock tokens. Ops liquidity — not the house book.
 pub const TESTNET_TSLA: &str = "0xC9f9c86933092BbbfFF3CCb4b105A4A94bf3Bd4E";
 pub const TESTNET_AMD: &str = "0x71178BAc73cBeb415514eB542a8995b82669778d";
@@ -246,6 +254,10 @@ mod tests {
         assert!(TESTNET_SPUSD.is_empty());
         assert!(TESTNET_SPUSD_CD.is_empty());
         assert!(TESTNET_SAVINGS_ROUTER.is_empty());
+        assert!(TESTNET_HOUSE_FEE_REMIT.is_empty());
+        assert!(TESTNET_HOUSE_UNI_SKIM.is_empty());
+        assert!(TESTNET_FEE_ATTRIBUTION.is_empty());
+        assert!(TESTNET_REMITTANCE_SINK.is_empty());
         assert_eq!(TESTNET_HOUSE.len(), 42);
         assert!(VAPURR_LOOP.is_empty());
         assert_eq!(TESTNET_STOCKS.len(), 5);
