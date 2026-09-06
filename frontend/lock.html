@@ -21,7 +21,7 @@
       font-family: var(--font-sans, var(--font), system-ui, -apple-system, Segoe UI, sans-serif);
     }
 
-    /* Void + soft lime bokeh â€” matches mock 00 */
+    /* Void + soft lime bokeh -- matches mock 00 */
     .void {
       position: fixed;
       inset: 0;
@@ -105,7 +105,7 @@
 
     /*
       Floating dark liquid-glass wallet card (mock 00 chrome).
-      Clear refractive slab â€” NO frost / milk / backdrop-blur.
+      Clear refractive slab -- NO frost / milk / backdrop-blur.
     */
     .wallet-card {
       --card-w: min(340px, calc(100vw - 28px));
@@ -226,7 +226,7 @@
       border-radius: inherit;
     }
 
-    /* Header â€” VAPURR WALLET chrome from mock 00 */
+    /* Header -- VAPURR WALLET chrome from mock 00 */
     .card-head {
       display: flex;
       align-items: center;
@@ -396,7 +396,7 @@
       box-shadow: 0 0 10px color-mix(in srgb, #ff8a80 45%, transparent);
     }
 
-    /* Keypad inside the glass card â€” dark glass keys */
+    /* Keypad inside the glass card -- dark glass keys */
     .pad {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -530,6 +530,11 @@
       line-height: 1;
       transform: translateY(-1px);
     }
+    .key.ghost.del svg {
+      display: block;
+      width: 22px;
+      height: 22px;
+    }
     .key.ghost.del:hover {
       color: color-mix(in srgb, var(--color-lime) 85%, var(--color-snow));
     }
@@ -545,7 +550,7 @@
     .key:disabled { opacity: 0.35; pointer-events: none; }
     .key.ghost.spacer:disabled { opacity: 0; }
 
-    /* Lime CTA bar â€” mock 00 ENTER SUPERAPP chrome */
+    /* Lime CTA bar -- mock 00 ENTER SUPERAPP chrome */
     .cta {
       display: flex;
       align-items: center;
@@ -669,7 +674,7 @@
       <div class="unlock-block">
         <div class="unlock-label">Unlock</div>
         <h1 id="lock-title">Enter passcode</h1>
-        <p class="hint" id="hint">4-digit PIN Â· stays on this device</p>
+        <p class="hint" id="hint">4-digit PIN. Stays on this device</p>
         <div class="dots" id="dots" aria-label="Passcode progress">
           <span class="dot" data-i="0"></span>
           <span class="dot" data-i="1"></span>
@@ -690,7 +695,7 @@
         <button class="key" type="button" data-d="9"><span>9</span></button>
         <button class="key ghost spacer" type="button" tabindex="-1" aria-hidden="true" disabled><span></span></button>
         <button class="key" type="button" data-d="0"><span>0</span></button>
-        <button class="key ghost del" type="button" id="key-del" aria-label="Delete"><span aria-hidden="true">â†</span></button>
+        <button class="key ghost del" type="button" id="key-del" aria-label="Delete"><span aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12H8"/><path d="M12 7l-5 5 5 5"/></svg></span></button>
       </div>
 
       <button class="cta" type="button" id="cta" data-state="locked" tabindex="-1">
@@ -803,7 +808,7 @@
           mode = "unlock";
           title.textContent = "Enter passcode";
           kicker.textContent = "Wallet";
-          setHint("4-digit PIN Â· stays on this device", false);
+          setHint("4-digit PIN. Stays on this device", false);
           if (ctaLabel) ctaLabel.textContent = "Unlock wallet";
         }
       }
@@ -986,7 +991,7 @@
         api.lock({ mode: m });
       })();
 
-      /* Soft cipher field behind glass â€” clear, not milky */
+      /* Soft cipher field behind glass -- clear, not milky */
       (function cryptoGlass() {
         var canvas = document.getElementById("crypto-viz");
         if (!canvas || !canvas.getContext) return;
