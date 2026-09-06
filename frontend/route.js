@@ -4,6 +4,7 @@
   var AVAX_USDC = "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E";
   var SWAP_SYMS = {
     ETH: 1, VAPURR: 1, WGV: 1, PUSD: 1, USDG: 1, WETH: 1,
+    GV: 1, SPUSD: 1, MUSDG: 1, EETH: 1, ENVDA: 1, EAMD: 1, EAMZN: 1, ETSLA: 1, ENFLX: 1, EPLTR: 1,
     NVDA: 1, TSLA: 1, HOOD: 1, PLTR: 1, MSFT: 1,
     AAPL: 1, AMZN: 1, GOOGL: 1, META: 1, AMD: 1,
     COIN: 1, SPY: 1, QQQ: 1, INTC: 1, ORCL: 1, NFLX: 1
@@ -40,6 +41,8 @@
 
   g.bootRoute = function (opts) {
     var mode = opts.mode === "bridge" ? "bridge" : "swap";
+    var seed = null;
+    try { seed = JSON.parse((byId("route-catalog") || {}).textContent || "null"); } catch (_) {}
     var tokens = [];
     var chains = [];
     var quote = null;
@@ -176,6 +179,9 @@
     }
     function applySwapList() {
       var list = swapTokens();
+      var network = byId("route-network");
+      var info = chains.filter(function (c) { return Number(c.id) === activeChain(); })[0];
+      if (network) network.textContent = info ? info.name : "Chain " + activeChain();
       tokList = list;
       var fromEl = byId("from-tok");
       var toEl = byId("to-tok");
@@ -220,9 +226,9 @@
         grow.innerHTML = "<b></b><span class='hint'></span>";
         grow.querySelector("b").textContent = prettySym(t.symbol);
         var bal = tokBal(t);
-        grow.querySelector(".hint").textContent = bal
-          ? (bal.amount + " " + prettySym(bal.symbol))
-          : (t.native ? "gas" : "");
+        grow.querySelector(".hint").textContent = t.native ? "Network gas" :
+          String(t.address).slice(0, 6) + "…" + String(t.address).slice(-4);
+        if (bal && bal.amount !== "0") grow.querySelector(".hint").textContent += " · " + bal.amount;
         b.appendChild(ico);
         b.appendChild(grow);
         b.onclick = function () {
@@ -642,7 +648,8 @@
       byId("go").onclick = doGo;
     }
     paintIdle();
-    api("tokens").then(function (d) {
+    function applyCatalog(d) {
+      if (!d || !Array.isArray(d.tokens) || !d.tokens.length || !Array.isArray(d.chains)) throw new Error("Empty token catalog");
       tokens = d.tokens || [];
       chains = d.chains || [];
       var params = new URLSearchParams(location.search);
@@ -668,9 +675,19 @@
       paintBals();
       paintIdle();
       if ((byId("amt").value || "").trim()) request();
-    }).catch(function () {
-      if (mode !== "bridge") applySwapList();
-      paintIdle("Router offline. Retry when the connection is restored.");
-    });
+    }
+    function refreshTokens() {
+      var controller = typeof AbortController !== "undefined" ? new AbortController() : null;
+      var timeout = setTimeout(function () { if (controller) controller.abort(); }, 8000);
+      return api("tokens", controller && controller.signal).then(function (d) {
+        invalidate(); applyCatalog(d);
+      }).catch(function () {
+        if (mode !== "bridge") applySwapList();
+        if (!tokens.length) paintIdle("Token catalog unavailable. Tap ↻ to retry.");
+      }).finally(function () { clearTimeout(timeout); });
+    }
+    if (seed && Array.isArray(seed.tokens) && seed.tokens.length) applyCatalog(seed);
+    if (byId("refresh-tokens")) byId("refresh-tokens").onclick = refreshTokens;
+    refreshTokens();
   };
 })(window);

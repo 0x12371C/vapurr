@@ -68,11 +68,13 @@ pub fn tokens(chain: Option<&str>) -> Value {
         "integrator": ROUTE_INTEGRATOR,
         "tokens": out,
         "chains": chains(),
+        "default_chain": TESTNET_CHAIN_ID,
     })
 }
 
 fn chains() -> Value {
     json!([
+        { "id": 46630, "name": "Robinhood Testnet", "native": "ETH", "testnet": true },
         { "id": 4663, "name": "Robinhood Chain", "native": "ETH" },
         { "id": 1, "name": "Ethereum", "native": "ETH" },
         { "id": 43114, "name": "Avalanche", "native": "AVAX" },
@@ -104,6 +106,7 @@ fn rail_tokens() -> Vec<Value> {
     push_tok(&mut out, 8453, NATIVE, "ETH", "Ether", 18);
     push_tok(&mut out, 42161, NATIVE, "ETH", "Ether", 18);
     for chain in [CHAIN_ID, TESTNET_CHAIN_ID] {
+        out.extend(HouseBook::assets(chain));
         if let Some(book) = HouseBook::load(chain) {
             out.retain(|t| t["chain_id"] != chain || !matches!(t["symbol"].as_str(), Some("VAPURR" | "PUSD")));
             push_tok(&mut out, chain, &book.vapurr, "VAPURR", "VAPURR", 18);

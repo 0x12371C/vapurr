@@ -234,3 +234,13 @@
 - **workers:** KFX **idle** (grok 21016); PayId **idle** (grok 9228); Bind **idle** (`install_id` present, PID gone) - no respawn. Extra grok windows present (graphify / bare / gh-auth) - not watch-spawned. No new organizer procs.
 - **branch:** `pack/d59912d` @ `b11f168` (+ this docs slice); left dirty `Cargo.lock` + `crates/vapurr-relay/src/fee.rs` alone (worker WIP, not this watch)
 - **build slice:** TRACKS honesty - Programs/AppData promoted to **1.1.15** (same rev `e590ef3` as prior 1.1.14, new sha/size); TSL public still **1.1.13**. Preferred Fed UI stubs already landed; remaining P1 Relic-gated (Oliver gV/wgV collateral, live CD/BondMarket ABI, House Uni v4 e2e / remittance enable, SignPath, relay live, promote TSL after signed pack). Watch-only aside from TRACKS row.
+
+## 2026-09-06 ~15:06 ET - hourly watch
+
+- **justin:** online
+- **Programs:** VERSION **1.1.15** (sha F7436BF66BCC, rev e590ef3); **NotSigned** (signing still P0 ship blocker; Relic: unsigned OK for build/test)
+- **dist/channel:** AppData channel **1.1.15** (sha 7436bf66bcc..., matches Programs); **TSL channel** still **1.1.13** (rev e590ef3, sha 324286bf6f68...) at `thesecretlab.app/vapurr/channel/manifest.json`; local repo `channel/manifest.json` missing; dist pack artifacts still **1.1.10**
+- **workers:** KFX **idle** (grok 21016); PayId **idle** (grok 9228); Bind **idle** (PID gone) - no respawn. Extra grok windows present (graphify 18356, gh-auth 15672) - not watch-spawned. No new organizer procs.
+- **branch:** `pack/d59912d` (+ this slice)
+- **build slice:** frontend **route catalog seed + stock icons** - inject public `#route-catalog` into swap/bridge without unlocking private API; network label + refresh; HouseBook assets (gV/sPUSD/e*); Simple Icons stock SVGs; `verify-route-catalog.py` PASS; `route_pages_include_public_catalog_without_unlocking_private_api` ok (gnu). Still open P1: Oliver gV/wgV collateral, live CD/BondMarket ABI, House Uni v4 e2e / remittance live enable, SignPath, promote TSL after signed pack.
+

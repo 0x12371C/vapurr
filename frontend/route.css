@@ -516,6 +516,8 @@ html[data-theme="light"] .flip { background: var(--color-void); }
   letter-spacing: 0.02em;
 }
 .go.slide-hold:disabled { opacity: 0.4; box-shadow: none; }
+.route-network { display:flex; align-items:center; gap:8px; color:var(--color-muted); font-size:12px; margin:8px 0; }
+.route-network button { border:1px solid var(--color-muted); border-radius:50%; width:28px; height:28px; background:transparent; color:var(--color-snow); cursor:pointer; font-size:18px; }
 html[data-theme="light"] .go.slide-hold {
   background: var(--color-steel);
   color: var(--color-snow);

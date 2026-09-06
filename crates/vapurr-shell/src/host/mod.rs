@@ -80,6 +80,20 @@ mod tests {
     }
 
     #[test]
+    fn route_pages_include_public_catalog_without_unlocking_private_api() {
+        for page in ["swap.html", "bridge.html"] {
+            let response = serve_get(page);
+            assert_eq!(response.status(), 200);
+            let html = std::str::from_utf8(response.body()).unwrap();
+            let raw = html.split("id=\"route-catalog\">").nth(1).unwrap().split("</script>").next().unwrap();
+            let catalog: serde_json::Value = serde_json::from_str(raw).unwrap();
+            assert!(catalog["tokens"].as_array().unwrap().iter().any(|t| t["chain_id"] == 46630 && t["symbol"] == "AMZN"));
+            assert!(catalog["chains"].as_array().unwrap().iter().any(|c| c["id"] == 46630));
+        }
+        assert_eq!(serve_get("route/api/tokens").status(), 403);
+    }
+
+    #[test]
     fn ketflix_posters_are_served() {
         use wry::http::header::CONTENT_TYPE;
         let bytes = super::read_frontend("ketflix/posters/the-ketrix.png")

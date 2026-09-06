@@ -177,6 +177,11 @@ pub fn serve(
     }
     // Prefer the live frontend folder so logo/html edits show without a rebuild.
     if let Some(bytes) = read_frontend(rel) {
+        let bytes = if matches!(rel, "swap.html" | "bridge.html") {
+            let catalog = vapurr_rhc::route::tokens_json("").replace('<', "\\u003c");
+            let seed = format!("<script type=\"application/json\" id=\"route-catalog\">{catalog}</script></head>");
+            Cow::Owned(String::from_utf8_lossy(&bytes).replacen("</head>", &seed, 1).into_bytes())
+        } else { bytes };
         let mut b = Response::builder()
             .header(CONTENT_TYPE, mime(rel))
             .header("Access-Control-Allow-Origin", crate::security::CHROME_ORIGIN)

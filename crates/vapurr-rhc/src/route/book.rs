@@ -10,6 +10,33 @@ pub(super) struct HouseBook {
 }
 
 impl HouseBook {
+    pub fn assets(chain: u64) -> Vec<Value> {
+        let Some(base) = std::env::var_os("LOCALAPPDATA") else { return Vec::new(); };
+        let path = std::path::PathBuf::from(base).join("vapurr").join("market.json");
+        let Ok(bytes) = std::fs::read(path) else { return Vec::new(); };
+        let bytes = bytes.strip_prefix(&[0xef,0xbb,0xbf]).unwrap_or(&bytes);
+        let Ok(v) = serde_json::from_slice::<Value>(bytes) else { return Vec::new(); };
+        let expected = if chain == TESTNET_CHAIN_ID { "testnet" } else if chain == CHAIN_ID { "mainnet" } else { return Vec::new(); };
+        if v["net"] != expected || v["gen"].as_u64().unwrap_or(0) < 5 { return Vec::new(); }
+        let mut out = Vec::new();
+        for (field, symbol, name, decimals) in [
+            ("gv","gV","Staked VAPURR",18), ("spusd","sPUSD","Savings PUSD",18),
+            ("eeth","eETH","Test ETH pool asset",18), ("envda","eNVDA","Test NVIDIA pool asset",18),
+            ("eamd","eAMD","Test AMD pool asset",18), ("eamzn","eAMZN","Test Amazon pool asset",18),
+            ("etsla","eTSLA","Test Tesla pool asset",18), ("enflx","eNFLX","Test Netflix pool asset",18),
+            ("epltr","ePLTR","Test Palantir pool asset",18),
+        ] {
+            if let Some(address) = v[field].as_str().filter(|a| valid_address(a)) {
+                push_tok(&mut out,chain,address,symbol,name,decimals);
+            }
+        }
+        if chain == TESTNET_CHAIN_ID {
+            if let Some(address) = v["usdg"].as_str().filter(|a| valid_address(a) && !addr_eq(a,TESTNET_USDG)) {
+                push_tok(&mut out,chain,address,"mUSDG","Mock USDG (test only)",6);
+            }
+        }
+        out
+    }
     fn from_json(v: &Value, chain: u64) -> Option<Self> {
         let book_chain = match v.get("net")?.as_str()? {
             "testnet" => TESTNET_CHAIN_ID,
