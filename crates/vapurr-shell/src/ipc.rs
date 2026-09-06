@@ -97,6 +97,10 @@ pub(crate) enum Msg {
         sell_v: bool,
         amt: String,
     },
+    EconBond {
+        asset: String,
+        amt: String,
+    },
     EconCdOpen {
         amt: String,
     },
@@ -425,6 +429,10 @@ pub(crate) fn parse_ipc(body: &str) -> Option<Msg> {
                 .unwrap_or("")
                 .into(),
         }),
+        "econ-bond" => Some(Msg::EconBond {
+            asset: v.get("asset").and_then(|x| x.as_str()).unwrap_or("").into(),
+            amt: v.get("amt").and_then(|x| x.as_str()).unwrap_or("").into(),
+        }),
         "econ-cd-open" => Some(Msg::EconCdOpen {
             amt: v.get("amt").and_then(|x| x.as_str()).unwrap_or("").into(),
         }),
@@ -561,6 +569,18 @@ mod tests {
                 assert_eq!(amt, "8");
             }
             _ => panic!("swap"),
+        }
+    }
+
+
+    #[test]
+    fn parses_econ_bond() {
+        match parse_ipc(r#"{"cmd":"econ-bond","asset":"ETH","amt":"5"}"#).expect("bond") {
+            Msg::EconBond { asset, amt } => {
+                assert_eq!(asset, "ETH");
+                assert_eq!(amt, "5");
+            }
+            _ => panic!("bond"),
         }
     }
 

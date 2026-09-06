@@ -803,7 +803,7 @@
       if (window.vapurr && typeof vapurr.send === "function") {
         vapurr.send({ cmd: "econ-bond", asset: currentAsset, amt: amt });
       }
-      // Address book wire still open - keep CTA live; surface clear on-tx error (not a gray gate).
+      // Empty bond_market book -> NeedBondMarket; keep CTA live (not a gray gate).
       surfaceTxErr(
         "bond-err",
         "Bond tx not configured",

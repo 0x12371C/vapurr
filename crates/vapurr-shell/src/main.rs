@@ -1287,6 +1287,9 @@ fn main() {
             Event::UserEvent(Msg::HouseSwap { sell_v, amt }) => {
                 let _ = econ_tx.send(vapurr_econ::EconCmd::HouseSwap { sell_v, amt });
             }
+            Event::UserEvent(Msg::EconBond { asset, amt }) => {
+                let _ = econ_tx.send(vapurr_econ::EconCmd::BondOpen { asset, amt });
+            }
             Event::UserEvent(Msg::EconCdOpen { amt }) => {
                 let _ = econ_tx.send(vapurr_econ::EconCmd::CdOpen { amt });
             }

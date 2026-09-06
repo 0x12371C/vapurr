@@ -114,7 +114,7 @@ ETH and USDG tabs stay **visible and actionable** 24/7. There is no equity open/
 ## Status
 
 - **`BondMarket`:** quote + `bond`/`claim`, inventory fund, capacity, haircut; ship **enabled with sane capacity**. Killswitch via `setEnabled(false)`.
-- **UI:** `frontend/bonds.html` — live-by-default tabs; Open Bond / Open CD CTAs actionable; example labels remain on placeholder numbers. Address-book wire still open — missing market address surfaces a clear on-tx error, not a gray gate.
+- **UI:** `frontend/bonds.html` - live-by-default tabs; Open Bond / Open CD CTAs actionable; example labels remain on placeholder numbers. Address-book / IPC: empty `TESTNET_BOND_MARKET` + `MarketCfg.bond_market` + snap `bonds`; `econ-bond` parses and returns **NeedBondMarket** until Relic fills the CA. Missing market address surfaces a clear on-tx error, not a gray gate.
 - **Still open:** reliable RFV valuation oracles; live UI↔BondMarket reads once addresses land. STOCKS session/early-close/Fed-ops advisory banner live (hours/weekend/holiday/early-close + empty halt/corp map). ETH/USDG empty `CRYPTO_BOND_FED_OPS` valuation advisory map live (banner-only).
 - **sPUSD CD:** `SpusdCd.sol` open live (no disabled flag). `SavingsRouter` enabled by default; owner may `setAllocation(false, ...)`.
 

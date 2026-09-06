@@ -38,6 +38,8 @@ pub const TESTNET_SWAP: &str = "0x6304419b838Efb12D0Cdf931dd9579c5b4084dD2";
 /// House Uniswap v4 CL (`HouseLp.sol`) $VAPURR / $PUSD. Seeded 2026-09-04.
 pub const TESTNET_HOUSE: &str = "0x667bFcAF9D3Ee809336788Bf52511D35AE9C1bf7";
 /// Liquid sPUSD vault (`SPUSD.sol`). Empty until reviewed savings deploy.
+/// BondMarket intake. Empty until Relic signs a bonds deploy.
+pub const TESTNET_BOND_MARKET: &str = "";
 pub const TESTNET_SPUSD: &str = "";
 /// Term CD vault (`SpusdCd.sol`). Empty until reviewed savings deploy.
 pub const TESTNET_SPUSD_CD: &str = "";
@@ -251,6 +253,7 @@ mod tests {
         assert_eq!(TESTNET_LOOP.len(), 42);
         assert_eq!(TESTNET_SWAP.len(), 42);
         assert!(TESTNET_KETLIST.is_empty());
+        assert!(TESTNET_BOND_MARKET.is_empty());
         assert!(TESTNET_SPUSD.is_empty());
         assert!(TESTNET_SPUSD_CD.is_empty());
         assert!(TESTNET_SAVINGS_ROUTER.is_empty());

@@ -48,6 +48,9 @@ pub(crate) struct MarketCfg {
     pub(crate) rebase_policy: String,
     #[serde(default)]
     pub(crate) gv: String,
+    /// BondMarket intake. Empty until Relic signs a bonds deploy.
+    #[serde(default)]
+    pub(crate) bond_market: String,
     /// Liquid sPUSD vault. Empty until Relic signs a savings deploy.
     #[serde(default)]
     pub(crate) spusd: String,
@@ -113,6 +116,9 @@ impl MarketCfg {
         }
         if self.house.is_empty() && !rhc::TESTNET_HOUSE.is_empty() {
             self.house = rhc::TESTNET_HOUSE.into();
+        }
+        if self.bond_market.is_empty() && !rhc::TESTNET_BOND_MARKET.is_empty() {
+            self.bond_market = rhc::TESTNET_BOND_MARKET.into();
         }
         if self.spusd.is_empty() && !rhc::TESTNET_SPUSD.is_empty() {
             self.spusd = rhc::TESTNET_SPUSD.into();
@@ -198,6 +204,7 @@ mod tests {
         assert!(c.outbid.is_empty());
         assert!(c.ketlist.is_empty());
         assert!(c.usdg.is_empty());
+        assert!(c.bond_market.is_empty());
         assert!(c.spusd.is_empty());
         assert!(c.spusd_cd.is_empty());
         assert!(c.savings_router.is_empty());

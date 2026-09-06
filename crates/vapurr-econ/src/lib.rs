@@ -68,6 +68,8 @@ pub enum EconError {
     NeedHouse,
     #[error("house swap is not on chain yet")]
     NeedSwap,
+    #[error("bond market is not on chain yet")]
+    NeedBondMarket,
     #[error("savings market is not on chain yet")]
     NeedSavings,
     #[error("house fee remittance book is not on chain yet")]
@@ -127,6 +129,11 @@ pub enum EconCmd {
         amt: String,
     },
     Pulse,
+    /// Open a BondMarket position. Fails clearly until bond CA is set.
+    BondOpen {
+        asset: String,
+        amt: String,
+    },
     /// Open an sPUSD CD. Fails clearly until savings CAs are set.
     CdOpen {
         amt: String,
@@ -199,6 +206,7 @@ impl Client {
             | EconCmd::HouseBootstrap
             | EconCmd::HouseSwap { .. } => "house",
             EconCmd::SwapDeploy | EconCmd::SwapReplace | EconCmd::Pulse => "pulse",
+            EconCmd::BondOpen { .. } => "bond",
             EconCmd::CdOpen { .. } => "cd",
             EconCmd::HouseFeeRemit { .. } => "house-fee",
         };
@@ -287,6 +295,7 @@ impl Client {
                 Ok(self.snapshot())
             }
             EconCmd::Pulse => self.pulse(),
+            EconCmd::BondOpen { asset, amt } => self.bond_open(&asset, &amt),
             EconCmd::CdOpen { amt } => self.cd_open(&amt),
             EconCmd::HouseFeeRemit { amt } => self.house_fee_remit(&amt),
         }
@@ -306,6 +315,7 @@ impl Client {
         };
         v["loop"] = self.euler_snap();
         v["house"] = self.house_snap();
+        v["bonds"] = self.bonds_book_snap();
         v["savings"] = self.savings_book_snap();
         v["remittance"] = self.remittance_book_snap();
         v
@@ -396,6 +406,24 @@ impl Client {
             "yield_reserve": "0.00",
             "min_spread": "2.00",
             "seeded": false,
+        })
+    }
+
+
+    pub(crate) fn bond_open(&mut self, asset: &str, amt: &str) -> Result<Value, EconError> {
+        let _ = asset;
+        let _ = parse_amt(amt)?;
+        if self.cfg.bond_market.is_empty() {
+            return Err(EconError::NeedBondMarket);
+        }
+        // Live open path lands after Relic reviews the BondMarket deploy + IPC ABI.
+        Err(EconError::NeedBondMarket)
+    }
+
+    pub(crate) fn bonds_book_snap(&self) -> Value {
+        json!({
+            "bond_market": self.cfg.bond_market,
+            "configured": !self.cfg.bond_market.is_empty(),
         })
     }
 
@@ -921,6 +949,20 @@ mod tests {
     }
 }
 
+
+
+#[cfg(test)]
+mod bonds_ipc_tests {
+    use super::*;
+
+    #[test]
+    fn bond_open_needs_bond_market_book() {
+        let mut c = Client::open();
+        c.cfg.bond_market.clear();
+        let err = c.bond_open("ETH", "10").unwrap_err();
+        assert!(matches!(err, EconError::NeedBondMarket));
+    }
+}
 
 #[cfg(test)]
 mod savings_ipc_tests {
