@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8"/>
@@ -564,8 +564,60 @@
 
     // Live-by-default markets. Quotes/capacity/haircut stay "-" until chain reads land.
     // Relic: nothing product-critical stays gated - do not hide Bond/CD behind Unavailable.
+        // US equity regular session (America/New_York). Banner-only — never gray-gate CTAs.
+    // Fed still owns setValuation/setEnabled for corp-action / halt; calendar is advisory.
+    var US_EQUITY_HOLIDAYS = {
+      "2026-01-01": 1, "2026-01-19": 1, "2026-02-16": 1, "2026-04-03": 1,
+      "2026-05-25": 1, "2026-06-19": 1, "2026-07-03": 1, "2026-09-07": 1,
+      "2026-11-26": 1, "2026-12-25": 1
+    };
+
+    function equitySessionNow(when) {
+      var d = when || new Date();
+      var parts;
+      try {
+        parts = new Intl.DateTimeFormat("en-US", {
+          timeZone: "America/New_York",
+          year: "numeric", month: "2-digit", day: "2-digit",
+          weekday: "short", hour: "2-digit", minute: "2-digit",
+          hourCycle: "h23"
+        }).formatToParts(d);
+      } catch (e) {
+        return { session: "closed", label: "calendar unavailable" };
+      }
+      var map = {};
+      for (var i = 0; i < parts.length; i++) map[parts[i].type] = parts[i].value;
+      var ymd = map.year + "-" + map.month + "-" + map.day;
+      var wd = map.weekday;
+      var hh = parseInt(map.hour, 10);
+      var mm = parseInt(map.minute, 10);
+      var mins = hh * 60 + mm;
+      if (US_EQUITY_HOLIDAYS[ymd]) {
+        return { session: "closed", label: "holiday (ET " + ymd + ")" };
+      }
+      if (wd === "Sat" || wd === "Sun") {
+        return { session: "closed", label: "weekend" };
+      }
+      // Regular session 09:30–16:00 ET (no early-close table yet).
+      if (mins >= (9 * 60 + 30) && mins < (16 * 60)) {
+        return { session: "open", label: "regular 09:30–16:00 ET" };
+      }
+      return { session: "closed", label: "outside regular hours" };
+    }
+
+    function applyEquitySessionCalendar() {
+      var st = equitySessionNow();
+      Object.keys(MARKET).forEach(function (k) {
+        if (MARKET[k].tag === "STOCKS") {
+          MARKET[k].session = st.session;
+          MARKET[k].sessionLabel = st.label;
+        }
+      });
+      return st;
+    }
+
     var MARKET = {
-      // session: illustrative only until BondMarket address-book + calendar wire.
+      // STOCKS session filled by applyEquitySessionCalendar(); ETH/USDG stay n/a.
       // STOCKS closed/corp-action => Fed setValuation/setEnabled — CTA stays (no gray-gate).
       ETH:  { enabled: true, capacity: "-", oracle: "ETH/USD", haircut: "-", tag: "ETH", session: "n/a" },
       USDG: { enabled: true, capacity: "-", oracle: "USDG", haircut: "-", tag: "USDG", session: "n/a" },
@@ -575,6 +627,8 @@
       NFLX: { enabled: true, capacity: "-", oracle: "NFLX", haircut: "-", tag: "STOCKS", session: "open" },
       PLTR: { enabled: true, capacity: "-", oracle: "PLTR", haircut: "-", tag: "STOCKS", session: "open" }
     };
+
+    applyEquitySessionCalendar();
 
     function marketFor(asset) {
       return MARKET[asset] || { enabled: true, capacity: "-", oracle: asset, haircut: "-", tag: asset };
@@ -600,12 +654,16 @@
       if (why) {
         var sessionNote = "";
         if (m.tag === "STOCKS") {
+          // Refresh calendar each paint so overnight/weekend flips without reload.
+          var cal = equitySessionNow();
+          m.session = cal.session;
+          m.sessionLabel = cal.label;
           sessionNote = m.session === "closed"
-            ? " Session: valuation paused (Fed freeze / killswitch) — CTA stays; on-tx may revert."
-            : " Session: open (stub) — corp-action / close = Fed setValuation or setEnabled, not a gray tab.";
+            ? " Session: closed (" + (m.sessionLabel || "ET calendar") + ") — valuation may be paused; CTA stays; on-tx may revert."
+            : " Session: open (" + (m.sessionLabel || "regular ET") + ") — corp-action / halt = Fed setValuation or setEnabled, not a gray tab.";
         } else if (m.tag === "ETH" || m.tag === "USDG") {
-          // No equity calendar — oracle/valuation ops only (see BONDS.md ETH/USDG Fed ops).
-          sessionNote = " Valuation: 24/7 (no session clock) — stale/jump = Fed setValuation or setEnabled; CTA stays.";
+          // No equity calendar â€” oracle/valuation ops only (see BONDS.md ETH/USDG Fed ops).
+          sessionNote = " Valuation: 24/7 (no session clock) â€” stale/jump = Fed setValuation or setEnabled; CTA stays.";
         }
         why.textContent = " Oracle: " + m.oracle + "." + sessionNote;
       }

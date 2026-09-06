@@ -123,3 +123,12 @@
 - **workers:** KFX **idle** (20776); PayId **idle** (20492); Bind **idle** (PID gone) - no respawn. No new organizer procs.
 - **branch:** `pack/d59912d` (+ this slice)
 - **build slice:** House fee remittance address-book / IPC stub - empty `TESTNET_HOUSE_FEE_REMIT` / `TESTNET_HOUSE_UNI_SKIM` / `TESTNET_FEE_ATTRIBUTION` / `TESTNET_REMITTANCE_SINK` + `MarketCfg` fields + snap `remittance`; `econ-house-fee-remit` -> `NeedRemittance` until Relic fills CAs. Tests: rhc book, cfg adopt, `house_fee_remit_needs_remittance_book`, `parses_econ_house_fee_remit`. Still open P1: Oliver gV/wgV collateral wire, live CD open ABI after deploy, House Uni v4 e2e / remittance live enable, SignPath, auto session-calendar wire.
+
+## 2026-09-06 ~03:11 ET - hourly watch
+
+- **justin:** online
+- **Programs:** DisplayVersion **1.1.9**; FileVersion **1.1.9** @ `C:\Users\jfren\AppData\Local\Programs\vapurr\vapurr.exe`; sha `5C0781603729`; **NotSigned** (signing still P0 ship blocker; Relic: unsigned OK for build/test)
+- **dist/channel:** AppData channel manifest **1.1.9** rev `ecf74db` sha256 `5c0781603729...`; `thesecretlab.app/vapurr/channel/manifest.json` still **404**; local repo `channel/manifest.json` missing
+- **workers:** KFX **idle** (grok 21016 / ps 20776); PayId **idle** (grok 9228 / ps 20492); Bind **idle** (PID gone) - no respawn. Extra grok/ps windows present (graphify 18356, gh-auth 15672) - not watch-spawned. No new organizer procs.
+- **branch:** `pack/d59912d` (+ this slice)
+- **build slice:** STOCKS **session-calendar UI banner** - `frontend/bonds.html` America/New_York regular hours (09:30-16:00 ET) + 2026 holiday table; banner refreshes on paint; CTAs stay live (no gray-gate). BONDS.md still-open scrubbed. Smoke: now=closed (weekend), Tue 10ET=open, Tue 17:30ET=closed, Labor Day=closed. Still open P1: Oliver gV/wgV collateral wire, live CD open ABI after deploy, House Uni v4 e2e / remittance live enable, SignPath, STOCKS early-close table.
