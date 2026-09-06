@@ -571,6 +571,13 @@
       "2026-05-25": 1, "2026-06-19": 1, "2026-07-03": 1, "2026-09-07": 1,
       "2026-11-26": 1, "2026-12-25": 1
     };
+    // NYSE early closes (1:00 PM ET). 2026: day before Independence Day observance,
+    // day after Thanksgiving, Christmas Eve. Banner-only - never gray-gate CTAs.
+    var US_EQUITY_EARLY_CLOSE = {
+      "2026-07-02": 13 * 60,
+      "2026-11-27": 13 * 60,
+      "2026-12-24": 13 * 60
+    };
 
     function equitySessionNow(when) {
       var d = when || new Date();
@@ -598,9 +605,18 @@
       if (wd === "Sat" || wd === "Sun") {
         return { session: "closed", label: "weekend" };
       }
-      // Regular session 09:30–16:00 ET (no early-close table yet).
-      if (mins >= (9 * 60 + 30) && mins < (16 * 60)) {
+      // Regular session 09:30-16:00 ET; early-close days end at 13:00 ET.
+      var closeMins = 16 * 60;
+      var early = US_EQUITY_EARLY_CLOSE[ymd];
+      if (typeof early === "number") closeMins = early;
+      if (mins >= (9 * 60 + 30) && mins < closeMins) {
+        if (typeof early === "number") {
+          return { session: "open", label: "early close 09:30-13:00 ET (" + ymd + ")" };
+        }
         return { session: "open", label: "regular 09:30–16:00 ET" };
+      }
+      if (typeof early === "number" && mins >= closeMins) {
+        return { session: "closed", label: "early close done (ET " + ymd + ")" };
       }
       return { session: "closed", label: "outside regular hours" };
     }

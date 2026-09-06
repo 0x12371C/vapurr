@@ -92,6 +92,7 @@ STOCKS tabs stay **visible and actionable** (same live-by-default rule as ETH / 
 | Event | Fed action | User-facing |
 |-------|------------|-------------|
 | **Regular session closed** (nights / weekends / holidays) | Prefer `setValuation` freeze (hold last good `priceWad`) or `setEnabled(false)` on `BondAssetTag.STOCKS` until open | CTA stays; on-tx may revert `CLOSED` / misprice — surface the error, do not invent overnight marks |
+| **Early close** (day before Independence Day observance / day after Thanksgiving / Christmas Eve; 13:00 ET) | Same as session closed after 13:00 ET | Banner shows early-close open/done; CTA stays |
 | **Halt / circuit breaker** | Same as session closed until Fed clears | Honest banner copy once address-book reads land ("valuation paused") |
 | **Corporate action** (split, merger, special dividend, ticker change) | Pause market (`setEnabled(false)`), reset wrapper/`priceWad`/`haircutBps`, then re-enable | No auto-repricing in the client; Fed publishes new terms |
 
@@ -108,13 +109,13 @@ ETH and USDG tabs stay **visible and actionable** 24/7. There is no equity open/
 | **Haircut / capacity retune** | `setHaircutBps` / capacity params live — no UI gate | Quote may show thinner credit; CTA stays |
 | **USDG intake pause** | `setEnabled(false)` on USDG tag only | Tab stays; USDG remains BondAssetTag-only (never a `$PUSD`/USDG pool) |
 
-**Still open eng:** reliable RFV oracles; STOCKS early-close table. STOCKS UI banner now uses America/New_York regular-session calendar (09:30-16:00 ET + 2026 holiday table); Fed setValuation/setEnabled still owns corp-action/halt — CTA never gray-gated. ETH/USDG `session: n/a` shows valuation-ops copy only.
+**Still open eng:** reliable RFV oracles. STOCKS UI banner uses America/New_York regular-session calendar (09:30-16:00 ET + 2026 holiday table + early-close table Jul 2 / Nov 27 / Dec 24 at 13:00 ET); Fed setValuation/setEnabled still owns corp-action/halt — CTA never gray-gated. ETH/USDG `session: n/a` shows valuation-ops copy only.
 
 ## Status
 
 - **`BondMarket`:** quote + `bond`/`claim`, inventory fund, capacity, haircut; ship **enabled with sane capacity**. Killswitch via `setEnabled(false)`.
 - **UI:** `frontend/bonds.html` — live-by-default tabs; Open Bond / Open CD CTAs actionable; example labels remain on placeholder numbers. Address-book wire still open — missing market address surfaces a clear on-tx error, not a gray gate.
-- **Still open:** reliable RFV valuation oracles; STOCKS early-close table; live UI↔BondMarket reads once addresses land. STOCKS session banner calendar live (hours/weekend/holiday).
+- **Still open:** reliable RFV valuation oracles; live UI↔BondMarket reads once addresses land. STOCKS session banner calendar live (hours/weekend/holiday).
 - **sPUSD CD:** `SpusdCd.sol` open live (no disabled flag). `SavingsRouter` enabled by default; owner may `setAllocation(false, ...)`.
 
 ## Policy rate signal
