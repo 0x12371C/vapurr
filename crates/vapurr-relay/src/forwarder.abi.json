@@ -20,7 +20,7 @@
         "type": "address"
       },
       {
-        "indexed": true,
+        "indexed": false,
         "internalType": "address",
         "name": "to",
         "type": "address"
@@ -36,12 +36,6 @@
         "internalType": "bool",
         "name": "success",
         "type": "bool"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "gasUsed",
-        "type": "uint256"
       }
     ],
     "name": "Executed",

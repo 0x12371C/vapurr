@@ -72,31 +72,57 @@ EnvironmentFile=/etc/vapurr-relay/env
 ## The honest gas-savings math
 
 `FORWARDER_PER_ITEM_OVERHEAD_GAS` in `fee.rs` is a rough EVM-opcode
-estimate (~13k gas: ecrecover + a nonce SLOAD+SSTORE + the external CALL +
-an event), not a measurement. Two things fall out of even that rough
-model, and both matter before "up to 50%" goes in front of a user:
+estimate, not a measurement, currently **12,200 gas** — down from an
+initial 13,000 after one optimization pass:
 
-1. **A batch of one is not a discount — it's a subsidy.** Forwarding a
-   single request costs *more* gas than that user just submitting it
-   themselves (21,000 saved base cost vs. ~13,000 extra forwarder
-   overhead, net loss). The mechanism only pays for itself once enough
-   requests are riding in the same batch — roughly 4+ at this estimate.
-   `fee::estimate_savings` returns a signed number for exactly this
-   reason; a negative result means treasury is covering the gap, not
-   that the user is being overcharged.
-2. **The savings percentage shrinks as the forwarded call gets more
-   expensive**, because the fixed per-batch savings is a smaller slice of
-   a bigger number. In this rough model the ceiling as batch size grows
-   is roughly `(21,000 − 13,000) / 21,000 ≈ 38%` for cheap forwarded
-   calls, and less for expensive ones — not 50%.
+- **EIP-2098 compact signatures** on the batch path (64 bytes instead of
+  65 — no padding, no wallet-visible change; the relayer compacts an
+  already-verified ordinary signature itself). ~130 gas/item.
+- **A trimmed `Executed` event** — one indexed topic instead of two,
+  `gasUsed` dropped. ~375 gas/item. (Real trade-off, not a free lunch:
+  `to` is no longer indexed, so "show me every execution to contract X"
+  gets more expensive to query; "show my history," filtered by `from`,
+  stays cheap.)
+- **A real bug fixed along the way**: the batch path's signature recovery
+  used to `require()`-revert on a malformed signature, which would have
+  taken down the *entire* batch over one bad item — exactly the failure
+  mode the per-item error handling was supposed to prevent. It's now a
+  non-reverting recovery (`_recoverCompact`, mirrors what `ecrecover`
+  itself does on failure) that fails only that one item.
 
-None of that means "up to 50%" is wrong — it means it isn't validated
-yet. Getting there needs real numbers: submit a batch on RHC testnet,
-read `gasUsed` off the `Executed` events and the outer receipt, replace
-the estimate in `fee.rs`, and redo this math with RHC's actual base-tx
-cost (which may not match mainnet Ethereum's 21,000 — that's an L1
-constant this hasn't confirmed against RHC's own gas schedule). Do that
-before it's a marketing number, not after.
+**Where the wall actually is.** ecrecover (3,000, a fixed precompile
+cost) plus the nonce SLOAD+SSTORE pair (~5,000, the actual replay-
+protection mechanism) is ~8,000 gas per item that no contract-level
+optimization removes without weakening security — and that's already
+38% of the 21,000 gas a batch saves by not paying a second base
+transaction. Two things fall out of this:
+
+1. **A batch of one is still a subsidy, not a discount.** A single
+   forwarded request costs more gas than self-submitting (21,000 saved
+   vs. ~12,200 extra overhead). The break-even batch size is smaller than
+   before, but still requires real company in the batch.
+2. **The savings ceiling barely moved.** For a 60,000-gas forwarded call,
+   break-even fee went from 91.2% to about 89.1% — real, verified with
+   tests (`fee.rs::fifty_percent_fee_is_unprofitable_even_with_perfect_target_reuse`
+   checks this explicitly, including the best-case scenario below), and
+   nowhere near a 50%-off promise.
+
+**A second lever needed no code change**: if a batch's requests
+concentrate on a handful of contracts, EIP-2929 warms a target address on
+first touch — every later call to the *same* address in that transaction
+costs ~100 gas instead of 2,600, automatically, regardless of item order.
+`fee::overhead_with_target_reuse` models this. Even at the best case (one
+shared target, every other cost otherwise unchanged), overhead only drops
+to ~9,800 — still bounded below by the same ~8,000-gas crypto floor.
+
+**Getting past that floor** needs one of: a real RHC measurement showing
+this estimate is too conservative (possible — untested), signature
+aggregation (verify one aggregate signature for a whole batch instead of
+N separate ecrecovers — a materially bigger project, since it means users
+signing with something other than the secp256k1 keys their wallets
+already produce), or pricing this as a flat fee that isn't trying to be a
+percentage rebate on a savings pool that's smaller than the discount
+being promised against it.
 
 ## Flow
 

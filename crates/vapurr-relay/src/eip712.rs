@@ -120,6 +120,42 @@ pub fn recover_and_verify(domain: &Domain, req: &ForwardRequest, sig: &[u8]) -> 
     Ok(())
 }
 
+/// Convert a standard 65-byte (r, s, v) signature to EIP-2098 compact
+/// form (64 bytes: r, then s with its top bit repurposed to hold the
+/// recovery parity — safe because canonical low-s guarantees that bit is
+/// always 0 otherwise). Matches `VapurrForwarder._recoverCompact` exactly.
+///
+/// Called only AFTER `recover_and_verify` already checked the original
+/// 65-byte signature — this never changes what was verified, only how
+/// it's encoded for the cheaper on-chain path. The user's wallet never
+/// sees or produces this format; it signs an ordinary EIP-712 signature
+/// and the relayer compacts it here before batching.
+pub fn to_compact(sig: &[u8]) -> Result<[u8; 64], RelayError> {
+    if sig.len() != 65 {
+        return Err(RelayError::BadSignature);
+    }
+    let mut v = sig[64];
+    if v >= 27 {
+        v -= 27;
+    }
+    if v > 1 {
+        return Err(RelayError::BadSignature);
+    }
+    // Canonical low-s (already enforced by the recovery path that ran
+    // before this) means byte 32 (s's most significant byte) never has
+    // its top bit set — that's the bit this reclaims for parity.
+    if sig[32] & 0x80 != 0 {
+        return Err(RelayError::BadSignature);
+    }
+    let mut out = [0u8; 64];
+    out[..32].copy_from_slice(&sig[..32]); // r
+    out[32..].copy_from_slice(&sig[32..64]); // s
+    if v == 1 {
+        out[32] |= 0x80;
+    }
+    Ok(out)
+}
+
 mod hex_bytes {
     use serde::{Deserialize, Deserializer, Serializer};
 
@@ -224,6 +260,30 @@ mod tests {
             "17f8bb7893395a948c32db97df0bd680a565dc9ea07764ff73791442e53924614649f84d9eb75e521ebef777212d4fc4b751d2c75a897f9ed41d504e3acc18e01c"
         ).unwrap();
         recover_and_verify(&domain, &req, &sig).expect("golden signature must recover to req.from");
+    }
+
+    /// Golden vectors from ethers.js's `Signature.compactSerialized`, one
+    /// per parity bit — this is the conversion `VapurrForwarder._recoverCompact`
+    /// has to agree with byte-for-byte, so both v=27 and v=28 get checked,
+    /// not just whichever one a random test wallet happens to produce.
+    #[test]
+    fn to_compact_matches_ethers_js_golden_vectors() {
+        let cases = [
+            (
+                "5dc008c003d8b71d0451251b422b25d0a02cf9208661bbe380a703b4e9ef77534c9ca8786bda36294e876b7a417983ae76d67a29bb054842630a33cf7e38e1a71b",
+                "5dc008c003d8b71d0451251b422b25d0a02cf9208661bbe380a703b4e9ef77534c9ca8786bda36294e876b7a417983ae76d67a29bb054842630a33cf7e38e1a7",
+            ),
+            (
+                "e5c26562bc983d9cdcb14ba771d6776a6e010d58daa5cf2cef2d3eaeda782f386b0a5829947be7c28f972ff7673054efeea029dd4e099abb1b955727cd658c641c",
+                "e5c26562bc983d9cdcb14ba771d6776a6e010d58daa5cf2cef2d3eaeda782f38eb0a5829947be7c28f972ff7673054efeea029dd4e099abb1b955727cd658c64",
+            ),
+        ];
+        for (full_hex, compact_hex) in cases {
+            let full = hex::decode(full_hex).unwrap();
+            let expected = hex::decode(compact_hex).unwrap();
+            let got = to_compact(&full).expect("valid 65-byte sig must compact");
+            assert_eq!(got.to_vec(), expected);
+        }
     }
 
     #[test]

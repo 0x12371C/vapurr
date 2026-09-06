@@ -33,8 +33,11 @@ pub async fn submit_batch(cfg: &Config, batch: &[PendingRequest]) -> Result<Subm
     let mut rejected = Vec::new();
 
     for p in batch {
-        match eip712::recover_and_verify(&domain, &p.req, &p.sig) {
-            Ok(()) => {
+        // Verify the ORIGINAL 65-byte signature the wallet actually
+        // produced first — compaction below only changes how an already-
+        // verified signature is encoded on-chain, never what gets checked.
+        match eip712::recover_and_verify(&domain, &p.req, &p.sig).and_then(|()| eip712::to_compact(&p.sig)) {
+            Ok(compact_sig) => {
                 accepted_ids.push(p.id.clone());
                 items.push(BatchItem {
                     from: p.req.from,
@@ -44,7 +47,7 @@ pub async fn submit_batch(cfg: &Config, batch: &[PendingRequest]) -> Result<Subm
                     nonce: p.req.nonce,
                     data: p.req.data.clone(),
                     valid_until: p.req.valid_until,
-                    sig: p.sig.clone(),
+                    sig: compact_sig.to_vec(),
                 });
             }
             Err(e) => rejected.push((p.id.clone(), e.to_string())),

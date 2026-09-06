@@ -46,7 +46,12 @@ contract VapurrForwarder {
 
     event RelayerAuthorized(address indexed relayer, bool allowed);
     event OwnerChanged(address indexed previous, address indexed next);
-    event Executed(address indexed from, address indexed to, uint256 nonce, bool success, uint256 gasUsed);
+    /// `to` is deliberately NOT indexed and `gasUsed` is dropped — "show my
+    /// history" (filter by `from`) is the query that matters; a second
+    /// indexed topic and a data word both cost real gas on every single
+    /// item. Trimmed for that reason, not for free: this is less queryable
+    /// than the original, on purpose, to buy back gas.
+    event Executed(address indexed from, address to, uint256 nonce, bool success);
 
     modifier onlyOwner() {
         require(msg.sender == owner, "OWNER");
@@ -122,6 +127,14 @@ contract VapurrForwarder {
         return _recover(digest(req), sig) == req.from;
     }
 
+    /// The N/2 canonical-low-s ceiling (secp256k1 order / 2), shared by
+    /// both recovery paths below.
+    uint256 private constant _S_CEILING = 0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0;
+
+    /// `execute()`'s path — standard 65-byte (r, s, v). Reverts on a
+    /// malformed signature, which is correct here: there is only one
+    /// request in this call, so "the signature was garbage" and "the
+    /// request is invalid" are the same outcome.
     function _recover(bytes32 h, bytes calldata sig) private pure returns (address) {
         require(sig.length == 65, "SIG_LEN");
         bytes32 r;
@@ -134,15 +147,41 @@ contract VapurrForwarder {
         }
         if (v < 27) v += 27;
         require(v == 27 || v == 28, "SIG_V");
-        // Malleability guard: only accept the canonical low-s form.
-        require(
-            uint256(s) <= 0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0,
-            "SIG_S"
-        );
+        require(uint256(s) <= _S_CEILING, "SIG_S");
         address signer = ecrecover(h, v, r, s);
         require(signer != address(0), "SIG_BAD");
         return signer;
     }
+
+    /// `executeBatch()`'s path — EIP-2098 compact (64-byte: r, then s with
+    /// its recovery bit packed into s's otherwise-always-zero top bit,
+    /// which canonical low-s guarantees is free). 32 bytes of calldata
+    /// saved per item over the standard encoding — no wallet-visible
+    /// change, since the relayer converts the user's ordinary 65-byte
+    /// wallet signature to this form itself before batching (see
+    /// `crates/vapurr-relay/src/eip712.rs::to_compact`).
+    ///
+    /// NEVER reverts on malformed input — returns `address(0)` instead,
+    /// same as `ecrecover` itself does on failure. `execute()`'s `_recover`
+    /// can afford to revert because there is nothing else in that call to
+    /// protect; here, one item's garbage signature must fail ONLY that
+    /// item (see `_runFields`), not the whole batch everyone else is
+    /// riding in.
+    function _recoverCompact(bytes32 h, bytes calldata sig) private pure returns (address) {
+        if (sig.length != 64) return address(0);
+        bytes32 r;
+        bytes32 vs;
+        assembly {
+            r := calldataload(sig.offset)
+            vs := calldataload(add(sig.offset, 32))
+        }
+        uint8 v = uint8((uint256(vs) >> 255) + 27);
+        bytes32 s = bytes32(uint256(vs) & _S_CEILING_MASK);
+        if (uint256(s) > _S_CEILING) return address(0);
+        return ecrecover(h, v, r, s);
+    }
+
+    uint256 private constant _S_CEILING_MASK = 0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
 
     // ─── Execution ────────────────────────────────────────────────────────
 
@@ -153,7 +192,6 @@ contract VapurrForwarder {
 
         nonces[req.from] = req.nonce + 1;
 
-        uint256 gasBefore = gasleft();
         // ERC-2771 convention: append the true sender so a `data`-recipient
         // contract that trusts this forwarder can recover it via its own
         // `_msgSender()` override. A recipient that does not know about
@@ -161,9 +199,8 @@ contract VapurrForwarder {
         // safe as long as it does not gate on msg.sender for anything the
         // forwarder itself should not be trusted to do on a user's behalf.
         (success, ret) = req.to.call{value: req.value, gas: req.gas}(abi.encodePacked(req.data, req.from));
-        uint256 gasUsed = gasBefore - gasleft();
 
-        emit Executed(req.from, req.to, req.nonce, success, gasUsed);
+        emit Executed(req.from, req.to, req.nonce, success);
     }
 
     function execute(ForwardRequest calldata req, bytes calldata sig)
@@ -224,25 +261,27 @@ contract VapurrForwarder {
         );
 
         if (block.timestamp > validUntil) {
-            emit Executed(from, to, nonce, false, 0);
+            emit Executed(from, to, nonce, false);
             return (false, bytes("EXPIRED"));
         }
         if (nonces[from] != nonce) {
-            emit Executed(from, to, nonce, false, 0);
+            emit Executed(from, to, nonce, false);
             return (false, bytes("NONCE"));
         }
-        address signer = _recover(h, sig);
+        // Non-reverting recovery: a malformed signature here is a per-item
+        // failure (signer resolves to address(0), which never equals a
+        // real `from`), never a revert that would take the rest of the
+        // batch down with it.
+        address signer = _recoverCompact(h, sig);
         if (signer != from) {
-            emit Executed(from, to, nonce, false, 0);
+            emit Executed(from, to, nonce, false);
             return (false, bytes("SIG"));
         }
 
         nonces[from] = nonce + 1;
 
-        uint256 gasBefore = gasleft();
         (success, ret) = to.call{value: value, gas: gas}(abi.encodePacked(data, from));
-        uint256 gasUsed = gasBefore - gasleft();
-        emit Executed(from, to, nonce, success, gasUsed);
+        emit Executed(from, to, nonce, success);
     }
 
     receive() external payable {}
