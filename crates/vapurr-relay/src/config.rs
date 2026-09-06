@@ -75,7 +75,14 @@ impl Config {
         let batch_max_wait_ms: u64 = env_or("VAPURR_RELAY_BATCH_MAX_WAIT_MS", "2000")
             .parse()
             .map_err(|_| RelayError::Config("VAPURR_RELAY_BATCH_MAX_WAIT_MS must be a number".into()))?;
-        let user_fee_bps: u64 = env_or("VAPURR_RELAY_USER_FEE_BPS", "5000")
+        // 9500 (95% of solo cost), not 5000: at fee.rs's own overhead
+        // estimate, a 50% discount is priced ABOVE the real savings pool
+        // (~38% at best) and loses money on every batch, regardless of
+        // volume — see fee.rs's module doc and docs/RELAY.md. 9500 clears
+        // break-even across a wide range of call sizes at that estimate;
+        // it is still a guess pending a real RHC gas measurement, not a
+        // number to leave unexamined either.
+        let user_fee_bps: u64 = env_or("VAPURR_RELAY_USER_FEE_BPS", "9500")
             .parse()
             .map_err(|_| RelayError::Config("VAPURR_RELAY_USER_FEE_BPS must be a number".into()))?;
         let priority_fee_wei: u128 = env_or("VAPURR_RELAY_PRIORITY_FEE_WEI", "1000000000")

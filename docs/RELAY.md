@@ -125,7 +125,7 @@ before it's a marketing number, not after.
 | `VAPURR_RELAY_BIND_ADDR` | Default `127.0.0.1:8792`. |
 | `VAPURR_RELAY_BATCH_MAX_SIZE` | Default 32. |
 | `VAPURR_RELAY_BATCH_MAX_WAIT_MS` | Default 2000 — how long a lone request waits hoping for company before it ships anyway. |
-| `VAPURR_RELAY_USER_FEE_BPS` | Default 5000 (50% of solo cost) — see the honesty note above before trusting this number externally. |
+| `VAPURR_RELAY_USER_FEE_BPS` | Default 9500 (95% of solo cost) — deliberately *not* 5000. At this file's own overhead estimate, a 50% discount is priced above the real savings pool (~38% at best) and loses money on every batch; 9500 clears break-even across a wide range of call sizes at that estimate. Still a guess pending a real RHC measurement — see the math below before moving this number either direction. |
 | `VAPURR_RELAY_PRIORITY_FEE_WEI` | Default 1 gwei. |
 | `VAPURR_RELAY_LOCAL=1` | Defaults RPC/chain to RHC testnet for local runs. |
 
