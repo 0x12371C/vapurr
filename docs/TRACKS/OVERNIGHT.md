@@ -151,3 +151,11 @@
 - **branch:** `pack/d59912d` (+ this slice)
 - **build slice:** STOCKS **halt/corp-action Fed-ops advisory** - empty `US_EQUITY_FED_OPS` map + `equityFedOpsNote` banner wire in `frontend/bonds.html` (banner-only, never gray-gate); BONDS.md valuation/still-open scrubbed. Smoke: weekend/early-close + halt/corp note PASS. Still open P1: Oliver gV/wgV collateral wire, live CD open ABI after deploy, House Uni v4 e2e / remittance live enable, SignPath.
 
+## 2026-09-06 ~06:15 ET - hourly watch
+
+- **justin:** online
+- **Programs:** DisplayVersion **1.1.9**; FileVersion **1.1.9** @ `C:\Users\jfren\AppData\Local\Programs\vapurr\vapurr.exe`; sha `5C0781603729`; **NotSigned** (signing still P0 ship blocker; Relic: unsigned OK for build/test)
+- **dist/channel:** AppData channel manifest **1.1.9** rev `ecf74db` sha256 `5c0781603729...`; `thesecretlab.app/vapurr/channel/manifest.json` still **404**; local repo `channel/manifest.json` missing
+- **workers:** KFX **idle** (grok 21016 / ps 20776); PayId **idle** (grok 9228 / ps 20492); Bind **idle** (PID gone) - no respawn. Extra grok windows present (graphify etc) - not watch-spawned. No new organizer procs.
+- **branch:** `pack/d59912d` (+ this slice)
+- **build slice:** ETH/USDG **valuation Fed-ops advisory** - empty `CRYPTO_BOND_FED_OPS` + `valuationFedOpsNote` in `frontend/bonds.html` (stale/jump/intakePause; banner-only, never gray-gate); BONDS.md still-open scrubbed. Smoke: empty/stale/jump/intake PASS. Still open P1: Oliver gV/wgV collateral wire, live CD open ABI after deploy, House Uni v4 e2e / remittance live enable, SignPath.
