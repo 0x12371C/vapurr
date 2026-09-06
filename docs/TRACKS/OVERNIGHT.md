@@ -244,3 +244,13 @@
 - **branch:** `pack/d59912d` (+ this slice)
 - **build slice:** frontend **route catalog seed + stock icons** - inject public `#route-catalog` into swap/bridge without unlocking private API; network label + refresh; HouseBook assets (gV/sPUSD/e*); Simple Icons stock SVGs; `verify-route-catalog.py` PASS; `route_pages_include_public_catalog_without_unlocking_private_api` ok (gnu). Still open P1: Oliver gV/wgV collateral, live CD/BondMarket ABI, House Uni v4 e2e / remittance live enable, SignPath, promote TSL after signed pack.
 
+
+## 2026-09-06 ~16:09 ET - hourly watch
+
+- **justin:** online
+- **Programs:** VERSION **1.1.15** (sha F7436BF66BCC, rev e590ef3); **NotSigned** (signing still P0 ship blocker; Relic: unsigned OK for build/test)
+- **dist/channel:** AppData channel **1.1.15** (matches Programs); **TSL channel** still **1.1.13** (rev e590ef3, sha 324286bf6f68...) at `thesecretlab.app/vapurr/channel/manifest.json`; local repo `channel/manifest.json` missing; dist pack artifacts still **1.1.10**; Cargo.toml still **1.1.10**
+- **workers:** KFX **idle** (grok 21016); PayId **idle** (grok 9228); Bind **idle** (install_id present, PID gone) - no respawn. Extra grok windows present (graphify / housekeeping / bare) - not watch-spawned. No new organizer procs.
+- **branch:** `pack/d59912d` (+ this slice)
+- **build slice:** honesty-scrub **SNAPSHOT.md** off stale 1.1.4 board + rebate kickback lore; STATUS note for Programs/AppData **1.1.15** vs TSL **1.1.13** / dist **1.1.10**. Preferred Fed UI stubs already landed; remaining P1 Relic-gated (Oliver gV/wgV collateral, live CD/BondMarket ABI, House Uni v4 e2e / remittance enable, SignPath, promote TSL after signed pack).
+

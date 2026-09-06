@@ -1,4 +1,16 @@
-# vapurr status
+﻿# vapurr status
+
+## 2026-09-06 ~16:09 ET — SNAPSHOT honesty + channel skew
+
+Refreshed `docs/SNAPSHOT.md` off stale 2026-09-04 / **1.1.4** board:
+
+- **Programs + AppData channel = 1.1.15** (rev `e590ef3`, sha `f7436bf66bcc...`, **NotSigned**).
+- **TSL public channel still 1.1.13** (same rev, different sha/size).
+- Cargo / `dist/` pack artifacts still **1.1.10**; local repo `channel/manifest.json` missing.
+- Dropped SNAPSHOT kickback lore: synthetic VAPURR rebates / 0.03% display rebate are **not** current (matches swap/bridge repair above). House fee stays 0.30% when configured; no user rebate until executed payout.
+- Fed UI stubs (BONDS session, sPUSD CD, fee→remittance, wgV House, routing-visual, route-catalog) treated as landed; live CAs / SignPath / TSL promote remain Relic-gated.
+
+No pack this hour. Signing remains P0 ship blocker.
 
 ## 2026-09-06 — Swap / bridge execution repair
 
