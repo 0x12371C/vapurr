@@ -7,6 +7,9 @@ pub(crate) const GEN: u32 = 5;
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub(crate) struct MarketCfg {
+    /// Preserve deployment fields owned by other desks (including wgV).
+    #[serde(flatten)]
+    pub(crate) extra: std::collections::BTreeMap<String, serde_json::Value>,
     #[serde(default)]
     pub(crate) gen: u32,
     #[serde(default)]
@@ -150,7 +153,8 @@ impl MarketCfg {
 
     pub(crate) fn load() -> Self {
         let mut c = if let Ok(bytes) = std::fs::read(Self::path()) {
-            if let Ok(c) = serde_json::from_slice::<MarketCfg>(&bytes) {
+            let bytes = bytes.strip_prefix(&[0xef, 0xbb, 0xbf]).unwrap_or(&bytes);
+            if let Ok(c) = serde_json::from_slice::<MarketCfg>(bytes) {
                 if c.gen >= GEN {
                     c
                 } else {
@@ -188,6 +192,16 @@ impl MarketCfg {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn deployment_extensions_survive_roundtrip() {
+        let input = r#"{"gen":5,"net":"testnet","market":"active","wgv":"wrapped","bonds":"launched-bonds"}"#;
+        let cfg: MarketCfg = serde_json::from_str(input).unwrap();
+        let saved = serde_json::to_value(cfg).unwrap();
+        assert_eq!(saved["wgv"], "wrapped");
+        assert_eq!(saved["bonds"], "launched-bonds");
+        assert_eq!(saved["market"], "active");
+    }
 
     #[test]
     fn empty_testnet_adopts_gen4_book() {

@@ -98,7 +98,7 @@ html[data-theme=light] .finance-brand img{filter:brightness(.55)}
 }
 
 /* Product map lanes (Cash / Equity / Bonds / House) — shared visual stub */
-.routing-visual{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 10px;margin:10px 0 18px;padding:10px 12px;border:1px solid color-mix(in srgb,var(--color-ink,currentColor) 12%,transparent);border-radius:14px;background:color-mix(in srgb,var(--color-panel,#12141a) 80%,transparent)}
+.routing-visual{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 10px;margin:10px 0 18px;padding:10px 12px;border:1px solid color-mix(in srgb,var(--color-snow) 12%,transparent);border-radius:14px;background:color-mix(in srgb,var(--color-steel) 80%,transparent)}
 .routing-visual .rv-lane{display:flex;flex-direction:column;gap:2px;min-width:4.5rem;background:none;border:0;padding:0;color:inherit;text-align:left;cursor:pointer;font:inherit}
 .routing-visual .rv-lane:focus-visible{outline:2px solid var(--color-accent,#9fefb0);outline-offset:3px;border-radius:8px}
 .routing-visual .rv-lane b{font-size:12px;letter-spacing:0.04em;text-transform:uppercase}

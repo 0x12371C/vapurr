@@ -27,7 +27,7 @@ If you add a `vapurr://` id, add a row here in the same change.
 | `zzzmail` | `zmail`, `mail` | `zzzmail.html` | glass inbox. `.hood` names (ENS-shaped). Seal â†’ CID pin â†’ 0.25Â¢ gasless postage. `zmail.html` is a redirect stub |
 | `id` | | `id.html` | zer0ID. Start KYC opens https://www.thesecretlab.app/kyc. Does not fake Proven. Not Shield |
 | `defi` | `finance` | `defi.html` | House DeFi hub â€” Swap, Bridge, PUSD, vapurrbid, PNS, Liquidity. Rail button. |
-| `swap` | | `swap.html` | Simulate, then sign and broadcast. MAX, balances, impact, `$VAPURR` refund |
+| `swap` | | `swap.html` | Simulate, review, sign. Deployed wgV/PUSD House, exact approvals, expiring native quote IDs. No synthetic rebate. |
 | `stake` | `pusd`, `vapurr`, `mint`, `lithe`, `euler`, `loop`, `house`, `lp` | `pusd.html` | $VAPURR / $PUSD desk. **Lithe** is 9% on $PUSD. Vault `?tab=euler`. House Uni v4 CL `?tab=house`. CAs in `vapurr-rhc`. |
 | `vapurrbid` | `outbid`, `bid`, `board` | `vapurrbid.html` | $PUSD pay-to-rank. `outbid.html` redirects here |
 | `pns` | `hood`, `names` | `pns.html` | Purr Name Service. TLD `.hood`. On-chain registry |
@@ -63,7 +63,7 @@ Served by `crates/vapurr-shell/src/host/` (not static files):
 | `/liq/api` | same snapshot, for swap/fomo to pull |
 | `/liq/api/tape` | full RHC pair list for Ketcharts (CACHE, not Scan's capped view) |
 | `/liq/api/trades/{pool}` | recent Swap logs for one pool. Cache + background RPC — not on the protocol thread |
-| `/route/api/quote` | `vapurr-rhc::route` — scored routers, required sim, full route + `$VAPURR` refund, 25 bps buy/burn remainder → `$PUSD` |
+| `/route/api/quote` | `vapurr-rhc::route` — quoted output minus gas, source simulation, deployed House pair verification, single-use 45-second execution IDs. No synthetic rebate or fee-conversion payout. |
 | `/route/api/tokens` | `vapurr-rhc::route` |
 | `/zzzmail/api/quote` | `vapurr-zmail` â€” 0.25Â¢ $PUSD/$VAPURR, gasless |
 | `/zzzmail/api/me` | mailcard |

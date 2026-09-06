@@ -1,5 +1,17 @@
 # vapurr status
 
+## 2026-09-06 — Swap / bridge execution repair
+
+The router now reads the deployed gen-5 book, accepts its UTF-8 BOM, and verifies House's wgV/PUSD addresses and actual pool fee on-chain. Read-only RPC confirmed the configured swapper and 3000 ppm (0.30%) fee. Wallet and economics config readers also accept the BOM; saving economics config preserves additional deployment fields.
+
+Removed synthetic VAPURR rebates, rebate-based rankings, and the unexecuted 25-bps conversion claim. House simulates actual wallet state and the final minimum-output calldata; approvals use the exact input amount. Execution requires an expiring, single-use native route ID bound to wallet, chain, target, calldata and value. The UI immediately invalidates edited quotes and refuses stale responses or changed reviews.
+
+Provider routes must match the requested assets, amounts, chains, recipient and minimum receipt. Only a single executable signed step is supported today; bridge source confirmation is explicitly distinguished from destination settlement. Provider calldata decoding and destination settlement tracking remain further work. No wallet transactions or contract deployments were performed for this repair. Details: [ROUTING.md](econ/ROUTING.md).
+
+Validation: economics/router/wallet library suites passed (144 tests), shell IPC tests passed (9), and the added decimal/hex native-value regression passed. The final routing-only run passed 22 tests; the ignored deployed-House RPC check was run explicitly and passed. `verify-route-safety.py` covers stale replies, changed reviews, native route IDs and wrong-chain receipts. `verify-defi-ui.py` covers all five finance surfaces at three widths in both themes and tests deliberate hold confirmation. Screenshots inspected for desktop swap and mobile bridge; light-theme route controls and the shared economic map use theme tokens. Graphify was refreshed and branded.
+
+Packed **1.1.10** at **2026-09-06 15:02:14 UTC** from working tree based on `915cc6f`. Verified exact embedded bytes for route.js, route.css, swap.html, bridge.html, defi-flow.css and sign.js; ZIP CRC passed and its installer matches the setup executable and local update channel. SHA-256: `7aaa0a16b8d4461d87d6673b32b416740353aea99fc5a9be9cca7939873d6680`. Artifacts: `dist/vapurr-setup.exe` and `dist/vapurr-1.1.10-windows-x64.zip`. Signing certificate unset: local package unsigned.
+
 ## 2026-09-05 — Swap/bridge finance chrome + back stack
 
 `frontend/swap.html` and `frontend/bridge.html` now share `defi-flow` chrome (nav + Back). Finance nav includes Swap/Bridge on every desk. In-page Back walks a session stack of prior finance desks (Oliver/House tabs preserved) and falls back to `vapurr://defi`. Existing `route.js` quote/sign path is unchanged; offline smoke still cannot invent a quote. Earn/wallet stay on their own surfaces.

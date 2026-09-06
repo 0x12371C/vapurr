@@ -2,6 +2,16 @@
 
 Relic lock 2026-09-05. Living truth for Fed/branches split.
 
+## Swap / bridge execution — 2026-09-06
+
+The router reads the deployed `market.json` House book (including PowerShell UTF-8 BOM), verifies the swapper's `wgV()`, `pusd()` and `fee()` getters, and presents wgV/PUSD. It does not substitute legacy V/PUSD addresses. On 2026-09-06, read-only RPC verified swapper `0xBBec0a2Db7fDabf22cB09E10914Ac8952260D52b`, equity `0x0599C4C4d24Bc4bbbaAdeC5CfD783Fc1cB09964a`, cash `0x78AD4C4Fd6007051f5321c3850BCE762f5FefBcd`, and fee 3000 ppm (0.30%).
+
+No current swap transaction contains a VAPURR rebate or the previously advertised 25-bps buy/burn conversion. Refund amounts and scoring contributions are zero; only the actual route and provider/pool fees are shown. A future rebate needs an executed payout before UI or rankings count it.
+
+Wallet execution requires a native-issued ID bound to sender, chain, destination, calldata and value. IDs expire after 45 seconds, are single-use, and are checked again immediately before signing. The UI invalidates on input/wallet changes, rejects stale responses and changed reviews, and requests exact-input ERC20 allowances. House minimum output is 0.50% below simulated output; the final calldata must pass both call and gas simulation without balance overrides.
+
+LI.FI metadata must match requested chains, token addresses/decimals, recipient, amount and a nonzero minimum. Step transaction refreshes cannot silently replace the quote. The executor supports one signed route step; routes requiring additional signatures need a sequential executor. A successful source receipt does not prove destination bridge settlement. These checks do not independently decode every provider's calldata or audit their contracts. See LI.FI's [manual execution requirements](https://docs.li.fi/sdk/execute-routes) and [transaction fields](https://docs.li.fi/agents/workflows/execution).
+
 **Earnings / NERDOMICS:** `EARNINGS_ENGINE.md` - who pays whom, BrowserStream 50k **global** budget, flat-V solvency, Oliver ~6x banking leverage, `FeeAttribution` source ledger (House/Lithe/Oliver) -> RemittanceSink -> sPUSD.
 
 ## Institutional map

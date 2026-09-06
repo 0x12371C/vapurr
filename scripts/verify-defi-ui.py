@@ -63,7 +63,10 @@ def main():
                 assert not page.evaluate("window.__messages.some(m=>m.cmd==='econ-mint')")
                 # Accept only into the mocked IPC sink, then complete the fake receipt.
                 page.locator('#go').click()
+                # Confirmation now requires a deliberate hold; a tap must not sign.
                 page.locator('#vs-go').click()
+                assert not page.evaluate("window.__messages.some(m=>m.cmd==='econ-mint')")
+                page.locator('#vs-go').press('Space', delay=650)
                 page.wait_for_function("window.__messages.some(m=>m.cmd==='econ-mint' && m.amt==='10')")
                 page.evaluate('() => { vapurr.finishTx(true,{tx:"0xui_test",tx_status:"confirmed"}); }')
                 page.locator('#vs-no').click()

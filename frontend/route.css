@@ -516,6 +516,10 @@ html[data-theme="light"] .flip { background: var(--color-void); }
   letter-spacing: 0.02em;
 }
 .go.slide-hold:disabled { opacity: 0.4; box-shadow: none; }
+html[data-theme="light"] .go.slide-hold {
+  background: var(--color-steel);
+  color: var(--color-snow);
+}
 @media (prefers-reduced-motion: reduce) {
   .sim-board[data-state="wait"] .pip,
   .tnode.wait .dot,

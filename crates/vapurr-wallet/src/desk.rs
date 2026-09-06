@@ -45,6 +45,7 @@ pub enum WalletCmd {
         to: String,
     },
     Exec {
+        route_id: String,
         to: String,
         data: String,
         value: String,
@@ -87,7 +88,7 @@ fn write_net(net: &str) -> Result<(), WalletError> {
     let path = crate::data_dir().join("market.json");
     let mut v = std::fs::read(&path)
         .ok()
-        .and_then(|b| serde_json::from_slice::<Value>(&b).ok())
+        .and_then(|b| serde_json::from_slice::<Value>(b.strip_prefix(&[0xef, 0xbb, 0xbf]).unwrap_or(&b)).ok())
         .unwrap_or_else(|| json!({}));
     if !v.is_object() {
         v = json!({});
@@ -104,7 +105,7 @@ fn write_net(net: &str) -> Result<(), WalletError> {
 fn load_net() -> Net {
     let v = std::fs::read(crate::data_dir().join("market.json"))
         .ok()
-        .and_then(|b| serde_json::from_slice::<Value>(&b).ok())
+        .and_then(|b| serde_json::from_slice::<Value>(b.strip_prefix(&[0xef, 0xbb, 0xbf]).unwrap_or(&b)).ok())
         .unwrap_or(Value::Null);
     let testnet = v.get("net").and_then(|x| x.as_str()).unwrap_or("testnet") != "mainnet";
     let mut pusd = cfg_str(&v, "pusd");
@@ -262,12 +263,13 @@ impl Desk {
             WalletCmd::ExportKey => crate::session::export_key(),
             WalletCmd::Resolve { to } => resolve_preview(&to),
             WalletCmd::Exec {
+                route_id,
                 to,
                 data,
                 value,
                 chain_id,
                 gas,
-            } => self.exec_route(&to, &data, &value, chain_id, gas),
+            } => self.exec_route(&route_id, &to, &data, &value, chain_id, gas),
         }
     }
 
@@ -638,6 +640,7 @@ impl Desk {
 
     fn exec_route(
         &mut self,
+        route_id: &str,
         to: &str,
         data: &str,
         value: &str,
@@ -645,6 +648,8 @@ impl Desk {
         gas: u64,
     ) -> Result<Value, WalletError> {
         let _signing = crate::transactions::signing_guard()?;
+        let authorization = rhc::route::take_execution(route_id, &self.key.address.to_hex(), to, data, value, chain_id)
+            .map_err(WalletError::Fail)?;
         let rpc_url = rhc::rpc_http(chain_id).ok_or_else(|| {
             WalletError::Fail("unsupported chain".into())
         })?;
@@ -653,7 +658,7 @@ impl Desk {
         if data_b.is_empty() && value.trim().is_empty() {
             return Err(WalletError::Fail("empty route tx".into()));
         }
-        let value_n = crate::parse_hex_u128(value)?;
+        let value_n = route_value_wei(value)?;
         let rpc = Rpc::at(rpc_url);
         let from = self.key.address.to_hex();
         let eth = rpc.eth_balance(&from).map_err(rpc_err)?;
@@ -683,6 +688,7 @@ impl Desk {
             value: value_n,
             data: data_b,
         };
+        authorization.ensure_fresh().map_err(WalletError::Fail)?;
         let raw = self.key.sign_tx(&tx)?;
         let hash = rpc.eth_send_raw(&hex0x(&raw)).map_err(rpc_err)?;
         crate::transactions::record(&hash, chain_id, &from, "pending")?;
@@ -1209,10 +1215,29 @@ pub fn fmt_units(n: u128, decimals: u8) -> String {
     format!("{whole}.{f}")
 }
 
+fn route_value_wei(value: &str) -> Result<u128, WalletError> {
+    let parsed = if let Some(hex) = value.strip_prefix("0x") {
+        u128::from_str_radix(hex, 16)
+    } else {
+        value.parse::<u128>()
+    };
+    parsed.map_err(|_| WalletError::Fail("Invalid native transaction value".into()))
+}
+
 #[cfg(test)]
 mod tests {
     use super::{fmt_units, fmt_usd_bag, map_blockscout_xfer, normalize_net, parse_units};
     use serde_json::json;
+
+    #[test]
+    fn route_value_preserves_decimal_and_hex_wei() {
+        assert_eq!(super::route_value_wei("100").unwrap(), 100);
+        assert_eq!(super::route_value_wei("0x64").unwrap(), 100);
+        assert_eq!(super::route_value_wei("0").unwrap(), 0);
+        for value in ["", "0x", "-1", "1.5", "1e3", "340282366920938463463374607431768211456"] {
+            assert!(super::route_value_wei(value).is_err(), "{value}");
+        }
+    }
 
     #[test]
     fn units_round_trip() {

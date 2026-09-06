@@ -2,10 +2,8 @@
   var NATIVE = "0x0000000000000000000000000000000000000000";
   var USDG = "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168";
   var AVAX_USDC = "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E";
-  var TESTNET_VAPURR = "0xD4b36DDe47d6294274193d1Bf546E5C32c1E7585";
-  var TESTNET_PUSD = "0xBe71EF3e1b49ec35b4C3A80c257342A39CEEE42e";
   var SWAP_SYMS = {
-    ETH: 1, VAPURR: 1, PUSD: 1, USDG: 1, WETH: 1,
+    ETH: 1, VAPURR: 1, WGV: 1, PUSD: 1, USDG: 1, WETH: 1,
     NVDA: 1, TSLA: 1, HOOD: 1, PLTR: 1, MSFT: 1,
     AAPL: 1, AMZN: 1, GOOGL: 1, META: 1, AMD: 1,
     COIN: 1, SPY: 1, QQQ: 1, INTC: 1, ORCL: 1, NFLX: 1
@@ -20,16 +18,6 @@
     var u = String(s || "").replace(/^\$/, "").toUpperCase();
     if (u === "VAPURR" || u === "PUSD") return "$" + u;
     return s || "";
-  }
-  function houseSym(t) {
-    return String((t && t.symbol) || "").toUpperCase().replace(/^\$/, "");
-  }
-  function isHousePair(a, b) {
-    if (!a || !b) return false;
-    if (Number(a.chain_id) !== Number(b.chain_id)) return false;
-    var sa = houseSym(a);
-    var sb = houseSym(b);
-    return (sa === "VAPURR" && sb === "PUSD") || (sa === "PUSD" && sb === "VAPURR");
   }
   function api(path, signal) {
     return fetch("/route/api/" + path, signal ? { signal: signal } : {}).then(function (r) {
@@ -55,6 +43,10 @@
     var tokens = [];
     var chains = [];
     var quote = null;
+    var expires = 0;
+    var expiryTimer = 0;
+    var pendingChain = 0;
+    var approving = false;
     var timer = 0;
     var seq = 0;
     var ac = null;
@@ -68,31 +60,25 @@
     var tokList = [];
     window.__setWallet = function (s) {
       if (!s || !Array.isArray(s.assets)) return;
+      var previousChain = snap && snap.chain_id;
       snap = s;
       var next = s.address || "";
-      var changed = next && next !== fromAddress;
+      var changed = next !== fromAddress || previousChain !== s.chain_id;
       fromAddress = next;
       if (mode !== "bridge") applySwapList();
       paintBals();
-      if (sending && s.tx && s.tx !== waitHash) {
+      if (sending && s.tx && s.tx !== waitHash && Number(s.tx_chain_id) === pendingChain) {
         sending = false;
-        if (vapurr.finishTx) vapurr.finishTx(s.tx_status === "confirmed", { tx: s.tx, txUrl: s.tx_url, tx_status: s.tx_status, tx_chain_id: s.tx_chain_id });
+        if (vapurr.finishTx) vapurr.finishTx(s.tx_status === "confirmed", {
+          tx: s.tx, txUrl: s.tx_url, tx_status: s.tx_status, tx_chain_id: s.tx_chain_id,
+          title: mode === "bridge" && !approving ? "Bridge source transaction" : undefined,
+          lede: mode === "bridge" && !approving ? "Destination receipt is not yet verified. Do not submit again." : undefined
+        });
         debounce();
       }
       if (changed) debounce();
     };
     window.__walletErr = function (msg) {
-      sending = false;
-      if (vapurr.pendingTx && vapurr.finishTx) vapurr.finishTx(false, { error: msg || "not sent" });
-    };
-    window.__setEcon = function (s) {
-      if (!sending && !vapurr.pendingTx) return;
-      if (s && s.tx && s.tx !== waitHash) {
-        sending = false;
-        if (vapurr.finishTx) vapurr.finishTx(s.tx_status === "confirmed", { tx: s.tx, txUrl: s.tx_url, tx_status: s.tx_status, tx_chain_id: s.tx_chain_id });
-      }
-    };
-    window.__econErr = function (which, msg) {
       sending = false;
       if (vapurr.pendingTx && vapurr.finishTx) vapurr.finishTx(false, { error: msg || "not sent" });
     };
@@ -109,43 +95,11 @@
       if (snap && snap.chain_id) return Number(snap.chain_id);
       return 46630;
     }
-    function houseFor(cid) {
-      cid = Number(cid);
-      var rows = [];
-      if (cid === 46630) {
-        rows.push({ chain_id: 46630, address: TESTNET_VAPURR, symbol: "VAPURR", name: "VAPURR", decimals: 18 });
-        rows.push({ chain_id: 46630, address: TESTNET_PUSD, symbol: "PUSD", name: "PUSD", decimals: 18 });
-      }
-      if (snap && Array.isArray(snap.assets)) {
-        snap.assets.forEach(function (a) {
-          if (!a || !a.token) return;
-          var s = String(a.symbol || "").toUpperCase().replace(/^\$/, "");
-          if (s !== "VAPURR" && s !== "PUSD") return;
-          if (snap.chain_id && Number(snap.chain_id) !== cid) return;
-          if (rows.some(function (r) { return r.symbol === s; })) return;
-          rows.push({
-            chain_id: cid,
-            address: a.token,
-            symbol: s,
-            name: s,
-            decimals: a.decimals || 18
-          });
-        });
-      }
-      return rows;
-    }
     function swapTokens() {
       var cid = activeChain();
       var list = tokens.filter(function (t) { return Number(t.chain_id) === cid; });
-      houseFor(cid).forEach(function (h) {
-        var has = list.some(function (t) {
-          return String(t.symbol || "").toUpperCase().replace(/^\$/, "") === h.symbol
-            || String(t.address || "").toLowerCase() === String(h.address).toLowerCase();
-        });
-        if (!has) list.unshift(h);
-      });
       var out = swapList(list);
-      var rank = { VAPURR: 0, PUSD: 1, USDG: 2, ETH: 3 };
+      var rank = { WGV: 0, PUSD: 1, VAPURR: 2, ETH: 3 };
       out.sort(function (a, b) {
         var sa = String(a.symbol || "").toUpperCase().replace(/^\$/, "");
         var sb = String(b.symbol || "").toUpperCase().replace(/^\$/, "");
@@ -231,7 +185,7 @@
         return;
       }
       fromPick = pickInList(list, fromPick && tokenKey(fromPick), fromPick && fromPick.symbol)
-        || pickInList(list, "", "VAPURR")
+        || pickInList(list, "", "WGV")
         || pickInList(list, "", "ETH")
         || list[0]
         || null;
@@ -315,11 +269,13 @@
       return [
         { state: "held", kind: "in", label: "You pay", value: ft ? prettySym(ft.symbol) : "—" },
         { state: "held", kind: "swap", label: "Route", value: "—" },
-        { state: "held", kind: "out", label: "You get", value: tt ? prettySym(tt.symbol) : "—" },
-        { state: "held", kind: "refund", label: "$VAPURR", value: "refund" }
+        { state: "held", kind: "out", label: "Estimated receipt", value: tt ? prettySym(tt.symbol) : "—" }
       ];
     }
     function paintIdle(msg) {
+      quote = null;
+      expires = 0;
+      clearTimeout(expiryTimer);
       var box = byId("route");
       var rec = byId("receive");
       var go = byId("go");
@@ -338,8 +294,8 @@
           "</div>" +
           "<div class='row'><span>Min received</span><b>—</b></div>" +
           "<div class='row'><span>Impact</span><b>—</b></div>" +
-          "<div class='row'><span>Refund</span><b>small $VAPURR</b></div>" +
-          "<div class='row'><span>Fee</span><span>0.25% → $VAPURR, rest mints $PUSD</span></div>" +
+          "<div class='row'><span>Refund</span><b>None</b></div>" +
+          "<div class='row'><span>Fee</span><span>Shown with quote</span></div>" +
           "<div class='note'>" + esc(msg || "Enter an amount. We simulate on this device before you sign.") + "</div>";
       }
       if (go) {
@@ -380,13 +336,13 @@
       }
       var sim = q.sim || {};
       var refund = q.refund || {};
-      var refundLine = refund.display ? ("+" + refund.display + " $VAPURR") : "small $VAPURR refund";
+      var refundLine = "Not included";
       var refChip = byId("chip-refund");
       if (refChip) {
         var rb = (refund.bps != null ? refund.bps : q.refund_bps);
-        refChip.textContent = rb != null ? ((Number(rb) / 100).toFixed(2) + "%") : "—";
+        refChip.textContent = "None";
       }
-      var sink = (q.fee_sink && q.fee_sink.label) || "0.25% buys $VAPURR. Rest burns to mint $PUSD.";
+      var sink = (q.fee_sink && q.fee_sink.label) || "Provider fees included; gas separate";
       var gasBits = [];
       if (sim.gas) gasBits.push(Number(sim.gas).toLocaleString() + " gas");
       if (sim.gas_eth) gasBits.push(sim.gas_eth + " ETH");
@@ -432,17 +388,17 @@
         var extra = (best.extra_display && best.extra_display !== "0")
           ? ("  ·  +" + best.extra_display + " " + prettySym(q.to_symbol || ""))
           : "";
-        var ref = best.refund_display ? ("  ·  +" + best.refund_display + " $VAPURR") : "";
+        var ref = "";
         byId("q-best").textContent = bestLine + extra + ref;
       }
       byId("q-min").textContent = (q.to_min_display || q.to_display) + " " + prettySym(q.to_symbol || "")
         + (q.slippage ? "  ·  " + q.slippage + " slip" : "");
       var imp = byId("q-impact");
       if (imp) imp.textContent = q.impact || "—";
-      var house = q.tool === "house" || isHousePair(current("from"), current("to"));
+      var house = q.tool === "house";
       if (house) {
         byId("q-refund").textContent = "none";
-        byId("q-fee").textContent = "0.30% house book";
+        byId("q-fee").textContent = sink;
         if (hopChip) hopChip.textContent = "house";
       } else {
         byId("q-refund").textContent = refundLine;
@@ -450,20 +406,20 @@
       }
       byId("q-note").textContent = note;
       if (altHtml) byId("q-alts").innerHTML = altHtml;
-      var canApprove = !!(q.needs_approve && q.approve && q.approve.to && q.approve.data);
+      var canApprove = !!(q.needs_approve && q.approve && q.approve.to && q.approve.data && q.approve.execution_id);
       var goLab = canApprove && !q.payable
         ? ("Approve " + prettySym(q.from_symbol))
         : (mode === "bridge" ? "Bridge" : "Swap");
       if (go._slideHold) {
-        go._slideHold.setDisabled(sending || !(q.payable || canApprove));
+        go._slideHold.setDisabled(sending || !((q.payable && q.execution_id) || canApprove));
         go._slideHold.setLabel(goLab);
       } else {
-        go.disabled = sending || !(q.payable || canApprove);
+        go.disabled = sending || !((q.payable && q.execution_id) || canApprove);
         go.textContent = goLab;
       }
     }
     function tokBal(tok) {
-      if (!snap || !tok) return null;
+      if (!snap || !tok || Number(snap.chain_id) !== Number(tok.chain_id)) return null;
       if (tok.native || String(tok.address).replace(/0x/, "") === "") {
         return { amount: snap.eth || "0", symbol: "ETH" };
       }
@@ -488,7 +444,20 @@
       if (fb) fb.textContent = a ? (a.amount + " " + prettySym(a.symbol)) : "";
       if (tb) tb.textContent = b ? (b.amount + " " + prettySym(b.symbol)) : "";
     }
+    function requestKey() {
+      return [fromAddress, activeChain(), tokenKey(current("from")), tokenKey(current("to")), (byId("amt").value || "").trim()].join("|");
+    }
+    function invalidate() {
+      ++seq;
+      if (ac) ac.abort();
+      quote = null; expires = 0; clearTimeout(expiryTimer);
+      var go = byId("go");
+      if (go._slideHold) go._slideHold.setDisabled(true); else go.disabled = true;
+    }
     function request() {
+      invalidate();
+      var key = requestKey();
+      var started = Date.now();
       var fromTok = current("from");
       var toTok = current("to");
       var amt = (byId("amt").value || "").trim();
@@ -499,7 +468,8 @@
       var id = ++seq;
       if (ac) try { ac.abort(); } catch (e) {}
       ac = typeof AbortController !== "undefined" ? new AbortController() : null;
-      if (ac) setTimeout(function () { try { ac.abort(); } catch (e) {} }, 10000);
+      var controller = ac;
+      var timeout = setTimeout(function () { if (controller) controller.abort(); }, 15000);
       byId("route").innerHTML =
         "<div class='sim-board' data-state='wait'>" +
           "<div class='sim-head'><span class='pip'></span><b>SIMULATING</b><span>house book</span></div>" +
@@ -519,14 +489,21 @@
         amount: amt,
         fromAddress: fromAddress
       }), ac && ac.signal).then(function (q) {
-        if (id !== seq) return;
+        clearTimeout(timeout);
+        if (id !== seq || key !== requestKey()) return;
         paintQuote(q);
+        if (!quote) return;
+        expires = started + Math.min(Number(q.expires_in_ms) || 0, 40000);
+        if (expires <= Date.now()) { paintIdle("Quote expired. Enter an amount to refresh."); return; }
+        expiryTimer = setTimeout(function () { invalidate(); paintIdle("Quote expired. Edit the amount to refresh."); }, expires - Date.now());
       }).catch(function (e) {
+        clearTimeout(timeout);
         if (id !== seq) return;
         paintIdle(e && e.name === "AbortError" ? "Quote timed out." : "Router wait.");
       });
     }
     function debounce() {
+      invalidate();
       clearTimeout(timer);
       timer = setTimeout(request, 140);
     }
@@ -583,29 +560,38 @@
     function doGo() {
       if (sending) return;
       if (!vapurr.beginTx) return;
-      if (!quote || !quote.ok) return;
-      if (quote.needs_approve && quote.approve && !quote.payable) {
-        var ap = quote.approve;
-        var apChain = Number(ap.chainId || quote.from_chain || 0);
+      if (!quote || !quote.ok || Date.now() >= expires) { debounce(); return; }
+      var reviewed = quote, reviewedSeq = seq, key = requestKey();
+      function stillReviewed() {
+        if (quote === reviewed && seq === reviewedSeq && key === requestKey() && Date.now() < expires) return true;
+        sending = false;
+        if (vapurr.finishTx) vapurr.finishTx(false, { error: "Quote changed or expired. Review a fresh quote." });
+        debounce(); return false;
+      }
+      if (reviewed.needs_approve && reviewed.approve && !reviewed.payable) {
+        var ap = reviewed.approve;
+        if (!ap.execution_id) return;
+        var apChain = Number(ap.chainId || reviewed.from_chain || 0);
         vapurr.beginTx({
-          title: "Approve " + prettySym(quote.from_symbol),
+          title: "Approve " + prettySym(reviewed.from_symbol),
           kicker: "This device signs",
-          lede: "One-time allowance so the house book can pull. Then we simulate the swap again.",
+          lede: "Approve only this amount. The swap requires a fresh quote afterward.",
           rows: [
-            { k: "Token", v: prettySym(quote.from_symbol) },
-            { k: "Spender", v: "house book" },
-            { k: "You pay", v: (quote.from_display || "") + " " + prettySym(quote.from_symbol || "") }
+            { k: "Token", v: prettySym(reviewed.from_symbol) },
+            { k: "Spender", v: ap.spender || ap.to },
+            { k: "You pay", v: (reviewed.from_display || "") + " " + prettySym(reviewed.from_symbol || "") }
           ],
           confirmLabel: "Sign approve",
           doneTitle: "Approved",
           failTitle: "Not approved",
           explorer: (apChain === 4663 || apChain === 46630) ? "" : (snap && snap.explorer)
         }).then(function (ok) {
-          if (!ok) return;
-          sending = true;
+          if (!ok || !stillReviewed()) return;
+          sending = true; approving = true; pendingChain = apChain;
           waitHash = (snap && snap.tx) || "";
           vapurr.send({
             cmd: "wallet-exec",
+            route_id: ap.execution_id,
             to: ap.to,
             data: ap.data,
             value: ap.value || "0x0",
@@ -615,35 +601,38 @@
         });
         return;
       }
-      if (!quote.payable) return;
-      var tx = quote.tx || {};
+      if (!reviewed.payable || !reviewed.execution_id) return;
+      var tx = reviewed.tx || {};
       if (!tx.to || !tx.data) return;
-      var chain = Number(tx.chainId || quote.from_chain || 0);
+      var chain = Number(tx.chainId || reviewed.from_chain || 0);
       vapurr.beginTx({
         title: mode === "bridge" ? "Bridge" : "Swap",
         kicker: "This device signs",
-        lede: "Simulated on this device. Nothing leaves until you sign.",
+        lede: mode === "bridge" ? "Source transaction simulated. Destination settlement is separate." : "Review this simulated route before signing.",
         rows: [
-          { k: "You pay", v: (quote.from_display || "") + " " + prettySym(quote.from_symbol || "") },
-          { k: "You get", v: (quote.to_display || "") + " " + prettySym(quote.to_symbol || "") },
-          { k: "Min", v: (quote.to_min_display || "") + " " + prettySym(quote.to_symbol || "") },
-          { k: "Refund", v: quote.refund && quote.refund.display ? ("+" + quote.refund.display + " $VAPURR") : "—" }
+          { k: "You pay", v: (reviewed.from_display || "") + " " + prettySym(reviewed.from_symbol || "") },
+          { k: "Estimated receipt", v: (reviewed.to_display || "") + " " + prettySym(reviewed.to_symbol || "") },
+          { k: "Min", v: (reviewed.to_min_display || "") + " " + prettySym(reviewed.to_symbol || "") },
+          { k: "Network", v: String(chain) },
+          { k: "Router", v: tx.to },
+          { k: "Native value (wei)", v: String(BigInt(tx.value || "0x0")) }
         ],
         confirmLabel: "Sign and send",
         doneTitle: "Sent",
         failTitle: "Not sent",
         explorer: (chain === 4663 || chain === 46630) ? "" : (snap && snap.explorer)
       }).then(function (ok) {
-        if (!ok) return;
-        sending = true;
+        if (!ok || !stillReviewed()) return;
+        sending = true; approving = false; pendingChain = chain;
         waitHash = (snap && snap.tx) || "";
         vapurr.send({
           cmd: "wallet-exec",
+          route_id: reviewed.execution_id,
           to: tx.to,
           data: tx.data,
           value: tx.value || "0x0",
           chain_id: chain,
-          gas: (quote.sim && quote.sim.gas) || 0
+          gas: (reviewed.sim && reviewed.sim.gas) || 0
         });
       });
     }
@@ -681,7 +670,7 @@
       if ((byId("amt").value || "").trim()) request();
     }).catch(function () {
       if (mode !== "bridge") applySwapList();
-      paintIdle("Router offline. $VAPURR and $PUSD still pickable.");
+      paintIdle("Router offline. Retry when the connection is restored.");
     });
   };
 })(window);

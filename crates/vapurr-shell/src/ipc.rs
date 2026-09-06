@@ -119,6 +119,7 @@ pub(crate) enum Msg {
         amt: String,
     },
     WalletExec {
+        route_id: String,
         to: String,
         data: String,
         value: String,
@@ -314,6 +315,7 @@ pub(crate) fn parse_ipc(body: &str) -> Option<Msg> {
             amt: v.get("amt").and_then(|x| x.as_str()).unwrap_or("").into(),
         }),
         "wallet-exec" => Some(Msg::WalletExec {
+            route_id: v.get("route_id")?.as_str()?.to_string(),
             to: v.get("to").and_then(|x| x.as_str()).unwrap_or("").into(),
             data: v.get("data").and_then(|x| x.as_str()).unwrap_or("").into(),
             value: v.get("value").and_then(|x| x.as_str()).unwrap_or("0x0").into(),
@@ -491,8 +493,9 @@ mod tests {
 
     #[test]
     fn wallet_exec_cmd() {
+        assert!(parse_ipc(r#"{"cmd":"wallet-exec","to":"0xabc","data":"0x12","value":"0x0","chain_id":4663}"#).is_none());
         match parse_ipc(
-            r#"{"cmd":"wallet-exec","to":"0xabc","data":"0x12","value":"0x0","chain_id":4663,"gas":21000}"#,
+            r#"{"cmd":"wallet-exec","route_id":"test-route","to":"0xabc","data":"0x12","value":"0x0","chain_id":4663,"gas":21000}"#,
         )
         .expect("exec")
         {

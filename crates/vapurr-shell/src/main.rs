@@ -1066,6 +1066,7 @@ fn main() {
                 let _ = wallet_tx.send(vapurr_wallet::WalletCmd::Send { asset, to, amt });
             }
             Event::UserEvent(Msg::WalletExec {
+                route_id,
                 to,
                 data,
                 value,
@@ -1073,6 +1074,7 @@ fn main() {
                 gas,
             }) => {
                 let _ = wallet_tx.send(vapurr_wallet::WalletCmd::Exec {
+                    route_id,
                     to,
                     data,
                     value,
