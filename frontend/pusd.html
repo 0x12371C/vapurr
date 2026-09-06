@@ -720,7 +720,8 @@
           <div class="chip"><span id="h-lpv-lab">LP</span><b id="h-lpv">0.00</b></div>
         </div>
         <div class="have" id="h-gate">Wrap gV to wgV before supplying House.</div>
-        <div class="have" id="h-fee-note">Protocol fee carve remits to RemittanceSink (HouseFeeRemit / HouseUniSkim). LP fees stay with LPs. Live Uni v4 skim e2e still open.</div>
+        <div class="have" id="h-fee-note">Protocol fee carve remits House / Lithe / Oliver through FeeAttribution into RemittanceSink. Book empty (NeedRemittance) until Relic fills CAs. LP fees stay with LPs. Live Uni v4 skim e2e still open.</div>
+        <div class="facts" id="h-attrib" aria-label="FeeAttribution who paid"><div class="chip"><span>House</span><b id="h-attrib-house">—</b></div><div class="chip"><span>Lithe</span><b id="h-attrib-lithe">—</b></div><div class="chip"><span>Oliver</span><b id="h-attrib-oliver">—</b></div></div>
         <div class="have" id="h-have">Not seeded.</div>
         <div class="have" id="h-stocks"></div>
         <div class="two" id="house-boot-row">
@@ -1291,6 +1292,22 @@
       var swapBox = document.getElementById("house-swap");
       if (bootRow) bootRow.style.display = H.live ? "none" : "";
       if (swapBox) swapBox.style.display = H.live ? "block" : "none";
+      var R = (s && s.remittance) || {};
+      var feeNote = document.getElementById("h-fee-note");
+      var ah = document.getElementById("h-attrib-house");
+      var al = document.getElementById("h-attrib-lithe");
+      var ao = document.getElementById("h-attrib-oliver");
+      // Source shares stay em-dash until live FeeAttribution.breakdown() reads land.
+      if (ah) ah.textContent = "—";
+      if (al) al.textContent = "—";
+      if (ao) ao.textContent = "—";
+      if (feeNote) {
+        if (R.configured) {
+          feeNote.textContent = "FeeAttribution book live — source share reads still open. LP fees stay with LPs.";
+        } else {
+          feeNote.textContent = "Protocol fee carve remits House / Lithe / Oliver through FeeAttribution into RemittanceSink. Book empty (NeedRemittance) until Relic fills CAs. LP fees stay with LPs. Live Uni v4 skim e2e still open.";
+        }
+      }
       quoteHouse();
     }
     document.getElementById("amt").addEventListener("input", quote);

@@ -71,5 +71,9 @@ Client remittance book slots are empty until Relic deploys: `TESTNET_HOUSE_FEE_R
 Short ops checklist: [WGV_HOUSE.md](WGV_HOUSE.md) (wrap path, green/open, do-nots).
 
 ## UI stub
+### FeeAttribution who-paid UI stub (2026-09-06)
+
+`frontend/pusd.html` House tab paints `#h-attrib` House/Lithe/Oliver chips (em-dash until `FeeAttribution.breakdown()` reads land) and updates `#h-fee-note` from `snap.remittance.configured` (empty book → NeedRemittance honesty). Live enable still Relic-gated.
+
 
 `vapurr://house` (`pusd.html?tab=house`) copy locks **wgV / $PUSD** + wrap-first gate. Deploy/seed still open until live Uni + pairConfig.

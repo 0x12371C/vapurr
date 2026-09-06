@@ -16,7 +16,9 @@ SNAP = dict(live=True, net='testnet', status='live', price='0.05', apy='9',
                       collat_v='12000', collat_value='1800', total_assets='12000',
                       util='33.33', borrow_apy='6', supply_apy='2', max_ltv='8500', health='4.05'),
             house=dict(live=True, need_deploy=False, vapurr='1400', pusd='950',
-                       house='0x'+'3'*40, pool_id='0x'+'4'*64, token_id='7'))
+                       house='0x'+'3'*40, pool_id='0x'+'4'*64, token_id='7'),
+            remittance=dict(configured=False, house_fee_remit='', house_uni_skim='',
+                            fee_attribution='', remittance_sink=''))
 
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
@@ -146,6 +148,15 @@ def main():
             assert page.locator('#'+panel).is_visible()
             assert not page.locator('#book').is_visible()
             page.close()
+        # FeeAttribution who-paid stub on House tab
+        page = context.new_page()
+        page.goto('http://vapurr.localhost/pusd.html?tab=house')
+        page.evaluate('(s)=>window.__setEcon(s)', SNAP)
+        assert page.locator('#h-attrib').count() >= 1, 'missing FeeAttribution who-paid stub'
+        assert page.locator('#h-attrib-house').inner_text() in ('—', '-')
+        fee = page.locator('#h-fee-note').inner_text()
+        assert ('NeedRemittance' in fee) or ('FeeAttribution' in fee), fee
+        page.close()
         browser.close()
     print('\n'.join(results))
     print('Navigation, form modes, input validation, snapshot rendering, LTV meter, swap/bridge back stack: OK')

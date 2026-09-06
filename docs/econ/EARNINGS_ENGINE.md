@@ -42,7 +42,7 @@ Hard split: **cash surplus path != equity rebase path**. Browse never funds from
 
 Savers (`sPUSD` / CD) are paid **only** from sink surplus **above** `RunwayFloor`. They do not receive gV rebase.
 
-UI/TVL "who paid the yield": read `FeeAttribution.breakdown()` / `shareBps(Source)`. Untagged direct remits to sink do not update the ledger.
+UI/TVL "who paid the yield": read `FeeAttribution.breakdown()` / `shareBps(Source)`. UI stub: House tab `#h-attrib` chips (House/Lithe/Oliver) stay em-dash until book + breakdown reads; `#h-fee-note` reflects `snap.remittance.configured` / NeedRemittance. Untagged direct remits to sink do not update the ledger.
 
 ---
 

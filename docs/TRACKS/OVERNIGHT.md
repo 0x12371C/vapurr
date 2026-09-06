@@ -177,3 +177,12 @@
 - **workers:** KFX **idle**; PayId **idle**; Bind **idle** (PID gone) - no respawn. Extra grok windows present (House/Pilot/graphify) - not watch-spawned. No new organizer procs.
 - **branch:** `pack/d59912d` (+ this slice)
 - **build slice:** frontend **routing-visual on Swap/Bridge/Overview** - `defi-flow.js` `mapDesks` now injects shared Cash/Equity/Bonds/House product map on `swap`/`bridge`/`overview` (was Cash+Bonds only). ROUTING.md scrubbed. Smoke: `verify-defi-ui.py` asserts map + house lane click on route desks. Still open P1: Oliver gV/wgV collateral wire, live CD/BondMarket ABI after deploy, House Uni v4 e2e / remittance live enable, SignPath.
+
+## 2026-09-06 ~09:10 ET - hourly watch
+
+- **justin:** online
+- **Programs:** DisplayVersion **1.1.9**; FileVersion **1.1.9** @ `C:\Users\jfren\AppData\Local\Programs\vapurr\vapurr.exe`; sha `E87E0C15F8FF`; **NotSigned** (signing still P0 ship blocker; Relic: unsigned OK for build/test)
+- **dist/channel:** AppData channel manifest **1.1.9** rev `8770b23` sha256 `e87e0c15f8ff...`; `thesecretlab.app/vapurr/channel/manifest.json` still **404**; local repo `channel/manifest.json` missing
+- **workers:** KFX **idle** (grok 21016); PayId **idle** (grok 9228); Bind **idle** (PID gone) - no respawn. Extra grok windows present (graphify 18356, bare grok, gh-auth 15672) - not watch-spawned. No new organizer procs.
+- **branch:** `pack/d59912d` (+ this slice)
+- **build slice:** FeeAttribution **who-paid UI stub** on House tab - `#h-attrib` House/Lithe/Oliver chips (em-dash until breakdown reads) + `#h-fee-note` follows `snap.remittance.configured` / NeedRemittance. Docs HOUSE_PAIR / EARNINGS_ENGINE / ROUTING / TRACKS channel rev honesty. Still open P1: Oliver gV/wgV collateral wire, live CD/BondMarket ABI after deploy, House Uni v4 e2e / remittance live enable, SignPath.
