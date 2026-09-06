@@ -131,9 +131,9 @@
     document.querySelectorAll('[data-mode]').forEach(function(button){button.addEventListener('click',function(){selectDesk('book',false);});});
   }
   var flows={
-    mint:['01','CASH · LITHE','VAPURR<br/>meets PUSD.','Mint PUSD. Redeem back to VAPURR.','V','VAPURR','You exchange','Lithe','Mint ↔ redeem','P','PUSD','You receive','At exchange','Oracle + spread','Open Lithe','vapurr://lithe','exchange'],
-    supply:['02','CREDIT · OLIVER','Put PUSD<br/>to work.','Supply the lending pool. Withdraw from available cash.','P','PUSD','You supply','Oliver','Supply → interest','P','Position','You hold','Yield','Variable','Open Oliver','vapurr://oliver','save'],
-    borrow:['03','CREDIT · OLIVER','Access cash.<br/>Keep exposure.','Borrow against collateral. Track debt and liquidation risk.','V','Collateral','You deposit','Oliver','Collateral → credit','P','PUSD','You borrow','Position','Interest + LTV','Open Oliver','vapurr://oliver','borrow'],
+    mint:['01','CASH · LITHE','VAPURR<br/>meets PUSD.','Seigniorage: burn VAPURR → mint PUSD; redeem burns PUSD → mint VAPURR. Not inventory.','V','VAPURR','You burn','Lithe','Seigniorage mint','P','PUSD','You receive','At mint','≥2% spread · Lithe','Open Lithe','vapurr://lithe','exchange'],
+    supply:['02','CREDIT · OLIVER','Put PUSD<br/>to work.','Isolated $PUSD vault. Supply earns borrow interest; Lithe still drips on vault cash. Withdraw needs available cash.','P','PUSD','You supply','Oliver','Supply → interest','P','Position','You hold','Yield','Vault + Lithe','Open Oliver','vapurr://oliver','save'],
+    borrow:['03','CREDIT · OLIVER','Access cash.<br/>Keep exposure.','Borrow against $VAPURR and supplied $PUSD. 85% LTV. Liq under 90% health.','V','$VAPURR','You deposit','Oliver','Collateral → credit','P','PUSD','You borrow','Position','85% LTV','Open Oliver','vapurr://oliver','borrow'],
     bond:['04','CAPITAL · BONDS','Assets in.<br/>Equity ahead.','Bond an asset. Claim gV after vesting.','↗','Asset','You bond','Bonds','Deposit → vest','gV','gV','You claim','Terms','Discount + vesting','Open bonds','vapurr://bonds','clock'],
     trade:['05','MARKETS · HOUSE','Equity<br/>meets cash.','Exchange wrapped gV and PUSD through House.','gV','wgV','You exchange','House','wgV ↔ PUSD','P','PUSD','You receive','At exchange','Price + fee','Open House','vapurr://house','trade']
   };

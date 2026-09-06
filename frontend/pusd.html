@@ -605,7 +605,7 @@
           <div class="live"><span class="pip" id="pip"></span><span id="live">…</span></div>
         </div>
         <h1><em>$</em><span id="bal-p">0.00</span></h1>
-        <p class="hero-net">Net PUSD · wallet + supplied − debt</p>
+        <p class="hero-net">Net Oliver · wallet $PUSD + supplied − debt</p>
         <p class="hero-v hero-collat"><b id="bal-collat-v">0</b> $VAPURR collateral</p>
         <p class="hero-v"><b id="bal-v">0.00</b> wallet $VAPURR</p>
         <div class="err-chip" id="snap-err" hidden></div>
@@ -628,9 +628,9 @@
         </div>
       </div>
       <div class="card" id="lithe">
-        <h2>Combined yield</h2>
+        <h2>Lithe</h2>
         <p class="rate"><b id="apy">—</b><span id="earned"></span></p>
-        <p class="say">PUSD + Oliver. Rates vary.</p>
+        <p class="say">Every <b>$PUSD</b> earns in place — no claim. Mint spread funds it. Oliver stacks on top. Browse-earn is separate (<code>vapurr://earn</code>).</p>
       </div>
     </div>
 
@@ -643,7 +643,7 @@
     <div class="board" id="board">
     <div class="card" id="book" role="tabpanel" aria-label="Lithe mint and redeem">
       <h2><span data-icon="exchange"></span>Lithe</h2>
-      <p class="say">Mint PUSD. Redeem back to VAPURR.</p><div class="mini-route" aria-label="VAPURR through Lithe to PUSD"><span>VAPURR</span><b aria-hidden="true">→</b><span><i data-icon="exchange"></i>Lithe</span><b aria-hidden="true">→</b><span>PUSD</span></div><label class="flow-field-label" for="amt">You exchange</label>
+      <p class="say">Seigniorage: burn <b>$VAPURR</b> → mint <b>$PUSD</b>; redeem burns <b>$PUSD</b> → mint <b>$VAPURR</b>. Not inventory / stocked V. Oracle = first spot of the block. Spread ≥2% funds Lithe. Not USDG.</p><div class="mini-route" aria-label="VAPURR through Lithe to PUSD"><span>VAPURR</span><b aria-hidden="true">→</b><span><i data-icon="exchange"></i>Lithe</span><b aria-hidden="true">→</b><span>PUSD</span></div><label class="flow-field-label" for="amt">You exchange</label>
       <div class="amt">
         <input class="field" id="amt" aria-label="Exchange amount" placeholder="0" inputmode="decimal" autocomplete="off"/>
         <button class="btn-ghost" id="max" type="button" style="height:44px">Max</button>
@@ -651,7 +651,7 @@
       <div class="have" id="have">0.00 $VAPURR</div>
       <div class="quote" id="quote"></div>
       <button class="btn" id="go" type="button">Mint $PUSD</button>
-      <div class="err" id="book-err" role="alert"></div><details class="flow-details"><summary>Exchange details</summary><p>Oracle-priced mint and redeem. The spread reduces the amount received. Review the estimate before signing.</p></details>
+      <div class="err" id="book-err" role="alert"></div><details class="flow-details"><summary>Exchange details</summary><p>Seigniorage mint and redeem — not inventory / stocked V. Oracle = first spot of the block. Spread ≥2% funds Lithe. Review the estimate before signing.</p></details>
     </div>
 
     <div class="card" id="euler" role="tabpanel" aria-label="Oliver credit">
@@ -659,7 +659,7 @@
         <h2><span data-icon="borrow"></span>Oliver</h2>
         <span class="hint" id="e-hint"></span>
       </div>
-      <p class="say">Supply cash. Borrow against collateral.</p>
+      <p class="say">Isolated <b>$PUSD</b> credit with <b>$VAPURR</b> collateral. <b>Loop</b> is leverage against collateral (virtual shares, capped by vault cash). <b>Withdraw</b> needs real <b>cash</b>. <b>Unwind</b> burns supply vs debt without needing cash. Borrow ≤ <b>85%</b> LTV. Liq under 90% health. Boot <b>150% → 6%</b> as cash fills.</p>
       <div id="e-tick">Supplied $0.00</div>
       <div id="euler-boot">
         <p class="note" id="euler-st">Deploy Oliver after the market is live.</p>
@@ -1315,15 +1315,15 @@
         title: mint ? "Mint $PUSD" : "Redeem $PUSD",
         kicker: "This device signs",
         lede: mint
-          ? "Exchange VAPURR for PUSD through Lithe."
-          : "Exchange PUSD for VAPURR through Lithe.",
+          ? "Seigniorage: burn $VAPURR → mint $PUSD (not inventory). Spread funds Lithe. Hash or it failed."
+          : "Seigniorage: burn $PUSD → mint $VAPURR (not inventory unwrap). Spread is not minted back. Hash or it failed.",
         rows: [
           { k: "Network", v: netLabel() },
           { k: "From", v: (snap && snap.address) || "this device" },
-          { k: "You exchange", v: amt + (mint ? " VAPURR" : " PUSD") },
-          { k: "Estimated receipt", v: document.getElementById("quote").textContent || "—" },
+          { k: mint ? "Burn V" : "Burn P", v: amt },
+          { k: "Path", v: mint ? "seigniorage: burn VAPURR → mint PUSD" : "seigniorage: burn PUSD → mint VAPURR" },
           { k: "Spread", v: spreadPct().toFixed(2) + "%" },
-          { k: "Route", v: "Lithe · mint / redeem" }
+          { k: "Lithe", v: (snap && snap.apy != null && snap.apy !== "" ? Number(snap.apy).toFixed(2) + "%" : "—") }
         ],
         confirmLabel: mint ? "Sign and mint" : "Sign and redeem",
         doneTitle: mint ? "Minted" : "Redeemed",
