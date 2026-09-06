@@ -372,6 +372,7 @@
 
 
     /* defi-surface bonds polish */
+    .have{margin:8px 0 0;padding:8px 10px;border-radius:10px;border:1px solid color-mix(in srgb,var(--color-snow) 10%,transparent);color:var(--color-muted);font-size:12px;line-height:1.45}
     .lane, .panel, .depth, .cd-card, .step {
       transition:
         transform 0.2s var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1)),
@@ -463,6 +464,7 @@
       <div class="mono">cash / sPUSD CD</div>
       <h2>Choose your horizon.</h2>
       <p class="lede">PUSD savings. Yield comes from available surplus.</p>
+      <div class="have" id="cd-book-note">Savings book empty (NeedSavings) until Relic fills sPUSD / SpusdCd / SavingsRouter CAs. Open CD stays live; on-tx surfaces the miss.</div>
       <div class="cd-grid">
         <div class="cd-card"><span data-icon="save"></span>
           <div class="mono">liquid</div>
@@ -498,6 +500,7 @@
       <div class="mono">bonds / v1 assets</div>
       <h2>Turn assets into equity.</h2>
       <p class="lede">Deposit an asset. Claim gV after vesting.</p>
+      <div class="have" id="bond-book-note">BondMarket book empty (NeedBondMarket) until Relic fills the CA. Open Bond stays live; on-tx surfaces the miss.</div>
 
       <div class="tabs" role="tablist" aria-label="Bond assets">
         <button class="tab on" type="button" data-asset="ETH" role="tab" aria-selected="true">ETH</button>
@@ -728,7 +731,7 @@
           sessionNote += equityFedOpsNote(asset);
         } else if (m.tag === "ETH" || m.tag === "USDG") {
           // No equity calendar - oracle/valuation ops only (see BONDS.md ETH/USDG Fed ops).
-          sessionNote = " Valuation: 24/7 (no session clock) â€” stale/jump = Fed setValuation or setEnabled; CTA stays.";
+          sessionNote = " Valuation: 24/7 (no session clock) - stale/jump = Fed setValuation or setEnabled; CTA stays.";
           sessionNote += valuationFedOpsNote(asset);
         }
         why.textContent = " Oracle: " + m.oracle + "." + sessionNote;
@@ -807,7 +810,7 @@
       surfaceTxErr(
         "bond-err",
         "Bond tx not configured",
-        "Connect a bond market to load terms and create a bond."
+        "BondMarket book empty (NeedBondMarket) until Relic fills the CA. Open Bond stays live."
       );
     };
 
@@ -824,9 +827,41 @@
       surfaceTxErr(
         "cd-err",
         "CD tx not configured",
-        "Connect a savings market to load the term, coupon and early-exit fee."
+        "Savings book empty (NeedSavings) until Relic fills sPUSD / SpusdCd / SavingsRouter. Open CD stays live."
       );
     };
+
+    function paintBooks(s) {
+      var Sav = (s && s.savings) || {};
+      var Bon = (s && s.bonds) || {};
+      var cdNote = document.getElementById("cd-book-note");
+      var bondNote = document.getElementById("bond-book-note");
+      var strip = document.getElementById("capital-strip");
+      if (cdNote) {
+        cdNote.textContent = Sav.configured
+          ? "Savings book live - CD open ABI / coupon reads still open after Relic deploy review."
+          : "Savings book empty (NeedSavings) until Relic fills sPUSD / SpusdCd / SavingsRouter CAs. Open CD stays live; on-tx surfaces the miss.";
+      }
+      if (bondNote) {
+        bondNote.textContent = Bon.configured
+          ? "BondMarket book live - quote/capacity reads still open after Relic deploy review."
+          : "BondMarket book empty (NeedBondMarket) until Relic fills the CA. Open Bond stays live; on-tx surfaces the miss.";
+      }
+      if (strip) {
+        var parts = [];
+        parts.push(Bon.configured ? "BondMarket connected" : "BondMarket awaiting CA");
+        parts.push(Sav.configured ? "Savings connected" : "Savings awaiting CA");
+        strip.innerHTML = '<span class="tiny-dot"></span>' + parts.join(" · ");
+      }
+    }
+    window.__setEcon = function (s) { paintBooks(s); };
+    if (window.vapurr && typeof vapurr.send === "function") {
+      vapurr.send({ cmd: "econ" });
+      setInterval(function () {
+        if (vapurr.pendingTx) return;
+        vapurr.send({ cmd: "econ" });
+      }, 8000);
+    }
 
     paintAsset("ETH");
   </script>

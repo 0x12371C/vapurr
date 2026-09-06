@@ -186,3 +186,13 @@
 - **workers:** KFX **idle** (grok 21016); PayId **idle** (grok 9228); Bind **idle** (PID gone) - no respawn. Extra grok windows present (graphify 18356, bare grok, gh-auth 15672) - not watch-spawned. No new organizer procs.
 - **branch:** `pack/d59912d` (+ this slice)
 - **build slice:** FeeAttribution **who-paid UI stub** on House tab - `#h-attrib` House/Lithe/Oliver chips (em-dash until breakdown reads) + `#h-fee-note` follows `snap.remittance.configured` / NeedRemittance. Docs HOUSE_PAIR / EARNINGS_ENGINE / ROUTING / TRACKS channel rev honesty. Still open P1: Oliver gV/wgV collateral wire, live CD/BondMarket ABI after deploy, House Uni v4 e2e / remittance live enable, SignPath.
+
+## 2026-09-06 ~10:10 ET - hourly watch
+
+- **justin:** online
+- **Programs:** DisplayVersion **1.1.9**; FileVersion **1.1.9**; sha `1966F07AF5FA`; **NotSigned** (signing still P0; Relic: unsigned OK for build/test)
+- **dist/channel:** AppData channel **1.1.9** rev `8770b23` sha256 `35a8b73c64f3`; Programs exe != channel copy; TSL channel manifest still **404**
+- **workers:** KFX idle (grok 21016); PayId idle (grok 9228); Bind idle (PID gone) - no respawn. Extra grok/ps present - not watch-spawned. No new organizer procs.
+- **branch:** `pack/d59912d` (+ this slice)
+- **build slice:** NeedSavings / NeedBondMarket honesty UI on frontend/bonds.html - #cd-book-note + #bond-book-note follow snap.savings/bonds.configured; capital strip CA status; CTA errors name Need*; __setEcon + econ poll. Docs SPUSD/BONDS scrubbed. Still open P1: Oliver gV/wgV collateral wire, live CD/BondMarket ABI after deploy, House Uni v4 e2e / remittance live enable, SignPath.
+

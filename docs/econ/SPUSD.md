@@ -105,3 +105,8 @@ positions, early-exit accounting, principal isolation, ownership, and fuzzed pay
 repaid interest -> attribution -> sink -> both savings legs at a flat V oracle price.
 Also tests actual rebasing PUSD deposits and credits. The House fee is funded inventory
 in this test; automated Uni swap fee collection remains a separate integration.
+
+### NeedSavings honesty UI (2026-09-06)
+
+frontend/bonds.html #spusd-cd paints #cd-book-note from snap.savings.configured (empty book -> NeedSavings). Open CD CTA stays live; on-tx miss surfaces clearly. Live open ABI still Relic-gated after deploy.
+

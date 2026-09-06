@@ -156,3 +156,7 @@ These are **distinct from Open Bond** (exogenous in → gV out). Bond purchase s
 
 Contracts: ExogenousPairRegistry.sol (+ optional ExogenousSeedMarket stub). Wire: LaunchBootstrap. Proofs: ExogenousPairRegistry.t.sol. Live Uni v4 pool addresses remain empty until deploy — UI honest-empty.
 
+### NeedBondMarket honesty UI (2026-09-06)
+
+frontend/bonds.html #bonds paints #bond-book-note from snap.bonds.configured (empty book -> NeedBondMarket). Open Bond CTA stays live; capital strip shows BondMarket/Savings CA status. Live quote ABI still Relic-gated after deploy.
+
