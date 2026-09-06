@@ -215,3 +215,13 @@
 - **branch:** `pack/d59912d` @ `6385b67` (+ this slice)
 - **build slice:** honesty-scrub STATUS postage + TRACKS build row for **VapurrForwarder / vapurr-relay** source (`docs/RELAY.md`) and Programs **1.1.14** / manifest **1.1.13** mismatch. Postage stays voucher until live enable. Still open P1: Oliver gV/wgV collateral wire, live CD/BondMarket ABI after deploy, House Uni v4 e2e / remittance live enable, SignPath, live relay deploy.
 
+
+## 2026-09-06 ~13:05 ET - hourly watch
+
+- **justin:** online
+- **Programs:** VERSION **1.1.14** (sha `F5897A8BEC53`, rev `e590ef3`); Programs `manifest.json` **1.1.13** (same rev, different sha/size); **NotSigned** (signing still P0 ship blocker; Relic: unsigned OK for build/test)
+- **dist/channel:** AppData channel **1.1.14** (sha `f5897a8bec53...`); **TSL channel restored** — `https://thesecretlab.app/vapurr/channel/manifest.json` **200** at **1.1.13** (rev `e590ef3`, sha `324286bf6f68...`); local repo `channel/manifest.json` missing; dist pack artifacts still **1.1.10**
+- **workers:** KFX **idle** (grok 21016 / ps 20776); PayId **idle** (grok 9228 / ps 20492); Bind **idle** (PID gone) - no respawn. Extra grok windows present (graphify 18356, bare grok, House title, gh-auth 15672) - not watch-spawned. No new organizer procs.
+- **branch:** `pack/d59912d` @ `71ae5f7` (+ this slice)
+- **build slice:** TRACKS honesty — TSL channel no longer 404; record live **1.1.13** public channel vs Programs/AppData **1.1.14** / Programs manifest **1.1.13** mismatch. Preferred Fed UI stubs (BONDS ETH/USDG/stocks, routing-visual, fee→remittance, sPUSD CD, wgV House notes) already landed prior hours; remaining P1 are Relic-gated deploys (Oliver gV/wgV collateral, live CD/BondMarket ABI, House Uni v4 e2e / remittance enable, SignPath, relay live). Still open P1: same + promote TSL channel to 1.1.14 after signed pack.
+
