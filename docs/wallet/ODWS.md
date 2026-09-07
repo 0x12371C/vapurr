@@ -31,9 +31,30 @@ OpenAI ≠ open-iris. Name each correctly in UI and press.
 |---|---|---|
 | 0–2 | Wallet (+ optional age/jurisdiction claims) | Wallet uniqueness only |
 | 3 | Phone (Twilio Verify) | Phone nullifier |
-| **4 / Level 4 full KYC** | Ocular template via **open-iris** | UI: https://thesecretlab.app/kyc/scan (iPhone-first). Product copy says **Level 4**. Claims: UniqueHuman, OcularBiometric. |
+| **4 / Level 4 full KYC** | Ocular nullifier via **open-iris** | UI: https://thesecretlab.app/kyc/scan (iPhone-first). Product copy says **Level 4**. Claims: UniqueHuman, OcularBiometric. |
 
 Browse-earn **claim** requires proven human attestation (**Level 4** / trustLevel 4). install_id binds the machine install separately.
+
+### Privacy hard lock (Relic, 2026-09-07)
+
+We do not store anyone's personal info. Proof is ZK — an opaque attestation
+and nullifier, not the underlying scan. Concretely, for the ocular Level 4
+flow:
+
+- Camera frames are written to a temp file only for the duration of the
+  enroll request and always unlinked, never durable.
+- The iris-code template is computed and consumed on that request's stack;
+  it is **never** written to durable storage.
+- What's kept is `keccak(template)` — an opaque, one-way nullifier — plus
+  which engine produced it. No raw template, no wallet address paired with
+  the biometric, no photo, anywhere durable.
+- Durable state lives only in the **vapurrDB-secured backend** (opaque
+  attestations / nullifiers), the same store `vapurr-id::verify_attestation`
+  and vapurrDB's `cacheAttestation` already agree on.
+- Trade-off, stated plainly: this means near-duplicate detection (catching a
+  *similar*, not bit-identical, rescan of the same eye) is not done
+  durably anymore — only an exact-nullifier repeat is rejected. See Secret
+  Lab's `lib/zeroid/ocular.js` and `ZEROID_ISSUER.md` for the implementation.
 
 ## First create (product gate)
 

@@ -30,3 +30,14 @@ No fake Proven. No PII in vapurr tree. No mainnet secrets in repo.
 ## Full KYC (ocular)
 Wallet Identity pane opens https://thesecretlab.app/kyc/scan. Builds on Worldcoin open-iris (MIT); tooling may build on OpenAI tech. Not partnership claims. ODWS: docs/wallet/ODWS.md.
 
+**Storage hard lock (Relic, 2026-09-07):** we do not store anyone's personal
+info. Proof is ZK; durable state lives only in the vapurrDB-secured backend
+as opaque attestations / nullifiers — no raw photos, no PII, no long-lived
+biometric templates tied to a wallet. The Secret Lab ocular path
+(`lib/zeroid/ocular.js`) was found storing the raw template durably and
+indexing it for cross-enrollment near-dup checks; both are fixed — durable
+storage now keeps only `{nullifier, engine, enrolledAt}`, and dedup is
+exact-nullifier only (see that repo's `ZEROID_ISSUER.md`). UI surfaces
+(`login.html`, `earn.html`, `id.html`, `/kyc/scan`) now say this plainly:
+we don't store your scan, only a ZK-style attestation.
+
