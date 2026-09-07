@@ -110,3 +110,4 @@ in this test; automated Uni swap fee collection remains a separate integration.
 
 frontend/bonds.html #spusd-cd paints #cd-book-note from snap.savings.configured (empty book -> NeedSavings). Open CD CTA stays live; on-tx miss surfaces clearly. Live open ABI still Relic-gated after deploy.
 
+Prove: `python scripts/verify-spusd-cd.py` (live CTA + NeedSavings + SPUSD.md sketch needles).
