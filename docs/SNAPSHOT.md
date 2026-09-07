@@ -1,12 +1,12 @@
-﻿# vapurr snapshot — 2026-09-06 ~16:09 ET (vapurrbot)
+# vapurr snapshot - 2026-09-07 ~00:02 ET (vapurrbot)
 
 Living board for agents. Prefer this + `TRACKS.md` + `STATUS.md` over old overnight kick lore.
 
 ## Ship
 | Item | Truth |
 |------|-------|
-| Programs | **1.1.15** @ `%LOCALAPPDATA%\Programs\vapurr\vapurr.exe` (rev `e590ef3`, sha `f7436bf66bcc...`, **NotSigned**) |
-| AppData channel | **1.1.15** (same rev/sha as Programs VERSION.txt) |
+| Programs | **1.1.19** @ `%LOCALAPPDATA%\Programs\vapurr\vapurr.exe` (rev `e590ef3`, sha `7731576ce92c...`, **NotSigned**; Uninstall DisplayVersion repaired to match) |
+| AppData channel | **1.1.19** (same rev/sha as Programs; profile VERSION.txt synced) |
 | TSL public channel | **1.1.13** at `thesecretlab.app/vapurr/channel/manifest.json` (rev `e590ef3`, different sha/size) |
 | Cargo / dist zip | Cargo still **1.1.10**; latest `dist/vapurr-1.1.10-windows-x64.zip` + `dist/vapurr-setup.exe` (~11:02 ET). Local repo `channel/manifest.json` missing. |
 | Pack rule | **never embed mp4/webm**; House/`pack.ps1` sole packer |
@@ -23,7 +23,7 @@ Living board for agents. Prefer this + `TRACKS.md` + `STATUS.md` over old overni
 - sPUSD CD live CTA stub + NeedSavings honesty.
 - House fee→remittance note + FeeAttribution who-paid chips (em-dash until breakdown reads).
 - wgV / $PUSD House visual stub (wrap-first).
-- Still Relic-gated: Oliver gV/wgV collateral wire, live CD/BondMarket ABI after deploy, House Uni v4 e2e / remittance enable, SignPath, promote TSL to 1.1.15 after signed pack, live relay.
+- Still Relic-gated: Oliver gV/wgV collateral wire, live CD/BondMarket ABI after deploy, House Uni v4 e2e / remittance enable, SignPath, promote TSL to 1.1.19 after signed pack, live relay.
 
 ## Org
 | Role | Status |
@@ -48,7 +48,7 @@ Living board for agents. Prefer this + `TRACKS.md` + `STATUS.md` over old overni
 - Docs: `docs/ketflix/HOSTING.md`.
 
 ## Open next (Relic)
-1. SignPath / signed pack, then promote TSL channel to match Programs 1.1.15
+1. SignPath / signed pack, then promote TSL channel to match Programs 1.1.19
 2. Hostile-page security retest before public ship
 3. Live address-book fills (savings / bond_market / remittance) after reviewed deploys
 4. Trailer sync to TSL when ready

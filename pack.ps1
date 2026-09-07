@@ -199,6 +199,26 @@ Copy-Item $loader.FullName (Join-Path $chan "WebView2Loader.dll") -Force -ErrorA
 Set-Content -Path (Join-Path $chan "manifest.json") -Value $manifest -Encoding ascii
 Copy-Item (Join-Path $stage "VERSION.txt") (Join-Path $chan "VERSION.txt") -Force
 Write-Output "channel $chan"
+# If Programs exe already matches this channel hash (manual/sync promote), keep
+# Uninstall DisplayVersion + profile VERSION.txt honest without waiting for PatchApply.
+$progDir = Join-Path $env:LOCALAPPDATA "Programs\vapurr"
+$progExe = Join-Path $progDir "vapurr.exe"
+$chanExe = Join-Path $chan "vapurr.exe"
+if ((Test-Path $progExe) -and (Test-Path $chanExe)) {
+  $ph = (Get-FileHash $progExe -Algorithm SHA256).Hash.ToLowerInvariant()
+  $chash = (Get-FileHash $chanExe -Algorithm SHA256).Hash.ToLowerInvariant()
+  if ($ph -eq $chash) {
+    Copy-Item (Join-Path $chan "VERSION.txt") (Join-Path $progDir "VERSION.txt") -Force
+    Copy-Item (Join-Path $chan "manifest.json") (Join-Path $progDir "manifest.json") -Force
+    $uKey = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\vapurr"
+    if (Test-Path $uKey) {
+      Set-ItemProperty -Path $uKey -Name DisplayVersion -Value $ver
+      Write-Output "Programs==channel; uninstall DisplayVersion -> $ver"
+    }
+  }
+}
+Copy-Item (Join-Path $chan "VERSION.txt") (Join-Path $env:LOCALAPPDATA "vapurr\VERSION.txt") -Force
+
 
 Copy-Item (Join-Path $PSScriptRoot "LICENSE") (Join-Path $stage "LICENSE.txt") -Force
 

@@ -321,3 +321,13 @@ emittance_book_snap); empty CAs show NeedRemittance (no live remit enable). Prov
 - **workers:** KFX **idle** (grok 21016 / ps 20776); PayId **idle** (grok 9228 / ps 20492); Bind **idle** (PID gone) - no respawn. Extra grok windows present (graphify 18356, bare groks, gh-auth 15672) - not watch-spawned. No new organizer procs.
 - **branch:** `pack/d59912d` (+ this slice)
 - **build slice:** sPUSD CD sketch prove - `scripts/verify-spusd-cd.py` PASS (Open CD live CTA not gray-gated, NeedSavings book note, savings_book_snap, SPUSD.md needles). TRACKS Build/pack honesty: TSL restored 200 @ 1.1.13; Programs 1.1.17 vs channel 1.1.18. Still open P1: Oliver gV/wgV collateral, live CD/BondMarket ABI, House Uni v4 e2e / remittance live enable, SignPath, promote TSL after signed pack + PatchApply Programs to 1.1.18.
+
+
+## 2026-09-07 ~00:02 ET - hourly watch
+
+- **justin:** online
+- **Programs:** VERSION **1.1.19** (sha 7731576ce92c..., rev e590ef3); Uninstall DisplayVersion was stale **1.1.17** after promote-without-PatchApply; **repaired to 1.1.19**; **NotSigned** (signing still P0 ship blocker; Relic: unsigned OK for build/test)
+- **dist/channel:** AppData channel **1.1.19** (same sha/rev); AppData root VERSION.txt synced off Programs (was lag 1.1.11); **TSL channel 200** at **1.1.13** (rev e590ef3, sha 324286bf6f68...); local repo channel/manifest.json missing; dist/Cargo still **1.1.10**
+- **workers:** KFX **idle** (grok 21016 / ps 20776); PayId **idle** (grok 9228 / ps 20492); Bind **idle** (PID gone) - no respawn. Extra grok windows present (graphify / bare / gh-auth) - not watch-spawned. No new organizer procs.
+- **branch:** `pack/d59912d` (+ this slice)
+- **build slice:** DisplayVersion honesty after 1.1.19 promote - live Uninstall repair + profile VERSION sync; `verify-display-version.py --live` PASS; `pack.ps1` refreshes DisplayVersion + profile VERSION when Programs sha==channel; TRACKS/SNAPSHOT ship board honest at 1.1.19. Still open P1: Oliver gV/wgV collateral, live CD/BondMarket ABI, House Uni v4 e2e / remittance live enable, SignPath, promote TSL after signed pack.
