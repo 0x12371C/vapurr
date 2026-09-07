@@ -1,4 +1,4 @@
-﻿# zer0ID on Robinhood Chain (Relic overnight)
+# zer0ID on Robinhood Chain (Relic overnight)
 
 ## Why this moved up
 Browse-earn **payout** requires zer0ID KYC at https://www.thesecretlab.app/kyc.
@@ -25,3 +25,8 @@ Therefore live zer0ID is **not** parked theater for the earn/KetPay path — it 
 
 ## Honesty
 No fake Proven. No PII in vapurr tree. No mainnet secrets in repo.
+
+
+## Full KYC (ocular)
+Wallet Identity pane opens https://thesecretlab.app/kyc/scan. Builds on Worldcoin open-iris (MIT); tooling may build on OpenAI tech. Not partnership claims. ODWS: docs/wallet/ODWS.md.
+

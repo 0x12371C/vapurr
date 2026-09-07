@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8"/>
@@ -19,7 +19,7 @@
     h1 { font-size: 32px; font-weight: 600; letter-spacing: -0.03em; margin-bottom: 8px; }
     .lede { color: var(--color-muted); margin-bottom: 24px; max-width: 460px; line-height: 1.5; }
     .card {
-      padding: 18px 20px 20px; margin-bottom: 18px;
+      padding: 18px 20px 20px; margin-bottom: 14px;
       background: color-mix(in srgb, var(--color-steel) 58%, transparent);
       backdrop-filter: blur(24px) saturate(1.45);
       -webkit-backdrop-filter: blur(24px) saturate(1.45);
@@ -40,12 +40,20 @@
 <body>
   <div class="wrap">
     <div class="mark-wrap"><img class="mark" src="/mascot.png" alt=""/></div>
-    <div class="mono kicker">IDENTITY</div>
+    <div class="mono kicker">IDENTITY · ODWS</div>
     <h1>zer0ID</h1>
-    <p class="lede">Prove a person. We keep a handle, not a passport. Browse-earn payout requires KYC.</p>
+    <p class="lede">Prove a person for browse-earn. Wallet keys stay on this device under the Open Digital Wallet Standard. We keep a handle, not a passport.</p>
     <div class="steel card">
-      <b>KYC via Secret Lab</b>
-      <p>Complete zer0ID at thesecretlab.app/kyc. Attestation stays claims-only (over-18, unique human, sanctions-clear). No passport or selfie stored in vapurr.</p>
+      <b>Full KYC — ocular scan</b>
+      <p>Required for earn claim. iPhone-first capture; templates via Worldcoin open-iris (MIT) on Secret Lab servers. Not Orb hardware. Opens thesecretlab.app/kyc/scan.</p>
+    </div>
+    <div class="steel card">
+      <b>Builds on</b>
+      <p>open-iris for ocular uniqueness. OpenAI technology where the Secret Lab / vapurr tooling integrates it. Not an official OpenAI or Worldcoin partnership — we build on open / available tech.</p>
+    </div>
+    <div class="steel card">
+      <b>Open Digital Wallet Standard</b>
+      <p>Local encrypted vault, passcode lock, seed backup at create. Spec: docs/wallet/ODWS.md.</p>
     </div>
     <ul class="facts">
       <li><strong>Earn gate.</strong> Without a proven attestation, browse-data claim pays nothing. Machine install_id still binds the install.</li>
@@ -53,7 +61,8 @@
       <li><strong>Ad block is Shield.</strong> This page is identity only.</li>
     </ul>
     <div class="row">
-      <button class="btn" id="kyc" type="button">Start KYC</button>
+      <button class="btn" id="kyc" type="button">Full KYC scan</button>
+      <button class="btn-ghost" id="kyc-basic" type="button">Basic KYC</button>
       <button class="btn-ghost" id="to-shield" type="button">Open Shield</button>
       <button class="btn-ghost" id="to-earn" type="button">Earn</button>
     </div>
@@ -61,6 +70,9 @@
   <script src="/ipc.js"></script>
   <script>
     document.getElementById("kyc").onclick = function () {
+      vapurr.send({ cmd: "open", url: "https://thesecretlab.app/kyc/scan" });
+    };
+    document.getElementById("kyc-basic").onclick = function () {
       vapurr.send({ cmd: "open", url: "https://thesecretlab.app/kyc" });
     };
     document.getElementById("to-shield").onclick = function () {
