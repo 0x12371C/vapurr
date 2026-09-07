@@ -89,7 +89,9 @@ it is not a deployment performed by this change.
 
 `frontend/bonds.html` `#spusd-cd` is a **live CTA stub** (Open CD + amount), same posture as Open Bond:
 actionable controls, clear on-tx / not-configured error when address-book / IPC is missing.
-Do not gray-gate or hide the CD surface. Term / coupon / break-fee rows stay placeholder until a savings market is connected (`econ-cd-open`).
+Do not gray-gate or hide the CD surface.
+
+**Sketch rows (2026-09-07):** 30d/90d cards show **target / term** and **break fee** as `sketch · awaiting book` / `sketch · entry-time`, plus a separate **funded preview** row (`— until surplus credited`). Live numbers land only after SavingsRouter / SpusdCd CAs + IPC (`econ-cd-open`). Prove: `scripts/verify-spusd-cd.py`.
 
 **Address book / IPC (2026-09-06):** empty slots landed in apurr-rhc (TESTNET_SPUSD, TESTNET_SPUSD_CD, TESTNET_SAVINGS_ROUTER) + MarketCfg (spusd / spusd_cd / savings_router) and snap under savings. econ-cd-open parses and returns **NeedSavings** until Relic fills CAs after a reviewed deploy. Live open/ABI still open; existing deployments do not pick up source-only changes automatically.
 

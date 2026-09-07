@@ -13,10 +13,18 @@ need_html = [
     'id="cd-book-note"',
     'id="cd-cta"',
     'id="cd-amt"',
+    'id="cd-30-target"',
+    'id="cd-30-funded"',
+    'id="cd-30-break"',
+    'id="cd-90-target"',
+    'id="cd-90-funded"',
+    'id="cd-90-break"',
     "Open CD",
     "NeedSavings",
     "econ-cd-open",
     "Sav.configured",
+    "funded preview",
+    "sketch · awaiting book",
 ]
 missing_html = [n for n in need_html if n not in html]
 if missing_html:
@@ -58,4 +66,15 @@ for needle in [
         print("FAIL SPUSD.md missing", needle)
         sys.exit(1)
 
-print("PASS sPUSD CD live CTA + NeedSavings + SPUSD.md sketch")
+# SPUSD.md requires target/term + funded preview shown separately (not one fake rate).
+for needle in ["funded preview", "target per term", "current funded preview"]:
+    if needle not in spusd and needle != "funded preview":
+        pass
+if "funded preview" not in spusd and "current funded preview" not in spusd:
+    print("FAIL SPUSD.md missing funded-preview UI requirement")
+    sys.exit(1)
+if "sketch · awaiting book" not in html:
+    print("FAIL CD cards missing sketch awaiting-book posture")
+    sys.exit(1)
+
+print("PASS sPUSD CD live CTA + funded-preview sketch + NeedSavings + SPUSD.md")
