@@ -175,3 +175,9 @@ Client stubs on disk (not live-wired): `crates/vapurr-econ/src/bond_market.abi.j
 ### ExoRfvSink ABI stub (2026-09-07)
 
 STOCKS treasury sink client stub on disk (ops/keeper spend path, not Open Bond UX): `crates/vapurr-econ/src/exo_rfv_sink.abi.json`. Live CA on 46630 is documented in `STATUS.md` / `RFV_STOCK_ETH_V_LOOP.md`. No user IPC cmd yet — stub only. Prove: `scripts/verify-exo-rfv-abi.py`.
+
+## Exo RFV sink (ops)
+- Source: `contracts/ExoRfvSink.sol` (keeper/owner spendable sink for BondMarket treasury retarget after deploy).
+- ABI stub: `crates/vapurr-econ/src/exo_rfv_sink.abi.json` — prove `scripts/verify-exo-rfv-abi.py`.
+- Not a user IPC path; GenesisTreasury V-carve stays untouched.
+

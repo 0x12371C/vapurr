@@ -1,16 +1,16 @@
-# vapurr snapshot - 2026-09-07 ~11:27 ET (vapurrbot)
+# vapurr snapshot - 2026-09-07 ~15:18 ET (vapurrbot)
 
 Living board for agents. Prefer this + `TRACKS.md` + `STATUS.md` over old overnight kick lore.
 
 ## Ship
 | Item | Truth |
 |------|-------|
-| Programs | **1.1.19** @ `%LOCALAPPDATA%\Programs\vapurr\vapurr.exe` (rev `e590ef3`, sha `7731576ce92c...`, **NotSigned**; Uninstall DisplayVersion repaired to match) |
-| AppData channel | **1.1.10** (rev `31d8e7d`, sha `f78c3476322e...`, packed ~10:56 ET) — **Programs still on 1.1.19**; profile VERSION.txt matches channel |
-| TSL public channel | **1.1.13** at `thesecretlab.app/vapurr/channel/manifest.json` (rev `e590ef3`); **www.thesecretlab.app TLS expired** |
-| Cargo / dist zip | Cargo still **1.1.10**; latest `dist/vapurr-1.1.10-windows-x64.zip` + `dist/vapurr-setup.exe` (~11:02 ET). Local repo `channel/manifest.json` missing. |
+| Programs | **1.1.10** @ `%LOCALAPPDATA%\Programs\vapurr\vapurr.exe` (rev `b57b32f`, sha `cfd7435a5984...`, **NotSigned**; Uninstall DisplayVersion **1.1.10** matches) |
+| AppData channel | **1.1.10** (same sha/rev) — Programs **matches** channel; profile VERSION.txt matches |
+| TSL public channel | **1.1.13** at `thesecretlab.app/vapurr/channel/manifest.json` (rev `e590ef3`, sha `324286bf6f68...`); **www.thesecretlab.app TLS expired** |
+| Cargo / dist zip | Cargo **1.1.10**; local Programs/channel also **1.1.10**. TSL still lagging signed promote. |
 | Pack rule | **never embed mp4/webm**; House/`pack.ps1` sole packer |
-| Version board | `scripts/verify-version-board.py --watch` reports **SKEW** Programs 1.1.19 != channel 1.1.10; `--live` still strict FAIL until PatchApply/repack |
+| Version board | `scripts/verify-version-board.py --watch` PASS live Programs==channel==DisplayVersion=1.1.10; NOTE TSL SKEW 1.1.13 |
 | Signing | **P0 SHIP BLOCKER** — unsigned Defender hit. SignPath / OV still open. Relic: unsigned OK for build/test; hold stranger-ship until signed + security retest (`docs/RELEASE_REVIEW_2026-09-04.md`). |
 
 ## Routing / House honesty (2026-09-06)
@@ -24,7 +24,7 @@ Living board for agents. Prefer this + `TRACKS.md` + `STATUS.md` over old overni
 - sPUSD CD live CTA stub + NeedSavings honesty.
 - House fee→remittance note + FeeAttribution who-paid chips (em-dash until breakdown reads). Prove: scripts/verify-remittance-book.py (who-paid chips).
 - wgV / $PUSD House visual stub (wrap-first).
-- Still Relic-gated: Oliver gV/wgV collateral wire, live CD/BondMarket ABI after deploy, House Uni v4 e2e / remittance enable, SignPath, promote TSL to 1.1.19 after signed pack, live relay.
+- Still Relic-gated: Oliver gV/wgV collateral wire, live CD/BondMarket ABI after deploy, House Uni v4 e2e / remittance enable, SignPath, promote TSL to match local 1.1.10 after signed pack, live relay.
 
 ## Org
 | Role | Status |
@@ -49,7 +49,7 @@ Living board for agents. Prefer this + `TRACKS.md` + `STATUS.md` over old overni
 - Docs: `docs/ketflix/HOSTING.md`.
 
 ## Open next (Relic)
-1. SignPath / signed pack, then promote TSL channel to match Programs 1.1.19; renew www.thesecretlab.app TLS (bare host still 200)
+1. SignPath / signed pack, then promote TSL channel to match Programs 1.1.10 (after signed pack); renew www.thesecretlab.app TLS (bare host still 200)
 2. Hostile-page security retest before public ship
 3. Live address-book fills (savings / bond_market / remittance) after reviewed deploys
 4. Trailer sync to TSL when ready
