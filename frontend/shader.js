@@ -125,15 +125,24 @@ void main() {
   }
 
   function bootShader(canvas) {
-    var gl = canvas.getContext("webgl2", {
+    var opts = {
       alpha: false,
       antialias: false,
       depth: false,
       stencil: false,
       premultipliedAlpha: true,
       powerPreference: "high-performance",
-    });
-    if (!gl) return;
+    };
+    var gl = canvas.getContext("webgl2", opts);
+    if (!gl) {
+      try {
+        canvas.dataset.shader = "fail-webgl2";
+        console.warn("vapurr shader: WebGL2 unavailable");
+        if (canvas.parentElement) canvas.parentElement.classList.add("shader-fallback");
+      } catch (e) {}
+      return;
+    }
+    try { canvas.dataset.shader = "webgl2"; } catch (e2) {}
 
     var vs = compile(gl, gl.VERTEX_SHADER, VERT);
     var fs = compile(gl, gl.FRAGMENT_SHADER, FRAG);
@@ -223,8 +232,18 @@ void main() {
       if (!reduced && !g.document.hidden) g.requestAnimationFrame(frame);
     }
 
-    fit();
-    draw(t0);
+    function refitSoon() {
+      fit();
+      draw(performance.now());
+    }
+    refitSoon();
+    // Late chrome layout / WebView2 first paint: canvas can boot at 1x1 then grow.
+    g.requestAnimationFrame(function () {
+      refitSoon();
+      g.requestAnimationFrame(refitSoon);
+    });
+    g.setTimeout(refitSoon, 50);
+    g.setTimeout(refitSoon, 250);
     if (!reduced) g.requestAnimationFrame(frame);
     g.document.addEventListener("visibilitychange", function () {
       if (!g.document.hidden && !reduced) g.requestAnimationFrame(frame);

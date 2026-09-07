@@ -26,6 +26,22 @@
       height: 100%;
       display: block;
     }
+    /* If WebGL2 dies (dataset set by shader.js), keep a living lime wash so home is not flat void. */
+    .shader-layer.shader-fallback {
+      background:
+        radial-gradient(120% 80% at 50% 15%, color-mix(in srgb, var(--color-lime) 22%, transparent), transparent 55%),
+        radial-gradient(90% 70% at 20% 80%, color-mix(in srgb, var(--color-forest) 55%, transparent), transparent 60%),
+        radial-gradient(90% 70% at 85% 70%, color-mix(in srgb, var(--color-lime) 10%, transparent), transparent 55%),
+        var(--color-void);
+      animation: shaderPulse 12s ease-in-out infinite alternate;
+    }
+    @keyframes shaderPulse {
+      from { filter: saturate(1) brightness(1); }
+      to { filter: saturate(1.15) brightness(1.06); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .shader-layer.shader-fallback { animation: none; }
+    }
     .stage {
       flex: 1;
       min-height: 0;
