@@ -723,6 +723,12 @@
         <div class="have" id="h-fee-note">Protocol fee carve remits House / Lithe / Oliver through FeeAttribution into RemittanceSink. Book empty (NeedRemittance) until Relic fills CAs. LP fees stay with LPs. Live Uni v4 skim e2e still open.</div>
         <div class="facts" id="h-attrib" aria-label="FeeAttribution who paid"><div class="chip"><span>House</span><b id="h-attrib-house">—</b></div><div class="chip"><span>Lithe</span><b id="h-attrib-lithe">—</b></div><div class="chip"><span>Oliver</span><b id="h-attrib-oliver">—</b></div></div>
         <div class="facts" id="h-remit-book" aria-label="Remittance destination address book"><div class="chip"><span>FeeRemit</span><b id="h-remit-fee">—</b></div><div class="chip"><span>UniSkim</span><b id="h-remit-skim">—</b></div><div class="chip"><span>FeeAttr</span><b id="h-remit-attr">—</b></div><div class="chip"><span>Sink</span><b id="h-remit-sink">—</b></div></div>
+        <div class="have" id="h-remit-note">Remittance book empty (NeedRemittance) until Relic fills FeeRemit / UniSkim / FeeAttr / Sink CAs. Remit fees stays live; on-tx surfaces the miss.</div>
+        <div class="two" id="h-remit-row" style="margin-top:8px;gap:8px;align-items:center">
+          <input class="field" id="h-remit-amt" aria-label="House fee remit amount" placeholder="0" inputmode="decimal" autocomplete="off"/>
+          <button class="btn" type="button" id="h-remit-cta" title="Remit protocol fee carve via FeeAttribution">Remit fees</button>
+        </div>
+        <div id="h-remit-err" role="alert" style="display:none;margin-top:8px;padding:10px 12px;border-radius:10px;border:1px solid color-mix(in srgb,#f87171 45%,transparent);color:#fecaca;font-size:13px;line-height:1.4"></div>
         <div class="have" id="h-have">Not seeded.</div>
         <div class="have" id="h-stocks"></div>
         <div class="two" id="house-boot-row">
@@ -1322,6 +1328,14 @@
           feeNote.textContent = "Protocol fee carve remits House / Lithe / Oliver through FeeAttribution into RemittanceSink. Book empty (NeedRemittance) until Relic fills CAs. LP fees stay with LPs. Live Uni v4 skim e2e still open.";
         }
       }
+      var remitNote = document.getElementById("h-remit-note");
+      if (remitNote) {
+        if (R.configured) {
+          remitNote.textContent = "Remittance book live — FeeAttribution source-share reads + live Uni v4 skim e2e still open. Remit fees stays live.";
+        } else {
+          remitNote.textContent = "Remittance book empty (NeedRemittance) until Relic fills FeeRemit / UniSkim / FeeAttr / Sink CAs. Remit fees stays live; on-tx surfaces the miss.";
+        }
+      }
       quoteHouse();
     }
     document.getElementById("amt").addEventListener("input", quote);
@@ -1593,6 +1607,26 @@
         waitHash = (snap && snap.tx) || "";
         vapurr.send({ cmd: "econ-swap", sell_v: sellV, amt: amt });
       });
+    };
+        var remitCta = document.getElementById("h-remit-cta");
+    if (remitCta) remitCta.onclick = function () {
+      var amt = ((document.getElementById("h-remit-amt") || {}).value || "").trim();
+      var err = document.getElementById("h-remit-err");
+      if (err) { err.style.display = "none"; err.textContent = ""; }
+      if (!amt || !(Number(amt) > 0)) {
+        if (err) {
+          err.style.display = "block";
+          err.textContent = "Remit needs an amount — enter positive $PUSD, then Remit fees again.";
+        }
+        return;
+      }
+      if (window.vapurr && typeof vapurr.send === "function") {
+        vapurr.send({ cmd: "econ-house-fee-remit", amt: amt });
+      }
+      if (err) {
+        err.style.display = "block";
+        err.textContent = "Remittance book empty (NeedRemittance) until Relic fills FeeRemit / UniSkim / FeeAttr / Sink. Remit fees stays live.";
+      }
     };
     document.getElementById("house-deploy").onclick = function () {
       if (vapurr.pendingTx) return;

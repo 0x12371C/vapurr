@@ -1,4 +1,4 @@
-| Build / pack | House | **Programs + AppData channel 1.1.19** (sha 7731576ce92c..., rev e590ef3, **NotSigned**); Uninstall DisplayVersion **1.1.19**; AppData VERSION.txt **1.1.19**; **TSL bare** channel **200** at **1.1.13** (rev e590ef3, sha 324286bf6f68...); **www.thesecretlab.app TLS expired** (CERT_VERIFY_FAILED); Cargo/dist still **1.1.10**; local repo channel/manifest.json missing. Overnight 02:22: scripts/verify-version-board.py --live PASS (Programs==channel==DisplayVersion; Cargo/TSL skew noted). Hold stranger-ship until signed + Relic security bar. | Signed pack to TSL after Relic retest; renew www TLS; promote TSL after signed pack; SignPath remains ship P0 |
+| Build / pack | House | **Programs + AppData channel 1.1.19** (sha 7731576ce92c..., rev e590ef3, **NotSigned**); Uninstall DisplayVersion **1.1.19**; AppData VERSION.txt **1.1.19**; **TSL** `thesecretlab.app/vapurr/channel` **200** at **1.1.13** (rev e590ef3, sha 324286bf6f68...); bare `/channel` **404**; **www TLS expired**; Cargo/dist still **1.1.10**; House **Remit fees** live CTA + NeedRemittance book (verify-remittance-book PASS). Hold stranger-ship until signed + Relic security bar. | Signed pack to TSL after Relic retest; renew www TLS; promote TSL after signed pack; SignPath remains ship P0 |
 
 Living owner board. Snapshot: `docs/SNAPSHOT.md`. Flash: `docs/ORG_FLASH.md`.
 
@@ -15,7 +15,7 @@ Living owner board. Snapshot: `docs/SNAPSHOT.md`. Flash: `docs/ORG_FLASH.md`.
 | KetPay / zer0ID | PayId | NeedKyc + KYC URL; **idle** since ~10:26 | freeze unless Relic names hole |
 | install_id | Bind+House | code-verified; Bind PID **gone**; **idle** | no respawn; don't reopen setup.rs |
 | Token economy | vapurrbot+Pilot | gen-4 / HouseLp claimed live 46630; Pilot touched pay/wallet/pusd PM | keep STATUS CAs honest; vault live |
-| Token economy / Fed gV | Relic+House | **slice green** — gV walls + fee/skim/CD/wgV stubs + SavingsRouter/BondMarket live-by-default + gen-5 Lithe cutover source; **USDG = BondAssetTag only** (no `$PUSD`/USDG pool / peg-depth) | Live wire / Uni IHooks / House AMM wgV deploy when Relic opens; savings CAs empty (NeedSavings); remittance CAs empty (NeedRemittance); bond_market empty (NeedBondMarket); SignPath remains ship P0; bonds/CD book prove `verify-bonds-book.py` PASS |
+| Token economy / Fed gV | Relic+House | **slice green** — gV walls + fee/skim/CD/wgV stubs + SavingsRouter/BondMarket live-by-default + gen-5 Lithe cutover source; **USDG = BondAssetTag only** (no `$PUSD`/USDG pool / peg-depth) | Live wire / Uni IHooks / House AMM wgV deploy when Relic opens; savings CAs empty (NeedSavings); remittance CAs empty (NeedRemittance; Remit fees live CTA); bond_market empty (NeedBondMarket); SignPath remains ship P0; bonds/CD book prove `verify-bonds-book.py` PASS |
 | Charts / Psy / Tube | PARK | | |
 
 ## Hard media rule (Relic)

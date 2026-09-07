@@ -350,3 +350,12 @@ emittance_book_snap); empty CAs show NeedRemittance (no live remit enable). Prov
 - **workers:** KFX **idle** (grok 21016 / ps 20776); PayId **idle** (grok 9228 / ps 20492); Bind **idle** (PID gone) - no respawn. Extra grok windows present (graphify / bare / House+Pilot keep) - not watch-spawned. No new organizer procs.
 - **branch:** pack/d59912d (+ this slice)
 - **build slice:** version-board honesty - scripts/verify-version-board.py --live PASS (Programs==channel==DisplayVersion 1.1.19; Cargo 1.1.10 skew noted; TSL bare 1.1.13 skew; www TLS fail noted). Left dirty Oliver/RFV/STATUS worker notes alone. Still open P1: Oliver gV/wgV collateral, live CD/BondMarket ABI, House Uni v4 e2e / remittance live enable, SignPath, renew www TLS, promote TSL after signed pack.
+
+## 2026-09-07 ~03:01 ET - hourly watch
+
+- **justin:** online
+- **Programs:** VERSION **1.1.19** (sha 7731576CE92C, rev e590ef3); Uninstall DisplayVersion **1.1.19**; **NotSigned** (signing still P0 ship blocker; Relic: unsigned OK for build/test)
+- **dist/channel:** AppData channel **1.1.19** (same sha/rev); AppData root VERSION.txt **1.1.19**; **TSL** `thesecretlab.app/vapurr/channel` **200** at **1.1.13** (rev e590ef3, sha 324286bf6f68...); bare `/channel/manifest.json` **404** (wrong path); **www.thesecretlab.app TLS expired**; local repo channel/manifest.json missing; dist/Cargo still **1.1.10**
+- **workers:** KFX **idle** (grok 21016 / ps 20776); PayId **idle** (grok 9228 / ps 20492); Bind **idle** (PID gone) - no respawn. Extra grok windows present (graphify / bare / House+Pilot keep) - not watch-spawned. No new organizer procs.
+- **branch:** pack/d59912d (+ this slice)
+- **build slice:** House fee→remittance live CTA - `#h-remit-cta` Remit fees (not gray-gated) → `econ-house-fee-remit`; remittance note + err surface NeedRemittance; `scripts/verify-remittance-book.py` PASS; HOUSE_PAIR UI note. Still open P1: Oliver gV/wgV collateral, live CD/BondMarket ABI, House Uni v4 e2e / remittance live enable (CAs), SignPath, renew www TLS, promote TSL after signed pack.

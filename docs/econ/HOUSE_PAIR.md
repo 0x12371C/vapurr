@@ -66,6 +66,7 @@ Uni v4 LP fees stay with LPs. Protocol carve (ops / hook / swapper skim) lands a
 
 Client remittance book slots are empty until Relic deploys: `TESTNET_HOUSE_FEE_REMIT`, `TESTNET_HOUSE_UNI_SKIM`, `TESTNET_FEE_ATTRIBUTION`, `TESTNET_REMITTANCE_SINK` + MarketCfg fields; snap under `remittance`. `econ-house-fee-remit` returns **NeedRemittance** until those CAs are filled. Contract sketches (`HouseFeeRemit` / `HouseUniSkim` / `FeeAttribution` / RemittanceSink) exist; P1 live enable + Uni v4 e2e still open.
 
+**UI (2026-09-07):** House card paints remittance destination chips + **Remit fees** live CTA (`#h-remit-cta` → `econ-house-fee-remit`). Empty book stays NeedRemittance-honest; CTA is not gray-gated. Prove: `scripts/verify-remittance-book.py`.
 ## Operator notes
 
 Short ops checklist: [WGV_HOUSE.md](WGV_HOUSE.md) (wrap path, green/open, do-nots).
