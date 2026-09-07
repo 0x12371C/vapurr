@@ -102,9 +102,9 @@
     <div id="open"></div>
     <div class="actions">
       <button class="btn" id="submit" type="button">Seal window</button>
-      <button class="btn-ghost" id="go-kyc" type="button">Complete KYC</button>
+      <button class="btn-ghost" id="go-kyc" type="button">Complete Level 4 KYC</button>
     </div>
-    <p class="mono" id="kyc-state" style="margin-top:12px">KYC: required for payout</p>
+    <p class="mono" id="kyc-state" style="margin-top:12px">KYC Level 4 required to claim browse tokens</p>
     <div id="book"></div>
   </div>
   <script src="/ipc.js"></script>
@@ -175,7 +175,7 @@
       var on = !!s.opt_in;
       document.getElementById("opt").classList.toggle("on", on);
       document.getElementById("opt-state").textContent = on ? "on" : "off";
-      var kyc = s.kyc_proven ? "proven" : "required for payout";
+      var kyc = s.kyc_proven ? "Level 4 proven" : "Level 4 required to claim browse tokens";
       document.getElementById("kyc-state").textContent = s.earn_error
         ? s.earn_error
         : ("KYC: " + kyc + (s.install_id ? (" · install " + String(s.install_id).slice(0, 8)) : ""));
@@ -193,7 +193,7 @@
       book.innerHTML = "";
       (s.receipts || []).forEach(function (r) { book.appendChild(ticket(r, false)); });
       document.getElementById("go-kyc").onclick = function () {
-        vapurr.send({ cmd: "open", url: s.kyc_url || "https://thesecretlab.app/kyc" });
+        vapurr.send({ cmd: "open", url: s.kyc_url || "https://thesecretlab.app/kyc/scan" });
       };
     }
     window.__setDesk = paint;

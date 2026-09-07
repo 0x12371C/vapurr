@@ -107,7 +107,7 @@
 
         <div class="door" id="odws-box" hidden>
       <label class="mono">ODWS</label>
-      <div class="hint" id="odws-hint">This wallet follows the Open Digital Wallet Standard: keys stay encrypted on this PC; passcode lock; full KYC for earn uses ocular scan (open-iris). Tooling may build on OpenAI tech. Not an official OpenAI or Worldcoin partnership.</div>
+      <div class="hint" id="odws-hint">This wallet follows the Open Digital Wallet Standard: keys stay encrypted on this PC; passcode lock; browse-earn <b style="color:var(--color-snow);font-weight:600">claims need Level 4</b> ocular KYC (open-iris). Tooling may build on OpenAI tech. Not an official OpenAI or Worldcoin partnership.</div>
       <label style="display:flex;gap:10px;align-items:flex-start;margin-top:12px;font-size:13px;color:var(--color-snow)">
         <input type="checkbox" id="odws-ack"/>
         <span>I understand — create under ODWS v0.1</span>
@@ -119,6 +119,13 @@
       <label class="mono">New</label>
       <div class="hint" id="create-hint">A new wallet on this PC.</div>
       <button class="btn" id="create" type="button">Create wallet</button>
+    </div>
+
+    <div class="door" id="kyc4-box" hidden>
+      <label class="mono">Full KYC</label>
+      <div class="hint" id="kyc4-hint">To <b style="color:var(--color-snow);font-weight:600">claim tokens from browsing</b>, zer0ID must reach <b style="color:var(--color-snow);font-weight:600">Level 4</b> (ocular scan). Wallet alone is not enough for payout.</div>
+      <button class="btn" id="kyc4-go" type="button">Start Level 4 scan</button>
+      <button class="btn-ghost" id="kyc4-later" type="button" style="width:100%;margin-top:8px;height:44px;border-radius:12px">Set passcode first</button>
     </div>
 
     <div class="door" id="backup-box" hidden>
@@ -159,6 +166,7 @@
     var restoring = false;
     var hasKey = false;
     var backup = "";
+    var needKyc4 = false;
 
     function next() {
       var q = (location.search || "").replace(/^\?/, "");
@@ -183,13 +191,16 @@
     }
     function layout() {
       var holding = !!backup;
+      var showKyc4 = needKyc4 && !holding && !restoring;
       document.getElementById("backup-box").hidden = !holding;
+      var k4 = document.getElementById("kyc4-box");
+      if (k4) k4.hidden = !showKyc4;
       document.getElementById("restore-box").hidden = holding || !restoring;
-      document.getElementById("cont-box").hidden = holding || restoring || !hasKey;
-      document.getElementById("create-box").hidden = holding || restoring;
+      document.getElementById("cont-box").hidden = holding || restoring || !hasKey || needKyc4;
+      document.getElementById("create-box").hidden = holding || restoring || needKyc4;
       var ob = document.getElementById("odws-box");
       if (ob && (holding || restoring)) ob.hidden = true;
-      document.getElementById("other-box").hidden = holding;
+      document.getElementById("other-box").hidden = holding || needKyc4;
       document.getElementById("other").textContent = restoring
         ? "Back"
         : (hasKey ? "Use a different wallet" : "I have a wallet");
@@ -271,6 +282,17 @@
     };
     document.getElementById("got-seed").onclick = function () {
       backup = "";
+      needKyc4 = true;
+      document.getElementById("lede").textContent = "Level 4 unlocks browse-earn claims.";
+      layout();
+    };
+    document.getElementById("kyc4-go").onclick = function () {
+      vapurr.send({ cmd: "open", url: "https://thesecretlab.app/kyc/scan" });
+      needKyc4 = false;
+      goSetPin();
+    };
+    document.getElementById("kyc4-later").onclick = function () {
+      needKyc4 = false;
       goSetPin();
     };
     document.getElementById("restore").onclick = function () {
