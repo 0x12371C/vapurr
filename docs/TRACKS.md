@@ -1,4 +1,4 @@
-| Build / pack | House | **Programs + AppData channel 1.1.19** (sha 7731576ce92c..., rev e590ef3, **NotSigned**); Uninstall DisplayVersion **1.1.19**; AppData VERSION.txt **1.1.19**; **TSL** `thesecretlab.app/vapurr/channel` **200** at **1.1.13** (rev e590ef3, sha 324286bf6f68...); bare `/channel` **404**; **www TLS expired**; Cargo/dist still **1.1.10**; BONDS ETH/USDG/STOCKS tab prove hardened (verify-bonds-book PASS). Hold stranger-ship until signed + Relic security bar. | Signed pack to TSL after Relic retest; renew www TLS; promote TSL after signed pack; SignPath remains ship P0 |
+| Build / pack | House | **Programs 1.1.19** (sha 7731576ce92c..., rev e590ef3, **NotSigned**) vs **AppData channel 1.1.10** (sha f78c3476322e..., rev 31d8e7d, faucet/shader pack @ 10:56 ET) — **Programs lags channel**; Uninstall DisplayVersion **1.1.19**; AppData root VERSION **1.1.10**; **TSL** `thesecretlab.app/vapurr/channel` **200** at **1.1.13**; **www TLS expired**; Cargo/dist still **1.1.10**. `verify-version-board.py --watch` reports SKEW. Hold stranger-ship until signed + Relic security bar. | PatchApply Programs to channel 1.1.10 or re-pack with bumped Cargo; renew www TLS; promote TSL after signed pack; SignPath remains ship P0 |
 
 Living owner board. Snapshot: `docs/SNAPSHOT.md`. Flash: `docs/ORG_FLASH.md`.
 
@@ -25,3 +25,5 @@ Never pack `.mp4` / `.webm`. Host at `https://thesecretlab.app/vapurr/…`. Embe
 - 2026-09-07 08:21 ET: FeeAttribution prove @ 4c771ec (honesty); signing/TLS still P0.
 - 2026-09-07 09:12 ET: ODWS/Level 4 KYC prove @ verify-odws-kyc.py PASS; signing/TLS still P0.
 - 2026-09-07 10:11 ET: Bond/CD/Savings IPC ABI stubs on disk (verify-bond-cd-abi.py PASS); open paths still Need*-gated; TSL channel TLS FAIL (was 1.1.13 skew); signing/TLS still P0.
+
+- 2026-09-07 ~11:27 ET: version-board watch mode — Programs 1.1.19 vs channel 1.1.10 SKEW honest; signing/TLS still P0.

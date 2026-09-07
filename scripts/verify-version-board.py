@@ -2,7 +2,8 @@
 """Prove local ship-version board honesty: Programs == AppData channel == DisplayVersion.
 
 Also reports Cargo.toml + optional public TSL channel skew (warn-only; promote is Relic-gated
-until signed pack). Use --live on Windows with an install present.
+until signed pack). Use --live on Windows with an install present (strict: Programs==channel==DisplayVersion).
+Use --watch for hourly overnight honesty (reports skew, exits 0 unless install missing).
 """
 from __future__ import annotations
 
@@ -71,7 +72,10 @@ def fetch_tsl():
     return notes
 
 
-def prove_live() -> None:
+def prove_live(*, strict: bool = True) -> None:
+    """strict=True (--live): FAIL on Programs/channel/DisplayVersion skew.
+    strict=False (--watch): report SKEW lines and exit 0 (hourly overnight).
+    """
     local = Path(os.environ.get("LOCALAPPDATA", ""))
     prog = local / "Programs" / "vapurr"
     if not prog.is_dir():
@@ -94,15 +98,16 @@ def prove_live() -> None:
     if not chan_ver:
         print("FAIL live: AppData channel/manifest.json missing")
         sys.exit(1)
-    if chan_ver != prog_ver:
-        print(f"FAIL live: Programs {prog_ver} != AppData channel {chan_ver}")
-        sys.exit(1)
-    if prog_sha and chan_sha and prog_sha.lower() != chan_sha.lower():
-        print(
-            f"FAIL live: Programs sha != channel sha ({prog_sha[:12]} vs {chan_sha[:12]})"
-        )
-        sys.exit(1)
 
+    skews = []
+    if chan_ver != prog_ver:
+        skews.append(f"Programs {prog_ver} != AppData channel {chan_ver}")
+    if prog_sha and chan_sha and prog_sha.lower() != chan_sha.lower():
+        skews.append(
+            f"Programs sha != channel sha ({prog_sha[:12]} vs {chan_sha[:12]})"
+        )
+
+    disp = None
     try:
         import winreg
     except ImportError:
@@ -113,23 +118,47 @@ def prove_live() -> None:
             with winreg.OpenKey(winreg.HKEY_CURRENT_USER, key_path) as k:
                 disp, _ = winreg.QueryValueEx(k, "DisplayVersion")
         except FileNotFoundError:
-            print("FAIL live: Uninstall key missing while Programs present")
+            msg = "Uninstall key missing while Programs present"
+            if strict:
+                print(f"FAIL live: {msg}")
+                sys.exit(1)
+            skews.append(msg)
+        else:
+            if str(disp) != str(prog_ver):
+                skews.append(f"DisplayVersion={disp!r} != Programs {prog_ver!r}")
+
+    sha12 = (prog_sha or "")[:12]
+    chan12 = (chan_sha or "")[:12]
+    if skews:
+        for s in skews:
+            tag = "FAIL" if strict else "SKEW"
+            print(f"{tag} live: {s}")
+        print(
+            f"NOTE board Programs={prog_ver} sha={sha12} | channel={chan_ver} sha={chan12}"
+            + (f" | DisplayVersion={disp}" if disp is not None else "")
+        )
+        if strict:
             sys.exit(1)
-        if str(disp) != str(prog_ver):
-            print(f"FAIL live: DisplayVersion={disp!r} != Programs {prog_ver!r}")
-            sys.exit(1)
-        sha12 = (prog_sha or "")[:12]
+    else:
         print(f"PASS live Programs==channel==DisplayVersion={prog_ver} sha={sha12}")
 
     cargo = cargo_version()
     print(f"NOTE Cargo.toml version={cargo} (local Programs={prog_ver}; bump is pack/House)")
 
+    profile = local / "vapurr" / "VERSION.txt"
+    if profile.is_file():
+        prof_ver = parse_version_stamp(profile.read_text(encoding="utf-8", errors="replace"))
+        if prof_ver and prof_ver != chan_ver:
+            print(f"NOTE AppData root VERSION.txt={prof_ver} (channel={chan_ver})")
+        elif prof_ver:
+            print(f"NOTE AppData root VERSION.txt={prof_ver} matches channel")
+
     for url, status, ver, sha in fetch_tsl():
         host = url.split("/")[2]
         if status == "ok":
             skew = "MATCH" if ver == prog_ver else f"SKEW local={prog_ver} tsl={ver}"
-            sha12 = (sha or "")[:12]
-            print(f"NOTE TSL {host}: {ver} ({skew}) sha={sha12}")
+            sha12t = (sha or "")[:12]
+            print(f"NOTE TSL {host}: {ver} ({skew}) sha={sha12t}")
         else:
             print(f"NOTE TSL {host}: {status}")
 
@@ -139,12 +168,22 @@ def main() -> None:
     ap.add_argument(
         "--live",
         action="store_true",
-        help="Check Programs/channel/DisplayVersion + report TSL/Cargo",
+        help="Strict: Programs/channel/DisplayVersion must match; report TSL/Cargo",
+    )
+    ap.add_argument(
+        "--watch",
+        action="store_true",
+        help="Hourly honesty: report skew without failing (still FAIL if Programs missing VERSION)",
     )
     args = ap.parse_args()
     prove_source()
+    if args.live and args.watch:
+        print("FAIL pass only one of --live / --watch")
+        sys.exit(1)
     if args.live:
-        prove_live()
+        prove_live(strict=True)
+    elif args.watch:
+        prove_live(strict=False)
 
 
 if __name__ == "__main__":

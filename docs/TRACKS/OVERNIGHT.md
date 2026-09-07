@@ -426,3 +426,12 @@ emittance_book_snap); empty CAs show NeedRemittance (no live remit enable). Prov
 - **workers:** KFX **idle** (grok 21016); PayId **idle** (grok 9228); Bind **idle** (PID gone) - no respawn. Extra grok windows present (graphify / bare / House+Pilot keep) - not watch-spawned. No new organizer procs.
 - **branch:** pack/d59912d (+ this slice)
 - **build slice:** BondMarket / SpusdCd / SavingsRouter IPC ABI stubs - extracted forge ABI into `crates/vapurr-econ/src/{bond_market,spusd_cd,savings_router}.abi.json`; `include_str!` in lib.rs; `bond_open` / `cd_open` stay Need*-gated (no live encode). `scripts/verify-bond-cd-abi.py` PASS; BONDS.md / SPUSD.md needles. Still open P1: Oliver gV/wgV collateral wire (Relic), live BondMarket/CD IPC wire after CA fill, House Uni v4 e2e / remittance live CAs, SignPath, renew www TLS, promote TSL after signed pack.
+
+## 2026-09-07 ~11:27 ET - hourly watch
+
+- **justin:** online
+- **Programs:** VERSION **1.1.19** (sha 7731576ce92c..., rev e590ef3) at Local\Programs\vapurr; Uninstall DisplayVersion **1.1.19**; **NotSigned** (signing still P0 ship blocker; Relic: unsigned OK for build/test)
+- **dist/channel:** AppData channel **1.1.10** (sha f78c3476322e..., rev 31d8e7d, built 14:56Z / ~10:56 ET) — **Programs lags channel**; AppData root VERSION.txt **1.1.10**; **TSL** thesecretlab.app/vapurr/channel **200** at **1.1.13** (rev e590ef3, sha 324286bf6f68...); **www.thesecretlab.app TLS expired**; Cargo still **1.1.10**
+- **workers:** KFX **idle** (grok 21016); PayId **idle** (grok 9228); Bind **idle** (PID gone) - no respawn. Extra grok windows present (graphify / bare / House+Pilot keep) - not watch-spawned. No new organizer procs.
+- **branch:** pack/d59912d (+ this slice)
+- **build slice:** version-board hourly `--watch` - `scripts/verify-version-board.py` reports Programs/channel/DisplayVersion/TSL/Cargo honestly without failing on known SKEW; `--live` stays strict. TRACKS/SNAPSHOT ship board updated for Programs **1.1.19** vs channel **1.1.10**. Still open P1: Oliver gV/wgV collateral wire (Relic), live BondMarket/CD IPC wire after CA fill, House Uni v4 e2e / remittance live CAs, SignPath, renew www TLS, PatchApply or re-pack Programs to channel, promote TSL after signed pack.
