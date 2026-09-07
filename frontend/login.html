@@ -178,6 +178,9 @@
       if (n === "login" || n === "signin" || n === "signup") n = "wallet";
       return n;
     }
+    function wantSwitch() {
+      return /(?:^|[?&])switch=1(?:&|$)/.test(location.search || "");
+    }
     function goIn() {
       vapurr.send({ cmd: "pane", id: next() });
     }
@@ -214,12 +217,12 @@
     function paint(s) {
       if (!s) return;
       if (s.seed) backup = String(s.seed);
-      if (s.logged_in && !backup) {
+      if (s.logged_in && !backup && !wantSwitch()) {
         if (s.needs_pin) goSetPin();
         else goIn();
         return;
       }
-      if (s.has_key && s.has_pin && !s.logged_in) {
+      if (s.has_key && s.has_pin && !s.logged_in && !wantSwitch()) {
         vapurr.send({ cmd: "pane", id: next() });
         return;
       }

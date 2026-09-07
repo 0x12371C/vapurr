@@ -182,6 +182,7 @@ pub(crate) fn authorized_ipc(source: &str, body: &str) -> Option<Msg> {
         Msg::WalletExec { .. } => matches!(path.as_str(), "/swap.html" | "/bridge.html"),
         Msg::LoginCreate | Msg::LoginContinue | Msg::LoginRestore { .. } => path == "/login.html",
         Msg::PasscodeUnlock { .. } | Msg::PasscodeSet { .. } => path == "/lock.html",
+        Msg::Logout => path == "/wallet.html",
         Msg::LockSession | Msg::Activity => true,
         Msg::WalletImport { .. } => matches!(path.as_str(), "/wallet.html" | "/settings.html" | "/login.html"),
         Msg::EconMint(_) | Msg::EconRedeem(_) | Msg::EconDeploy | Msg::EconSeed { .. } |
@@ -212,6 +213,7 @@ pub(crate) fn confirmation(msg: &Msg) -> Option<String> {
         Msg::LoginContinue => "Unlock this device wallet for this browser session? Transactions and secret exports still require authorization.".into(),
         Msg::LoginCreate => "Create a new wallet on this device? Save your existing wallet recovery material before replacing it.".into(),
         Msg::LoginRestore { .. } | Msg::WalletImport { .. } => "Replace this device wallet with the imported wallet? Save your existing recovery material first.".into(),
+        Msg::Logout => "Remove this wallet from this PC? Deletes the encrypted vault and passcode here. Your on-chain funds stay; you need the seed or key to restore.".into(),
         Msg::EconMint(a) => format!("Burn {a} VAPURR to mint PUSD?"),
         Msg::EconRedeem(a) => format!("Burn {a} PUSD to mint VAPURR?"),
         Msg::LoopOp { op, amt, steps } => format!("Authorize Oliver vault operation: {op}\nAmount: {amt}\nSteps: {steps}"),

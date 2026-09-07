@@ -242,7 +242,12 @@ impl Desk {
                 self.reload_key();
                 Ok(self.snap())
             }
-            WalletCmd::Logout => Ok(crate::session::logout()),
+            WalletCmd::Logout => {
+                let _ = crate::session::logout();
+                // Drop any cached signing key; generate is ephemeral until create/import saves.
+                self.key = DeviceKey::generate();
+                Ok(self.snap())
+            }
             WalletCmd::LockSession => Ok(crate::session::lock_session()),
             WalletCmd::PasscodeUnlock { code } => {
                 crate::session::unlock_with_pin(&code)?;

@@ -566,7 +566,8 @@
       <div class="set-block">
         <label class="mono">This PC</label>
         <button class="btn ghost" id="set-restore" type="button">Use a different wallet</button>
-        <button class="btn ghost" id="set-out" type="button">Sign out</button>
+        <button class="btn ghost" id="set-out" type="button">Remove wallet</button>
+        <div class="hint" style="margin-top:8px;color:var(--color-muted);font-size:12px;line-height:1.4">Remove deletes the encrypted vault on this PC. Lock only closes the session.</div>
       </div>
       <button class="btn ghost" data-close="1" type="button">Done</button>
     </div>
@@ -1326,10 +1327,13 @@
       if (secretArmed !== "hex") { secretArmed = "hex"; this.textContent = "Tap again — this is the key"; return; }
       vapurr.send({ cmd: "wallet-export-key" });
     };
-    document.getElementById("set-restore").onclick = function () { vapurr.send({ cmd: "pane", id: "login" }); };
+    document.getElementById("set-restore").onclick = function () {
+      // Stay unlocked; login?switch=1 skips auto-continue so create/import is reachable.
+      vapurr.send({ cmd: "go", url: "http://vapurr.localhost/login.html?switch=1" });
+    };
     document.getElementById("set-out").onclick = function () {
+      // Native confirm + wipe + navigate happen in the shell Logout handler.
       vapurr.send({ cmd: "logout" });
-      vapurr.send({ cmd: "pane", id: "login" });
     };
     document.getElementById("copy-addr").onclick = copyAddr;
     document.getElementById("send-half").onclick = function () { fillAmt(0.5); };

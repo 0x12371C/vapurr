@@ -93,7 +93,11 @@ pub fn export_key() -> Result<Value, WalletError> {
     Ok(json!({"ok":true,"hex_key":format!("0x{}", hex::encode(raw.as_slice())),"logged_in":true,"has_key":true,"has_pin":has_pin(),"address":key.address.to_checksum()}))
 }
 pub fn logout() -> Value {
+    // Sign-out removes this PC's encrypted wallet so create/import is available again.
+    // Lock alone only clears the in-memory unlock flag (see lock_session).
     UNLOCKED.store(false, Ordering::Release);
+    let _ = crate::keystore::wipe();
+    let _ = crate::passcode::clear_pin();
     let _ = std::fs::remove_file(data_dir().join("session.json"));
     status()
 }

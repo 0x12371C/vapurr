@@ -1124,7 +1124,15 @@ fn main() {
                 }
             },
             Event::UserEvent(Msg::Logout) => {
+                // Wipe vault sync so pane_url("login") sees has_key=false immediately.
+                let _ = vapurr_wallet::logout();
                 let _ = wallet_tx.send(vapurr_wallet::WalletCmd::Logout);
+                let url = pane_url("login");
+                tabs.borrow_mut().navigate(url.clone());
+                tabs.borrow_mut().suppress = true;
+                set_page_url(&page_url, &url);
+                let _ = page.borrow().load_url(&url);
+                paint_chrome();
             }
             Event::UserEvent(Msg::LockSession) => {
                 let _ = vapurr_wallet::lock_session();
