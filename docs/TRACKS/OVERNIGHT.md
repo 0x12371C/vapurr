@@ -303,3 +303,12 @@ emittance_book_snap); empty CAs show NeedRemittance (no live remit enable). Prov
 - **branch:** `pack/d59912d` (+ this slice)
 - **build slice:** BONDS honesty + prove - `docs/econ/BONDS.md` live-ops note (BondArb inventory gV drained to 0 on 46630; STOCKS treasury ExoRfvSink; USDG BondAssetTag-only); `scripts/verify-bonds-book.py` PASS for NeedBondMarket/NeedSavings stubs + ETH/USDG/STOCKS posture. Still open P1: Oliver gV/wgV collateral, live CD/BondMarket ABI, House Uni v4 e2e / remittance live enable, SignPath, promote TSL after signed pack.
 
+
+## 2026-09-06 ~22:04 ET - hourly watch
+
+- **justin:** online
+- **Programs:** VERSION **1.1.17** (sha 93A4AAE04C7C, rev e590ef3); Uninstall DisplayVersion **1.1.17**; **NotSigned** (signing still P0 ship blocker; Relic: unsigned OK for build/test)
+- **dist/channel:** AppData channel **1.1.18** (sha 97156FC2CA73, rev e590ef3) - **Programs lags channel**; AppData root VERSION.txt still lag **1.1.11**; **TSL channel fetch FAIL** - TLS cert expired (SEC_E_CERT_EXPIRED) on thesecretlab.app/channel/manifest.json; local repo channel/manifest.json missing; dist/Cargo still **1.1.10**
+- **workers:** KFX **idle** (grok 21016 / ps 20776); PayId **idle** (grok 9228 / ps 20492); Bind **idle** (PID gone) - no respawn. Extra grok windows present (graphify 18356, bare groks, gh-auth 15672) - not watch-spawned. No new organizer procs.
+- **branch:** `pack/d59912d` (+ this slice)
+- **build slice:** wgV House prove - `scripts/verify-wgv-house.py` PASS (pusd.html wrap-first / wgV/$PUSD book + NeedHouse + WGV_HOUSE.md / HOUSE_PAIR.md needles). TRACKS Build/pack honesty: Programs 1.1.17 vs channel 1.1.18 + TSL TLS expired. Still open P1: Oliver gV/wgV collateral, live CD/BondMarket ABI, House Uni v4 e2e / remittance live enable, SignPath, promote TSL after signed pack + renew TSL TLS cert + PatchApply Programs to 1.1.18.
