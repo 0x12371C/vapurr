@@ -24,6 +24,23 @@ if missing_html:
     print('FAIL missing in bonds.html:', missing_html)
     sys.exit(1)
 
+# ETH / USDG / stocks tab chrome - live-by-default, never gray-gated.
+need_tabs = [
+    'role="tablist"',
+    'data-asset="ETH"',
+    'data-asset="USDG"',
+    'data-asset="AMD"',  # STOCKS-tagged major
+    'id="bond-cta"',
+    'never gray-gate',
+]
+missing_tabs = [n for n in need_tabs if n not in html]
+if missing_tabs:
+    print('FAIL bonds.html missing ETH/USDG/stocks tab posture:', missing_tabs)
+    sys.exit(1)
+if 'cta.disabled = false' not in html:
+    print('FAIL bonds.html must keep bond CTA live (cta.disabled = false)')
+    sys.exit(1)
+
 for k in ['bond_market', 'configured']:
     if f'"{k}"' not in econ or 'fn bonds_book_snap' not in econ:
         print('FAIL bonds_book_snap missing', k)
@@ -37,7 +54,7 @@ if 'NeedBondMarket' not in econ or 'NeedSavings' not in econ:
     sys.exit(1)
 
 # Canon: USDG is BondAssetTag only; ETH/USDG/STOCKS tabs live-by-default.
-for needle in ['BondAssetTag', 'USDG', 'ETH', 'STOCKS', 'NeedBondMarket']:
+for needle in ['BondAssetTag', 'USDG', 'ETH', 'STOCKS', 'NeedBondMarket', 'Do not gray-gate']:
     if needle not in bonds_md:
         print('FAIL BONDS.md missing', needle)
         sys.exit(1)
@@ -45,4 +62,4 @@ if 'PUSD/USDG' in bonds_md and 'Banned as pairs' not in bonds_md:
     print('FAIL BONDS.md lost USDG pool ban posture')
     sys.exit(1)
 
-print('PASS bonds/CD address-book + BONDS.md asset posture')
+print('PASS bonds/CD address-book + BONDS.md ETH/USDG/STOCKS tab posture')
