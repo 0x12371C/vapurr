@@ -292,3 +292,14 @@ emittance_book_snap); empty CAs show NeedRemittance (no live remit enable). Prov
 - **workers:** KFX **idle** (grok 21016 / ps 20776); PayId **idle** (grok 9228 / ps 20492); Bind **idle** (PID gone) - no respawn. Extra grok windows present (graphify 18356, bare groks, gh-auth 15672) - not watch-spawned. No new organizer procs.
 - **branch:** `pack/d59912d` (+ this slice)
 - **build slice:** Uninstall **DisplayVersion** honesty - Programs was **1.1.17** but HKCU Uninstall stuck at **1.1.9** because setup hardcoded `CARGO_PKG_VERSION` and PatchApply never refreshed the key. Now `resolve_display_version` prefers sibling VERSION.txt/manifest; `refresh_uninstall_key` runs on patch-swap; live key repaired **1.1.9→1.1.17**. Prove: `setup::tests::parse_version_stamp_*` + `resolve_display_version_prefers_version_txt` ok (gnu); `scripts/verify-display-version.py` PASS. Left dirty RFV/STATUS worker notes alone. Still open P1: Oliver gV/wgV collateral, live CD/BondMarket ABI, House Uni v4 e2e / remittance live enable, SignPath, promote TSL after signed pack.
+
+
+## 2026-09-06 ~21:14 ET - hourly watch
+
+- **justin:** online
+- **Programs:** VERSION **1.1.17** (sha 93A4AAE04C7C, rev e590ef3); Uninstall DisplayVersion **1.1.17** (fixed prior hour); **NotSigned** (signing still P0 ship blocker; Relic: unsigned OK for build/test)
+- **dist/channel:** AppData channel **1.1.17** (same sha/rev); AppData root VERSION.txt still lag **1.1.11**; **TSL channel** **200** at **1.1.13** (rev e590ef3, sha 324286bf6f68...); local repo channel/manifest.json missing; dist/Cargo still **1.1.10**
+- **workers:** KFX **idle** (grok 21016 / ps 20776); PayId **idle** (grok 9228 / ps 20492); Bind **idle** (PID gone) - no respawn. Extra grok windows present (graphify 18356, bare groks, gh-auth 15672) - not watch-spawned. No new organizer procs.
+- **branch:** `pack/d59912d` (+ this slice)
+- **build slice:** BONDS honesty + prove - `docs/econ/BONDS.md` live-ops note (BondArb inventory gV drained to 0 on 46630; STOCKS treasury ExoRfvSink; USDG BondAssetTag-only); `scripts/verify-bonds-book.py` PASS for NeedBondMarket/NeedSavings stubs + ETH/USDG/STOCKS posture. Still open P1: Oliver gV/wgV collateral, live CD/BondMarket ABI, House Uni v4 e2e / remittance live enable, SignPath, promote TSL after signed pack.
+

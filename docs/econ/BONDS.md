@@ -160,3 +160,10 @@ Contracts: ExogenousPairRegistry.sol (+ optional ExogenousSeedMarket stub). Wire
 
 frontend/bonds.html #bonds paints #bond-book-note from snap.bonds.configured (empty book -> NeedBondMarket). Open Bond CTA stays live; capital strip shows BondMarket/Savings CA status. Live quote ABI still Relic-gated after deploy.
 
+### Live ops honesty (2026-09-06 ~21:14 ET)
+
+Robinhood testnet **46630** BondArb session drained **availableInventory gV to 0** (reserved payout still vesting). App address-book TESTNET_BOND_MARKET remains empty, so UI stays **NeedBondMarket** until Relic fills the CA (live inventory reads land with that wire).
+
+**STOCKS RFV sink:** BondMarket STOCKS treasury retargeted to **ExoRfvSink** so stock offtake is spendable RFV (WETH to wgV to V). Distinct from Open Bond UX: treasury destination is Fed ops, not a tab gray-gate. ETH / USDG / STOCKS tabs stay live-by-default; USDG remains **BondAssetTag only** (no $PUSD/USDG pool).
+
+Prove: scripts/verify-bonds-book.py.
