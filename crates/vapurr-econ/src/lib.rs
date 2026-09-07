@@ -53,6 +53,8 @@ const EXO_RFV_SINK_ABI: &str = include_str!("exo_rfv_sink.abi.json");
 const EXOGENOUS_PAIR_REGISTRY_ABI: &str = include_str!("exogenous_pair_registry.abi.json");
 // ExogenousSeedMarket POL seed stub (ops/bootstrap; no user IPC cmd yet).
 const EXOGENOUS_SEED_MARKET_ABI: &str = include_str!("exogenous_seed_market.abi.json");
+// DevFundStream genesis lockup ABI stub (ops/treasury; no user IPC cmd yet).
+const DEV_FUND_STREAM_ABI: &str = include_str!("dev_fund_stream.abi.json");
 
 #[derive(Debug, thiserror::Error)]
 pub enum EconError {

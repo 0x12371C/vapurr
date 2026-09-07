@@ -498,3 +498,12 @@ emittance_book_snap); empty CAs show NeedRemittance (no live remit enable). Prov
 - **workers:** KFX **idle** (grok 21016 / ps 20776); PayId **idle** (grok 9228 / ps 20492); Bind **idle** (PID gone) - no respawn. Extra grok windows present (graphify / bare / House+Pilot keep) - not watch-spawned. No new organizer procs.
 - **branch:** pack/d59912d (+ this slice)
 - **build slice:** USDG pin prove - scripts/verify-usdg-pins.py + verify-route-catalog.py --pins (catalog TESTNET_USDG vs desk rhc::USDG/route.js; playwright lazy/SKIP). BONDS BondAssetTag discipline. Still open P1: Oliver gV/wgV collateral wire (Relic), live BondMarket/CD/remittance IPC after CA fill, House Uni v4 e2e, SignPath, renew www TLS, promote TSL after signed pack, proxy cutover for bare Lithe/V/PUSD.
+
+## 2026-09-07 ~19:01 ET - hourly watch
+
+- **justin:** online
+- **Programs:** VERSION **1.1.10** (sha cfd7435a5984..., rev b57b32f) at Local\Programs\vapurr; Uninstall DisplayVersion **1.1.10** (matches); **NotSigned** (signing still P0 ship blocker; Relic: unsigned OK for build/test)
+- **dist/channel:** AppData channel **1.1.10** (same sha/rev) - Programs **matches** channel; AppData root VERSION.txt **1.1.10**; **TSL** thesecretlab.app/vapurr/channel **200** at **1.1.13** (rev e590ef3, sha 324286bf6f68...); **www.thesecretlab.app TLS expired**; Cargo still **1.1.10**
+- **workers:** KFX **idle (grok 21016)**; PayId **idle (grok 9228)**; Bind **idle** (PID gone) - no respawn. Extra grok windows present (House+Pilot keep) - not watch-spawned. No new organizer procs.
+- **branch:** pack/d59912d (+ this slice)
+- **build slice:** DevFundStream ABI stub - solc-extracted into crates/vapurr-econ/src/dev_fund_stream.abi.json + include_str! in lib.rs (ops/treasury; no user IPC encode). scripts/verify-dev-fund-abi.py PASS; DEV_FUND.md needle; verify-version-board --watch PASS local match (TSL SKEW noted). Still open P1: Oliver gV/wgV collateral wire (Relic), live BondMarket/CD/remittance IPC after CA fill, House Uni v4 e2e, SignPath, renew www TLS, promote TSL after signed pack, proxy cutover for bare Lithe/V/PUSD.

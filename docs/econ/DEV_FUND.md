@@ -76,3 +76,7 @@ DevFund **200k is extra** — not taken from the 1M launch float. The 1M is Brow
 - `BONDS.md` ? exogenous bond intake vs POL trading books
 - `EARNINGS_ENGINE.md` ? BrowserStream global 50k budget
 - Oliver: `PusdLoop.sol` (`depositV` / `borrow` / no DevFund `withdrawV` path)
+
+### IPC ABI stub (2026-09-07)
+
+Client stub on disk (ops/treasury; not live-wired): `crates/vapurr-econ/src/dev_fund_stream.abi.json` + `include_str!` in lib.rs. No user IPC cmd yet — stub only until Relic fills genesis / Oliver wire. Prove: `scripts/verify-dev-fund-abi.py`.
