@@ -31,9 +31,9 @@ OpenAI ≠ open-iris. Name each correctly in UI and press.
 |---|---|---|
 | 0–2 | Wallet (+ optional age/jurisdiction claims) | Wallet uniqueness only |
 | 3 | Phone (Twilio Verify) | Phone nullifier |
-| **4 full KYC** | Ocular template via **open-iris** | UI: `https://thesecretlab.app/kyc/scan` (iPhone-first). Claims: `UniqueHuman`, `OcularBiometric`. |
+| **4 / Level 4 full KYC** | Ocular template via **open-iris** | UI: https://thesecretlab.app/kyc/scan (iPhone-first). Product copy says **Level 4**. Claims: UniqueHuman, OcularBiometric. |
 
-Browse-earn **claim** requires proven human attestation. `install_id` binds the machine install separately.
+Browse-earn **claim** requires proven human attestation (**Level 4** / trustLevel 4). install_id binds the machine install separately.
 
 ## First create (product gate)
 

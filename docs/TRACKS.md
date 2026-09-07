@@ -21,3 +21,6 @@ Living owner board. Snapshot: `docs/SNAPSHOT.md`. Flash: `docs/ORG_FLASH.md`.
 ## Hard media rule (Relic)
 
 Never pack `.mp4` / `.webm`. Host at `https://thesecretlab.app/vapurr/…`. Embed excludes in `crates/vapurr-shell/src/host/assets.rs`.
+
+- 2026-09-07 08:21 ET: FeeAttribution prove @ 4c771ec (honesty); signing/TLS still P0.
+- 2026-09-07 09:12 ET: ODWS/Level 4 KYC prove @ verify-odws-kyc.py PASS; signing/TLS still P0.

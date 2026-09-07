@@ -398,3 +398,22 @@ emittance_book_snap); empty CAs show NeedRemittance (no live remit enable). Prov
 - **workers:** KFX **idle** (grok 21016 / ps 20776); PayId **idle** (grok 9228 / ps 20492); Bind **idle** (PID gone) - no respawn. Extra grok windows present (graphify / bare / House+Pilot keep) - not watch-spawned. No new organizer procs.
 - **branch:** pack/d59912d (+ this slice)
 - **build slice:** FeeAttribution who-paid prove - scripts/verify-remittance-book.py now asserts #h-attrib House/Lithe/Oliver chips + em-dash until FeeAttribution.breakdown() + HOUSE_PAIR note; PASS (also reconfirmed bonds/spusd verifies). Prefer-list UI stubs already green earlier tonight. Still open P1: Oliver gV/wgV collateral wire (Relic), live CD/BondMarket ABI, House Uni v4 e2e / remittance live CAs, SignPath, renew www TLS, promote TSL after signed pack.
+
+## 2026-09-07 ~08:21 ET - hourly watch
+
+- **justin:** online
+- **Programs:** VERSION **1.1.19** (sha 7731576ce92c..., rev e590ef3) at Local\Programs\vapurr; Uninstall DisplayVersion **1.1.19**; **NotSigned** (signing still P0 ship blocker; Relic: unsigned OK for build/test)
+- **dist/channel:** AppData channel **1.1.19** (same sha/rev); AppData root VERSION.txt **1.1.19**; **TSL** thesecretlab.app/vapurr/channel **200** at **1.1.13** (rev e590ef3, sha 324286bf6f68...); bare /channel/manifest.json **404**; **www.thesecretlab.app TLS expired**; local repo channel/manifest.json missing; dist/Cargo still **1.1.10**
+- **workers:** KFX **idle** (grok 21016); PayId **idle** (grok 9228); Bind **idle** (PID gone) - no respawn. Extra grok windows present (graphify / bare / House+Pilot keep) - not watch-spawned. No new organizer procs.
+- **branch:** pack/d59912d
+- **build slice:** **blocked** this hour - local Shell + Task Auto-review classifier errors; no OVERNIGHT append/commit landed at the time. Prefer-list stubs already green. Still open P1: Oliver gV/wgV collateral wire (Relic), live CD/BondMarket ABI, House Uni v4 e2e / remittance live CAs, SignPath, renew www TLS, promote TSL after signed pack.
+
+
+## 2026-09-07 ~09:12 ET - hourly watch
+
+- **justin:** online
+- **Programs:** VERSION **1.1.19** (sha 7731576ce92c..., rev e590ef3) at Local\Programs\vapurr; Uninstall DisplayVersion **1.1.19**; **NotSigned** (signing still P0 ship blocker; Relic: unsigned OK for build/test)
+- **dist/channel:** AppData channel **1.1.19** (same sha/rev); AppData root VERSION.txt **1.1.19**; **TSL** thesecretlab.app/vapurr/channel **200** at **1.1.13** (rev e590ef3, sha 324286bf6f68...); bare /channel/manifest.json **404**; **www.thesecretlab.app TLS expired**; Cargo still **1.1.10**
+- **workers:** KFX **idle** (grok 21016 / ps 20776); PayId **idle** (grok 9228 / ps 20492); Bind **idle** (PID gone) - no respawn. Extra grok windows present (graphify / bare / House+Pilot keep) - not watch-spawned. No new organizer procs.
+- **branch:** pack/d59912d (+ this slice)
+- **build slice:** ODWS/Level 4 KYC honesty prove - `scripts/verify-odws-kyc.py` PASS (login/earn/id ODWS ack + Level 4 steer); ODWS.md Level 4 copy aligned with UI. Prefer-list stubs already green. Still open P1: Oliver gV/wgV collateral wire (Relic), live CD/BondMarket ABI, House Uni v4 e2e / remittance live CAs, SignPath, renew www TLS, promote TSL after signed pack.
