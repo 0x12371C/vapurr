@@ -1109,6 +1109,15 @@ fn main() {
             Event::UserEvent(Msg::LoginRestore { secret }) => {
                 let _ = wallet_tx.send(vapurr_wallet::WalletCmd::LoginRestore { secret });
             }
+            Event::UserEvent(Msg::WalletSignMessage { message }) => {
+                let _ = wallet_tx.send(vapurr_wallet::WalletCmd::SignMessage { message });
+            }
+            Event::UserEvent(Msg::KycAttestAge { age_confirmed }) => {
+                let _ = wallet_tx.send(vapurr_wallet::WalletCmd::KycAttestAge { age_confirmed });
+            }
+            Event::UserEvent(Msg::KycAttestJurisdiction) => {
+                let _ = wallet_tx.send(vapurr_wallet::WalletCmd::KycAttestJurisdiction);
+            }
             Event::UserEvent(Msg::PatchApply) => match patch::apply_and_relaunch() {
                 Ok(()) => {
                     crash::log("patch apply staged; exiting for swap");

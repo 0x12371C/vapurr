@@ -163,6 +163,13 @@ pub(crate) enum Msg {
     ZzzmailHood {
         name: String,
     },
+    WalletSignMessage {
+        message: String,
+    },
+    KycAttestAge {
+        age_confirmed: bool,
+    },
+    KycAttestJurisdiction,
 }
 
 pub(crate) fn authorized_ipc(source: &str, body: &str) -> Option<Msg> {
@@ -181,6 +188,8 @@ pub(crate) fn authorized_ipc(source: &str, body: &str) -> Option<Msg> {
         Msg::WalletSend { .. } => matches!(path.as_str(), "/wallet.html" | "/pay.html"),
         Msg::WalletExec { .. } => matches!(path.as_str(), "/swap.html" | "/bridge.html"),
         Msg::LoginCreate | Msg::LoginContinue | Msg::LoginRestore { .. } => path == "/login.html",
+        Msg::KycAttestAge { .. } | Msg::KycAttestJurisdiction => path == "/login.html",
+        Msg::WalletSignMessage { .. } => matches!(path.as_str(), "/login.html" | "/id.html" | "/earn.html"),
         Msg::PasscodeUnlock { .. } | Msg::PasscodeSet { .. } => path == "/lock.html",
         Msg::Logout => path == "/wallet.html",
         Msg::LockSession | Msg::Activity => true,
@@ -352,6 +361,13 @@ pub(crate) fn parse_ipc(body: &str) -> Option<Msg> {
                 .unwrap_or("")
                 .into(),
         }),
+        "wallet-sign" | "personal-sign" => Some(Msg::WalletSignMessage {
+            message: v.get("message").and_then(|x| x.as_str())?.to_string(),
+        }),
+        "kyc-attest-age" => Some(Msg::KycAttestAge {
+            age_confirmed: v.get("ageConfirmed").or_else(|| v.get("age_confirmed")).and_then(|x| x.as_bool()).unwrap_or(false),
+        }),
+        "kyc-attest-jurisdiction" => Some(Msg::KycAttestJurisdiction),
         "passcode-submit" | "passcode-unlock" => Some(Msg::PasscodeUnlock {
             code: v.get("code").or_else(|| v.get("pin")).and_then(|x| x.as_str())?.to_string(),
         }),

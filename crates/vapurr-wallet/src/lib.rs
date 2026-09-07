@@ -16,6 +16,7 @@ mod import;
 mod session;
 mod passcode;
 mod keystore;
+mod kyc;
 pub mod transactions;
 pub mod tx;
 pub use desk::{parse_units, Desk as WalletDesk, WalletCmd};

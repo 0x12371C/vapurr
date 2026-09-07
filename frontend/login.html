@@ -197,11 +197,41 @@
       <button class="btn" id="create" type="button">Create wallet</button>
     </div>
 
-    <div class="door" id="kyc4-box" hidden>
-      <label class="mono">Full KYC</label>
-      <div class="hint" id="kyc4-hint">To <b style="color:var(--color-snow);font-weight:600">claim tokens from browsing</b>, zer0ID must reach <b style="color:var(--color-snow);font-weight:600">Level 4</b> (ocular scan). Wallet alone is not enough for payout. We do not store your scan or personal info — proof is a ZK-style attestation only, secured in vapurrDB.</div>
-      <button class="btn" id="kyc4-go" type="button">Start Level 4 scan</button>
-      <button class="btn-ghost" id="kyc4-later" type="button" style="width:100%;margin-top:8px;height:44px;border-radius:12px">Set passcode first</button>
+    <div class="door" id="kyc-box" hidden>
+      <label class="mono" id="kyc-label">KYC</label>
+      <div class="odws-card" id="kyc-card">
+        <div class="odws-title">
+          <strong id="kyc-title">Verify to unlock claims</strong>
+          <span class="odws-ver" id="kyc-step-pill">L1</span>
+        </div>
+        <div class="hint" id="kyc-hint" style="min-height:0;margin-top:0"></div>
+        <div id="kyc-age" hidden>
+          <label class="odws-ack" for="kyc-age-ack" style="margin-top:10px">
+            <input type="checkbox" id="kyc-age-ack"/>
+            <span>I confirm I am 18 or older — self-attest (not a DOB document check)</span>
+          </label>
+          <button class="btn" id="kyc-age-go" type="button" disabled>Sign &amp; continue</button>
+        </div>
+        <div id="kyc-geo" hidden>
+          <p class="hint" style="margin-top:8px">Country comes from this connection (CDN/IP geo) — not a dropdown. Embargoed jurisdictions are refused.</p>
+          <button class="btn" id="kyc-geo-go" type="button">Detect country &amp; continue</button>
+          <div class="hint" id="kyc-geo-result" style="margin-top:8px"></div>
+        </div>
+        <div id="kyc-phone" hidden>
+          <p class="hint" style="margin-top:8px">Level 3 — SMS possession on Secret Lab. Browse-earn <b>claims stay locked</b> until Level 4.</p>
+          <button class="btn" id="kyc-phone-open" type="button">Start phone verify</button>
+          <button class="btn" id="kyc-phone-done" type="button" disabled style="margin-top:8px">Done — continue</button>
+          <button class="btn-ghost" id="kyc-phone-later" type="button" style="width:100%;margin-top:8px;height:44px;border-radius:12px">I&apos;ll do KYC later</button>
+        </div>
+        <div id="kyc-iris" hidden>
+          <p class="hint" style="margin-top:8px">Level 4 — ocular scan (open-iris). <b>iPhone Safari first</b>; on desktop open the scan page, then finish on your phone if the camera path needs it. We do not store your scan — ZK-style attestation only.</p>
+          <button class="btn" id="kyc-iris-open" type="button">Start Level 4 scan</button>
+          <button class="btn" id="kyc-iris-done" type="button" disabled style="margin-top:8px">Done — set passcode</button>
+          <button class="btn-ghost" id="kyc-iris-later" type="button" style="width:100%;margin-top:8px;height:44px;border-radius:12px">I&apos;ll do KYC later</button>
+        </div>
+        <div class="odws-foot" id="kyc-foot" style="margin-top:10px">No personal name collected. Claims need Level 4.</div>
+      </div>
+      <div class="err" id="kyc-err"></div>
     </div>
 
     <div class="door" id="backup-box" hidden>
@@ -242,7 +272,85 @@
     var restoring = false;
     var hasKey = false;
     var backup = "";
-    var needKyc4 = false;
+    var needKyc = false;
+    var kycStep = 0; // 1 age, 2 geo, 3 phone, 4 iris
+    var kycPhoneOpened = false;
+    var kycIrisOpened = false;
+    var KYC_STORE = "vapurr.createKyc";
+    function saveKyc() {
+      try {
+        if (!needKyc || kycStep < 1) { sessionStorage.removeItem(KYC_STORE); return; }
+        sessionStorage.setItem(KYC_STORE, JSON.stringify({
+          step: kycStep, phoneOpened: !!kycPhoneOpened, irisOpened: !!kycIrisOpened
+        }));
+      } catch (e) {}
+    }
+    function loadKyc() {
+      try {
+        var raw = sessionStorage.getItem(KYC_STORE);
+        if (!raw) return;
+        var o = JSON.parse(raw);
+        if (o && o.step >= 1) {
+          needKyc = true;
+          kycStep = o.step | 0;
+          kycPhoneOpened = !!o.phoneOpened;
+          kycIrisOpened = !!o.irisOpened;
+        }
+      } catch (e) {}
+    }
+    function clearKyc() {
+      needKyc = false;
+      kycStep = 0;
+      kycPhoneOpened = false;
+      kycIrisOpened = false;
+      try { sessionStorage.removeItem(KYC_STORE); } catch (e) {}
+    }
+    function openKycTab(url) {
+      // Single webview: new tab keeps login in the strip; state restored via sessionStorage.
+      vapurr.send({ cmd: "newtab" });
+      setTimeout(function () {
+        vapurr.send({ cmd: "open", url: url });
+      }, 40);
+    }
+    function setKycErr(msg) {
+      var e = document.getElementById("kyc-err");
+      if (e) e.textContent = msg || "";
+    }
+    function paintKycStep() {
+      var age = document.getElementById("kyc-age");
+      var geo = document.getElementById("kyc-geo");
+      var phone = document.getElementById("kyc-phone");
+      var iris = document.getElementById("kyc-iris");
+      if (age) age.hidden = kycStep !== 1;
+      if (geo) geo.hidden = kycStep !== 2;
+      if (phone) phone.hidden = kycStep !== 3;
+      if (iris) iris.hidden = kycStep !== 4;
+      var title = document.getElementById("kyc-title");
+      var pill = document.getElementById("kyc-step-pill");
+      var hint = document.getElementById("kyc-hint");
+      var label = document.getElementById("kyc-label");
+      var titles = {
+        1: "Level 1 — Age",
+        2: "Level 2 — Jurisdiction",
+        3: "Level 3 — Phone",
+        4: "Level 4 — Ocular"
+      };
+      var hints = {
+        1: "Self-attest AgeOver18 with a wallet signature. Not a government ID or DOB document.",
+        2: "Issuer reads country from this connection (CDN/IP). No name / PII stored.",
+        3: "Open phone verify, finish SMS there, then tap Done here. Claims still need Level 4.",
+        4: "Open the ocular scan. Do not skip ahead — tap Done when the scan tab is open."
+      };
+      if (title) title.textContent = titles[kycStep] || "KYC";
+      if (pill) pill.textContent = kycStep ? ("L" + kycStep) : "";
+      if (hint) hint.textContent = hints[kycStep] || "";
+      if (label) label.textContent = kycStep ? ("KYC · Level " + kycStep) : "KYC";
+      var pd = document.getElementById("kyc-phone-done");
+      if (pd) pd.disabled = !kycPhoneOpened;
+      var idn = document.getElementById("kyc-iris-done");
+      if (idn) idn.disabled = !kycIrisOpened;
+      saveKyc();
+    }
 
     function next() {
       var q = (location.search || "").replace(/^\?/, "");
@@ -270,16 +378,17 @@
     }
     function layout() {
       var holding = !!backup;
-      var showKyc4 = needKyc4 && !holding && !restoring;
+      var showKyc = needKyc && kycStep >= 1 && !holding && !restoring;
       document.getElementById("backup-box").hidden = !holding;
-      var k4 = document.getElementById("kyc4-box");
-      if (k4) k4.hidden = !showKyc4;
+      var kb = document.getElementById("kyc-box");
+      if (kb) kb.hidden = !showKyc;
+      if (showKyc) paintKycStep();
       document.getElementById("restore-box").hidden = holding || !restoring;
-      document.getElementById("cont-box").hidden = holding || restoring || !hasKey || needKyc4;
-      document.getElementById("create-box").hidden = holding || restoring || needKyc4;
+      document.getElementById("cont-box").hidden = holding || restoring || !hasKey || needKyc;
+      document.getElementById("create-box").hidden = holding || restoring || needKyc;
       var ob = document.getElementById("odws-box");
-      if (ob && (holding || restoring)) ob.hidden = true;
-      document.getElementById("other-box").hidden = holding || needKyc4;
+      if (ob && (holding || restoring || needKyc)) ob.hidden = true;
+      document.getElementById("other-box").hidden = holding || needKyc;
       document.getElementById("other").textContent = restoring
         ? "Back"
         : (hasKey ? "Use a different wallet" : "I have a wallet");
@@ -292,7 +401,41 @@
     }
     function paint(s) {
       if (!s) return;
+      if (s.kind === "signed") return;
+      if (s.kyc) {
+        busy = false;
+        var ageBtn = document.getElementById("kyc-age-go");
+        var geoBtn = document.getElementById("kyc-geo-go");
+        if (ageBtn) ageBtn.textContent = "Sign & continue";
+        if (geoBtn) geoBtn.textContent = "Detect country & continue";
+        if (!s.ok) {
+          setKycErr(s.error || "KYC step failed");
+          layout();
+          return;
+        }
+        setKycErr("");
+        if (s.level === 1) {
+          kycStep = 2;
+          document.getElementById("lede").textContent = "Jurisdiction next — then phone & ocular.";
+        } else if (s.level === 2) {
+          var country = s.country ? String(s.country) : "";
+          var gr = document.getElementById("kyc-geo-result");
+          if (gr) gr.textContent = country ? ("Detected: " + country) : "Country attested.";
+          kycStep = 3;
+          document.getElementById("lede").textContent = "Phone verify next. Claims still need Level 4.";
+        }
+        saveKyc();
+        layout();
+        return;
+      }
       if (s.seed) backup = String(s.seed);
+      // Mid create-KYC: never auto-skip to passcode (login-status race).
+      if (needKyc && kycStep >= 1) {
+        if (typeof s.has_key === "boolean") hasKey = !!s.has_key;
+        busy = false;
+        layout();
+        return;
+      }
       if (s.logged_in && !backup && !wantSwitch()) {
         if (s.needs_pin) goSetPin();
         else goIn();
@@ -324,6 +467,15 @@
       document.getElementById("restore").textContent = "Sign in";
       document.getElementById("cont").textContent = "Continue";
       document.getElementById("create").textContent = "Create wallet";
+      var ageBtn = document.getElementById("kyc-age-go");
+      var geoBtn = document.getElementById("kyc-geo-go");
+      if (ageBtn) ageBtn.textContent = "Sign & continue";
+      if (geoBtn) geoBtn.textContent = "Detect country & continue";
+      if (needKyc && kycStep >= 1) {
+        setKycErr(msg || "KYC step failed");
+        layout();
+        return;
+      }
       showRestore(true);
       document.getElementById("err").textContent = msg || "could not sign in";
     };
@@ -368,19 +520,65 @@
     };
     document.getElementById("got-seed").onclick = function () {
       backup = "";
-      needKyc4 = true;
-      document.getElementById("lede").textContent = "Level 4 unlocks browse-earn claims.";
+      needKyc = true;
+      kycStep = 1;
+      kycPhoneOpened = false;
+      kycIrisOpened = false;
+      setKycErr("");
+      document.getElementById("lede").textContent = "Complete KYC — claims need Level 4.";
+      saveKyc();
       layout();
     };
-    document.getElementById("kyc4-go").onclick = function () {
-      vapurr.send({ cmd: "open", url: "https://thesecretlab.app/kyc/scan" });
-      needKyc4 = false;
+    document.getElementById("kyc-age-ack").onchange = function () {
+      document.getElementById("kyc-age-go").disabled = !this.checked;
+    };
+    document.getElementById("kyc-age-go").onclick = function () {
+      if (busy) return;
+      if (!document.getElementById("kyc-age-ack").checked) return;
+      busy = true;
+      setKycErr("");
+      this.textContent = "Signing…";
+      vapurr.send({ cmd: "kyc-attest-age", ageConfirmed: true });
+    };
+    document.getElementById("kyc-geo-go").onclick = function () {
+      if (busy) return;
+      busy = true;
+      setKycErr("");
+      this.textContent = "Detecting…";
+      vapurr.send({ cmd: "kyc-attest-jurisdiction" });
+    };
+    document.getElementById("kyc-phone-open").onclick = function () {
+      openKycTab("https://thesecretlab.app/kyc/phone");
+      kycPhoneOpened = true;
+      saveKyc();
+      paintKycStep();
+    };
+    document.getElementById("kyc-phone-done").onclick = function () {
+      if (!kycPhoneOpened) return;
+      kycStep = 4;
+      setKycErr("");
+      document.getElementById("lede").textContent = "Level 4 ocular unlocks browse-earn claims.";
+      saveKyc();
+      layout();
+    };
+    document.getElementById("kyc-iris-open").onclick = function () {
+      openKycTab("https://thesecretlab.app/kyc/scan");
+      kycIrisOpened = true;
+      saveKyc();
+      paintKycStep();
+    };
+    document.getElementById("kyc-iris-done").onclick = function () {
+      if (!kycIrisOpened) return;
+      clearKyc();
       goSetPin();
     };
-    document.getElementById("kyc4-later").onclick = function () {
-      needKyc4 = false;
+    function skipKycLater() {
+      // Soft skip — browse-earn claims stay locked without Level 4.
+      clearKyc();
       goSetPin();
-    };
+    }
+    document.getElementById("kyc-phone-later").onclick = skipKycLater;
+    document.getElementById("kyc-iris-later").onclick = skipKycLater;
     document.getElementById("restore").onclick = function () {
       if (busy) return;
       var secret = document.getElementById("seed").value;
@@ -404,6 +602,11 @@
         document.getElementById("restore").click();
       }
     });
+    loadKyc();
+    if (needKyc && kycStep >= 1) {
+      document.getElementById("lede").textContent = "Complete KYC — claims need Level 4.";
+      layout();
+    }
     vapurr.send({ cmd: "login-status" });
   </script>
 </body>

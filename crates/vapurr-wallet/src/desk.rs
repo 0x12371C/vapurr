@@ -52,6 +52,16 @@ pub enum WalletCmd {
         chain_id: u64,
         gas: u64,
     },
+    /// EIP-191 personal_sign for chrome pages (KYC challenge, etc.).
+    SignMessage {
+        message: String,
+    },
+    /// Level 1 age self-attest via thesecretlab issuer.
+    KycAttestAge {
+        age_confirmed: bool,
+    },
+    /// Level 2 jurisdiction via issuer CDN/IP geo.
+    KycAttestJurisdiction,
 }
 
 struct Net {
@@ -209,7 +219,7 @@ impl Desk {
 
     pub fn run(&mut self, cmd: WalletCmd) -> Result<Value, WalletError> {
         self.reload_net();
-        if matches!(&cmd, WalletCmd::Send { .. } | WalletCmd::Exec { .. } | WalletCmd::RevealSeed | WalletCmd::ExportKey) {
+        if matches!(&cmd, WalletCmd::Send { .. } | WalletCmd::Exec { .. } | WalletCmd::RevealSeed | WalletCmd::ExportKey | WalletCmd::SignMessage { .. } | WalletCmd::KycAttestAge { .. } | WalletCmd::KycAttestJurisdiction) {
             crate::require_unlocked()?;
             self.key = DeviceKey::load_result()?.ok_or_else(|| WalletError::Fail("No wallet on this PC".into()))?;
         }
@@ -266,6 +276,9 @@ impl Desk {
             }
             WalletCmd::RevealSeed => crate::session::reveal_seed(),
             WalletCmd::ExportKey => crate::session::export_key(),
+            WalletCmd::SignMessage { message } => crate::kyc::sign_message(&self.key, &message),
+            WalletCmd::KycAttestAge { age_confirmed } => crate::kyc::attest_age(&self.key, age_confirmed),
+            WalletCmd::KycAttestJurisdiction => crate::kyc::attest_jurisdiction(&self.key),
             WalletCmd::Resolve { to } => resolve_preview(&to),
             WalletCmd::Exec {
                 route_id,
