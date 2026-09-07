@@ -182,5 +182,5 @@ STOCKS treasury sink client stub on disk (ops/keeper spend path, not Open Bond U
 - Not a user IPC path; GenesisTreasury V-carve stays untouched.
 
 ### ExogenousPairRegistry ABI stub (2026-09-07)
-Client stub on disk (POL / bootstrap ops; not Open Bond UX): crates/vapurr-econ/src/exogenous_pair_registry.abi.json. Source: contracts/ExogenousPairRegistry.sol (+ ExogenousSeedMarket in same file). Live Uni v4 pool addresses stay empty until Relic deploy - UI honest-empty. No user IPC cmd yet - stub only. Prove: scripts/verify-exo-pair-abi.py.
+Client stub on disk (POL / bootstrap ops; not Open Bond UX): crates/vapurr-econ/src/exogenous_pair_registry.abi.json + exogenous_seed_market.abi.json (seed stub). Source: contracts/ExogenousPairRegistry.sol (+ ExogenousSeedMarket in same file). Live Uni v4 pool addresses stay empty until Relic deploy - UI honest-empty. No user IPC cmd yet - stub only. Prove: scripts/verify-exo-pair-abi.py.
 

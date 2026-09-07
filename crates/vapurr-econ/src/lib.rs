@@ -51,6 +51,8 @@ const EXO_RFV_SINK_ABI: &str = include_str!("exo_rfv_sink.abi.json");
 // ExogenousPairRegistry POL book ABI stub (ops/bootstrap; no user IPC cmd yet).
 #[allow(dead_code)]
 const EXOGENOUS_PAIR_REGISTRY_ABI: &str = include_str!("exogenous_pair_registry.abi.json");
+// ExogenousSeedMarket POL seed stub (ops/bootstrap; no user IPC cmd yet).
+const EXOGENOUS_SEED_MARKET_ABI: &str = include_str!("exogenous_seed_market.abi.json");
 
 #[derive(Debug, thiserror::Error)]
 pub enum EconError {
