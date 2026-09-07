@@ -48,6 +48,9 @@ const REMITTANCE_SINK_ABI: &str = include_str!("remittance_sink.abi.json");
 // ExoRfvSink treasury-spend ABI stub (ops/keeper; no user IPC cmd yet).
 #[allow(dead_code)]
 const EXO_RFV_SINK_ABI: &str = include_str!("exo_rfv_sink.abi.json");
+// ExogenousPairRegistry POL book ABI stub (ops/bootstrap; no user IPC cmd yet).
+#[allow(dead_code)]
+const EXOGENOUS_PAIR_REGISTRY_ABI: &str = include_str!("exogenous_pair_registry.abi.json");
 
 #[derive(Debug, thiserror::Error)]
 pub enum EconError {
