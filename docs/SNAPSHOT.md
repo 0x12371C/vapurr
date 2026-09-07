@@ -1,4 +1,4 @@
-# vapurr snapshot - 2026-09-07 ~00:02 ET (vapurrbot)
+# vapurr snapshot - 2026-09-07 ~02:22 ET (vapurrbot)
 
 Living board for agents. Prefer this + `TRACKS.md` + `STATUS.md` over old overnight kick lore.
 
@@ -10,6 +10,7 @@ Living board for agents. Prefer this + `TRACKS.md` + `STATUS.md` over old overni
 | TSL public channel | **1.1.13** at `thesecretlab.app/vapurr/channel/manifest.json` (rev `e590ef3`, different sha/size) |
 | Cargo / dist zip | Cargo still **1.1.10**; latest `dist/vapurr-1.1.10-windows-x64.zip` + `dist/vapurr-setup.exe` (~11:02 ET). Local repo `channel/manifest.json` missing. |
 | Pack rule | **never embed mp4/webm**; House/`pack.ps1` sole packer |
+| Version board | scripts/verify-version-board.py --live PASS at 02:22 (Programs==channel==DisplayVersion 1.1.19; Cargo 1.1.10; TSL bare 1.1.13; www TLS expired) |
 | Signing | **P0 SHIP BLOCKER** — unsigned Defender hit. SignPath / OV still open. Relic: unsigned OK for build/test; hold stranger-ship until signed + security retest (`docs/RELEASE_REVIEW_2026-09-04.md`). |
 
 ## Routing / House honesty (2026-09-06)
@@ -48,7 +49,7 @@ Living board for agents. Prefer this + `TRACKS.md` + `STATUS.md` over old overni
 - Docs: `docs/ketflix/HOSTING.md`.
 
 ## Open next (Relic)
-1. SignPath / signed pack, then promote TSL channel to match Programs 1.1.19
+1. SignPath / signed pack, then promote TSL channel to match Programs 1.1.19; renew www.thesecretlab.app TLS (bare host still 200)
 2. Hostile-page security retest before public ship
 3. Live address-book fills (savings / bond_market / remittance) after reviewed deploys
 4. Trailer sync to TSL when ready

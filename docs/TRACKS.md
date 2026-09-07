@@ -1,6 +1,4 @@
-# Tracks
-
-Overnight log: `docs/TRACKS/OVERNIGHT.md` (canonical). Root `docs/OVERNIGHT.md` is a stub pointer only.
+| Build / pack | House | **Programs + AppData channel 1.1.19** (sha 7731576ce92c..., rev e590ef3, **NotSigned**); Uninstall DisplayVersion **1.1.19**; AppData VERSION.txt **1.1.19**; **TSL bare** channel **200** at **1.1.13** (rev e590ef3, sha 324286bf6f68...); **www.thesecretlab.app TLS expired** (CERT_VERIFY_FAILED); Cargo/dist still **1.1.10**; local repo channel/manifest.json missing. Overnight 02:22: scripts/verify-version-board.py --live PASS (Programs==channel==DisplayVersion; Cargo/TSL skew noted). Hold stranger-ship until signed + Relic security bar. | Signed pack to TSL after Relic retest; renew www TLS; promote TSL after signed pack; SignPath remains ship P0 |
 
 Living owner board. Snapshot: `docs/SNAPSHOT.md`. Flash: `docs/ORG_FLASH.md`.
 
@@ -8,7 +6,6 @@ Living owner board. Snapshot: `docs/SNAPSHOT.md`. Flash: `docs/ORG_FLASH.md`.
 |-------|-------|--------|------|
 | Org board | vapurrbot | live — Bot is primary (CLI credits dry) | KEEP House+Pilot; ACTIVE KFX/PayId/Bind only; **no new grok procs** |
 | Code signing | Relic + House | **P0 SHIP BLOCKER** - unsigned Defender hit (`NotSigned` on Programs exe). Wallet IPC hardening in-tree; Relic hostile-page retest open — `docs/RELEASE_REVIEW_2026-09-04.md`. | OV/Artifact Signing; `pack.ps1` must sign; MSFT FP; Relic security retest before public ship |
-| Build / pack | House | **Programs + AppData channel 1.1.19** (sha 7731576ce92c..., rev e590ef3, **NotSigned**); Uninstall DisplayVersion repaired **1.1.17->1.1.19** (Programs promote without PatchApply refresh); AppData root VERSION.txt synced off Programs; **TSL channel 200** at **1.1.13** (rev e590ef3, sha 324286bf6f68...); dist/Cargo still **1.1.10**; local repo channel/manifest.json missing. Overnight 00:02: verify-display-version.py --live PASS after repair; pack.ps1 now refreshes DisplayVersion when Programs sha==channel. Hold stranger-ship until signed + Relic security bar. | Signed pack to TSL after Relic retest; promote TSL after signed pack; SignPath remains ship P0 |
 
 | Media hosting | vapurrbot + TSL | Ketflix `TRAILER_BASE` → thesecretlab.app; CDN 404 until upload | sync `frontend/ketflix/trailers/*.mp4`; see HOSTING.md |
 | Ketflix UI | KFX | posters+hero 1080p landscape; **idle** since ~13:07 | review only; no new proc |
