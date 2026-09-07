@@ -167,3 +167,7 @@ Robinhood testnet **46630** BondArb session drained **availableInventory gV to 0
 **STOCKS RFV sink:** BondMarket STOCKS treasury retargeted to **ExoRfvSink** so stock offtake is spendable RFV (WETH to wgV to V). Distinct from Open Bond UX: treasury destination is Fed ops, not a tab gray-gate. ETH / USDG / STOCKS tabs stay live-by-default; USDG remains **BondAssetTag only** (no $PUSD/USDG pool).
 
 Prove: scripts/verify-bonds-book.py.
+
+### IPC ABI stubs (2026-09-07)
+
+Client stubs on disk (not live-wired): `crates/vapurr-econ/src/bond_market.abi.json` (+ `spusd_cd.abi.json` / `savings_router.abi.json`). `open_bond` stays `NeedBondMarket` until Relic fills the CA and reviews IPC. Prove: `scripts/verify-bond-cd-abi.py`.

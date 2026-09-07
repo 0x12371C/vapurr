@@ -113,3 +113,7 @@ in this test; automated Uni swap fee collection remains a separate integration.
 frontend/bonds.html #spusd-cd paints #cd-book-note from snap.savings.configured (empty book -> NeedSavings). Open CD CTA stays live; on-tx miss surfaces clearly. Live open ABI still Relic-gated after deploy.
 
 Prove: `python scripts/verify-spusd-cd.py` (live CTA + NeedSavings + SPUSD.md sketch needles).
+
+### IPC ABI stubs (2026-09-07)
+
+Client stubs on disk (not live-wired): `crates/vapurr-econ/src/spusd_cd.abi.json` + `savings_router.abi.json`. `cd_open` stays `NeedSavings` until Relic fills sPUSD / SpusdCd / SavingsRouter CAs. Prove: `scripts/verify-bond-cd-abi.py`.

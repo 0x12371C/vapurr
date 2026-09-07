@@ -24,3 +24,4 @@ Never pack `.mp4` / `.webm`. Host at `https://thesecretlab.app/vapurr/…`. Embe
 
 - 2026-09-07 08:21 ET: FeeAttribution prove @ 4c771ec (honesty); signing/TLS still P0.
 - 2026-09-07 09:12 ET: ODWS/Level 4 KYC prove @ verify-odws-kyc.py PASS; signing/TLS still P0.
+- 2026-09-07 10:11 ET: Bond/CD/Savings IPC ABI stubs on disk (verify-bond-cd-abi.py PASS); open paths still Need*-gated; TSL channel TLS FAIL (was 1.1.13 skew); signing/TLS still P0.

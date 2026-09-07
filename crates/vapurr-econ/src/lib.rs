@@ -27,6 +27,15 @@ use vapurr_wallet::{addr_from_hex, Address, DeviceKey};
 pub const DEC: u128 = 1_000_000_000_000_000_000;
 const MARKET_HEX: &str = include_str!("market.hex");
 const MOCK_USDG_HEX: &str = include_str!("mock_usdg.hex");
+// IPC ABI stubs for BondMarket / SpusdCd / SavingsRouter (forge out). Kept for
+// Relic live-wire review; bond_open / cd_open / house_fee_remit stay Need* until
+// CAs + IPC land. Do not delete — verify-bond-cd-abi.py asserts these.
+#[allow(dead_code)]
+const BOND_MARKET_ABI: &str = include_str!("bond_market.abi.json");
+#[allow(dead_code)]
+const SPUSD_CD_ABI: &str = include_str!("spusd_cd.abi.json");
+#[allow(dead_code)]
+const SAVINGS_ROUTER_ABI: &str = include_str!("savings_router.abi.json");
 
 #[derive(Debug, thiserror::Error)]
 pub enum EconError {
@@ -416,7 +425,7 @@ impl Client {
         if self.cfg.bond_market.is_empty() {
             return Err(EconError::NeedBondMarket);
         }
-        // Live open path lands after Relic reviews the BondMarket deploy + IPC ABI.
+        // Live open path lands after Relic fills bond_market CA + reviews IPC (ABI stub on disk).
         Err(EconError::NeedBondMarket)
     }
 
@@ -435,7 +444,7 @@ impl Client {
         {
             return Err(EconError::NeedSavings);
         }
-        // Live open path lands after Relic reviews the savings deploy + IPC ABI.
+        // Live open path lands after Relic fills savings CAs + reviews IPC (ABI stubs on disk).
         Err(EconError::NeedSavings)
     }
 

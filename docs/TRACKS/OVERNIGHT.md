@@ -417,3 +417,12 @@ emittance_book_snap); empty CAs show NeedRemittance (no live remit enable). Prov
 - **workers:** KFX **idle** (grok 21016 / ps 20776); PayId **idle** (grok 9228 / ps 20492); Bind **idle** (PID gone) - no respawn. Extra grok windows present (graphify / bare / House+Pilot keep) - not watch-spawned. No new organizer procs.
 - **branch:** pack/d59912d (+ this slice)
 - **build slice:** ODWS/Level 4 KYC honesty prove - `scripts/verify-odws-kyc.py` PASS (login/earn/id ODWS ack + Level 4 steer); ODWS.md Level 4 copy aligned with UI. Prefer-list stubs already green. Still open P1: Oliver gV/wgV collateral wire (Relic), live CD/BondMarket ABI, House Uni v4 e2e / remittance live CAs, SignPath, renew www TLS, promote TSL after signed pack.
+
+## 2026-09-07 ~10:11 ET - hourly watch
+
+- **justin:** online
+- **Programs:** VERSION **1.1.19** (sha 7731576ce92c..., rev e590ef3) at Local\Programs\vapurr; Uninstall DisplayVersion **1.1.19**; **NotSigned** (signing still P0 ship blocker; Relic: unsigned OK for build/test)
+- **dist/channel:** AppData channel **1.1.19** (same sha/rev); AppData root VERSION.txt **1.1.19**; **TSL** thesecretlab.app/vapurr/channel **TLS FAIL** (trust/expired — could not establish SSL); bare /channel same TLS FAIL; Cargo still **1.1.10**
+- **workers:** KFX **idle** (grok 21016); PayId **idle** (grok 9228); Bind **idle** (PID gone) - no respawn. Extra grok windows present (graphify / bare / House+Pilot keep) - not watch-spawned. No new organizer procs.
+- **branch:** pack/d59912d (+ this slice)
+- **build slice:** BondMarket / SpusdCd / SavingsRouter IPC ABI stubs - extracted forge ABI into `crates/vapurr-econ/src/{bond_market,spusd_cd,savings_router}.abi.json`; `include_str!` in lib.rs; `bond_open` / `cd_open` stay Need*-gated (no live encode). `scripts/verify-bond-cd-abi.py` PASS; BONDS.md / SPUSD.md needles. Still open P1: Oliver gV/wgV collateral wire (Relic), live BondMarket/CD IPC wire after CA fill, House Uni v4 e2e / remittance live CAs, SignPath, renew www TLS, promote TSL after signed pack.
