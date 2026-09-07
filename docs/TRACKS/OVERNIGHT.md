@@ -331,3 +331,12 @@ emittance_book_snap); empty CAs show NeedRemittance (no live remit enable). Prov
 - **workers:** KFX **idle** (grok 21016 / ps 20776); PayId **idle** (grok 9228 / ps 20492); Bind **idle** (PID gone) - no respawn. Extra grok windows present (graphify / bare / gh-auth) - not watch-spawned. No new organizer procs.
 - **branch:** `pack/d59912d` (+ this slice)
 - **build slice:** DisplayVersion honesty after 1.1.19 promote - live Uninstall repair + profile VERSION sync; `verify-display-version.py --live` PASS; `pack.ps1` refreshes DisplayVersion + profile VERSION when Programs sha==channel; TRACKS/SNAPSHOT ship board honest at 1.1.19. Still open P1: Oliver gV/wgV collateral, live CD/BondMarket ABI, House Uni v4 e2e / remittance live enable, SignPath, promote TSL after signed pack.
+
+## 2026-09-07 ~01:11 ET - hourly watch
+
+- **justin:** online
+- **Programs:** VERSION **1.1.19** (sha 7731576ce92c..., rev e590ef3); Uninstall DisplayVersion **1.1.19**; **NotSigned** (signing still P0 ship blocker; Relic: unsigned OK for build/test)
+- **dist/channel:** AppData channel **1.1.19** (same sha/rev); AppData root VERSION.txt **1.1.19**; Programs install path AppData Local Programs vapurr; TSL channel not rechecked this hour (local-only watch); local repo channel/manifest.json missing; dist/Cargo still **1.1.10**
+- **workers:** KFX **idle** (grok 21016 / ps 20776); PayId **idle** (grok 9228 / ps 20492); Bind **idle** (PID gone) - no respawn. Extra grok windows present (graphify / bare / gh-auth) - not watch-spawned. No new organizer procs.
+- **branch:** `pack/d59912d` (+ this slice)
+- **build slice:** frontend routing visuals stub - bridge gains route-network + catalog refresh parity with swap; `scripts/verify-routing-visuals.py` PASS (network strip, idle sim-board, desk cross-links, desk USDG pin). Still open P1: Oliver gV/wgV collateral, live CD/BondMarket ABI, House Uni v4 e2e / remittance live enable, SignPath, promote TSL after signed pack.
