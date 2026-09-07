@@ -479,12 +479,27 @@ fn is_google_surface(url: &str) -> bool {
 
 fn is_challenge(url: &str) -> bool {
     let u = url.to_ascii_lowercase();
-    if u.contains("recaptcha") || u.contains("/sorry/") {
+    // Turnstile / CF challenge iframes change source_url away from the faucet
+    // host — without this, EasyList can strip the verify scripts mid-challenge.
+    if u.contains("recaptcha")
+        || u.contains("/sorry/")
+        || u.contains("turnstile")
+        || u.contains("/cdn-cgi/challenge")
+        || u.contains("cf-challenge")
+    {
         return true;
     }
     let h = host(&u);
     let h = h.trim_start_matches("www.");
-    host_matches(h, "recaptcha.net") || host_matches(h, "gstatic.com")
+    if host_matches(h, "recaptcha.net")
+        || host_matches(h, "gstatic.com")
+        || host_matches(h, "challenges.cloudflare.com")
+    {
+        return true;
+    }
+    // Other cloudflare.com challenge endpoints (not the whole CDN).
+    host_matches(h, "cloudflare.com")
+        && (u.contains("turnstile") || u.contains("challenge") || u.contains("cdn-cgi"))
 }
 
 fn host_matches(host: &str, root: &str) -> bool {
@@ -590,6 +605,17 @@ mod tests {
         assert!(!s.should_block(
             "https://challenges.cloudflare.com/turnstile/v0/api.js",
             "https://faucet.testnet.chain.robinhood.com/",
+            "script"
+        ));
+        // iframe is now the source — still must not strip Turnstile
+        assert!(!s.should_block(
+            "https://challenges.cloudflare.com/cdn-cgi/challenge-platform/h/b/turnstile/f/ov2/av0/rch",
+            "https://challenges.cloudflare.com/turnstile/v0/api.js",
+            "xhr"
+        ));
+        assert!(!s.should_block(
+            "https://challenges.cloudflare.com/turnstile/v0/g/normal",
+            "https://challenges.cloudflare.com/",
             "script"
         ));
         assert!(s
