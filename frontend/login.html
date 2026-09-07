@@ -87,6 +87,71 @@
     html[data-theme="light"] .door {
       background: color-mix(in srgb, var(--color-steel) 84%, transparent);
     }
+
+    .odws-card {
+      margin-top: 10px;
+      padding: 14px 14px 12px;
+      border-radius: 14px;
+      background: color-mix(in srgb, var(--color-void) 42%, transparent);
+      border: 1px solid color-mix(in srgb, var(--color-lime) 18%, transparent);
+    }
+    .odws-card .odws-title {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .odws-card .odws-title strong {
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      color: var(--color-snow);
+    }
+    .odws-card .odws-ver {
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--color-lime);
+    }
+    .odws-card ul {
+      margin: 0;
+      padding: 0 0 0 16px;
+      color: var(--color-muted);
+      font-size: 12.5px;
+      line-height: 1.5;
+    }
+    .odws-card ul li { margin: 4px 0; }
+    .odws-card ul b { color: var(--color-snow); font-weight: 600; }
+    .odws-card .odws-foot {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid color-mix(in srgb, var(--color-snow) 8%, transparent);
+      color: color-mix(in srgb, var(--color-muted) 88%, transparent);
+      font-size: 11.5px;
+      line-height: 1.45;
+    }
+    .odws-ack {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      margin-top: 14px;
+      padding: 12px 12px;
+      border-radius: 12px;
+      background: color-mix(in srgb, var(--color-void) 28%, transparent);
+      border: 1px solid color-mix(in srgb, var(--color-snow) 7%, transparent);
+      font-size: 13px;
+      color: var(--color-snow);
+      cursor: pointer;
+      user-select: none;
+    }
+    .odws-ack input {
+      margin-top: 2px;
+      width: 16px;
+      height: 16px;
+      accent-color: var(--color-lime);
+      flex: 0 0 auto;
+    }
   </style>
 </head>
 <body>
@@ -105,10 +170,21 @@
       <button class="btn" id="cont" type="button">Continue</button>
     </div>
 
-        <div class="door" id="odws-box" hidden>
-      <label class="mono">ODWS</label>
-      <div class="hint" id="odws-hint">This wallet follows the Open Digital Wallet Standard: keys stay encrypted on this PC; passcode lock; browse-earn <b style="color:var(--color-snow);font-weight:600">claims need Level 4</b> ocular KYC (open-iris). We don't store your scan or personal info — a ZK-style attestation, secured in vapurrDB, is all that's kept. Tooling may build on OpenAI tech. Not an official OpenAI or Worldcoin partnership.</div>
-      <label style="display:flex;gap:10px;align-items:flex-start;margin-top:12px;font-size:13px;color:var(--color-snow)">
+    <div class="door" id="odws-box" hidden>
+      <label class="mono">Before you create</label>
+      <div class="odws-card" id="odws-hint">
+        <div class="odws-title">
+          <strong>Open Digital Wallet Standard</strong>
+          <span class="odws-ver">v0.1</span>
+        </div>
+        <ul>
+          <li>Keys stay <b>encrypted on this PC</b>, behind your passcode.</li>
+          <li>Browse-earn <b>claims need Level 4</b> ocular KYC (open-iris).</li>
+          <li>We <b>don't store</b> your scan or personal info — only a ZK-style attestation in vapurrDB.</li>
+        </ul>
+        <div class="odws-foot">Builds on OpenAI tech + Worldcoin open-iris (MIT). Not an official OpenAI or Worldcoin partnership.</div>
+      </div>
+      <label class="odws-ack" for="odws-ack">
         <input type="checkbox" id="odws-ack"/>
         <span>I understand — create under ODWS v0.1</span>
       </label>
@@ -273,7 +349,14 @@
       document.getElementById("odws-box").hidden = false;
       document.getElementById("other-box").hidden = true;
       if (hasKey) {
-        document.getElementById("odws-hint").textContent = "Replaces the wallet on this PC. ODWS still applies: encrypted vault, passcode, ocular full KYC via open-iris; tooling may build on OpenAI tech.";
+        var h = document.getElementById("odws-hint");
+        if (h) {
+          h.querySelector(".odws-title strong").textContent = "Replaces the wallet on this PC";
+          h.querySelector("ul").innerHTML =
+            "<li>ODWS still applies: <b>encrypted vault</b> + passcode.</li>" +
+            "<li>Browse-earn <b>claims need Level 4</b> ocular KYC (open-iris).</li>" +
+            "<li>We <b>don't store</b> your scan — ZK attestation in vapurrDB only.</li>";
+        }
       }
     };
     document.getElementById("odws-ack").onchange = function () {
