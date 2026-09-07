@@ -389,3 +389,12 @@ emittance_book_snap); empty CAs show NeedRemittance (no live remit enable). Prov
 - **workers:** KFX **idle** (grok 21016 / ps 20776); PayId **idle** (grok 9228 / ps 20492); Bind **idle** (PID gone) - no respawn. Extra grok windows present (graphify / bare / House+Pilot keep) - not watch-spawned. No new organizer procs.
 - **branch:** `pack/d59912d` (+ this slice)
 - **build slice:** sPUSD CD sketch honesty - 30d/90d cards now show separate **target / term**, **funded preview**, **break fee** rows (sketch · awaiting book / — until surplus credited / sketch · entry-time); `scripts/verify-spusd-cd.py` PASS; SPUSD.md sketch rows note. Still open P1: Oliver gV/wgV collateral wire (Relic), live CD/BondMarket ABI, House Uni v4 e2e / remittance live CAs, SignPath, renew www TLS, promote TSL after signed pack.
+
+## 2026-09-07 ~07:02 ET - hourly watch
+
+- **justin:** online
+- **Programs:** VERSION **1.1.19** (sha 7731576ce92c..., rev e590ef3) at Local\Programs\vapurr; Uninstall DisplayVersion **1.1.19**; **NotSigned** (signing still P0 ship blocker; Relic: unsigned OK for build/test)
+- **dist/channel:** AppData channel **1.1.19** (same sha/rev); AppData root VERSION.txt **1.1.19**; **TSL** thesecretlab.app/vapurr/channel **200** at **1.1.13** (rev e590ef3, sha 324286bf6f68...); **www.thesecretlab.app TLS expired**; local repo channel/manifest.json missing; dist/Cargo still **1.1.10**
+- **workers:** KFX **idle** (grok 21016 / ps 20776); PayId **idle** (grok 9228 / ps 20492); Bind **idle** (PID gone) - no respawn. Extra grok windows present (graphify / bare / House+Pilot keep) - not watch-spawned. No new organizer procs.
+- **branch:** pack/d59912d (+ this slice)
+- **build slice:** FeeAttribution who-paid prove - scripts/verify-remittance-book.py now asserts #h-attrib House/Lithe/Oliver chips + em-dash until FeeAttribution.breakdown() + HOUSE_PAIR note; PASS (also reconfirmed bonds/spusd verifies). Prefer-list UI stubs already green earlier tonight. Still open P1: Oliver gV/wgV collateral wire (Relic), live CD/BondMarket ABI, House Uni v4 e2e / remittance live CAs, SignPath, renew www TLS, promote TSL after signed pack.

@@ -1,4 +1,4 @@
-# vapurr snapshot - 2026-09-07 ~02:22 ET (vapurrbot)
+# vapurr snapshot - 2026-09-07 ~07:02 ET (vapurrbot)
 
 Living board for agents. Prefer this + `TRACKS.md` + `STATUS.md` over old overnight kick lore.
 
@@ -22,7 +22,7 @@ Living board for agents. Prefer this + `TRACKS.md` + `STATUS.md` over old overni
 ## Fed / econ UI stubs (landed; Relic-gated live)
 - BONDS ETH/USDG/STOCKS tabs + session/early-close/Fed-ops banners; NeedBondMarket honesty.
 - sPUSD CD live CTA stub + NeedSavings honesty.
-- House fee→remittance note + FeeAttribution who-paid chips (em-dash until breakdown reads).
+- House fee→remittance note + FeeAttribution who-paid chips (em-dash until breakdown reads). Prove: scripts/verify-remittance-book.py (who-paid chips).
 - wgV / $PUSD House visual stub (wrap-first).
 - Still Relic-gated: Oliver gV/wgV collateral wire, live CD/BondMarket ABI after deploy, House Uni v4 e2e / remittance enable, SignPath, promote TSL to 1.1.19 after signed pack, live relay.
 
