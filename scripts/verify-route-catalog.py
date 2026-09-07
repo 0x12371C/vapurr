@@ -5,7 +5,6 @@ import subprocess
 import sys
 from pathlib import Path
 from urllib.parse import urlparse, unquote
-from playwright.sync_api import sync_playwright
 
 ROOT = Path(__file__).resolve().parents[1]
 FRONT = ROOT / 'frontend'
@@ -17,7 +16,26 @@ def main():
     result = subprocess.run(command, capture_output=True, text=True, check=True)
     catalog = json.loads(result.stdout)
     dollars = [t for t in catalog['tokens'] if 'USDG' in t['symbol'].upper()]
-    assert len(dollars) == 1 and dollars[0]['address'].lower() == '0x7e955252e15c84f5768b83c41a71f9eba181802f'
+    # Catalog example is tokens(Some("46630")) - official Paxos TESTNET_USDG (rhc::TESTNET_USDG).
+    # Desk / live unit-of-account is rhc::USDG + frontend/route.js (mainnet 4663), pinned below.
+    TESTNET_USDG = '0x7e955252e15c84f5768b83c41a71f9eba181802f'
+    USDG = '0x5fc5360d0400a0fd4f2af552add042d716f1d168'  # canonical runtime / desk
+    assert len(dollars) == 1 and dollars[0]['address'].lower() == TESTNET_USDG, (
+        'testnet catalog USDG mismatch; desk/live USDG is ' + USDG
+    )
+    route_js = (FRONT / 'route.js').read_text(encoding='utf-8')
+    lib_rs = (ROOT / 'crates' / 'vapurr-rhc' / 'src' / 'lib.rs').read_text(encoding='utf-8')
+    assert USDG in route_js.lower(), 'desk route.js missing canonical USDG'
+    assert USDG.lower() in lib_rs.lower() and 'pub const USDG' in lib_rs, 'rhc::USDG drift'
+    print('PASS usdg pins: catalog TESTNET_USDG + desk rhc::USDG / route.js')
+    if '--pins' in sys.argv:
+        return
+    try:
+        from playwright.sync_api import sync_playwright
+    except ImportError as e:
+        print('SKIP swap UI preview: playwright not installed (' + str(e) + ')')
+        print('Pin prove already PASS; install playwright for full catalog UI check')
+        return
     OUT.mkdir(parents=True, exist_ok=True)
     (OUT/'catalog.json').write_text(json.dumps(catalog, indent=2), encoding='utf-8')
     security = (ROOT/'crates/vapurr-shell/src/security.js').read_text(encoding='utf-8').replace('__API_TOKEN__', '"test-capability"')

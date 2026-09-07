@@ -168,6 +168,9 @@ Robinhood testnet **46630** BondArb session drained **availableInventory gV to 0
 
 Prove: scripts/verify-bonds-book.py.
 
+### USDG pin prove (2026-09-07)
+Desk/runtime unit-of-account is `rhc::USDG` + `frontend/route.js` (`0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168`). Testnet catalog `tokens(Some("46630"))` pins Paxos `rhc::TESTNET_USDG` (`0x7E955252…802F`). Distinct on purpose — USDG remains **BondAssetTag only** (no `$PUSD`/USDG pool). Prove: `scripts/verify-usdg-pins.py` (and `scripts/verify-route-catalog.py --pins`).
+
 ### IPC ABI stubs (2026-09-07)
 
 Client stubs on disk (not live-wired): `crates/vapurr-econ/src/bond_market.abi.json` (+ `spusd_cd.abi.json` / `savings_router.abi.json`). `open_bond` stays `NeedBondMarket` until Relic fills the CA and reviews IPC. Prove: `scripts/verify-bond-cd-abi.py`.
