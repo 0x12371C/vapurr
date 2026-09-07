@@ -36,6 +36,30 @@ interface IFedBackstop {
     function coverBadDebt(address vault, uint256 need) external returns (uint256 funded);
 }
 
+/// The gen-4 Market that is actually live on 46630 predates `creditVapurrRate`
+/// and `vapurrRate` — both selectors revert on it (verified on-chain 2026-09-07,
+/// selectors cross-checked with solc). It does expose `snapshot(address)`, whose
+/// third word is the same price. This is the last-resort price read so a vault
+/// compiled from current source is not dead on arrival against that Market.
+struct MarketSnap {
+    uint256 vapurrBal;
+    uint256 pusdBal;
+    uint256 px;
+    uint256 idx;
+    uint256 vapurrSupply;
+    uint256 pusdSupply;
+    uint256 yieldRes;
+    uint256 apy;
+    address vapurrToken;
+    address pusdToken;
+    uint256 stablePool;
+    uint256 minSpread;
+}
+
+interface IMarketSnap {
+    function snapshot(address a) external view returns (MarketSnap memory);
+}
+
 contract PusdLoopUpgradeable is Initializable, UUPSUpgradeable {
     uint256 public constant DEC = 1e18;
     uint256 public constant YEAR = 365 days;
@@ -143,9 +167,10 @@ contract PusdLoopUpgradeable is Initializable, UUPSUpgradeable {
         require(msg.sender == owner, "OWN");
     }
 
-    /// Surface marker for upgrade proofs (v1).
+    /// Surface marker for upgrade proofs. v2 = resilient price resolution
+    /// (`_marketPx`) so the vault works against the live gen-4 Market.
     function oliverVersion() external pure returns (uint256) {
-        return 1;
+        return 2;
     }
 
     function accrue() external lock {
@@ -559,12 +584,9 @@ contract PusdLoopUpgradeable is Initializable, UUPSUpgradeable {
             : (rate * s.util / DEC) * (10_000 - RESERVE_BPS) / 10_000 * 10_000 / DEC;
         s.ltvBps = LTV_BPS;
         s.lltvBps = LLTV_BPS;
-        // Snapshot prefers fresh credit rate; falls back to raw rate if heartbeat stale.
-        try market.creditVapurrRate(MAX_RATE_AGE) returns (uint256 fresh) {
-            s.px = fresh;
-        } catch {
-            s.px = market.vapurrRate();
-        }
+        // Read path degrades instead of reverting: a desk that cannot price the
+        // oracle should render with px = 0 and say so, not fail to load at all.
+        s.px = _marketPx();
         s.supplied = _assetsOfPreview(a, cash, borrows);
         s.collatV_ = collatV[a];
         s.debt = _debtOfPreview(a, borrows);
@@ -651,9 +673,31 @@ contract PusdLoopUpgradeable is Initializable, UUPSUpgradeable {
         require(got > 0, "TINY");
     }
 
+    /// Price resolution, most-trusted first. Returns 0 when no source answers.
+    /// 1. `creditVapurrRate(MAX_RATE_AGE)` — the only source that enforces the
+    ///    staleness heartbeat. gen-5 Lithe has it; live gen-4 does not.
+    /// 2. `vapurrRate()` — raw spot, no staleness guard.
+    /// 3. `snapshot(address).px` — same number the desk already reads for the
+    ///    Lithe card; the only one the live gen-4 Market answers.
+    function _marketPx() internal view returns (uint256) {
+        try market.creditVapurrRate(MAX_RATE_AGE) returns (uint256 fresh) {
+            if (fresh > 0) return fresh;
+        } catch {}
+        try market.vapurrRate() returns (uint256 raw) {
+            if (raw > 0) return raw;
+        } catch {}
+        try IMarketSnap(address(market)).snapshot(address(this)) returns (MarketSnap memory ms) {
+            if (ms.px > 0) return ms.px;
+        } catch {}
+        return 0;
+    }
+
+    /// Write-path price. Fails closed: borrow / withdraw / liq sizing must never
+    /// proceed on an unpriceable oracle.
     function _px() internal view returns (uint256) {
-        // Borrow / withdraw / liq sizing reject stale oracle (STALE).
-        return market.creditVapurrRate(MAX_RATE_AGE);
+        uint256 px = _marketPx();
+        require(px > 0, "PRICE");
+        return px;
     }
 
     function _mintSupply(address u, uint256 assets, bool alreadyIn) internal returns (uint256 sh) {
