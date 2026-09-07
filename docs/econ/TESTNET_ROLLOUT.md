@@ -50,11 +50,14 @@ Execute in order. Record each address in `docs/STATUS.md` only after a successfu
 - [ ] Verify proxy `owner`, `vapurr`, `pusd`, `litheVersion()==1` on live chain after approved broadcast
 - [x] No Lithe redeem V inventory fund (seigniorage: `swapPusdToV` mints via `marketMinter`; see §8 handoff)
 
-### 3. Oliver (`PusdLoop`) — [IN SCRIPT]
+### 3. Oliver (`PusdLoopUpgradeable`) behind UUPS ERC1967Proxy — [IN SCRIPT]
 
-- [x] Deploy Oliver against **proxy** market address (not the impl)
+- [x] Deploy `PusdLoopUpgradeable` **implementation** (not user-facing) — `contracts/PusdLoopUpgradeable.sol`
+- [x] Deploy `ERC1967Proxy(impl, initialize(market_, owner_))` against **proxy** market address (not the impl) — same shape as §2 Lithe, required by `docs/econ/PROXY_DEPLOY_GATE.md` (2026-09-06 hard lock, post-GT). Bare-impl-as-live is the exact anti-pattern that locked this gate.
+- [x] `scripts/verify-proxy.ps1 -Address 0x07d1085b545d5e1f55668a6a2EA9332233AaeC69` exits 0 (impl `0x982f20837FBC9112225504580e0d9dc23b3eAAa5`) — script did not exist yet, written this pass alongside the deploy
 - [x] `setOwner` to rollout owner (after wiring)
 - [x] DevFund path locks V as Oliver collateral only (`DEV_FUND.md`) via LaunchBootstrap
+- [x] Boot economics eased in this impl: `BOOT_SLOPE1` 150%→30%, `BOOT_CASH` 100,000→5,000 PUSD (gen-4 vault sat at ~0.0007 PUSD total cash after two days at the old settings — a genuine deadlock, not a slow ramp). `constant`s, not storage — a further retune still needs an upgrade, which is the point of doing this behind UUPS this time.
 
 ### 4. BondMarket (USDG bond-only) — [IN SCRIPT]
 
@@ -212,7 +215,7 @@ Captured from `forge script script/TestnetRollout.s.sol:TestnetRollout -vv` (CON
 
 1. Fed V + RebasePolicy + gV (dynamic 1–9%)
 2. Lithe impl + ERC1967Proxy (UUPS) — prefer vanity `0xC47f…EBD2`
-3. Oliver (`PusdLoop`) behind market proxy
+3. Oliver (`PusdLoopUpgradeable`) behind its own UUPS ERC1967Proxy, wired to the market proxy
 4. BondMarket (USDG BondAssetTag only) + `policy.bindBondMarket`
 5. RemittanceSink + RunwayFloor + `setRemittance` on Lithe + Oliver
 6. **SavingsRouter + SPUSD + SpusdCd** + `sink.setForward` — **starts DISABLED**

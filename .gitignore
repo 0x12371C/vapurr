@@ -28,6 +28,12 @@ vapurr.log
 **/liq-pools.json
 **/pns.json
 **/desk.json
+.oliver-deployer.json
+.oliver-deploy-result.json
+.house-pns-deploy-result.json
+.house_lp_old_ref.sol
+.house_swap_old_ref.sol
+.house_snapshot_raw.json
 
 # Tooling that is not the product
 .agents/

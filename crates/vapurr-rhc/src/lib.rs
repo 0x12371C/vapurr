@@ -1,4 +1,4 @@
-#![recursion_limit = "256"]
+﻿#![recursion_limit = "256"]
 //! Robinhood Chain is vapurr's home network.
 //! Verified users never see these numbers. Advanced mode does.
 
@@ -21,22 +21,70 @@ pub const TESTNET_FAUCET: &str = "https://faucet.testnet.chain.robinhood.com";
 pub const TESTNET_USDG: &str = "0x7E955252E15c84f5768B83c41a71F9eba181802F";
 pub const TESTNET_AMZN: &str = "0x5884aD2f920c162CFBbACc88C9C51AA75eC09E02";
 /// PNS registry on testnet 46630. Root = deployer, this CA owns namehash("hood").
-/// Old 0x7eAc… did not own the TLD. Do not deploy a second registry.
-pub const TESTNET_PNS: &str = "0x13C9fCaB70e8f7eED688A5548B0E3849B1ae0fC4";
+/// Deployed 2026-09-07 as `PnsRegistryUpgradeable` behind its own EIP-1967
+/// proxy (impl 0xb3ad3c3915795D81504838D8d91d570616253b24, gate-verified).
+/// Fresh registry — a first-time proxy-ification has no upgrade path from the
+/// old bare-impl one, so any prior `.hood` registrations do not carry over
+/// (none found for the known operating wallet at cutover time).
+/// Root owner is still the one-off deploy key (.oliver-deployer.json,
+/// gitignored) pending transfer to 0xc9371911d6b5a6e36306334ab56d27cb35e669c9
+/// (the real root owner on the old registry) — see docs/STATUS.md.
+/// Old 0x7eAc… did not own the TLD; old bare-impl 0x13C9fCaB…0fC4 retired.
+/// Do not deploy a second registry.
+pub const TESTNET_PNS: &str = "0xC0E6f3217525afc80FE89f077504D9E5377a4bB5";
 /// Fresh gen-4 PusdMarket on 46630. Deployed 2026-09-04 from this device.
 /// Retired 0x447F… / 0x435C… / 0x59bB… / 0x159d… do not count.
 pub const TESTNET_MARKET: &str = "0x47Aca5292423e2133A3eE983aB38291de3983617";
 pub const TESTNET_VAPURR: &str = "0xD4b36DDe47d6294274193d1Bf546E5C32c1E7585";
 pub const TESTNET_PUSD: &str = "0xBe71EF3e1b49ec35b4C3A80c257342A39CEEE42e";
-pub const TESTNET_OUTBID: &str = "";
-/// Ketcharts $PUSD listing board (`KetList.sol`). Empty until this device deploys it.
-pub const TESTNET_KETLIST: &str = "";
-/// Isolated $PUSD vault (`PusdLoop.sol`). Deployed 2026-09-04 on gen-4.
-pub const TESTNET_LOOP: &str = "0x89E17eefa58B99d025145970c0FBAe7768a14521";
-/// House v4 exact-in swapper. Live 2026-09-04.
-pub const TESTNET_SWAP: &str = "0x6304419b838Efb12D0Cdf931dd9579c5b4084dD2";
-/// House Uniswap v4 CL (`HouseLp.sol`) $VAPURR / $PUSD. Seeded 2026-09-04.
-pub const TESTNET_HOUSE: &str = "0x667bFcAF9D3Ee809336788Bf52511D35AE9C1bf7";
+/// vapurrbid $PUSD pay-to-rank board. Deployed 2026-09-07 as
+/// `OutbidUpgradeable` behind its own EIP-1967 proxy (impl
+/// 0x7EC369198D9C486fcc212c0DF84EbcFcFc4ab209, gate-verified). Same economics
+/// as the never-deployed `Outbid.sol`: first listing 10 $PUSD, +5 to take #1.
+/// NOTE: `pot` still has no withdrawal path — every $PUSD paid in is locked by
+/// design. Upgradeability is the only route to ever add a sweep.
+/// owner() is the one-off deploy key pending handoff — see docs/STATUS.md.
+pub const TESTNET_OUTBID: &str = "0x253360abeaC4F162D17336A4683D5c11575BF9e7";
+/// Ketcharts $PUSD listing board. Deployed 2026-09-07 as `KetListUpgradeable`
+/// behind its own EIP-1967 proxy (impl 0x74E7349Ba3C29C51940d6e12322A259B2904C7F4,
+/// gate-verified). First listing 50 $PUSD, +25 to take #1. Same locked-`pot`
+/// caveat as TESTNET_OUTBID above.
+pub const TESTNET_KETLIST: &str = "0x30c2f609E53199A5C963D2F2dce74589B6BafE7f";
+/// Isolated $PUSD vault. Deployed 2026-09-06 as `PusdLoopUpgradeable` behind
+/// its own EIP-1967 `ERC1967Proxy` (this address is the proxy — impl is
+/// 0x982f20837FBC9112225504580e0d9dc23b3eAAa5, verified non-zero at the
+/// standard impl slot per docs/econ/PROXY_DEPLOY_GATE.md). Wired to gen-4
+/// TESTNET_MARKET/VAPURR/PUSD above (verified via market()/vapurr()/pusd()
+/// on-chain). Carries the `loop()` min(room, cash) cap and eased boot
+/// economics (BOOT_SLOPE1 30%, BOOT_CASH 5,000 PUSD — verified on-chain).
+/// owner() is the one-off deploy key in .oliver-deployer.json (gitignored,
+/// not committed) — has UUPS upgrade authority over this vault; transfer to
+/// a team-controlled key via setOwner before treating this as durable.
+/// Old non-upgradeable vault 0x89E17eef…4521 retired (still holds a real,
+/// unmigrated ~485846 VAPURR collateral position — see docs/STATUS.md).
+pub const TESTNET_LOOP: &str = "0x07d1085b545d5e1f55668a6a2EA9332233AaeC69";
+/// House v4 exact-in swapper. Deployed 2026-09-07 as `HouseSwapUpgradeable`
+/// behind its own EIP-1967 proxy (impl 0xc72DB61b98b13dCbA0552A15f4bF7A83aCA2C6e3,
+/// gate-verified), matching the raw-$VAPURR shape actually live before this
+/// (commit e3b3565 — predates the unreleased wgV/HousePairConfig redesign
+/// tracked as "still open" in docs/econ/TESTNET_ROLLOUT.md §9). Stateless;
+/// nothing to migrate. owner() handed directly to the real House operator
+/// 0xe718e24b8d438a26cf39226854ed0b22db0ca56f at init (matches old TESTNET_SWAP
+/// owner). Old bare-impl 0x6304419b…4dD2 retired.
+pub const TESTNET_SWAP: &str = "0x4a00651238EAf8F849b8d8cbb7FD051a4D0f5383";
+/// House Uniswap v4 CL (`HouseLp.sol`) $VAPURR / $PUSD. Deployed 2026-09-07 as
+/// `HouseLpUpgradeable` behind its own EIP-1967 proxy (impl
+/// 0x1eaa565E1d09afcdc6BA023CB5B7a0138F72413E, gate-verified), same raw-$VAPURR
+/// shape as TESTNET_SWAP above for the same reason. The real NFT position
+/// (#2273, ticks [-1860,1860], the same liquidity as before) was never held by
+/// the old contract — it sits with the owner EOA — so nothing moved; `adopt()`
+/// recorded that existing position on this proxy's bookkeeping without
+/// minting a new one (verified on-chain: tokenId/liquidity/ticks/poolId match
+/// exactly). owner() is still the one-off deploy key pending transfer to
+/// 0xe718e24b8d438a26cf39226854ed0b22db0ca56f (the real House operator,
+/// matching TESTNET_SWAP) — see docs/STATUS.md. Old bare-impl 0x667bFcAF…1bf7
+/// retired.
+pub const TESTNET_HOUSE: &str = "0x603AaDFCD483aC196E2bcB158989dD5d38B24336";
 /// Liquid sPUSD vault (`SPUSD.sol`). Empty until reviewed savings deploy.
 /// BondMarket intake. Empty until Relic signs a bonds deploy.
 pub const TESTNET_BOND_MARKET: &str = "";
@@ -239,7 +287,7 @@ mod tests {
         assert_eq!(TESTNET_MARKET.len(), 42);
         assert_eq!(TESTNET_PUSD.len(), 42);
         assert_eq!(TESTNET_VAPURR.len(), 42);
-        assert!(TESTNET_OUTBID.is_empty());
+        assert_eq!(TESTNET_OUTBID.len(), 42);
         assert!(TESTNET_MOCK_USDG.is_empty());
         assert!(VAPURR_MARKET.is_empty());
         assert!(PUSD_TOKEN.is_empty());
@@ -252,7 +300,7 @@ mod tests {
         assert_eq!(MAINNET_PUSD_VANITY.len(), 42);
         assert_eq!(TESTNET_LOOP.len(), 42);
         assert_eq!(TESTNET_SWAP.len(), 42);
-        assert!(TESTNET_KETLIST.is_empty());
+        assert_eq!(TESTNET_KETLIST.len(), 42);
         assert!(TESTNET_BOND_MARKET.is_empty());
         assert!(TESTNET_SPUSD.is_empty());
         assert!(TESTNET_SPUSD_CD.is_empty());
