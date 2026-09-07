@@ -24,7 +24,7 @@ Bootstrap that seeds raw `$VAPURR` or market.vapurr into House is wrong. Wrap fi
 
 Revert class: `RawGvNotHouseEquity` if either Uni currency is raw gV.
 
-## Green vs open (2026-09-05)
+## Green vs open (2026-09-07)
 
 **Green (sketch / in-tree):**
 
@@ -32,14 +32,19 @@ Revert class: `RawGvNotHouseEquity` if either Uni currency is raw gV.
 - HouseFeeRemit (fee carve -> RemittanceSink)
 - HouseUniSkim (authorized skim -> creditFees)
 - BrowserStream / browse never call gV rebase mint
+- House tab remittance live CTA stub (`#h-remit-cta` Remit fees, NeedRemittance-honest) — `scripts/verify-remittance-book.py`
+- Operator notes + UI prove — `scripts/verify-wgv-house.py`
+- Oliver collateral boundary prove — `scripts/verify-oliver-collateral.py` ($VAPURR only; gV/wgV closed)
 
 **Open (needs Relic go):**
 
-- Post-cutover follow-up script (dry-run ready): `contracts/script/TestnetHouseFollowup.s.sol` — deploys `wgVAPURR` + `HousePairConfig` against gen-5 Lithe/`gV` (see `TESTNET_ROLLOUT.md` §9). Core cutover not blocked on this.
+- Post-cutover follow-up script (dry-run ready): `contracts/script/TestnetHouseFollowup.s.sol` — deploys `wgVAPURR` + `HousePairConfig` against gen-5 Lithe/`gV` (see `TESTNET_ROLLOUT.md`). Core cutover not blocked on this.
 - Live Uni v4 deploy: HousePairConfig address into HouseLp/HouseSwap; Rust `house_deploy` / `swap_deploy` ABI encodes `pairConfig` first
 - PositionManager + Permit2 approvals for wgV; PoolManager unlock/settle e2e
 - Full Uni v4 `IHooks` / swapper integration beyond HouseUniSkim inventory bridge
+- Remittance / FeeAttribution live CAs (UI CTA already un-gated; book still NeedRemittance)
 - Pool-held `$PUSD` Lithe-index rebase allocation to LPs (**P1** — wgV fixes equity leg only)
+- Oliver gV/wgV collateral type switch (separate Relic go; UI stays closed)
 
 
 ## Oliver collateral boundary (2026-09-05)
