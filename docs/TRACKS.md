@@ -1,5 +1,6 @@
+﻿- 2026-09-07 ~13:27 ET: house-fee remittance ABI stubs (NeedRemittance-gated); Programs/channel **1.1.10** match, DisplayVersion **1.1.19** lag; signing/TLS still P0.
 - 2026-09-07 ~12:23 ET: proxy-book prove (UUPS LOOP/HOUSE/SWAP/PNS; bare Market/V/PUSD debt); signing/TLS still P0.
-| Build / pack | House | **Programs 1.1.19** (sha 7731576ce92c..., rev e590ef3, **NotSigned**) vs **AppData channel 1.1.10** (sha f78c3476322e..., rev 31d8e7d, faucet/shader pack @ 10:56 ET) — **Programs lags channel**; Uninstall DisplayVersion **1.1.19**; AppData root VERSION **1.1.10**; **TSL** `thesecretlab.app/vapurr/channel` **200** at **1.1.13**; **www TLS expired**; Cargo/dist still **1.1.10**. `verify-version-board.py --watch` reports SKEW. Hold stranger-ship until signed + Relic security bar. | PatchApply Programs to channel 1.1.10 or re-pack with bumped Cargo; renew www TLS; promote TSL after signed pack; SignPath remains ship P0 |
+| Build / pack | House | **Programs 1.1.10** (sha f78c3476322e..., rev 31d8e7d, **NotSigned**) matches **AppData channel 1.1.10**; Uninstall DisplayVersion **1.1.19** (**lags**); AppData root VERSION **1.1.10**; **TSL** `thesecretlab.app/vapurr/channel` **200** at **1.1.13**; **www TLS expired**; Cargo/dist **1.1.10**. `verify-version-board.py --watch` reports DisplayVersion SKEW. Hold stranger-ship until signed + Relic security bar. | Refresh DisplayVersion to 1.1.10; renew www TLS; promote TSL after signed pack; SignPath remains ship P0 |
 
 Living owner board. Snapshot: `docs/SNAPSHOT.md`. Flash: `docs/ORG_FLASH.md`.
 

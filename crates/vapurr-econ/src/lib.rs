@@ -36,6 +36,15 @@ const BOND_MARKET_ABI: &str = include_str!("bond_market.abi.json");
 const SPUSD_CD_ABI: &str = include_str!("spusd_cd.abi.json");
 #[allow(dead_code)]
 const SAVINGS_ROUTER_ABI: &str = include_str!("savings_router.abi.json");
+// House fee remittance IPC stubs (NeedRemittance until Relic fills CAs).
+#[allow(dead_code)] // ABI stub on disk; encode lands after Relic wire
+const HOUSE_FEE_REMIT_ABI: &str = include_str!("house_fee_remit.abi.json");
+#[allow(dead_code)]
+const HOUSE_UNI_SKIM_ABI: &str = include_str!("house_uni_skim.abi.json");
+#[allow(dead_code)]
+const FEE_ATTRIBUTION_ABI: &str = include_str!("fee_attribution.abi.json");
+#[allow(dead_code)]
+const REMITTANCE_SINK_ABI: &str = include_str!("remittance_sink.abi.json");
 
 #[derive(Debug, thiserror::Error)]
 pub enum EconError {

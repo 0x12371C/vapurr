@@ -444,3 +444,12 @@ emittance_book_snap); empty CAs show NeedRemittance (no live remit enable). Prov
 - **workers:** KFX **idle** (grok 21016 / ps 20776); PayId **idle** (grok 9228 / ps 20492); Bind **idle** (PID gone) - no respawn. Extra grok windows present (graphify / bare / House+Pilot keep) - not watch-spawned. No new organizer procs.
 - **branch:** pack/d59912d (+ this slice)
 - **build slice:** Proxy-book honesty prove - docs/econ/PROXY_DEPLOY_GATE.md live gen-4 board + scripts/verify-proxy-book.py (offline + --live via erify-proxy.ps1). UUPS PASS: LOOP/HOUSE/SWAP/PNS. Bare (known gate debt): MARKET/VAPURR/PUSD. Still open P1: Oliver gV/wgV collateral wire (Relic), live BondMarket/CD IPC after CA fill, House Uni v4 e2e / remittance live CAs, SignPath, renew www TLS, PatchApply or re-pack Programs to channel, promote TSL after signed pack, proxy cutover for bare Lithe/V/PUSD.
+
+## 2026-09-07 ~13:27 ET - hourly watch
+
+- **justin:** online
+- **Programs:** VERSION **1.1.10** (sha f78c3476322e..., rev 31d8e7d) at Local\Programs\vapurr; Uninstall DisplayVersion **1.1.19** (**lags** Programs/channel); **NotSigned** (signing still P0 ship blocker; Relic: unsigned OK for build/test)
+- **dist/channel:** AppData channel **1.1.10** (same sha/rev) â€” Programs **matches** channel files; AppData root VERSION.txt **1.1.10**; **TSL** thesecretlab.app/vapurr/channel **200** at **1.1.13**; **www.thesecretlab.app TLS expired**; Cargo still **1.1.10**
+- **workers:** KFX **idle** (grok 21016 / ps 20776); PayId **idle** (grok 9228 / ps 20492); Bind **idle** (PID gone) â€” no respawn. Extra grok windows present (graphify / bare / House+Pilot keep) â€” not watch-spawned. No new organizer procs.
+- **branch:** pack/d59912d (+ this slice)
+- **build slice:** House fee remittance IPC ABI stubs â€” extracted forge ABI into `crates/vapurr-econ/src/{house_fee_remit,house_uni_skim,fee_attribution,remittance_sink}.abi.json`; `include_str!` in lib.rs; `house_fee_remit` stays NeedRemittance-gated (no live encode). `scripts/verify-house-fee-abi.py` PASS; WGV_HOUSE.md needle. Still open P1: Oliver gV/wgV collateral wire (Relic), live BondMarket/CD/remittance IPC after CA fill, House Uni v4 e2e, SignPath, renew www TLS, refresh Uninstall DisplayVersion to 1.1.10, promote TSL after signed pack, proxy cutover for bare Lithe/V/PUSD.
