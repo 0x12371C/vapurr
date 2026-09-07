@@ -45,6 +45,9 @@ const HOUSE_UNI_SKIM_ABI: &str = include_str!("house_uni_skim.abi.json");
 const FEE_ATTRIBUTION_ABI: &str = include_str!("fee_attribution.abi.json");
 #[allow(dead_code)]
 const REMITTANCE_SINK_ABI: &str = include_str!("remittance_sink.abi.json");
+// ExoRfvSink treasury-spend ABI stub (ops/keeper; no user IPC cmd yet).
+#[allow(dead_code)]
+const EXO_RFV_SINK_ABI: &str = include_str!("exo_rfv_sink.abi.json");
 
 #[derive(Debug, thiserror::Error)]
 pub enum EconError {

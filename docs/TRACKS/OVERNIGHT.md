@@ -453,3 +453,12 @@ emittance_book_snap); empty CAs show NeedRemittance (no live remit enable). Prov
 - **workers:** KFX **idle** (grok 21016 / ps 20776); PayId **idle** (grok 9228 / ps 20492); Bind **idle** (PID gone) â€” no respawn. Extra grok windows present (graphify / bare / House+Pilot keep) â€” not watch-spawned. No new organizer procs.
 - **branch:** pack/d59912d (+ this slice)
 - **build slice:** House fee remittance IPC ABI stubs â€” extracted forge ABI into `crates/vapurr-econ/src/{house_fee_remit,house_uni_skim,fee_attribution,remittance_sink}.abi.json`; `include_str!` in lib.rs; `house_fee_remit` stays NeedRemittance-gated (no live encode). `scripts/verify-house-fee-abi.py` PASS; WGV_HOUSE.md needle. Still open P1: Oliver gV/wgV collateral wire (Relic), live BondMarket/CD/remittance IPC after CA fill, House Uni v4 e2e, SignPath, renew www TLS, refresh Uninstall DisplayVersion to 1.1.10, promote TSL after signed pack, proxy cutover for bare Lithe/V/PUSD.
+
+## 2026-09-07 ~14:29 ET - hourly watch
+
+- **justin:** online
+- **Programs:** VERSION **1.1.10** (sha cfd7435a5984..., rev b57b32f) at Local\Programs\vapurr; Uninstall DisplayVersion **1.1.10** (matches); **NotSigned** (signing still P0 ship blocker; Relic: unsigned OK for build/test)
+- **dist/channel:** AppData channel **1.1.10** (same sha/rev) — Programs **matches** channel; AppData root VERSION.txt **1.1.10**; **TSL** thesecretlab.app/vapurr/channel **200** at **1.1.13**; **www.thesecretlab.app TLS expired**; Cargo still **1.1.10**
+- **workers:** KFX **idle** (grok 21016 / ps 20776); PayId **idle** (grok 9228 / ps 20492); Bind **idle** (PID gone) — no respawn. Extra grok windows present (graphify / bare / House+Pilot keep) — not watch-spawned. No new organizer procs.
+- **branch:** pack/d59912d (+ this slice)
+- **build slice:** ExoRfvSink ABI stub — `crates/vapurr-econ/src/exo_rfv_sink.abi.json` + `include_str!` in lib.rs (ops/keeper; no user IPC encode). `scripts/verify-exo-rfv-abi.py` PASS; BONDS.md / RFV_STOCK_ETH_V_LOOP.md needles. DisplayVersion live prove also PASS at 1.1.10. Still open P1: Oliver gV/wgV collateral wire (Relic), live BondMarket/CD/remittance IPC after CA fill, House Uni v4 e2e, SignPath, renew www TLS, promote TSL after signed pack, proxy cutover for bare Lithe/V/PUSD.

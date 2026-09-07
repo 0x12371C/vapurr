@@ -171,3 +171,7 @@ Prove: scripts/verify-bonds-book.py.
 ### IPC ABI stubs (2026-09-07)
 
 Client stubs on disk (not live-wired): `crates/vapurr-econ/src/bond_market.abi.json` (+ `spusd_cd.abi.json` / `savings_router.abi.json`). `open_bond` stays `NeedBondMarket` until Relic fills the CA and reviews IPC. Prove: `scripts/verify-bond-cd-abi.py`.
+
+### ExoRfvSink ABI stub (2026-09-07)
+
+STOCKS treasury sink client stub on disk (ops/keeper spend path, not Open Bond UX): `crates/vapurr-econ/src/exo_rfv_sink.abi.json`. Live CA on 46630 is documented in `STATUS.md` / `RFV_STOCK_ETH_V_LOOP.md`. No user IPC cmd yet — stub only. Prove: `scripts/verify-exo-rfv-abi.py`.
