@@ -62,6 +62,8 @@ const HOUSE_PAIR_CONFIG_ABI: &str = include_str!("house_pair_config.abi.json");
 const GENESIS_TREASURY_ABI: &str = include_str!("genesis_treasury.abi.json");
 // LaunchBootstrap ABI stub (1M launch allocate + DevFund/Browser/exo seeds; ops; no user IPC encode yet).
 const LAUNCH_BOOTSTRAP_ABI: &str = include_str!("launch_bootstrap.abi.json");
+// LitheCutoverMigrator ABI stub (legacy PUSD -> legacy V -> convert -> canonical PUSD; ops; no user IPC encode yet).
+const LITHE_CUTOVER_MIGRATOR_ABI: &str = include_str!("lithe_cutover_migrator.abi.json");
 
 #[derive(Debug, thiserror::Error)]
 pub enum EconError {
