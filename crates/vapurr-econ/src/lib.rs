@@ -78,6 +78,8 @@ const ERC1967_PROXY_ABI: &str = include_str!("erc1967_proxy.abi.json");
 const PUSD_MARKET_FED_UPGRADEABLE_ABI: &str = include_str!("pusd_market_fed_upgradeable.abi.json");
 // GenesisAllocation ABI stub (hard-lock 1.2M mint constants; ops; no user IPC encode yet).
 const GENESIS_ALLOCATION_ABI: &str = include_str!("genesis_allocation.abi.json");
+// HouseLpUpgradeable ABI stub (House Uni v4 LP proxy impl; ops/adopt/seed; no user IPC encode yet).
+const HOUSE_LP_UPGRADEABLE_IMPL_ABI: &str = include_str!("house_lp_upgradeable_impl.abi.json");
 
 #[derive(Debug, thiserror::Error)]
 pub enum EconError {

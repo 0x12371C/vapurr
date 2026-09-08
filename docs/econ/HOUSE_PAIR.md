@@ -131,3 +131,8 @@ Short ops checklist: [WGV_HOUSE.md](WGV_HOUSE.md) (wrap path, green/open, do-not
 
 
 `vapurr://house` (`pusd.html?tab=house`) copy locks **wgV / $PUSD** + wrap-first gate. Deploy/seed still open until live Uni + pairConfig.
+
+### HouseLpUpgradeable ABI stub (2026-09-08 ~07:01)
+
+Client stub on disk (House Uni v4 LP proxy impl — adopt/seed/snapshot/upgrade walls; ops; no user IPC encode yet): `crates/vapurr-econ/src/house_lp_upgradeable_impl.abi.json` + `HOUSE_LP_UPGRADEABLE_IMPL_ABI` in lib.rs. Prove stub: `scripts/verify-house-lp-upgradeable-abi.py`.
+
