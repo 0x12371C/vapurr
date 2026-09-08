@@ -179,6 +179,31 @@
       accent-color: var(--color-lime);
       flex: 0 0 auto;
     }
+    .zkkyc-card {
+      margin: 0 0 12px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid color-mix(in srgb, var(--color-lime) 18%, transparent);
+      background: color-mix(in srgb, var(--color-lime) 6%, transparent);
+    }
+    .zkkyc-card b {
+      display: block;
+      font-size: 13px;
+      color: var(--color-lime);
+      letter-spacing: 0.02em;
+      margin-bottom: 6px;
+    }
+    .zkkyc-card p {
+      margin: 0 0 6px;
+      font-size: 12.5px;
+      line-height: 1.45;
+      color: color-mix(in srgb, var(--color-muted) 92%, var(--color-snow));
+    }
+    .zkkyc-card p:last-child { margin-bottom: 0; }
+    .zkkyc-card .mono-bit {
+      color: var(--color-snow);
+      font-weight: 600;
+    }
   </style>
 </head>
 <body>
@@ -206,10 +231,10 @@
         </div>
         <ul>
           <li>Keys stay <b>encrypted on this PC</b>, behind your passcode.</li>
-          <li>Browse-earn <b>claims need Level 4</b> ocular KYC (open-iris).</li>
-          <li>We <b>don't store</b> your scan or personal info — only a ZK-style attestation in vapurrDB.</li>
+          <li><b>zer0ID</b> ZKKYC: browse-earn <b>claims need L4</b> ocular (open-iris).</li>
+          <li>We <b>don't store</b> your scan or personal info — nullifier-only ZK attestation in vapurrDB.</li>
         </ul>
-        <div class="odws-foot">Builds on OpenAI tech + Worldcoin open-iris (MIT). Not an official OpenAI or Worldcoin partnership.</div>
+        <div class="odws-foot">Builds on Worldcoin open-iris (MIT) + OpenAI technology where used. Not official partnerships.</div>
       </div>
       <label class="odws-ack" for="odws-ack">
         <input type="checkbox" id="odws-ack"/>
@@ -225,13 +250,20 @@
     </div>
 
     <div class="door" id="kyc-box" hidden>
-      <label class="mono" id="kyc-label">KYC · ladder</label>
+      <label class="mono" id="kyc-label">zer0ID · ZKKYC ladder</label>
       <div class="odws-card" id="kyc-card">
-        <div class="kyc-ladder" id="kyc-ladder" aria-label="KYC steps">
+        <div class="zkkyc-card" id="zkkyc-explain">
+          <b>What is ZKKYC?</b>
+          <p><span class="mono-bit">zer0ID</span> uses zero-knowledge KYC: prove uniqueness and a few attributes without handing over a biometric database or raw photos.</p>
+          <p>Durable state is <span class="mono-bit">nullifier-only</span> — opaque in vapurrDB. No raw biometrics, no PII, no photo archive.</p>
+          <p>Trust ladder <span class="mono-bit">L1–L4</span> (Age → Country → Phone → <span class="mono-bit">open-iris</span>). Browse-earn claims need <span class="mono-bit">L4</span> ocular.</p>
+          <p>Builds on Worldcoin <span class="mono-bit">open-iris</span> (MIT) and OpenAI technology where used — not official partnerships.</p>
+        </div>
+        <div class="kyc-ladder" id="kyc-ladder" aria-label="zer0ID ZKKYC steps">
           <span data-step="1">Age</span>
           <span data-step="2">Country</span>
           <span data-step="3">Phone</span>
-          <span data-step="4">Iris</span>
+          <span data-step="4">open-iris</span>
         </div>
         <div class="odws-title">
           <strong id="kyc-title">Verify to unlock claims</strong>
@@ -256,13 +288,13 @@
           <button class="btn" id="kyc-phone-done" type="button" disabled style="margin-top:8px">Done — continue</button>
           <button class="btn-ghost" id="kyc-phone-later" type="button" style="width:100%;margin-top:8px;height:44px;border-radius:12px">I&apos;ll do KYC later</button>
         </div>
-        <div id="kyc-iris" hidden>
-          <p class="hint" style="margin-top:8px">Level 4 — ocular uniqueness unlocks <b>browse-earn claims</b> (open-iris). <b>iPhone Safari first</b>; on desktop open the scan page, finish on phone if needed. We don’t store your scan — ZK attestation only. Builds on open-iris (MIT) + OpenAI tech where used — not partnerships.</p>
-          <button class="btn" id="kyc-iris-open" type="button">Start Level 4 scan</button>
+                <div id="kyc-iris" hidden>
+          <p class="hint" style="margin-top:8px"><b>zer0ID</b> L4 — <b>open-iris</b> ocular uniqueness unlocks <b>browse-earn claims</b>. <b>iPhone Safari first</b>; on desktop open the scan page, finish on phone if needed. ZKKYC keeps nullifier-only state in vapurrDB — no raw scan. Builds on Worldcoin open-iris (MIT) + OpenAI tech where used — not partnerships.</p>
+          <button class="btn" id="kyc-iris-open" type="button">Start open-iris L4 scan</button>
           <button class="btn" id="kyc-iris-done" type="button" disabled style="margin-top:8px">Done — set passcode</button>
           <button class="btn-ghost" id="kyc-iris-later" type="button" style="width:100%;margin-top:8px;height:44px;border-radius:12px">I&apos;ll do KYC later</button>
         </div>
-        <div class="odws-foot" id="kyc-foot" style="margin-top:10px">Ladder: Age → Country → Phone → Iris. No PII stored. Browse-earn claims need Level 4.</div>
+        <div class="odws-foot" id="kyc-foot" style="margin-top:10px">zer0ID ZKKYC: L1 Age → L2 Country → L3 Phone → L4 open-iris. Nullifier-only in vapurrDB. Browse-earn needs L4.</div>
       </div>
       <div class="err" id="kyc-err"></div>
     </div>
@@ -366,21 +398,21 @@
       var hint = document.getElementById("kyc-hint");
       var label = document.getElementById("kyc-label");
       var titles = {
-        1: "Step 1 — Age",
-        2: "Step 2 — Country",
-        3: "Step 3 — Phone",
-        4: "Step 4 — Iris"
+        1: "Step 1 — Age (L1)",
+        2: "Step 2 — Country (L2)",
+        3: "Step 3 — Phone (L3)",
+        4: "Step 4 — open-iris (L4)"
       };
       var hints = {
         1: "Self-attest AgeOver18 with a wallet signature. Not a government ID or DOB document.",
         2: "Issuer reads country from this connection (CDN/IP). No name / PII stored.",
-        3: "Open phone verify. Use the code shown there — mock/on-screen when carrier SMS isn’t live (no text sent). Then tap Done here. Claims still need Level 4.",
-        4: "Level 4 unlocks browse-earn claims. Open the ocular scan (open-iris); tap Done when that tab is open. Soft-skip keeps claims locked."
+        3: "Open phone verify. Use the code shown there — mock/on-screen when carrier SMS isn’t live (no text sent). Then tap Done here. Claims still need L4 open-iris.",
+        4: "L4 open-iris unlocks browse-earn claims. ZKKYC: nullifier-only in vapurrDB. Tap Done when that tab is open. Soft-skip keeps claims locked."
       };
-      if (title) title.textContent = titles[kycStep] || "KYC";
+      if (title) title.textContent = titles[kycStep] || "zer0ID";
       if (pill) pill.textContent = kycStep ? (kycStep + "/4") : "";
       if (hint) hint.textContent = hints[kycStep] || "";
-      if (label) label.textContent = kycStep ? ("KYC · " + kycStep + " of 4") : "KYC";
+      if (label) label.textContent = kycStep ? ("zer0ID · ZKKYC " + kycStep + " of 4") : "zer0ID · ZKKYC ladder";
       var ladder = document.getElementById("kyc-ladder");
       if (ladder) {
         var bits = ladder.querySelectorAll("span[data-step]");

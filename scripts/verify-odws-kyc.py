@@ -17,8 +17,13 @@ need_login = [
     'id="kyc-ladder"',
     'id="kyc-phone-open"',
     'id="kyc-iris-open"',
-    'Start Level 4 scan',
-    'Level 4 unlocks browse-earn claims',
+    'id="zkkyc-explain"',
+    'zer0ID',
+    'open-iris',
+    'ZKKYC',
+    'nullifier-only',
+    'Start open-iris L4 scan',
+    'L4 open-iris unlocks browse-earn claims',
     'on-screen mock code',
     'needKyc',
 ]
@@ -51,6 +56,10 @@ need_earn = [
     'id="go-kyc"',
     'Complete Level 4 KYC',
     'Level 4 required to claim browse tokens',
+    'zer0ID',
+    'open-iris',
+    'ZKKYC',
+    'nullifier-only',
 ]
 missing = [n for n in need_earn if n not in earn]
 if missing:
@@ -59,9 +68,13 @@ if missing:
 
 need_id = [
     'ODWS',
+    'zer0ID',
+    'ZKKYC',
+    'nullifier',
     'Level 4 is required to claim browse-earn',
     'open-iris',
     '/kyc/phone',
+    'id="zkkyc-explain"',
 ]
 missing = [n for n in need_id if n not in ident]
 if missing:
@@ -73,6 +86,10 @@ need_doc = [
     'v0.1',
     'Level 4',
     'browse-earn',
+    'zer0ID',
+    'open-iris',
+    'ZKKYC',
+    'nullifier',
 ]
 missing = [n for n in need_doc if n not in odws]
 if missing:
@@ -83,4 +100,4 @@ if 'kyc_proven' in earn and 'Level 4 proven' not in earn:
     print('FAIL earn.html kyc_proven branch missing Level 4 proven copy')
     sys.exit(1)
 
-print('PASS ODWS v0.1 + Level 4 KYC steer (login/earn/id + ODWS.md) + Country/Phone handlers')
+print('PASS ODWS v0.1 + zer0ID/open-iris/ZKKYC + Level 4 KYC steer (login/earn/id + ODWS.md) + Country/Phone handlers')

@@ -27,6 +27,8 @@ OpenAI ≠ open-iris. Name each correctly in UI and press.
 
 ## zer0ID (human layer)
 
+**ZKKYC (one line):** zer0ID proves uniqueness/attributes with ZK — durable state is nullifier-only in vapurrDB (no raw biometrics/photos/PII). Trust ladder L1–L4; browse-earn needs L4 ocular via **open-iris**. Builds on Worldcoin open-iris (MIT) + OpenAI tech where used — not official partnerships.
+
 | Level | Anchor | Notes |
 |---|---|---|
 | 0–2 | Wallet (+ optional age/jurisdiction claims) | Wallet uniqueness only |

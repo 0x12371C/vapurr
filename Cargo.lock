@@ -4362,7 +4362,7 @@ checksum = "ba73ea9cf16a25df0c8caa16c51acb937d5712a8429db78a3ee29d5dcacd3a65"
 
 [[package]]
 name = "vapurr-blob"
-version = "1.1.21"
+version = "1.1.22"
 dependencies = [
  "chacha20poly1305",
  "hex",
@@ -4377,7 +4377,7 @@ dependencies = [
 
 [[package]]
 name = "vapurr-core"
-version = "1.1.21"
+version = "1.1.22"
 dependencies = [
  "serde",
  "thiserror 2.0.20",
@@ -4386,7 +4386,7 @@ dependencies = [
 
 [[package]]
 name = "vapurr-econ"
-version = "1.1.21"
+version = "1.1.22"
 dependencies = [
  "hex",
  "serde",
@@ -4399,7 +4399,7 @@ dependencies = [
 
 [[package]]
 name = "vapurr-engine"
-version = "1.1.21"
+version = "1.1.22"
 dependencies = [
  "scraper",
  "thiserror 2.0.20",
@@ -4410,7 +4410,7 @@ dependencies = [
 
 [[package]]
 name = "vapurr-fomo"
-version = "1.1.21"
+version = "1.1.22"
 dependencies = [
  "reqwest",
  "serde",
@@ -4420,7 +4420,7 @@ dependencies = [
 
 [[package]]
 name = "vapurr-id"
-version = "1.1.21"
+version = "1.1.22"
 dependencies = [
  "chrono",
  "hex",
@@ -4434,7 +4434,7 @@ dependencies = [
 
 [[package]]
 name = "vapurr-net"
-version = "1.1.21"
+version = "1.1.22"
 dependencies = [
  "reqwest",
  "thiserror 2.0.20",
@@ -4444,7 +4444,7 @@ dependencies = [
 
 [[package]]
 name = "vapurr-pay"
-version = "1.1.21"
+version = "1.1.22"
 dependencies = [
  "base64",
  "chrono",
@@ -4456,7 +4456,7 @@ dependencies = [
 
 [[package]]
 name = "vapurr-relay"
-version = "1.1.21"
+version = "1.1.22"
 dependencies = [
  "axum",
  "hex",
@@ -4475,7 +4475,7 @@ dependencies = [
 
 [[package]]
 name = "vapurr-rhc"
-version = "1.1.21"
+version = "1.1.22"
 dependencies = [
  "chrono",
  "hex",
@@ -4488,7 +4488,7 @@ dependencies = [
 
 [[package]]
 name = "vapurr-shell"
-version = "1.1.21"
+version = "1.1.22"
 dependencies = [
  "dpi",
  "mimalloc",
@@ -4517,7 +4517,7 @@ dependencies = [
 
 [[package]]
 name = "vapurr-shield"
-version = "1.1.21"
+version = "1.1.22"
 dependencies = [
  "adblock",
  "reqwest",
@@ -4529,14 +4529,14 @@ dependencies = [
 
 [[package]]
 name = "vapurr-ui"
-version = "1.1.21"
+version = "1.1.22"
 dependencies = [
  "egui",
 ]
 
 [[package]]
 name = "vapurr-wallet"
-version = "1.1.21"
+version = "1.1.22"
 dependencies = [
  "bip39",
  "hex",
@@ -4557,7 +4557,7 @@ dependencies = [
 
 [[package]]
 name = "vapurr-zmail"
-version = "1.1.21"
+version = "1.1.22"
 dependencies = [
  "base64",
  "chacha20poly1305",
