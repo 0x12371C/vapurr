@@ -15,6 +15,52 @@ pub fn chrome_path(raw: &str) -> Option<String> {
     is_chrome_url(raw).then(|| url::Url::parse(raw).unwrap().path().to_owned())
 }
 
+/// Secret Lab KYC surfaces opened in a desk tab (no injected MetaMask).
+/// Wallet-sign is allowed here so /kyc/phone can use vapurr IPC instead of window.ethereum.
+pub fn is_tsl_kyc_url(raw: &str) -> bool {
+    let Ok(u) = url::Url::parse(raw) else { return false };
+    if u.scheme() != "https" { return false; }
+    match u.host_str() {
+        // `/kyc` exactly, or a path under it. A bare `starts_with("/kyc")`
+        // would also match `/kycsomethingelse`.
+        Some("thesecretlab.app") | Some("www.thesecretlab.app") => {
+            let p = u.path();
+            p == "/kyc" || p.starts_with("/kyc/")
+        }
+        _ => false,
+    }
+}
+
+/// zer0ID attestation challenges begin with this, followed by the explanation
+/// and a server nonce. See `GET https://thesecretlab.app/api/kyc/challenge`.
+const ZEROID_CHALLENGE_PREFIX: &str = "zer0ID";
+
+/// Whether a message is a zer0ID attestation challenge.
+///
+/// Guest pages get no blanket signing authority. `SignMessage` requires only an
+/// unlocked wallet — there is no per-signature prompt — so letting a remote
+/// origin sign arbitrary bytes would make the wallet a blind signing oracle for
+/// that origin: any XSS or bad deploy on it could collect signatures over
+/// anything while the wallet is unlocked. Constraining the shape means a
+/// compromised issuer can obtain only what it could already mint for itself —
+/// a zer0ID challenge signature — and nothing another protocol would read as
+/// authorization.
+///
+/// Deliberately a prefix-and-bounds check, not an exact match: the nonce and
+/// wording are the issuer's to change. It is a blast-radius limit, not
+/// authentication of the challenge.
+pub fn is_zeroid_challenge(message: &str) -> bool {
+    let m = message.trim_start();
+    // The prefix alone is too weak — "zer0ID\n\nApprove everything\n\nNonce: x"
+    // would sail past it. Require the attestation phrasing too. Matched without
+    // the em-dash so the issuer can retouch punctuation without breaking the
+    // flow; wording changes fail closed (the user cannot sign) rather than open.
+    m.starts_with(ZEROID_CHALLENGE_PREFIX)
+        && m.contains("attest this wallet")
+        && m.contains("Nonce:")
+        && message.len() <= 2048
+}
+
 #[derive(Clone, Debug)]
 pub struct Document {
     pub url: String,
@@ -98,6 +144,47 @@ mod tests {
             assert!(!is_chrome_url(u), "{u}");
         }
     }
+    #[test]
+    fn tsl_kyc_url_is_host_and_path() {
+        assert!(is_tsl_kyc_url("https://thesecretlab.app/kyc/phone"));
+        assert!(is_tsl_kyc_url("https://www.thesecretlab.app/kyc/scan?from=vapurr"));
+        assert!(is_tsl_kyc_url("https://thesecretlab.app/kyc"));
+        assert!(!is_tsl_kyc_url("https://thesecretlab.app/"));
+        assert!(!is_tsl_kyc_url("https://evil.thesecretlab.app/kyc/phone"));
+        assert!(!is_tsl_kyc_url("http://thesecretlab.app/kyc/phone"));
+        assert!(!is_tsl_kyc_url("https://evil.invalid/kyc/phone?next=https://thesecretlab.app/kyc"));
+        // `/kyc` must not act as a bare prefix over unrelated paths.
+        assert!(!is_tsl_kyc_url("https://thesecretlab.app/kycevil"));
+        assert!(!is_tsl_kyc_url("https://thesecretlab.app/kyc-not-really/x"));
+    }
+
+    #[test]
+    fn only_zeroid_challenges_are_signable_from_a_guest_page() {
+        let real = "zer0ID — attest this wallet.\n\nSigning this proves you control this \
+                    address. It is not a transaction, costs nothing, and is never sent \
+                    anywhere but this server.\n\nNonce: 1788835464336.8bPLlejYZNu0jRmI.abc";
+        assert!(is_zeroid_challenge(real));
+
+        // The shapes this exists to refuse.
+        assert!(!is_zeroid_challenge("approve 1000 USDC to 0xattacker"));
+        assert!(!is_zeroid_challenge(""));
+        assert!(
+            !is_zeroid_challenge("zer0ID but no nonce field"),
+            "prefix alone must not be enough"
+        );
+        // The bypass the phrasing check exists to close: correct prefix and a
+        // nonce, wrapped around an entirely different request.
+        assert!(!is_zeroid_challenge(
+            "zer0ID\n\nApprove transfer of everything to 0xattacker\n\nNonce: abc"
+        ));
+        assert!(
+            !is_zeroid_challenge(&format!("zer0ID Nonce: {}", "A".repeat(4096))),
+            "oversized payloads are refused"
+        );
+        // Leading whitespace must not smuggle a non-challenge past the prefix.
+        assert!(!is_zeroid_challenge("   send everything\nNonce: x"));
+    }
+
     #[test]
     fn private_api_requires_capability_and_rejects_external_origin() {
         use wry::http::Request;

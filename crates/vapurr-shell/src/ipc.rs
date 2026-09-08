@@ -179,10 +179,22 @@ pub(crate) fn authorized_ipc(source: &str, body: &str) -> Option<Msg> {
     let msg = parse_ipc(body)?;
     if !crate::security::is_chrome_url(source) {
         // Page keyboard shortcuts and cosmetic selectors carry no private authority.
-        return matches!(&msg, Msg::ShieldDom { .. } | Msg::Back | Msg::Forward | Msg::Reload |
+        // Exception: Secret Lab KYC tabs may request wallet-sign (desk has no injected ethereum).
+        let guest_nav = matches!(&msg, Msg::ShieldDom { .. } | Msg::Back | Msg::Forward | Msg::Reload |
             Msg::FocusUrl | Msg::ShowFind | Msg::ZoomIn | Msg::ZoomOut | Msg::ZoomReset |
-            Msg::NewTab { .. } | Msg::CloseTab(_) | Msg::SelectTabAt(_) | Msg::CycleTab { .. })
-            .then_some(msg);
+            Msg::NewTab { .. } | Msg::CloseTab(_) | Msg::SelectTabAt(_) | Msg::CycleTab { .. });
+        // ...and only over a zer0ID challenge. A guest origin must never be able
+        // to sign arbitrary bytes: SignMessage needs no per-signature prompt, so
+        // an unconstrained bridge is a signing oracle for whoever controls that
+        // page. See security::is_zeroid_challenge.
+        let tsl_kyc_sign = match &msg {
+            Msg::WalletSignMessage { message } => {
+                crate::security::is_tsl_kyc_url(source)
+                    && crate::security::is_zeroid_challenge(message)
+            }
+            _ => false,
+        };
+        return (guest_nav || tsl_kyc_sign).then_some(msg);
     }
     let path = crate::security::chrome_path(source)?;
     let allowed = match &msg {

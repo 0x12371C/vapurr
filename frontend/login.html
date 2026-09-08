@@ -280,7 +280,7 @@
         <div id="kyc-geo" hidden>
           <p class="hint" style="margin-top:8px">Country comes from this connection (CDN/IP geo) - not a dropdown. Embargoed jurisdictions are refused.</p>
           <button class="btn" id="kyc-geo-go" type="button">Detect country &amp; continue</button>
-          <div class="hint" id="kyc-geo-result" style="margin-top:8px"></div>
+          <div id="kyc-geo-result" style="margin-top:10px;min-height:28px"></div>
         </div>
         <div id="kyc-phone" hidden>
           <p class="hint" style="margin-top:8px">Level 3 - phone possession on Secret Lab. If carrier SMS isn't wired yet, the page shows an <b>on-screen mock code</b> (no text sent). Browse-earn <b>claims stay locked</b> until Level 4.</p>
@@ -339,6 +339,37 @@
     var backup = "";
     var needKyc = false;
     var kycStep = 0; // 1 age, 2 geo, 3 phone, 4 iris
+    var lastCountry = "";
+    function countryFlag(cc) {
+      cc = String(cc || "").toUpperCase();
+      if (!/^[A-Z]{2}$/.test(cc)) return "";
+      return String.fromCodePoint(127397 + cc.charCodeAt(0), 127397 + cc.charCodeAt(1));
+    }
+    function paintCountryResult(cc, opts) {
+      opts = opts || {};
+      var gr = document.getElementById("kyc-geo-result");
+      if (!gr) return;
+      cc = String(cc || "").toUpperCase();
+      if (!/^[A-Z]{2}$/.test(cc)) {
+        gr.innerHTML = "";
+        gr.textContent = opts.emptyMsg || "";
+        return;
+      }
+      lastCountry = cc;
+      var flag = countryFlag(cc);
+      gr.innerHTML = "";
+      var row = document.createElement("div");
+      row.style.cssText = "display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;border:1px solid rgba(192,248,0,0.35);background:rgba(192,248,0,0.08)";
+      var fl = document.createElement("span");
+      fl.textContent = flag;
+      fl.style.cssText = "font-size:28px;line-height:1";
+      fl.setAttribute("aria-hidden", "true");
+      var lab = document.createElement("div");
+      lab.innerHTML = "<div style=\"font-size:15px;font-weight:600;color:#e8fff8\">" + flag + " " + cc + "</div><div style=\"font-size:12px;color:rgba(232,255,248,0.55);margin-top:2px\">Detected from this connection (CDN/IP) — not a self-report</div>";
+      row.appendChild(fl);
+      row.appendChild(lab);
+      gr.appendChild(row);
+    }
     var kycPhoneOpened = false;
     var kycIrisOpened = false;
     var KYC_STORE = "vapurr.createKyc";
@@ -406,7 +437,7 @@
       var hints = {
         1: "Self-attest AgeOver18 with a wallet signature. Not a government ID or DOB document.",
         2: "Issuer reads country from this connection (CDN/IP). No name / PII stored.",
-        3: "Open phone verify. Use the code shown there - mock/on-screen when carrier SMS isn't live (no text sent). Then tap Done here. Claims still need L4 open-iris.",
+        3: "Open phone verify in desk tab (desk wallet-sign). Mock/on-screen code when carrier SMS isn't live. Then tap Done. Claims still need L4 open-iris.",
         4: "L4 open-iris unlocks browse-earn claims. ZKKYC: nullifier-only in vapurrDB. Tap Done when that tab is open. Soft-skip keeps claims locked."
       };
       if (title) title.textContent = titles[kycStep] || "zer0ID";
@@ -494,11 +525,24 @@
           kycStep = 2;
           document.getElementById("lede").textContent = "Jurisdiction next - then phone & ocular.";
         } else if (s.level === 2) {
-          var country = s.country ? String(s.country) : "";
-          var gr = document.getElementById("kyc-geo-result");
-          if (gr) gr.textContent = country ? ("Detected: " + country) : "Country attested.";
-          kycStep = 3;
-          document.getElementById("lede").textContent = "Phone verify next. Claims still need Level 4.";
+          var country = s.country != null && s.country !== "" ? String(s.country).toUpperCase() : "";
+          if (!/^[A-Z]{2}$/.test(country)) {
+            setKycErr("Could not determine country from this connection — check network / VPN and tap Detect again");
+            paintCountryResult("", { emptyMsg: "No country detected (honest empty — not faked)." });
+            layout();
+            return;
+          }
+          paintCountryResult(country);
+          document.getElementById("lede").textContent = "Country " + countryFlag(country) + " " + country + " — phone next.";
+          // Brief pause so Relic can see the flag before the ladder advances.
+          setTimeout(function () {
+            if (kycStep !== 2) return;
+            kycStep = 3;
+            saveKyc();
+            layout();
+          }, 900);
+          layout();
+          return;
         }
         saveKyc();
         layout();
@@ -642,7 +686,7 @@
       kycPhoneOpened = true;
       saveKyc();
       paintKycStep();
-      var opened = openKycTab("https://thesecretlab.app/kyc/phone");
+      var opened = openKycTab("https://thesecretlab.app/kyc/phone?from=vapurr");
       if (!opened) {
         setKycErr("Phone tab did not open - visit thesecretlab.app/kyc/phone then tap Done");
       }
@@ -660,7 +704,7 @@
       kycIrisOpened = true;
       saveKyc();
       paintKycStep();
-      var opened = openKycTab("https://thesecretlab.app/kyc/scan");
+      var opened = openKycTab("https://thesecretlab.app/kyc/scan?from=vapurr");
       if (!opened) {
         setKycErr("Iris tab did not open - visit thesecretlab.app/kyc/scan then tap Done");
       }

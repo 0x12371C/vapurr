@@ -1178,6 +1178,18 @@ fn main() {
                     }
                 }
                 let _ = security::eval_chrome(&page.borrow(), &js_set_wallet(&snap));
+                // Desk KYC phone/scan tabs on thesecretlab need the signed payload in-page
+                // (eval_chrome only runs on vapurr.localhost).
+                if snap.get("kind").and_then(|x| x.as_str()) == Some("signed") {
+                    let cur = tabs.borrow().current().url().to_string();
+                    if security::is_tsl_kyc_url(&cur) {
+                        let js = format!(
+                            "window.__vapurrSigned && window.__vapurrSigned({}); window.__setWallet && window.__setWallet({})",
+                            snap, snap
+                        );
+                        let _ = page.borrow().evaluate_script(&js);
+                    }
+                }
                 let cur = tabs.borrow().current().url().to_string();
                 let on_lock = cur.contains("lock.html");
                 let logged = snap.get("logged_in").and_then(|x| x.as_bool()).unwrap_or(false);
@@ -1227,6 +1239,10 @@ fn main() {
                     )
                 };
                 let _ = security::eval_chrome(&page.borrow(), &js);
+                let cur = tabs.borrow().current().url().to_string();
+                if security::is_tsl_kyc_url(&cur) {
+                    let _ = page.borrow().evaluate_script(&js);
+                }
             }
             Event::UserEvent(Msg::ZzzmailSend { to, body, asset }) => {
                 let snap = host::zzzmail_send_json(&to, &body, &asset);
