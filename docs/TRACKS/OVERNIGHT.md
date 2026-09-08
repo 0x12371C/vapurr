@@ -517,3 +517,12 @@ emittance_book_snap); empty CAs show NeedRemittance (no live remit enable). Prov
 - **workers:** KFX **idle** (grok 21016); PayId **idle** (grok 9228); Bind **idle** (PID gone) - no respawn. Extra grok windows present (House+Pilot keep) - not watch-spawned. No new organizer procs.
 - **branch:** pack/d59912d (+ this slice)
 - **build slice:** BrowserStream ABI stub - solc-extracted from GvFed.sol into crates/vapurr-econ/src/browser_stream.abi.json + include_str! in lib.rs (ops/earn drip; no user IPC encode). scripts/verify-browser-stream-abi.py PASS; GENESIS_ALLOCATION.md needle; verify-version-board --watch PASS --watch (Programs/channel sha SKEW + TSL SKEW noted). Still open P1: Oliver gV/wgV collateral wire (Relic), live BondMarket/CD/remittance IPC after CA fill, House Uni v4 e2e, SignPath, renew www TLS, promote TSL after signed pack, proxy cutover for bare Lithe/V/PUSD.
+
+## 2026-09-07 ~20:16 ET - hourly watch
+
+- **justin:** online
+- **Programs:** VERSION **1.1.10** (sha cfd7435a5984..., rev b57b32f) at Local\Programs\vapurr; Uninstall DisplayVersion **1.1.10**; **NotSigned** (signing still P0 ship blocker; Relic: unsigned OK for build/test)
+- **dist/channel:** AppData channel **1.1.10** (sha b5a99887c7c9..., rev 8f0a983) — **Programs lags channel** (Programs still b57b32f / cfd7435a); AppData root VERSION.txt still reports Programs build; **TSL** thesecretlab.app/vapurr/channel **200** at **1.1.13** (rev e590ef3, sha 324286bf6f68...); **www.thesecretlab.app TLS expired**; Cargo still **1.1.10**
+- **workers:** KFX **idle** (grok 21016); PayId **idle** (grok 9228); Bind **idle** (PID gone) — no respawn. Extra grok windows present (graphify / bare / House+Pilot keep) — not watch-spawned. No new organizer procs.
+- **branch:** pack/d59912d (+ this slice)
+- **build slice:** BrowserStream ABI stub — extracted forge ABI into `crates/vapurr-econ/src/browser_stream.abi.json` + `include_str!` in lib.rs (treasury drip ops; no user IPC encode). `scripts/verify-browser-stream-abi.py` PASS; GENESIS_ALLOCATION.md needle. Still open P1: Oliver gV/wgV collateral wire (Relic), live BondMarket/CD/remittance IPC after CA fill, House Uni v4 e2e, SignPath, renew www TLS, PatchApply Programs to channel rev 8f0a983, promote TSL after signed pack, proxy cutover for bare Lithe/V/PUSD.

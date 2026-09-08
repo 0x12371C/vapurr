@@ -1,3 +1,4 @@
+- 2026-09-07 ~20:16 ET: Programs **1.1.10** rev b57b32f **lags** AppData channel **1.1.10** rev 8f0a983; DisplayVersion **1.1.10**; TSL still 1.1.13; BrowserStream ABI stub + GENESIS needle; signing/TLS still P0.
 - 2026-09-07 ~20:01 ET: Programs/channel/DisplayVersion **1.1.10** (Programs sha cfd7435a5984 vs channel sha b5a99887c7c9 **SKEW**); TSL still 1.1.13; BrowserStream ABI stub + GENESIS needle; signing/TLS still P0.
 - 2026-09-07 ~19:01 ET: Programs/channel/DisplayVersion **1.1.10** match (rev b57b32f, sha cfd7435a5984); TSL still 1.1.13; DevFundStream ABI stub + DEV_FUND needle; signing/TLS still P0.
 - 2026-09-07 ~18:03 ET: Programs/channel/DisplayVersion **1.1.10** match (rev b57b32f, sha cfd7435a5984); TSL still 1.1.13; USDG pin prove (TESTNET vs desk) + route-catalog --pins; signing/TLS still P0.

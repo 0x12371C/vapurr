@@ -25,6 +25,7 @@ Living board for agents. Prefer this + TRACKS.md + STATUS.md over old overnight 
 - House fee→remittance note + FeeAttribution who-paid chips (em-dash until breakdown reads). Prove: scripts/verify-remittance-book.py (who-paid chips).
 - wgV / $PUSD House visual stub (wrap-first).
 - ExogenousPairRegistry ABI stub on disk (exogenous_pair_registry + exogenous_seed_market.abi.json); prove erify-exo-pair-abi.py.
+- BrowserStream ABI stub on disk (`browser_stream.abi.json`); prove `verify-browser-stream-abi.py` (2026-09-07 ~20:16 ET).
 - USDG pins: TESTNET catalog vs desk `rhc::USDG` proved (`verify-usdg-pins.py`). Still Relic-gated: Oliver gV/wgV collateral wire, live CD/BondMarket ABI after deploy, House Uni v4 e2e / remittance enable, SignPath, promote TSL to match local 1.1.10 after signed pack, live relay.
 
 ## Org

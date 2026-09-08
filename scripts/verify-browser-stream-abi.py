@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Prove BrowserStream ABI stub is on disk and documented (ops/earn drip; no user IPC)."""
+"""Prove BrowserStream ABI stub is on disk and documented (ops/treasury; no user IPC)."""
 from pathlib import Path
 import json
 import sys
@@ -19,19 +19,19 @@ names = {x.get("name") for x in abi if isinstance(x, dict) and x.get("type") == 
 need = [
     "CAP",
     "DURATION",
-    "vapurr",
-    "owner",
     "distributor",
-    "start",
-    "released",
-    "started",
-    "setOwner",
-    "setDistributor",
-    "fund",
-    "startStream",
-    "vested",
-    "releasable",
     "drip",
+    "fund",
+    "owner",
+    "releasable",
+    "released",
+    "setDistributor",
+    "setOwner",
+    "start",
+    "startStream",
+    "started",
+    "vapurr",
+    "vested",
 ]
 miss = [n for n in need if n not in names]
 if miss:
@@ -47,20 +47,24 @@ if miss_lib:
     print("FAIL lib.rs missing:", miss_lib)
     sys.exit(1)
 
-if "fn browser_stream_" in lib or "fn drip_browser" in lib:
-    print("FAIL unexpected BrowserStream IPC fn - keep stub-only until Relic wire")
-    sys.exit(1)
+# Keep stub-only — no user IPC encoder yet.
+banned = ("fn browser_stream_", "fn drip_browser", "fn start_browser_stream")
+for b in banned:
+    if b in lib:
+        print("FAIL unexpected BrowserStream IPC fn - keep stub-only until Relic wire")
+        sys.exit(1)
 
-doc = (root / "docs" / "econ" / "GENESIS_ALLOCATION.md").read_text(encoding="utf-8")
-if "browser_stream.abi.json" not in doc:
+doc = root / "docs" / "econ" / "GENESIS_ALLOCATION.md"
+text = doc.read_text(encoding="utf-8") if doc.is_file() else ""
+if "browser_stream.abi.json" not in text:
     print("FAIL GENESIS_ALLOCATION.md missing browser_stream.abi.json needle")
     sys.exit(1)
 
 sol = (root / "contracts" / "GvFed.sol").read_text(encoding="utf-8")
 if "contract BrowserStream" not in sol:
-    print("FAIL GvFed.sol missing BrowserStream")
+    print("FAIL GvFed.sol missing contract BrowserStream")
     sys.exit(1)
-for fn in ("function fund", "function startStream", "function drip", "function releasable"):
+for fn in ("function startStream", "function drip", "function vested", "function fund"):
     if fn not in sol:
         print("FAIL BrowserStream missing", fn)
         sys.exit(1)
