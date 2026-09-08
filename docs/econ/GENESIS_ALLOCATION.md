@@ -73,3 +73,8 @@ Client stub on disk (ops/earn drip; transfer-only earmark, never mints): crates/
 4. Legacy converter = live gen-4 supply; no invented addresses; **not minted on top**.
 5. USDG bond-only. Launch markets = V/ETH + V/NVDA + V/AMD.
 6. No silent broadcast — `CONFIRM_TESTNET_DEPLOY` Relic-gated.
+
+### GenesisAllocation ABI stub (2026-09-08 ~06:01)
+
+Client stub on disk (hard-lock mint/bucket constants; ops; no user IPC encode yet): `crates/vapurr-econ/src/genesis_allocation.abi.json` + `GENESIS_ALLOCATION_ABI` in lib.rs. Prove stub: `scripts/verify-genesis-allocation-abi.py`.
+

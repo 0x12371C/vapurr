@@ -76,6 +76,8 @@ const WGV_APURR_ABI: &str = include_str!("wgv_apurr.abi.json");
 const ERC1967_PROXY_ABI: &str = include_str!("erc1967_proxy.abi.json");
 // PusdMarketFedUpgradeable ABI stub (bare Lithe/V/PUSD UUPS impl behind ERC1967Proxy; ops; no user IPC encode yet).
 const PUSD_MARKET_FED_UPGRADEABLE_ABI: &str = include_str!("pusd_market_fed_upgradeable.abi.json");
+// GenesisAllocation ABI stub (hard-lock 1.2M mint constants; ops; no user IPC encode yet).
+const GENESIS_ALLOCATION_ABI: &str = include_str!("genesis_allocation.abi.json");
 
 #[derive(Debug, thiserror::Error)]
 pub enum EconError {

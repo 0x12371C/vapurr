@@ -609,3 +609,13 @@ emittance_book_snap); empty CAs show NeedRemittance (no live remit enable). Prov
 - **branch:** pack/d59912d (+ this slice)
 - **build slice:** PusdMarketFedUpgradeable ABI stub - extracted forge ABI into `crates/vapurr-econ/src/pusd_market_fed_upgradeable.abi.json` + `include_str!` in lib.rs (bare Lithe/V/$PUSD UUPS impl behind ERC1967Proxy; ops; no user IPC encode). `scripts/verify-pusd-market-fed-abi.py` PASS; PROXY_DEPLOY_GATE.md needle. Still open P1: Oliver gV/wgV collateral live wire (Relic), live BondMarket/CD/remittance IPC after CA fill, House Uni v4 e2e, SignPath, renew www TLS, promote TSL after signed pack, bare Lithe/V/PUSD proxy cutover deploy (Relic).
 
+## 2026-09-08 ~06:01 ET - hourly watch
+
+- **justin:** online
+- **Programs:** VERSION **1.1.23** (sha 76c00a5edc5c..., rev 3908d54) at Local\Programs\vapurr; Uninstall DisplayVersion **1.1.23**; **NotSigned** (signing still P0 ship blocker; Relic: unsigned OK for build/test)
+- **dist/channel:** AppData channel **1.1.23** (sha 76c00a5edc5c..., rev 3908d54) - Programs **matches** channel; Cargo **1.1.23**; **TSL** thesecretlab.app/vapurr/channel **200** at **1.1.13** (rev e590ef3, sha 324286bf6f68...); **www.thesecretlab.app TLS expired**
+- **workers:** KFX **idle** (grok 21016); PayId **idle** (grok 9228); Bind **idle** (PID gone) - no respawn. Extra grok windows present (House+Pilot keep; Charts/Psy/Tube park) - not watch-spawned. No new organizer procs.
+- **branch:** pack/d59912d (+ this slice)
+- **build slice:** GenesisAllocation ABI stub - extracted forge ABI into crates/vapurr-econ/src/genesis_allocation.abi.json + include_str! in lib.rs (hard-lock 1.2M mint/bucket constants; ops; no user IPC encode). scripts/verify-genesis-allocation-abi.py PASS; GENESIS_ALLOCATION.md needle. Still open P1: Oliver gV/wgV collateral live wire (Relic), live BondMarket/CD/remittance IPC after CA fill, House Uni v4 e2e, SignPath, renew www TLS, promote TSL after signed pack, bare Lithe/V/PUSD proxy cutover deploy (Relic).
+
+
