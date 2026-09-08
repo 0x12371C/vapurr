@@ -1,5 +1,4 @@
-- 2026-09-08 ~14:47 ET: Programs/channel/DisplayVersion **1.1.23** (SKEW vs Programs vapurr 1.1.23
-windows x86_64-pc-windows-gnu
+- 2026-09-08 ~14:47 ET: Programs/channel/DisplayVersion **1.1.23** match (rev 3908d54, sha 76c00a5edc5c); TSL still 1.1.13; OutbidUpgradeable ABI stub + OUTBID needle; signing/TLS still P0.\nwindows x86_64-pc-windows-gnu
 built 2026-09-08T01:12:43.8889282Z
 rev 3908d54
 sha 76c00a5edc5c858f6833d4ef589c51ad1626d69ba6efd00a6e5995029db322c1) (rev 3908d54, sha 76c00a5edc5c); TSL still noted in OVERNIGHT; OutbidUpgradeable ABI stub + OUTBID needle; signing/TLS still P0.
