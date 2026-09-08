@@ -290,6 +290,14 @@
         var days = Math.floor((s.expiresAt * 1000 - Date.now()) / 86400000);
         why += " Expires in " + days + " day" + (days === 1 ? "" : "s") + ".";
       }
+      // Earn gate comes from the payout path itself, never recomputed here
+      // from the level number — the two must not be able to disagree.
+      if (typeof s.payoutReady === "boolean") {
+        why += s.payoutReady
+          ? " Browse-earn payout is unlocked."
+          : " Browse-earn payout stays locked until level " + (s.earnMinLevel || 4) +
+            " proves one human.";
+      }
       $("state-why").textContent = why;
 
       var claimed = s.claimedLevel || 0;

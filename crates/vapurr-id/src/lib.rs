@@ -113,6 +113,16 @@ pub struct VerifiedAccount {
     pub handle: String,
     pub attestation_id: String,
     pub verified_at: DateTime<Utc>,
+    /// Carried through from the verified attestation so payout decisions can
+    /// be made on what was actually proven rather than on "a struct exists".
+    /// `serde(default)` keeps older on-disk/JSON shapes loadable — they simply
+    /// deserialize as level 0 with no claims, which is not payout-ready.
+    #[serde(default)]
+    pub trust_level: u8,
+    #[serde(default)]
+    pub claims: Vec<Claim>,
+    #[serde(default)]
+    pub nullifier: String,
 }
 
 pub trait IdentityProvider: Send + Sync {
@@ -236,10 +246,16 @@ impl IdentityProvider for Zer0IdProvider {
             .find(|(s, _)| s.id == id)
             .ok_or(IdError::UnknownSession)?;
         row.0.status = KycStatus::Proven;
+        // A completed simulator session is not an ocular proof: no nullifier,
+        // no UniqueHuman claim, level 0. It deliberately fails `payout_ready`
+        // so local dev can walk the flow without minting a payable identity.
         Ok(VerifiedAccount {
             handle: row.1.clone(),
             attestation_id: format!("att_{}", row.0.id),
             verified_at: Utc::now(),
+            trust_level: 0,
+            claims: Vec::new(),
+            nullifier: String::new(),
         })
     }
 
@@ -274,12 +290,33 @@ impl IdentityProvider for Zer0IdProvider {
             handle: att.subject_handle.clone(),
             attestation_id: att.id.clone(),
             verified_at: att.issued_at,
+            trust_level: att.trust_level,
+            claims: att.claims.clone(),
+            nullifier: att.nullifier.clone(),
         })
     }
 }
 
+/// Browse-earn payout requires the ocular rung. Levels 0-3 are possession or
+/// self-declaration: level 1 is self-attested age, and level 3 falls back to an
+/// on-screen mock code when carrier SMS is unwired. None of them establish one
+/// human, so none of them may open a payout.
+pub const EARN_MIN_LEVEL: u8 = 4;
+
+/// Gate for browse-earn payout.
+///
+/// This used to be `handle non-empty && attestation_id non-empty`, which meant
+/// any issuer-signed attestation opened payouts — including a level 1
+/// self-attested-age one, which a single person can mint indefinitely. That is
+/// the farm docs/ketpay/SYBIL.md warns about. Payout now demands the thing that
+/// actually establishes one-human: a `UniqueHuman` claim, a nullifier to
+/// deduplicate on, and the ocular rung.
 pub fn payout_ready(acct: &VerifiedAccount) -> bool {
-    !acct.handle.is_empty() && !acct.attestation_id.is_empty()
+    !acct.handle.is_empty()
+        && !acct.attestation_id.is_empty()
+        && !acct.nullifier.is_empty()
+        && acct.trust_level >= EARN_MIN_LEVEL
+        && acct.claims.iter().any(|c| matches!(c, Claim::UniqueHuman))
 }
 
 /// Trusted issuer addresses from `VAPURR_ZEROID_ISSUER_ADDRESS`
@@ -385,6 +422,10 @@ pub fn status_json(profile_dir: &Path, trusted_issuers: &[String]) -> serde_json
         "claims": claims,
         "expiresAt": expires_at,
         "hasNullifier": parsed.as_ref().map(|a| !a.nullifier.is_empty()).unwrap_or(false),
+        // The browse-earn gate, evaluated the same way the payout path does it
+        // — never recomputed in the chrome from a level number alone.
+        "payoutReady": verified.as_ref().map(payout_ready).unwrap_or(false),
+        "earnMinLevel": EARN_MIN_LEVEL,
         "issuerWired": !trusted_issuers.is_empty(),
         "reason": reason,
         "kycUrl": KYC_URL,
@@ -435,6 +476,55 @@ mod tests {
         let s = p.start_session("@Ada_Lovelace").unwrap();
         let acct = p.complete_session(&s.id).unwrap();
         assert_eq!(acct.handle, "ada_lovelace");
+    }
+
+    /// The sybil hole this gate exists to close: level 1 is *self-attested*
+    /// age, so one person can mint it indefinitely. A signature from a real
+    /// issuer must still not open a payout on it.
+    #[test]
+    fn self_attested_age_verifies_but_never_opens_payout() {
+        let p = Zer0IdProvider::simulator();
+        let att = p
+            .issue_attestation("ada", 1, vec![Claim::AgeOver18])
+            .unwrap();
+        let acct = p.verify_attestation(&att).expect("issuer-signed, so it verifies");
+        assert_eq!(acct.trust_level, 1);
+        assert!(
+            !payout_ready(&acct),
+            "level 1 self-attested age must not unlock browse-earn"
+        );
+    }
+
+    /// UniqueHuman alone is not enough either — the ocular rung is what the
+    /// claim is supposed to come from, so the level has to back it up.
+    #[test]
+    fn unique_human_below_the_ocular_rung_does_not_open_payout() {
+        let p = Zer0IdProvider::simulator();
+        let att = p
+            .issue_attestation("ada", 3, vec![Claim::UniqueHuman])
+            .unwrap();
+        let acct = p.verify_attestation(&att).unwrap();
+        assert!(!payout_ready(&acct), "level 3 is possession, not one-human");
+    }
+
+    #[test]
+    fn ocular_attestation_opens_payout() {
+        let p = Zer0IdProvider::simulator();
+        let att = p
+            .issue_attestation("ada", EARN_MIN_LEVEL, vec![Claim::UniqueHuman])
+            .unwrap();
+        let acct = p.verify_attestation(&att).unwrap();
+        assert!(!acct.nullifier.is_empty(), "dedup needs a nullifier");
+        assert!(payout_ready(&acct));
+    }
+
+    /// Walking the simulator flow must not mint a payable identity.
+    #[test]
+    fn simulator_session_is_not_payout_ready() {
+        let p = Zer0IdProvider::simulator();
+        let s = p.start_session("ada").unwrap();
+        let acct = p.complete_session(&s.id).unwrap();
+        assert!(!payout_ready(&acct));
     }
 
     #[test]

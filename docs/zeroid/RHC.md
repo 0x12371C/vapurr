@@ -16,7 +16,14 @@ Therefore live zer0ID is **not** parked theater for the earn/KetPay path — it 
 2. **On-chain (RHC 4663 / testnet 46630 bootstrap)**: registry or attestation anchor so earn/BrowsePool can check unique-human without trusting only local JSON — align with Secret Lab ZeroIdRegistry patterns where possible (do not invent a second KYC stack)
 3. **vapurr-id**: real HTTP client to the now-live issuer + a chrome flow that actually calls it (wallet-sign the challenge, walk the level ladder, handle the phone OTP two-step) — `Zer0IdProvider::from_env()` still only verifies; nothing in the shell calls `thesecretlab.app/api/kyc/*` yet.
 4. **Chrome**: `vapurr://id` opens/continues KYC (deep link or embedded flow to thesecretlab.app/kyc), shows handle + proven claims
-5. **Earn**: claim/submit requires VerifiedAccount; install_id still binds machine
+5. **Earn**: claim/submit requires VerifiedAccount; install_id still binds machine.
+   Hardened 2026-09-07: `payout_ready` was `handle && attestation_id` non-empty, so **any**
+   issuer-signed attestation opened payouts — including level 1 self-attested age, which one
+   person can mint indefinitely (the farm SYBIL.md warns about). It now requires a
+   `UniqueHuman` claim, a non-empty nullifier to dedup on, and `trust_level >= EARN_MIN_LEVEL`
+   (4, the ocular rung). `VerifiedAccount` carries level/claims/nullifier so the decision is
+   made on what was proven, not on the struct existing. Simulator sessions are deliberately
+   not payout-ready.
 
 ## Owners
 - Pilot: vapurr wiring (id chrome, earn gate, VAPURR_ZEROID_URL)
