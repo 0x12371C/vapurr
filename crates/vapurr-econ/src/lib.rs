@@ -59,6 +59,7 @@ const DEV_FUND_STREAM_ABI: &str = include_str!("dev_fund_stream.abi.json");
 const BROWSER_STREAM_ABI: &str = include_str!("browser_stream.abi.json");
 // HousePairConfig ABI stub (wgV/$PUSD pair walls; ops/deploy; no user IPC encode yet).
 const HOUSE_PAIR_CONFIG_ABI: &str = include_str!("house_pair_config.abi.json");
+const GENESIS_TREASURY_ABI: &str = include_str!("genesis_treasury.abi.json");
 
 #[derive(Debug, thiserror::Error)]
 pub enum EconError {

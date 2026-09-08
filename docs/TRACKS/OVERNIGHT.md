@@ -535,3 +535,12 @@ emittance_book_snap); empty CAs show NeedRemittance (no live remit enable). Prov
 - **workers:** KFX **idle** (grok 21016); PayId **idle** (grok 9228); Bind **idle** (PID gone) — no respawn. Extra grok windows present (graphify / bare / House+Pilot keep) — not watch-spawned. No new organizer procs.
 - **branch:** pack/d59912d (+ this slice)
 - **build slice:** HousePairConfig ABI stub — extracted forge ABI into `crates/vapurr-econ/src/house_pair_config.abi.json` + `include_str!` in lib.rs (wgV/$PUSD pair walls; ops/deploy; no user IPC encode). `scripts/verify-house-pair-abi.py` PASS; WGV_HOUSE.md needle. Still open P1: Oliver gV/wgV collateral wire (Relic), live BondMarket/CD/remittance IPC after CA fill, House Uni v4 e2e, SignPath, renew www TLS, promote TSL after signed pack, proxy cutover for bare Lithe/V/PUSD.
+
+## 2026-09-07 ~22:03 ET - hourly watch
+
+- **justin:** online
+- **Programs:** VERSION **1.1.23** (sha 76c00a5edc5c..., rev 3908d54) at Local\Programs\vapurr; Uninstall DisplayVersion **1.1.23**; **NotSigned** (signing still P0 ship blocker; Relic: unsigned OK for build/test)
+- **dist/channel:** AppData channel **1.1.23** (sha 76c00a5edc5c..., rev 3908d54) - Programs **matches** channel; Cargo **1.1.23**; **TSL** thesecretlab.app/vapurr/channel **200** at **1.1.13** (rev e590ef3, sha 324286bf6f68...); **www.thesecretlab.app TLS expired**
+- **workers:** KFX **idle** (grok 21016 / ps 20776); PayId **idle** (grok 9228 / ps 20492); Bind **idle** (PID gone) - no respawn. Extra grok windows present (graphify / bare / House+Pilot keep) - not watch-spawned. No new organizer procs.
+- **branch:** pack/d59912d (+ this slice)
+- **build slice:** GenesisTreasury ABI stub - extracted forge ABI into `crates/vapurr-econ/src/genesis_treasury.abi.json` + `include_str!` in lib.rs (ops/treasury; no user IPC encode). `scripts/verify-genesis-treasury-abi.py` PASS; GENESIS_ALLOCATION.md needle. Still open P1: Oliver gV/wgV collateral wire (Relic), live BondMarket/CD/remittance IPC after CA fill, House Uni v4 e2e, SignPath, renew www TLS, promote TSL after signed pack, proxy cutover for bare Lithe/V/PUSD.

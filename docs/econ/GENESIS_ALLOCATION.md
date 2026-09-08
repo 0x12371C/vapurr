@@ -55,6 +55,9 @@ USDG is **bond intake only** (`BondAssetTag`). No V/USDG, PUSD/USDG, or USDG cas
 3. `TestnetRollout` composes the same 1.2M + carve. `BOOTSTRAP_V` env is ignored if it disagrees with `LAUNCH_V`. Dry-run mock legacy = 288k. No silent broadcast.
 
 
+### GenesisTreasury ABI stub (2026-09-07)
+Client stub on disk (ops/treasury stake→gV→Oliver collateralize; `withdrawV` stays `NoMarketSell`): crates/vapurr-econ/src/genesis_treasury.abi.json + include_str! in lib.rs. No user IPC cmd yet - stub only until Relic fills LaunchBootstrap wire. Prove: scripts/verify-genesis-treasury-abi.py.
+
 ### BrowserStream ABI stub (2026-09-07)
 
 Client stub on disk (ops/earn drip; transfer-only earmark, never mints): crates/vapurr-econ/src/browser_stream.abi.json + include_str! in lib.rs. No user IPC cmd yet — stub only until Relic fills distributor / LaunchBootstrap wire. Prove: scripts/verify-browser-stream-abi.py.
