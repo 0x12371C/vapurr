@@ -58,6 +58,9 @@ USDG is **bond intake only** (`BondAssetTag`). No V/USDG, PUSD/USDG, or USDG cas
 ### GenesisTreasury ABI stub (2026-09-07)
 Client stub on disk (ops/treasury stake→gV→Oliver collateralize; `withdrawV` stays `NoMarketSell`): crates/vapurr-econ/src/genesis_treasury.abi.json + include_str! in lib.rs. No user IPC cmd yet - stub only until Relic fills LaunchBootstrap wire. Prove: scripts/verify-genesis-treasury-abi.py.
 
+### LaunchBootstrap ABI stub (2026-09-07 ~23:01)
+
+Client stub on disk (ops launch allocate: DevFund + BrowserStream + V/ETH|NVDA|AMD seeds + GenesisTreasury remainder; no V/USDG or PUSD/USDG): `crates/vapurr-econ/src/launch_bootstrap.abi.json` + `LAUNCH_BOOTSTRAP_ABI` in lib.rs. No user IPC cmd yet - stub only until Relic fills live CAs / fundAndStart. Prove: `scripts/verify-launch-bootstrap-abi.py`.
 ### BrowserStream ABI stub (2026-09-07)
 
 Client stub on disk (ops/earn drip; transfer-only earmark, never mints): crates/vapurr-econ/src/browser_stream.abi.json + include_str! in lib.rs. No user IPC cmd yet — stub only until Relic fills distributor / LaunchBootstrap wire. Prove: scripts/verify-browser-stream-abi.py.
