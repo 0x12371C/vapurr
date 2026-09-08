@@ -74,6 +74,8 @@ const GV_APURR_ABI: &str = include_str!("gv_apurr.abi.json");
 const WGV_APURR_ABI: &str = include_str!("wgv_apurr.abi.json");
 // ERC1967Proxy ABI stub (proxy cutover for bare Lithe/V/PUSD; ops; no user IPC encode yet).
 const ERC1967_PROXY_ABI: &str = include_str!("erc1967_proxy.abi.json");
+// PusdMarketFedUpgradeable ABI stub (bare Lithe/V/PUSD UUPS impl behind ERC1967Proxy; ops; no user IPC encode yet).
+const PUSD_MARKET_FED_UPGRADEABLE_ABI: &str = include_str!("pusd_market_fed_upgradeable.abi.json");
 
 #[derive(Debug, thiserror::Error)]
 pub enum EconError {

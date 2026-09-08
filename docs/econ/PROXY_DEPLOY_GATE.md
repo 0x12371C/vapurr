@@ -110,4 +110,8 @@ Owner handoff for LOOP/HOUSE/PNS admin still pending (deploy key to operator) â€
 
 Client stub on disk (minimal proxy construct + fallback/receive for cutover of bare Lithe/V/PUSD CAs; no user IPC encode yet): `crates/vapurr-econ/src/erc1967_proxy.abi.json` + `ERC1967_PROXY_ABI` in lib.rs. Gate still: never record bare impl as live CA â€” prove with `scripts/verify-proxy.ps1` / `scripts/verify-proxy-book.py`. Prove stub: `scripts/verify-erc1967-proxy-abi.py`.
 
+### PusdMarketFedUpgradeable ABI stub (2026-09-08 ~05:01)
+
+Client stub on disk (UUPS Lithe/V/$PUSD market impl for proxy cutover; no user IPC encode yet): `crates/vapurr-econ/src/pusd_market_fed_upgradeable.abi.json` + `PUSD_MARKET_FED_UPGRADEABLE_ABI` in lib.rs. Gate still: never record bare impl as live CA - prove with `scripts/verify-proxy.ps1` / `scripts/verify-proxy-book.py`. Prove stub: `scripts/verify-pusd-market-fed-abi.py`.
+
 
