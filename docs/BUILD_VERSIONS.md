@@ -1,5 +1,14 @@
 # Build version progression
 
+## Single source of truth
+
+**Product / desk version** is `[workspace.package] version` in root `Cargo.toml` only.
+
+- `pack.ps1` reads that value, stamps `dist/vapurr/VERSION.txt` + `manifest.json`, AppData `channel/`, promotes the same bytes into `%LOCALAPPDATA%\Programs\vapurr`, and sets HKCU Uninstall `DisplayVersion`.
+- `vapurr-shell` embeds the same via `CARGO_PKG_VERSION`; Install / `--patch-swap` refresh `DisplayVersion` from sibling `VERSION.txt` / `manifest.json` (never a stale hardcoded string).
+- Prove: `python scripts/verify-version-board.py --live` (Programs == channel == DisplayVersion). `--watch` reports TSL/Cargo skew without failing.
+- Do **not** bump random crate dependency versions for a desk release. Signing remains P0; local packs may be **NotSigned**.
+
 Track every pack/channel/exe change overnight.
 
 | When (ET) | version | build/rev | artifact | notes |

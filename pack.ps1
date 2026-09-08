@@ -199,24 +199,45 @@ Copy-Item $loader.FullName (Join-Path $chan "WebView2Loader.dll") -Force -ErrorA
 Set-Content -Path (Join-Path $chan "manifest.json") -Value $manifest -Encoding ascii
 Copy-Item (Join-Path $stage "VERSION.txt") (Join-Path $chan "VERSION.txt") -Force
 Write-Output "channel $chan"
-# If Programs exe already matches this channel hash (manual/sync promote), keep
-# Uninstall DisplayVersion + profile VERSION.txt honest without waiting for PatchApply.
+# Promote channel -> Programs + DisplayVersion every pack (anti-drift).
 $progDir = Join-Path $env:LOCALAPPDATA "Programs\vapurr"
 $progExe = Join-Path $progDir "vapurr.exe"
 $chanExe = Join-Path $chan "vapurr.exe"
-if ((Test-Path $progExe) -and (Test-Path $chanExe)) {
-  $ph = (Get-FileHash $progExe -Algorithm SHA256).Hash.ToLowerInvariant()
-  $chash = (Get-FileHash $chanExe -Algorithm SHA256).Hash.ToLowerInvariant()
-  if ($ph -eq $chash) {
-    Copy-Item (Join-Path $chan "VERSION.txt") (Join-Path $progDir "VERSION.txt") -Force
-    Copy-Item (Join-Path $chan "manifest.json") (Join-Path $progDir "manifest.json") -Force
-    $uKey = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\vapurr"
-    if (Test-Path $uKey) {
-      Set-ItemProperty -Path $uKey -Name DisplayVersion -Value $ver
-      Write-Output "Programs==channel; uninstall DisplayVersion -> $ver"
-    }
-  }
+# Assert VERSION.txt + manifest cannot disagree with Cargo-derived $ver.
+$verTxt = Get-Content (Join-Path $stage "VERSION.txt") -Raw -Encoding ascii
+if ($verTxt -notmatch ("(?m)^vapurr\s+" + [regex]::Escape($ver) + "(\s|$)")) {
+  throw "pack: VERSION.txt does not stamp Cargo version $ver"
 }
+$manObj = Get-Content (Join-Path $stage "manifest.json") -Raw -Encoding ascii | ConvertFrom-Json
+if ($manObj.version -ne $ver) { throw "pack: manifest.version=$($manObj.version) != Cargo $ver" }
+if (-not $manObj.rev) { throw "pack: manifest.rev missing" }
+if (-not $manObj.sha256) { throw "pack: manifest.sha256 missing" }
+Write-Output "version-board stamps ok: $ver rev=$($manObj.rev) sha=$($manObj.sha256.Substring(0,12))"
+
+# Always promote channel -> Programs after pack so desk cannot lag channel.
+# pack already Stop-Process vapurr above; hashes must match after this copy.
+New-Item -ItemType Directory -Force -Path $progDir | Out-Null
+Copy-Item $chanExe $progExe -Force
+Copy-Item (Join-Path $chan "WebView2Loader.dll") (Join-Path $progDir "WebView2Loader.dll") -Force -ErrorAction SilentlyContinue
+Copy-Item (Join-Path $chan "VERSION.txt") (Join-Path $progDir "VERSION.txt") -Force
+Copy-Item (Join-Path $chan "manifest.json") (Join-Path $progDir "manifest.json") -Force
+# Keep Install vapurr.exe / setup sibling in Programs in sync when present.
+foreach ($n in @("Install vapurr.exe","vapurr-setup.exe","LICENSE.txt","README.txt")) {
+  $srcN = Join-Path $stage $n
+  if (Test-Path $srcN) { Copy-Item $srcN (Join-Path $progDir $n) -Force }
+}
+$uKey = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\vapurr"
+if (-not (Test-Path $uKey)) { New-Item -Path $uKey -Force | Out-Null }
+Set-ItemProperty -Path $uKey -Name DisplayName -Value "vapurr"
+Set-ItemProperty -Path $uKey -Name DisplayVersion -Value $ver
+Set-ItemProperty -Path $uKey -Name Publisher -Value "vapurr"
+Set-ItemProperty -Path $uKey -Name DisplayIcon -Value "$progExe,0"
+Set-ItemProperty -Path $uKey -Name InstallLocation -Value $progDir
+Set-ItemProperty -Path $uKey -Name UninstallString -Value "`"$progExe`" --uninstall"
+Set-ItemProperty -Path $uKey -Name QuietUninstallString -Value "`"$progExe`" --uninstall"
+Set-ItemProperty -Path $uKey -Name NoModify -Value 1 -Type DWord
+Set-ItemProperty -Path $uKey -Name NoRepair -Value 1 -Type DWord
+Write-Output "Programs promoted from channel; DisplayVersion -> $ver"
 Copy-Item (Join-Path $chan "VERSION.txt") (Join-Path $env:LOCALAPPDATA "vapurr\VERSION.txt") -Force
 
 
