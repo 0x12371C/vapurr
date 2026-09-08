@@ -68,6 +68,10 @@ UI honesty: `frontend/pusd.html` Oliver tab `#e-collat-note` states live collate
 
 Client stubs on disk (not live-wired): `crates/vapurr-econ/src/house_fee_remit.abi.json`, `house_uni_skim.abi.json`, `fee_attribution.abi.json`, `remittance_sink.abi.json`. `house_fee_remit` stays `NeedRemittance` until Relic fills remittance CAs and reviews IPC. Prove: `scripts/verify-house-fee-abi.py`.
 
+### HousePairConfig IPC ABI stub (2026-09-07 ~21:20)
+
+Client stub on disk (not live-wired): `crates/vapurr-econ/src/house_pair_config.abi.json` + `HOUSE_PAIR_CONFIG_ABI` in lib.rs. Ops/deploy walls only — no user IPC encoder until Relic fills pairConfig into HouseLp/HouseSwap. Prove: `scripts/verify-house-pair-abi.py`.
+
 ## Pointers
 
 - Pair canon: `HOUSE_PAIR.md`

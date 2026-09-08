@@ -57,6 +57,8 @@ const EXOGENOUS_SEED_MARKET_ABI: &str = include_str!("exogenous_seed_market.abi.
 const DEV_FUND_STREAM_ABI: &str = include_str!("dev_fund_stream.abi.json");
 // BrowserStream 50k/3y treasury earmark ABI stub (ops/earn drip; no user IPC cmd yet).
 const BROWSER_STREAM_ABI: &str = include_str!("browser_stream.abi.json");
+// HousePairConfig ABI stub (wgV/$PUSD pair walls; ops/deploy; no user IPC encode yet).
+const HOUSE_PAIR_CONFIG_ABI: &str = include_str!("house_pair_config.abi.json");
 
 #[derive(Debug, thiserror::Error)]
 pub enum EconError {
