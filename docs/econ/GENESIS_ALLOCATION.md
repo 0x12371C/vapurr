@@ -54,6 +54,11 @@ USDG is **bond intake only** (`BondAssetTag`). No V/USDG, PUSD/USDG, or USDG cas
 2. `LaunchBootstrap.fundAndStart()` pulls that remainder and allocates the table above. `GenesisTreasury` stakes V as gV then `collateralizeOliver` (PUSD-only; `withdrawV` reverts `NoMarketSell`).
 3. `TestnetRollout` composes the same 1.2M + carve. `BOOTSTRAP_V` env is ignored if it disagrees with `LAUNCH_V`. Dry-run mock legacy = 288k. No silent broadcast.
 
+
+### BrowserStream ABI stub (2026-09-07)
+
+Client stub on disk (ops/earn drip; transfer-only earmark, never mints): crates/vapurr-econ/src/browser_stream.abi.json + include_str! in lib.rs. No user IPC cmd yet — stub only until Relic fills distributor / LaunchBootstrap wire. Prove: scripts/verify-browser-stream-abi.py.
+
 ## Still locked
 
 1. DevFund **200k extra** — Oliver / $PUSD-only; distinct from BrowserStream.
