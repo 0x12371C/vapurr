@@ -64,6 +64,8 @@ const GENESIS_TREASURY_ABI: &str = include_str!("genesis_treasury.abi.json");
 const LAUNCH_BOOTSTRAP_ABI: &str = include_str!("launch_bootstrap.abi.json");
 // LitheCutoverMigrator ABI stub (legacy PUSD -> legacy V -> convert -> canonical PUSD; ops; no user IPC encode yet).
 const LITHE_CUTOVER_MIGRATOR_ABI: &str = include_str!("lithe_cutover_migrator.abi.json");
+// CanonicalLitheFactory ABI stub (one-tx successor deploy: canonical V/Lithe/converter/migrator/gV; ops; no user IPC encode yet).
+const CANONICAL_LITHE_FACTORY_ABI: &str = include_str!("canonical_lithe_factory.abi.json");
 
 #[derive(Debug, thiserror::Error)]
 pub enum EconError {

@@ -67,6 +67,10 @@ Live gen-4 bytecode may still be inventory until Relic-approved cutover. Do not 
 
 Client stub on disk (ops cutover path: legacy PUSD redeem -> legacy V -> LegacyVConverter inventory -> canonical Lithe expand to PUSD; no mint authority on migrator): `crates/vapurr-econ/src/lithe_cutover_migrator.abi.json` + `LITHE_CUTOVER_MIGRATOR_ABI` in lib.rs. No user IPC cmd yet - stub only until Relic-approved CutoverDeploy / live CAs. Prove: `scripts/verify-lithe-cutover-abi.py`.
 
+### CanonicalLitheFactory ABI stub (2026-09-08 ~01:01)
+
+Client stub on disk (ops one-tx successor deploy: canonical V + policy/gV + Lithe + converter + migrator; genesis mint locked; no factory mint of legacy on top): `crates/vapurr-econ/src/canonical_lithe_factory.abi.json` + `CANONICAL_LITHE_FACTORY_ABI` in lib.rs. No user IPC cmd yet - stub only until Relic-approved CutoverDeploy / live CAs. Prove: `scripts/verify-canonical-lithe-factory-abi.py`.
+
 Gen-5 source is seigniorage Lithe + dual printers. Live 46630 stays gen-4 until Relic-approved CutoverDeploy.
 
 1. Factory deploy of canonical V + gV/policy + Lithe + converter + migrator + Oliver.
