@@ -44,8 +44,8 @@
     <h1>zer0ID</h1>
     <p class="lede">Prove a person for browse-earn. Wallet keys stay on this device under the Open Digital Wallet Standard. We keep a handle, not a passport.</p>
     <div class="steel card">
-      <b>Full KYC — ocular scan</b>
-      <p>Level 4 required to claim browse-earn tokens. iPhone-first capture; a template is computed via Worldcoin open-iris (MIT) on Secret Lab servers. Not Orb hardware. Opens thesecretlab.app/kyc/scan.</p>
+      <b>Full KYC — phone, then ocular</b>
+      <p>Level 3 phone verify, then Level 4 ocular scan — Level 4 is required to claim browse-earn. Phone may show an on-screen mock code when carrier SMS isn’t wired (no text sent). Iris: iPhone-first capture via Worldcoin open-iris (MIT) on Secret Lab servers; not Orb hardware. Ladder: /kyc/phone → /kyc/scan.</p>
     </div>
     <div class="steel card">
       <b>We don't store your scan</b>
@@ -65,7 +65,7 @@
       <li><strong>Ad block is Shield.</strong> This page is identity only.</li>
     </ul>
     <div class="row">
-      <button class="btn" id="kyc" type="button">Full KYC scan</button>
+      <button class="btn" id="kyc" type="button">Full KYC — phone → scan</button>
       <button class="btn-ghost" id="kyc-basic" type="button">Basic KYC</button>
       <button class="btn-ghost" id="to-shield" type="button">Open Shield</button>
       <button class="btn-ghost" id="to-earn" type="button">Earn</button>
@@ -74,7 +74,8 @@
   <script src="/ipc.js"></script>
   <script>
     document.getElementById("kyc").onclick = function () {
-      vapurr.send({ cmd: "open", url: "https://thesecretlab.app/kyc/scan" });
+      // Ladder: phone first, then ocular (same order as create-wallet KYC).
+      vapurr.send({ cmd: "open", url: "https://thesecretlab.app/kyc/phone" });
     };
     document.getElementById("kyc-basic").onclick = function () {
       vapurr.send({ cmd: "open", url: "https://thesecretlab.app/kyc" });

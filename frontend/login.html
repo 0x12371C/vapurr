@@ -145,6 +145,33 @@
       cursor: pointer;
       user-select: none;
     }
+
+    .kyc-ladder {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin: 0 0 10px;
+      padding: 0;
+    }
+    .kyc-ladder span {
+      font-size: 11px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: color-mix(in srgb, var(--color-muted) 78%, transparent);
+      padding: 4px 8px;
+      border-radius: 999px;
+      border: 1px solid color-mix(in srgb, var(--color-snow) 8%, transparent);
+      background: color-mix(in srgb, var(--color-void) 28%, transparent);
+    }
+    .kyc-ladder span.on {
+      color: var(--color-lime);
+      border-color: color-mix(in srgb, var(--color-lime) 34%, transparent);
+      background: color-mix(in srgb, var(--color-lime) 10%, transparent);
+    }
+    .kyc-ladder span.done {
+      color: color-mix(in srgb, var(--color-snow) 72%, transparent);
+      border-color: color-mix(in srgb, var(--color-lime) 14%, transparent);
+    }
     .odws-ack input {
       margin-top: 2px;
       width: 16px;
@@ -198,11 +225,17 @@
     </div>
 
     <div class="door" id="kyc-box" hidden>
-      <label class="mono" id="kyc-label">KYC</label>
+      <label class="mono" id="kyc-label">KYC · ladder</label>
       <div class="odws-card" id="kyc-card">
+        <div class="kyc-ladder" id="kyc-ladder" aria-label="KYC steps">
+          <span data-step="1">Age</span>
+          <span data-step="2">Country</span>
+          <span data-step="3">Phone</span>
+          <span data-step="4">Iris</span>
+        </div>
         <div class="odws-title">
           <strong id="kyc-title">Verify to unlock claims</strong>
-          <span class="odws-ver" id="kyc-step-pill">L1</span>
+          <span class="odws-ver" id="kyc-step-pill">1/4</span>
         </div>
         <div class="hint" id="kyc-hint" style="min-height:0;margin-top:0"></div>
         <div id="kyc-age" hidden>
@@ -218,18 +251,18 @@
           <div class="hint" id="kyc-geo-result" style="margin-top:8px"></div>
         </div>
         <div id="kyc-phone" hidden>
-          <p class="hint" style="margin-top:8px">Level 3 — SMS possession on Secret Lab. Browse-earn <b>claims stay locked</b> until Level 4.</p>
+          <p class="hint" style="margin-top:8px">Level 3 — phone possession on Secret Lab. If carrier SMS isn’t wired yet, the page shows an <b>on-screen mock code</b> (no text sent). Browse-earn <b>claims stay locked</b> until Level 4.</p>
           <button class="btn" id="kyc-phone-open" type="button">Start phone verify</button>
           <button class="btn" id="kyc-phone-done" type="button" disabled style="margin-top:8px">Done — continue</button>
           <button class="btn-ghost" id="kyc-phone-later" type="button" style="width:100%;margin-top:8px;height:44px;border-radius:12px">I&apos;ll do KYC later</button>
         </div>
         <div id="kyc-iris" hidden>
-          <p class="hint" style="margin-top:8px">Level 4 — ocular scan (open-iris). <b>iPhone Safari first</b>; on desktop open the scan page, then finish on your phone if the camera path needs it. We do not store your scan — ZK-style attestation only.</p>
+          <p class="hint" style="margin-top:8px">Level 4 — ocular uniqueness unlocks <b>browse-earn claims</b> (open-iris). <b>iPhone Safari first</b>; on desktop open the scan page, finish on phone if needed. We don’t store your scan — ZK attestation only. Builds on open-iris (MIT) + OpenAI tech where used — not partnerships.</p>
           <button class="btn" id="kyc-iris-open" type="button">Start Level 4 scan</button>
           <button class="btn" id="kyc-iris-done" type="button" disabled style="margin-top:8px">Done — set passcode</button>
           <button class="btn-ghost" id="kyc-iris-later" type="button" style="width:100%;margin-top:8px;height:44px;border-radius:12px">I&apos;ll do KYC later</button>
         </div>
-        <div class="odws-foot" id="kyc-foot" style="margin-top:10px">No personal name collected. Claims need Level 4.</div>
+        <div class="odws-foot" id="kyc-foot" style="margin-top:10px">Ladder: Age → Country → Phone → Iris. No PII stored. Browse-earn claims need Level 4.</div>
       </div>
       <div class="err" id="kyc-err"></div>
     </div>
@@ -330,21 +363,29 @@
       var hint = document.getElementById("kyc-hint");
       var label = document.getElementById("kyc-label");
       var titles = {
-        1: "Level 1 — Age",
-        2: "Level 2 — Jurisdiction",
-        3: "Level 3 — Phone",
-        4: "Level 4 — Ocular"
+        1: "Step 1 — Age",
+        2: "Step 2 — Country",
+        3: "Step 3 — Phone",
+        4: "Step 4 — Iris"
       };
       var hints = {
         1: "Self-attest AgeOver18 with a wallet signature. Not a government ID or DOB document.",
         2: "Issuer reads country from this connection (CDN/IP). No name / PII stored.",
-        3: "Open phone verify, finish SMS there, then tap Done here. Claims still need Level 4.",
-        4: "Open the ocular scan. Do not skip ahead — tap Done when the scan tab is open."
+        3: "Open phone verify. Use the code shown there — mock/on-screen when carrier SMS isn’t live (no text sent). Then tap Done here. Claims still need Level 4.",
+        4: "Level 4 unlocks browse-earn claims. Open the ocular scan (open-iris); tap Done when that tab is open. Soft-skip keeps claims locked."
       };
       if (title) title.textContent = titles[kycStep] || "KYC";
-      if (pill) pill.textContent = kycStep ? ("L" + kycStep) : "";
+      if (pill) pill.textContent = kycStep ? (kycStep + "/4") : "";
       if (hint) hint.textContent = hints[kycStep] || "";
-      if (label) label.textContent = kycStep ? ("KYC · Level " + kycStep) : "KYC";
+      if (label) label.textContent = kycStep ? ("KYC · " + kycStep + " of 4") : "KYC";
+      var ladder = document.getElementById("kyc-ladder");
+      if (ladder) {
+        var bits = ladder.querySelectorAll("span[data-step]");
+        for (var i = 0; i < bits.length; i++) {
+          var n = parseInt(bits[i].getAttribute("data-step"), 10) || 0;
+          bits[i].className = n < kycStep ? "done" : (n === kycStep ? "on" : "");
+        }
+      }
       var pd = document.getElementById("kyc-phone-done");
       if (pd) pd.disabled = !kycPhoneOpened;
       var idn = document.getElementById("kyc-iris-done");

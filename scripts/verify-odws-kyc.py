@@ -14,10 +14,13 @@ need_login = [
     'id="odws-ack"',
     'id="odws-go"',
     'ODWS v0.1',
-    'id="kyc4-go"',
+    'id="kyc-ladder"',
+    'id="kyc-phone-open"',
+    'id="kyc-iris-open"',
     'Start Level 4 scan',
     'Level 4 unlocks browse-earn claims',
-    'needKyc4',
+    'on-screen mock code',
+    'needKyc',
 ]
 missing = [n for n in need_login if n not in login]
 if missing:
@@ -36,8 +39,9 @@ if missing:
 
 need_id = [
     'ODWS',
-    'Level 4 required to claim browse-earn',
+    'Level 4 is required to claim browse-earn',
     'open-iris',
+    '/kyc/phone',
 ]
 missing = [n for n in need_id if n not in ident]
 if missing:
