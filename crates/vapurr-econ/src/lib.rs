@@ -68,6 +68,10 @@ const LITHE_CUTOVER_MIGRATOR_ABI: &str = include_str!("lithe_cutover_migrator.ab
 const CANONICAL_LITHE_FACTORY_ABI: &str = include_str!("canonical_lithe_factory.abi.json");
 // LegacyVConverter ABI stub (cutover inventory: legacy V -> canonical V; ops; no user IPC encode yet).
 const LEGACY_V_CONVERTER_ABI: &str = include_str!("legacy_v_converter.abi.json");
+// gVAPURR ABI stub (Oliver surplus-only rebase / stake; ops; no user IPC encode yet).
+const GV_APURR_ABI: &str = include_str!("gv_apurr.abi.json");
+// wgVAPURR ABI stub (wrap gV for House pair walls; ops; no user IPC encode yet).
+const WGV_APURR_ABI: &str = include_str!("wgv_apurr.abi.json");
 
 #[derive(Debug, thiserror::Error)]
 pub enum EconError {

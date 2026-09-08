@@ -77,3 +77,9 @@ Client stub on disk (not live-wired): `crates/vapurr-econ/src/house_pair_config.
 - Pair canon: `HOUSE_PAIR.md`
 - Routing map: `ROUTING.md`
 - Fee path: `HouseFeeRemit.sol`, `HouseUniSkim.sol`
+
+### gVAPURR + wgVAPURR ABI stubs (2026-09-08 ~03:01)
+
+Client stubs on disk (Oliver surplus-only rebase / wrap for House pair walls; no live collateral wire yet): `crates/vapurr-econ/src/gv_apurr.abi.json` + `GV_APURR_ABI`, `crates/vapurr-econ/src/wgv_apurr.abi.json` + `WGV_APURR_ABI` in lib.rs. No user IPC cmd yet - stub only until Relic-approved Oliver gV/wgV collateral wire / live CAs. Prove: `scripts/verify-gv-wgv-abi.py`.
+
+
