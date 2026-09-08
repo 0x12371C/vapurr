@@ -656,3 +656,20 @@ emittance_book_snap); empty CAs show NeedRemittance (no live remit enable). Prov
 - **branch:** pack/d59912d (+ this slice)
 - **build slice:** LoopUpgradeable ABI stub wire - `LOOP_UPGRADEABLE_IMPL_ABI` include_str in lib.rs for existing `crates/vapurr-econ/src/loop_upgradeable_impl.abi.json` (Euler/loop vault UUPS; ops; no user IPC encode). `scripts/verify-loop-upgradeable-abi.py` PASS; PROXY_DEPLOY_GATE.md needle. Still open P1: Oliver gV/wgV collateral live wire (Relic), live BondMarket/CD/remittance IPC after CA fill, House Uni v4 e2e, SignPath, renew www TLS, promote TSL after signed pack, bare Lithe/V/PUSD proxy cutover deploy (Relic), outbid upgradeable ABI wire.
 
+## 2026-09-08 ~14:47 ET - hourly watch
+
+- **justin:** online
+- **Programs:** VERSION **vapurr 1.1.23
+windows x86_64-pc-windows-gnu
+built 2026-09-08T01:12:43.8889282Z
+rev 3908d54
+sha 76c00a5edc5c858f6833d4ef589c51ad1626d69ba6efd00a6e5995029db322c1** (sha 76c00a5edc5c..., rev 3908d54) at Local\Programs\vapurr; Uninstall DisplayVersion **1.1.23**; **NotSigned** (signing still P0 ship blocker; Relic: unsigned OK for build/test)
+- **dist/channel:** AppData channel **1.1.23** (sha 76c00a5edc5c..., rev 3908d54) - Programs **SKEW vs Programs vapurr 1.1.23
+windows x86_64-pc-windows-gnu
+built 2026-09-08T01:12:43.8889282Z
+rev 3908d54
+sha 76c00a5edc5c858f6833d4ef589c51ad1626d69ba6efd00a6e5995029db322c1** channel; Cargo check deferred; **TSL thesecretlab.app/vapurr/channel **200** at **1.1.13** (rev e590ef3, sha 324286bf6f68...)**; **www.thesecretlab.app TLS expired**
+- **workers:** KFX **idle (grok 21016)**; PayId **idle (grok 9228)**; Bind **idle (PID gone)** - no respawn. Extra grok windows present (House+Pilot keep; Charts/Psy/Tube park) - not watch-spawned. No new organizer procs.
+- **branch:** pack/d59912d (+ this slice)
+- **build slice:** OutbidUpgradeable ABI stub wire - `OUTBID_UPGRADEABLE_IMPL_ABI` include_str in lib.rs for existing `crates/vapurr-econ/src/outbid_upgradeable_impl.abi.json` ($PUSD outbid listings UUPS; ops; no user IPC encode). `scripts/verify-outbid-upgradeable-abi.py` PASS; PROXY_DEPLOY_GATE.md needle. Still open P1: Oliver gV/wgV collateral live wire (Relic), live BondMarket/CD/remittance IPC after CA fill, House Uni v4 e2e, SignPath, renew www TLS, promote TSL after signed pack, bare Lithe/V/PUSD proxy cutover deploy (Relic).
+

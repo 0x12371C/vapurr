@@ -86,6 +86,8 @@ const HOUSE_SWAP_UPGRADEABLE_IMPL_ABI: &str = include_str!("house_swap_upgradeab
 const KETLIST_UPGRADEABLE_IMPL_ABI: &str = include_str!("ketlist_upgradeable_impl.abi.json");
 // LoopUpgradeable ABI stub (Euler/loop vault UUPS impl; ops; no user IPC encode yet).
 const LOOP_UPGRADEABLE_IMPL_ABI: &str = include_str!("loop_upgradeable_impl.abi.json");
+// OutbidUpgradeable ABI stub ($PUSD outbid listings UUPS impl; ops; no user IPC encode yet).
+const OUTBID_UPGRADEABLE_IMPL_ABI: &str = include_str!("outbid_upgradeable_impl.abi.json");
 
 #[derive(Debug, thiserror::Error)]
 pub enum EconError {

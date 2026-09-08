@@ -122,3 +122,7 @@ Client stub on disk ($PUSD pay-to-list UUPS impl; list/row/topPaid/stats walls; 
 
 Client stub on disk (Euler/loop vault UUPS impl; initialize/owner/upgrade walls; ops; no user IPC encode yet; `TESTNET_LOOP` still empty until Relic deploy): `crates/vapurr-econ/src/loop_upgradeable_impl.abi.json` + `LOOP_UPGRADEABLE_IMPL_ABI` in lib.rs. Prove stub: `scripts/verify-loop-upgradeable-abi.py`.
 
+### OutbidUpgradeable ABI stub (2026-09-08 ~14:47)
+
+Client stub on disk ($PUSD outbid listings UUPS impl; initialize/owner/upgrade + bid/listings walls; ops; no user IPC encode yet; `TESTNET_OUTBID` still empty until Relic deploy): `crates/vapurr-econ/src/outbid_upgradeable_impl.abi.json` + `OUTBID_UPGRADEABLE_IMPL_ABI` in lib.rs. Prove stub: `scripts/verify-outbid-upgradeable-abi.py`.
+
