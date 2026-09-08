@@ -19,6 +19,8 @@ need_login = [
     'id="kyc-iris-open"',
     'id="zkkyc-explain"',
     'zer0ID',
+    'zer0ID | ZKKYC ladder',
+    'Age -> Country -> Phone',
     'open-iris',
     'ZKKYC',
     'nullifier-only',

@@ -1,4 +1,4 @@
-﻿# Open Digital Wallet Standard (ODWS) v0.1
+# Open Digital Wallet Standard (ODWS) v0.1
 
 **Scope:** vapurr device wallet + zer0ID human attestation  
 **Issuer:** The Secret Lab  
@@ -27,7 +27,7 @@ OpenAI ≠ open-iris. Name each correctly in UI and press.
 
 ## zer0ID (human layer)
 
-**ZKKYC (one line):** zer0ID proves uniqueness/attributes with ZK — durable state is nullifier-only in vapurrDB (no raw biometrics/photos/PII). Trust ladder L1–L4; browse-earn needs L4 ocular via **open-iris**. Builds on Worldcoin open-iris (MIT) + OpenAI tech where used — not official partnerships.
+**ZKKYC (one line):** zer0ID proves uniqueness/attributes with ZK - durable state is nullifier-only in vapurrDB (no raw biometrics/photos/PII). Trust ladder L1-L4; browse-earn needs L4 ocular via **open-iris**. Builds on Worldcoin open-iris (MIT) + OpenAI tech where used - not official partnerships.
 
 | Level | Anchor | Notes |
 |---|---|---|

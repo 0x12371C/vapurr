@@ -217,7 +217,7 @@
 
     <div class="door" id="cont-box" hidden>
       <label class="mono">This device</label>
-      <div class="addr" id="cont-addr">—</div>
+      <div class="addr" id="cont-addr">-</div>
       <div class="hint">Continue as this wallet.</div>
       <button class="btn" id="cont" type="button">Continue</button>
     </div>
@@ -232,13 +232,13 @@
         <ul>
           <li>Keys stay <b>encrypted on this PC</b>, behind your passcode.</li>
           <li><b>zer0ID</b> ZKKYC: browse-earn <b>claims need L4</b> ocular (open-iris).</li>
-          <li>We <b>don't store</b> your scan or personal info — nullifier-only ZK attestation in vapurrDB.</li>
+          <li>We <b>don't store</b> your scan or personal info - nullifier-only ZK attestation in vapurrDB.</li>
         </ul>
         <div class="odws-foot">Builds on Worldcoin open-iris (MIT) + OpenAI technology where used. Not official partnerships.</div>
       </div>
       <label class="odws-ack" for="odws-ack">
         <input type="checkbox" id="odws-ack"/>
-        <span>I understand — create under ODWS v0.1</span>
+        <span>I understand - create under ODWS v0.1</span>
       </label>
       <button class="btn" id="odws-go" type="button" disabled>Create wallet</button>
     </div>
@@ -250,14 +250,14 @@
     </div>
 
     <div class="door" id="kyc-box" hidden>
-      <label class="mono" id="kyc-label">zer0ID · ZKKYC ladder</label>
+      <label class="mono" id="kyc-label">zer0ID | ZKKYC ladder</label>
       <div class="odws-card" id="kyc-card">
         <div class="zkkyc-card" id="zkkyc-explain">
           <b>What is ZKKYC?</b>
           <p><span class="mono-bit">zer0ID</span> uses zero-knowledge KYC: prove uniqueness and a few attributes without handing over a biometric database or raw photos.</p>
-          <p>Durable state is <span class="mono-bit">nullifier-only</span> — opaque in vapurrDB. No raw biometrics, no PII, no photo archive.</p>
-          <p>Trust ladder <span class="mono-bit">L1–L4</span> (Age → Country → Phone → <span class="mono-bit">open-iris</span>). Browse-earn claims need <span class="mono-bit">L4</span> ocular.</p>
-          <p>Builds on Worldcoin <span class="mono-bit">open-iris</span> (MIT) and OpenAI technology where used — not official partnerships.</p>
+          <p>Durable state is <span class="mono-bit">nullifier-only</span> - opaque in vapurrDB. No raw biometrics, no PII, no photo archive.</p>
+          <p>Trust ladder <span class="mono-bit">L1-L4</span> (Age -> Country -> Phone -> <span class="mono-bit">open-iris</span>). Browse-earn claims need <span class="mono-bit">L4</span> ocular.</p>
+          <p>Builds on Worldcoin <span class="mono-bit">open-iris</span> (MIT) and OpenAI technology where used - not official partnerships.</p>
         </div>
         <div class="kyc-ladder" id="kyc-ladder" aria-label="zer0ID ZKKYC steps">
           <span data-step="1">Age</span>
@@ -273,28 +273,28 @@
         <div id="kyc-age" hidden>
           <label class="odws-ack" for="kyc-age-ack" style="margin-top:10px">
             <input type="checkbox" id="kyc-age-ack"/>
-            <span>I confirm I am 18 or older — self-attest (not a DOB document check)</span>
+            <span>I confirm I am 18 or older - self-attest (not a DOB document check)</span>
           </label>
           <button class="btn" id="kyc-age-go" type="button" disabled>Sign &amp; continue</button>
         </div>
         <div id="kyc-geo" hidden>
-          <p class="hint" style="margin-top:8px">Country comes from this connection (CDN/IP geo) — not a dropdown. Embargoed jurisdictions are refused.</p>
+          <p class="hint" style="margin-top:8px">Country comes from this connection (CDN/IP geo) - not a dropdown. Embargoed jurisdictions are refused.</p>
           <button class="btn" id="kyc-geo-go" type="button">Detect country &amp; continue</button>
           <div class="hint" id="kyc-geo-result" style="margin-top:8px"></div>
         </div>
         <div id="kyc-phone" hidden>
-          <p class="hint" style="margin-top:8px">Level 3 — phone possession on Secret Lab. If carrier SMS isn’t wired yet, the page shows an <b>on-screen mock code</b> (no text sent). Browse-earn <b>claims stay locked</b> until Level 4.</p>
+          <p class="hint" style="margin-top:8px">Level 3 - phone possession on Secret Lab. If carrier SMS isn't wired yet, the page shows an <b>on-screen mock code</b> (no text sent). Browse-earn <b>claims stay locked</b> until Level 4.</p>
           <button class="btn" id="kyc-phone-open" type="button">Start phone verify</button>
-          <button class="btn" id="kyc-phone-done" type="button" disabled style="margin-top:8px">Done — continue</button>
+          <button class="btn" id="kyc-phone-done" type="button" disabled style="margin-top:8px">Done - continue</button>
           <button class="btn-ghost" id="kyc-phone-later" type="button" style="width:100%;margin-top:8px;height:44px;border-radius:12px">I&apos;ll do KYC later</button>
         </div>
                 <div id="kyc-iris" hidden>
-          <p class="hint" style="margin-top:8px"><b>zer0ID</b> L4 — <b>open-iris</b> ocular uniqueness unlocks <b>browse-earn claims</b>. <b>iPhone Safari first</b>; on desktop open the scan page, finish on phone if needed. ZKKYC keeps nullifier-only state in vapurrDB — no raw scan. Builds on Worldcoin open-iris (MIT) + OpenAI tech where used — not partnerships.</p>
+          <p class="hint" style="margin-top:8px"><b>zer0ID</b> L4 - <b>open-iris</b> ocular uniqueness unlocks <b>browse-earn claims</b>. <b>iPhone Safari first</b>; on desktop open the scan page, finish on phone if needed. ZKKYC keeps nullifier-only state in vapurrDB - no raw scan. Builds on Worldcoin open-iris (MIT) + OpenAI tech where used - not partnerships.</p>
           <button class="btn" id="kyc-iris-open" type="button">Start open-iris L4 scan</button>
-          <button class="btn" id="kyc-iris-done" type="button" disabled style="margin-top:8px">Done — set passcode</button>
+          <button class="btn" id="kyc-iris-done" type="button" disabled style="margin-top:8px">Done - set passcode</button>
           <button class="btn-ghost" id="kyc-iris-later" type="button" style="width:100%;margin-top:8px;height:44px;border-radius:12px">I&apos;ll do KYC later</button>
         </div>
-        <div class="odws-foot" id="kyc-foot" style="margin-top:10px">zer0ID ZKKYC: L1 Age → L2 Country → L3 Phone → L4 open-iris. Nullifier-only in vapurrDB. Browse-earn needs L4.</div>
+        <div class="odws-foot" id="kyc-foot" style="margin-top:10px">zer0ID ZKKYC: L1 Age -> L2 Country -> L3 Phone -> L4 open-iris. Nullifier-only in vapurrDB. Browse-earn needs L4.</div>
       </div>
       <div class="err" id="kyc-err"></div>
     </div>
@@ -377,7 +377,7 @@
       if (!u) { setKycErr("Missing KYC URL"); return false; }
       var ok = false;
       try { ok = !!(window.vapurr && vapurr.send({ cmd: "newtab", url: u })); } catch (e) { ok = false; }
-      if (!ok) { setKycErr("Could not open KYC tab — try again from this desk"); return false; }
+      if (!ok) { setKycErr("Could not open KYC tab - try again from this desk"); return false; }
       return true;
     }
     function setKycErr(msg) {
@@ -398,21 +398,21 @@
       var hint = document.getElementById("kyc-hint");
       var label = document.getElementById("kyc-label");
       var titles = {
-        1: "Step 1 — Age (L1)",
-        2: "Step 2 — Country (L2)",
-        3: "Step 3 — Phone (L3)",
-        4: "Step 4 — open-iris (L4)"
+        1: "Step 1 - Age (L1)",
+        2: "Step 2 - Country (L2)",
+        3: "Step 3 - Phone (L3)",
+        4: "Step 4 - open-iris (L4)"
       };
       var hints = {
         1: "Self-attest AgeOver18 with a wallet signature. Not a government ID or DOB document.",
         2: "Issuer reads country from this connection (CDN/IP). No name / PII stored.",
-        3: "Open phone verify. Use the code shown there — mock/on-screen when carrier SMS isn’t live (no text sent). Then tap Done here. Claims still need L4 open-iris.",
+        3: "Open phone verify. Use the code shown there - mock/on-screen when carrier SMS isn't live (no text sent). Then tap Done here. Claims still need L4 open-iris.",
         4: "L4 open-iris unlocks browse-earn claims. ZKKYC: nullifier-only in vapurrDB. Tap Done when that tab is open. Soft-skip keeps claims locked."
       };
       if (title) title.textContent = titles[kycStep] || "zer0ID";
       if (pill) pill.textContent = kycStep ? (kycStep + "/4") : "";
       if (hint) hint.textContent = hints[kycStep] || "";
-      if (label) label.textContent = kycStep ? ("zer0ID · ZKKYC " + kycStep + " of 4") : "zer0ID · ZKKYC ladder";
+      if (label) label.textContent = kycStep ? ("zer0ID | ZKKYC " + kycStep + " of 4") : "zer0ID | ZKKYC ladder";
       var ladder = document.getElementById("kyc-ladder");
       if (ladder) {
         var bits = ladder.querySelectorAll("span[data-step]");
@@ -449,7 +449,7 @@
       vapurr.send({ cmd: "pane", id: next() });
     }
     function shortAddr(a) {
-      if (!a || a.length < 12) return a || "—";
+      if (!a || a.length < 12) return a || "-";
       return a.slice(0, 6) + "…" + a.slice(-4);
     }
     function layout() {
@@ -492,7 +492,7 @@
         setKycErr("");
         if (s.level === 1) {
           kycStep = 2;
-          document.getElementById("lede").textContent = "Jurisdiction next — then phone & ocular.";
+          document.getElementById("lede").textContent = "Jurisdiction next - then phone & ocular.";
         } else if (s.level === 2) {
           var country = s.country ? String(s.country) : "";
           var gr = document.getElementById("kyc-geo-result");
@@ -583,7 +583,7 @@
           h.querySelector("ul").innerHTML =
             "<li>ODWS still applies: <b>encrypted vault</b> + passcode.</li>" +
             "<li>Browse-earn <b>claims need Level 4</b> ocular KYC (open-iris).</li>" +
-            "<li>We <b>don't store</b> your scan — ZK attestation in vapurrDB only.</li>";
+            "<li>We <b>don't store</b> your scan - ZK attestation in vapurrDB only.</li>";
         }
       }
     };
@@ -601,7 +601,7 @@
       kycPhoneOpened = false;
       kycIrisOpened = false;
       setKycErr("");
-      document.getElementById("lede").textContent = "Complete KYC — claims need Level 4.";
+      document.getElementById("lede").textContent = "Complete KYC - claims need Level 4.";
       saveKyc();
       layout();
     };
@@ -627,14 +627,14 @@
       if (!sent) {
         busy = false;
         btn.textContent = "Detect country & continue";
-        setKycErr("Could not reach desk KYC — reopen Sign in and retry Country");
+        setKycErr("Could not reach desk KYC - reopen Sign in and retry Country");
         return;
       }
       setTimeout(function () {
         if (!busy || kycStep !== 2) return;
         busy = false;
         btn.textContent = "Detect country & continue";
-        setKycErr("Country detect timed out — check network and tap Detect again");
+        setKycErr("Country detect timed out - check network and tap Detect again");
       }, 28000);
     };
     document.getElementById("kyc-phone-open").onclick = function () {
@@ -644,7 +644,7 @@
       paintKycStep();
       var opened = openKycTab("https://thesecretlab.app/kyc/phone");
       if (!opened) {
-        setKycErr("Phone tab did not open — visit thesecretlab.app/kyc/phone then tap Done");
+        setKycErr("Phone tab did not open - visit thesecretlab.app/kyc/phone then tap Done");
       }
     };
     document.getElementById("kyc-phone-done").onclick = function () {
@@ -662,7 +662,7 @@
       paintKycStep();
       var opened = openKycTab("https://thesecretlab.app/kyc/scan");
       if (!opened) {
-        setKycErr("Iris tab did not open — visit thesecretlab.app/kyc/scan then tap Done");
+        setKycErr("Iris tab did not open - visit thesecretlab.app/kyc/scan then tap Done");
       }
     };
     document.getElementById("kyc-iris-done").onclick = function () {
@@ -671,7 +671,7 @@
       goSetPin();
     };
     function skipKycLater() {
-      // Soft skip — browse-earn claims stay locked without Level 4.
+      // Soft skip - browse-earn claims stay locked without Level 4.
       clearKyc();
       goSetPin();
     }
@@ -685,7 +685,7 @@
         if (!bit) return;
         var n = parseInt(bit.getAttribute("data-step"), 10) || 0;
         if (n !== kycStep) {
-          setKycErr(n < kycStep ? "That step is done — continue below." : "Finish the current step first.");
+          setKycErr(n < kycStep ? "That step is done - continue below." : "Finish the current step first.");
           return;
         }
         setKycErr("");
@@ -719,7 +719,7 @@
     });
     loadKyc();
     if (needKyc && kycStep >= 1) {
-      document.getElementById("lede").textContent = "Complete KYC — claims need Level 4.";
+      document.getElementById("lede").textContent = "Complete KYC - claims need Level 4.";
       layout();
     }
     vapurr.send({ cmd: "login-status" });

@@ -89,7 +89,7 @@
       <div class="mono">EARN</div>
       <h1>Browsing receipts</h1>
     </div>
-    <p class="defi-lede">Opt in and we keep <b>host</b>, <b>HTTPS</b>, and <b>time</b>. No path, query, cookies, or keystrokes. A receipt is a sealed window — not a visit counter.</p>
+    <p class="defi-lede">Opt in and we keep <b>host</b>, <b>HTTPS</b>, and <b>time</b>. No path, query, cookies, or keystrokes. A receipt is a sealed window - not a visit counter.</p>
     <div class="ticket glass-panel">
       <div class="row">
         <div>
@@ -105,7 +105,7 @@
       <button class="btn-ghost" id="go-kyc" type="button">Complete Level 4 KYC</button>
     </div>
     <p class="mono" id="kyc-state" style="margin-top:12px">KYC Level 4 required to claim browse tokens</p>
-    <p class="defi-lede" style="margin-top:6px"><b>zer0ID</b> ZKKYC L4 is an <b>open-iris</b> ocular scan — we don't store it: no photo, no biometric template. Durable state is nullifier-only in vapurrDB (opaque), proving uniqueness without a biometric database. Builds on open-iris (MIT) + OpenAI tech where used — not partnerships.</p>
+    <p class="defi-lede" style="margin-top:6px"><b>zer0ID</b> ZKKYC L4 is an <b>open-iris</b> ocular scan - we don't store it: no photo, no biometric template. Durable state is nullifier-only in vapurrDB (opaque), proving uniqueness without a biometric database. Builds on open-iris (MIT) + OpenAI tech where used - not partnerships.</p>
     <div id="book"></div>
   </div>
   <script src="/ipc.js"></script>
@@ -126,7 +126,7 @@
       var a = when(from), b = when(to);
       if (!a) return "";
       if (!b || a === b) return a;
-      return a + " – " + b;
+      return a + " - " + b;
     }
     function chips(hosts) {
       hosts = hosts || [];
@@ -164,7 +164,7 @@
         "<div class='head'><b>" + title + "</b><span class='pill " + status + "'>" + status + "</span></div>" +
         "<div class='when'>" + span(r.from, r.to) + "</div>" +
         "<div class='amt'>" + money(minor) + "</div>" +
-        "<div class='mono'>" + visits + " sessions · " + hosts + " hosts · " + https + " https</div>" +
+        "<div class='mono'>" + visits + " sessions | " + hosts + " hosts | " + https + " https</div>" +
         chips(r.host_list) +
         (hash ? "<div class='hash'>" + hash.slice(0, 16) + "…" + hash.slice(-8) + " <button class='btn-ghost' type='button' data-copy='" + hash + "'>copy</button></div>" : "");
       var b = el.querySelector("[data-copy]");
@@ -179,7 +179,7 @@
       var kyc = s.kyc_proven ? "Level 4 proven" : "Level 4 required to claim browse tokens";
       document.getElementById("kyc-state").textContent = s.earn_error
         ? s.earn_error
-        : ("KYC: " + kyc + (s.install_id ? (" · install " + String(s.install_id).slice(0, 8)) : ""));
+        : ("KYC: " + kyc + (s.install_id ? (" | install " + String(s.install_id).slice(0, 8)) : ""));
       var open = document.getElementById("open");
       open.innerHTML = "";
       if (s.window) {

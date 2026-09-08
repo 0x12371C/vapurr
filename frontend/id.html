@@ -88,14 +88,14 @@
 <body>
   <div class="wrap">
     <div class="mark-wrap"><img class="mark" src="/mascot.png" alt=""/></div>
-    <div class="mono kicker">IDENTITY · ODWS</div>
+    <div class="mono kicker">IDENTITY | ODWS</div>
     <h1>zer0ID</h1>
-    <p class="lede"><b>zer0ID</b> ZKKYC — prove a person for browse-earn without a biometric database. Wallet keys stay on this device under ODWS. Durable state is nullifier-only — a handle and a one-way nullifier, not a passport, not a face.</p>
+    <p class="lede"><b>zer0ID</b> ZKKYC - prove a person for browse-earn without a biometric database. Wallet keys stay on this device under ODWS. Durable state is nullifier-only - a handle and a one-way nullifier, not a passport, not a face.</p>
 
     <div class="steel card">
       <div class="status-head">
         <span class="status-state" id="state">Checking…</span>
-        <span class="chip" id="chip-level">level —</span>
+        <span class="chip" id="chip-level">level -</span>
         <span class="chip" id="chip-handle" hidden></span>
       </div>
       <div class="status-sub" id="state-why">Reading this device's attestation.</div>
@@ -103,31 +103,31 @@
 
     <div class="steel card" id="mismatch" hidden>
       <b>This device's file claims more than it proves</b>
-      <p><span id="mismatch-detail"></span> vapurr reports the verified level only. An attestation counts when it carries a signature from a trusted issuer and has not expired — editing <span class="mono">id.json</span> by hand cannot raise your level.</p>
+      <p><span id="mismatch-detail"></span> vapurr reports the verified level only. An attestation counts when it carries a signature from a trusted issuer and has not expired - editing <span class="mono">id.json</span> by hand cannot raise your level.</p>
     </div>
 
     <div class="steel card" id="zkkyc-explain">
       <b>What is ZKKYC?</b>
-      <p><b>zer0ID</b> uses zero-knowledge KYC: prove uniqueness and a few attributes without handing over a biometric database or raw photos. Durable state is <b>nullifier-only</b> — opaque in vapurrDB. Trust ladder <b>L1–L4</b>; browse-earn needs <b>L4</b> ocular via <b>open-iris</b>. Builds on Worldcoin open-iris (MIT) and OpenAI technology where used — not official partnerships.</p>
+      <p><b>zer0ID</b> uses zero-knowledge KYC: prove uniqueness and a few attributes without handing over a biometric database or raw photos. Durable state is <b>nullifier-only</b> - opaque in vapurrDB. Trust ladder <b>L1-L4</b>; browse-earn needs <b>L4</b> ocular via <b>open-iris</b>. Builds on Worldcoin open-iris (MIT) and OpenAI technology where used - not official partnerships.</p>
     </div>
 
     <div class="steel card">
-      <b>The zer0ID ladder (L1–L4)</b>
-      <p style="margin-bottom:12px">Each rung proves one specific thing. Higher is not "more trusted" in general — it is a different claim. Order is <span class="mono">/kyc/phone</span> → <span class="mono">/kyc/scan</span> (<b>open-iris</b>).</p>
+      <b>The zer0ID ladder (L1-L4)</b>
+      <p style="margin-bottom:12px">Each rung proves one specific thing. Higher is not "more trusted" in general - it is a different claim. Order is <span class="mono">/kyc/phone</span> -> <span class="mono">/kyc/scan</span> (<b>open-iris</b>).</p>
       <ul class="ladder" id="ladder"></ul>
     </div>
 
     <div class="steel card">
-      <b>Level 4 — open-iris ocular (Full KYC)</b>
+      <b>Level 4 - open-iris ocular (Full KYC)</b>
 
       <div class="stage on" id="stage-idle">
-        <p>The only rung that proves <strong>one account per person</strong>. <strong>Level 4 is required to claim browse-earn</strong> tokens. Capture is phone-first — an iPhone front camera running <b>open-iris</b>, not Orb hardware.</p>
+        <p>The only rung that proves <strong>one account per person</strong>. <strong>Level 4 is required to claim browse-earn</strong> tokens. Capture is phone-first - an iPhone front camera running <b>open-iris</b>, not Orb hardware.</p>
         <div class="row"><button class="btn" id="go-consent" type="button">Start open-iris L4 scan</button></div>
       </div>
 
       <div class="stage" id="stage-phone">
-        <p><strong>Phone verify comes first.</strong> Level 3 is the prerequisite for the ocular scan — the ladder runs <span class="mono">/kyc/phone</span> then <span class="mono">/kyc/scan</span>.</p>
-        <p class="note">Heads up: when carrier SMS isn't wired, the phone step shows an on-screen mock code and <strong>no text is sent</strong>. A mock code proves you can read your own screen, not that you control a phone number — so treat a level 3 earned that way as a placeholder, not possession.</p>
+        <p><strong>Phone verify comes first.</strong> Level 3 is the prerequisite for the ocular scan - the ladder runs <span class="mono">/kyc/phone</span> then <span class="mono">/kyc/scan</span>.</p>
+        <p class="note">Heads up: when carrier SMS isn't wired, the phone step shows an on-screen mock code and <strong>no text is sent</strong>. A mock code proves you can read your own screen, not that you control a phone number - so treat a level 3 earned that way as a placeholder, not possession.</p>
         <div class="row">
           <button class="btn" id="go-phone" type="button">Open phone verify</button>
           <button class="btn-ghost" id="skip-phone" type="button">Continue to scan anyway</button>
@@ -157,9 +157,9 @@
             </ul>
           </div>
         </div>
-        <p class="note">The right-hand column happens on Secret Lab servers. vapurr cannot verify it from here — it is their published commitment, not something this app can prove to you. What vapurr can prove is the left column.</p>
+        <p class="note">The right-hand column happens on Secret Lab servers. vapurr cannot verify it from here - it is their published commitment, not something this app can prove to you. What vapurr can prove is the left column.</p>
         <div class="row">
-          <button class="btn" id="go-handoff" type="button">I understand — continue</button>
+          <button class="btn" id="go-handoff" type="button">I understand - continue</button>
           <button class="btn-ghost" id="cancel-consent" type="button">Back</button>
         </div>
       </div>
@@ -172,7 +172,7 @@
             <ul class="steps">
               <li>Open the camera on your iPhone and point it at this code.</li>
               <li>Align one eye inside the ring and hold steady.</li>
-              <li>Come back here — this page picks up the new level on its own.</li>
+              <li>Come back here - this page picks up the new level on its own.</li>
             </ul>
             <div class="mono" id="scan-url" style="font-size:11px;color:var(--color-muted);word-break:break-all"></div>
           </div>
@@ -194,7 +194,7 @@
       </div>
 
       <div class="stage" id="stage-done">
-        <p><strong>Unique human proven.</strong> Browse-earn claims are unlocked on this device. ZKKYC durable state is nullifier-only in vapurrDB — one-way, so it never maps back to your face.</p>
+        <p><strong>Unique human proven.</strong> Browse-earn claims are unlocked on this device. ZKKYC durable state is nullifier-only in vapurrDB - one-way, so it never maps back to your face.</p>
         <div class="row"><button class="btn-ghost" id="to-earn-2" type="button">Go to Earn</button></div>
       </div>
 
@@ -205,7 +205,7 @@
 
     <div class="steel card">
       <b>Builds on</b>
-      <p>Worldcoin <b>open-iris</b> (MIT) for ocular uniqueness. OpenAI technology where the Secret Lab / vapurr tooling integrates it. Not official partnerships — we build on open / available tech.</p>
+      <p>Worldcoin <b>open-iris</b> (MIT) for ocular uniqueness. OpenAI technology where the Secret Lab / vapurr tooling integrates it. Not official partnerships - we build on open / available tech.</p>
     </div>
 
     <ul class="facts">
@@ -216,7 +216,7 @@
     </ul>
 
     <div class="row">
-      <button class="btn-ghost" id="kyc-basic" type="button">Basic KYC (levels 0–3)</button>
+      <button class="btn-ghost" id="kyc-basic" type="button">Basic KYC (levels 0-3)</button>
       <button class="btn-ghost" id="to-shield" type="button">Open Shield</button>
       <button class="btn-ghost" id="to-earn" type="button">Earn</button>
     </div>
@@ -254,7 +254,7 @@
         body.className = "rung-body";
         var nm = document.createElement("div");
         nm.className = "rung-name";
-        nm.textContent = L.level + " · " + L.name + (L.biometric ? " · biometric" : "");
+        nm.textContent = L.level + " | " + L.name + (L.biometric ? " | biometric" : "");
         var pr = document.createElement("div");
         pr.className = "rung-proves";
         pr.textContent = L.proves;
@@ -265,7 +265,7 @@
         if (L.level === 3) {
           var cv = document.createElement("div");
           cv.className = "rung-caveat";
-          cv.textContent = "If carrier SMS isn't wired, this shows an on-screen mock code — no text is sent.";
+          cv.textContent = "If carrier SMS isn't wired, this shows an on-screen mock code - no text is sent.";
           body.appendChild(cv);
         }
         li.appendChild(dot); li.appendChild(body);
@@ -276,7 +276,7 @@
     function apply(s) {
       verified = !!s.verified;
       level = s.trustLevel || 0;
-      $("state").textContent = verified ? ("Proven · level " + level) : "Not proven";
+      $("state").textContent = verified ? ("Proven | level " + level) : "Not proven";
       var chip = $("chip-level");
       chip.textContent = "level " + level;
       chip.className = "chip " + (verified ? "ok" : "warn");
@@ -334,7 +334,7 @@
           stopPolling();
           $("wait-copy").textContent = "Still not proven.";
           $("wait-note").textContent =
-            "Nothing arrived. If the scan failed or was abandoned, start it again — nothing was claimed.";
+            "Nothing arrived. If the scan failed or was abandoned, start it again - nothing was claimed.";
           return;
         }
         load().then(function (settled) { if (settled) stopPolling(); });
