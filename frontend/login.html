@@ -339,11 +339,14 @@
       try { sessionStorage.removeItem(KYC_STORE); } catch (e) {}
     }
     function openKycTab(url) {
-      // Single webview: new tab keeps login in the strip; state restored via sessionStorage.
-      vapurr.send({ cmd: "newtab" });
-      setTimeout(function () {
-        vapurr.send({ cmd: "open", url: url });
-      }, 40);
+      // Persist before navigate; single newtab+url IPC (old newtab-then-open raced).
+      try { saveKyc(); } catch (e) {}
+      var u = String(url || "").trim();
+      if (!u) { setKycErr("Missing KYC URL"); return false; }
+      var ok = false;
+      try { ok = !!(window.vapurr && vapurr.send({ cmd: "newtab", url: u })); } catch (e) { ok = false; }
+      if (!ok) { setKycErr("Could not open KYC tab — try again from this desk"); return false; }
+      return true;
     }
     function setKycErr(msg) {
       var e = document.getElementById("kyc-err");
@@ -585,14 +588,32 @@
       if (busy) return;
       busy = true;
       setKycErr("");
-      this.textContent = "Detecting…";
-      vapurr.send({ cmd: "kyc-attest-jurisdiction" });
+      var btn = this;
+      btn.textContent = "Detecting…";
+      var sent = false;
+      try { sent = !!(window.vapurr && vapurr.send({ cmd: "kyc-attest-jurisdiction" })); } catch (e) { sent = false; }
+      if (!sent) {
+        busy = false;
+        btn.textContent = "Detect country & continue";
+        setKycErr("Could not reach desk KYC — reopen Sign in and retry Country");
+        return;
+      }
+      setTimeout(function () {
+        if (!busy || kycStep !== 2) return;
+        busy = false;
+        btn.textContent = "Detect country & continue";
+        setKycErr("Country detect timed out — check network and tap Detect again");
+      }, 28000);
     };
     document.getElementById("kyc-phone-open").onclick = function () {
-      openKycTab("https://thesecretlab.app/kyc/phone");
+      setKycErr("");
       kycPhoneOpened = true;
       saveKyc();
       paintKycStep();
+      var opened = openKycTab("https://thesecretlab.app/kyc/phone");
+      if (!opened) {
+        setKycErr("Phone tab did not open — visit thesecretlab.app/kyc/phone then tap Done");
+      }
     };
     document.getElementById("kyc-phone-done").onclick = function () {
       if (!kycPhoneOpened) return;
@@ -603,10 +624,14 @@
       layout();
     };
     document.getElementById("kyc-iris-open").onclick = function () {
-      openKycTab("https://thesecretlab.app/kyc/scan");
+      setKycErr("");
       kycIrisOpened = true;
       saveKyc();
       paintKycStep();
+      var opened = openKycTab("https://thesecretlab.app/kyc/scan");
+      if (!opened) {
+        setKycErr("Iris tab did not open — visit thesecretlab.app/kyc/scan then tap Done");
+      }
     };
     document.getElementById("kyc-iris-done").onclick = function () {
       if (!kycIrisOpened) return;
@@ -620,6 +645,23 @@
     }
     document.getElementById("kyc-phone-later").onclick = skipKycLater;
     document.getElementById("kyc-iris-later").onclick = skipKycLater;
+    (function wireKycLadder() {
+      var ladder = document.getElementById("kyc-ladder");
+      if (!ladder) return;
+      ladder.addEventListener("click", function (ev) {
+        var bit = ev.target && ev.target.closest ? ev.target.closest("span[data-step]") : null;
+        if (!bit) return;
+        var n = parseInt(bit.getAttribute("data-step"), 10) || 0;
+        if (n !== kycStep) {
+          setKycErr(n < kycStep ? "That step is done — continue below." : "Finish the current step first.");
+          return;
+        }
+        setKycErr("");
+        var id = ({ 1: "kyc-age-go", 2: "kyc-geo-go", 3: "kyc-phone-open", 4: "kyc-iris-open" })[n];
+        var btn = id && document.getElementById(id);
+        if (btn && !btn.disabled) btn.click();
+      });
+    })();
     document.getElementById("restore").onclick = function () {
       if (busy) return;
       var secret = document.getElementById("seed").value;

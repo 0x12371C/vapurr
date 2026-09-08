@@ -11,7 +11,9 @@ pub(crate) enum Msg {
     Url(String),
     Title(String),
     Chain(String),
-    NewTab,
+    NewTab {
+        url: Option<String>,
+    },
     CloseTab(Option<u64>),
     SelectTab(u64),
     SelectTabAt(u64),
@@ -179,7 +181,7 @@ pub(crate) fn authorized_ipc(source: &str, body: &str) -> Option<Msg> {
         // Page keyboard shortcuts and cosmetic selectors carry no private authority.
         return matches!(&msg, Msg::ShieldDom { .. } | Msg::Back | Msg::Forward | Msg::Reload |
             Msg::FocusUrl | Msg::ShowFind | Msg::ZoomIn | Msg::ZoomOut | Msg::ZoomReset |
-            Msg::NewTab | Msg::CloseTab(_) | Msg::SelectTabAt(_) | Msg::CycleTab { .. })
+            Msg::NewTab { .. } | Msg::CloseTab(_) | Msg::SelectTabAt(_) | Msg::CycleTab { .. })
             .then_some(msg);
     }
     let path = crate::security::chrome_path(source)?;
@@ -263,7 +265,9 @@ pub(crate) fn parse_ipc(body: &str) -> Option<Msg> {
         "forward" => Some(Msg::Forward),
         "reload" => Some(Msg::Reload),
         "pane" => Some(Msg::Pane(v.get("id")?.as_str()?.to_string())),
-        "newtab" => Some(Msg::NewTab),
+        "newtab" => Some(Msg::NewTab {
+            url: v.get("url").and_then(|x| x.as_str()).map(|s| s.to_string()),
+        }),
         "closetab" => Some(Msg::CloseTab(v.get("id").and_then(|x| x.as_u64()))),
         "selecttab" => Some(Msg::SelectTab(v.get("id")?.as_u64()?)),
         "selecttabi" => Some(Msg::SelectTabAt(v.get("i")?.as_u64()?)),

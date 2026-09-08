@@ -27,6 +27,26 @@ if missing:
     print('FAIL login.html missing:', missing)
     sys.exit(1)
 
+# Country / Phone must be live handlers (not polish-only chrome).
+need_handlers = [
+    'kyc-attest-jurisdiction',
+    'id="kyc-geo-go"',
+    'kyc-geo-go").onclick',
+    'kyc-phone-open").onclick',
+    'thesecretlab.app/kyc/phone',
+    'cmd: "newtab"',
+]
+missing = [n for n in need_handlers if n not in login]
+if missing:
+    print('FAIL login.html KYC handlers missing:', missing)
+    sys.exit(1)
+if 'vapurr.send({ cmd: "open", url: url })' in login and 'cmd: "newtab", url:' not in login:
+    print('FAIL openKycTab still races newtab then delayed open (dead Phone click)')
+    sys.exit(1)
+if 'function openKycTab' in login and 'cmd: "newtab", url:' not in login:
+    print('FAIL openKycTab must send newtab with url in one IPC')
+    sys.exit(1)
+
 need_earn = [
     'id="go-kyc"',
     'Complete Level 4 KYC',
@@ -63,4 +83,4 @@ if 'kyc_proven' in earn and 'Level 4 proven' not in earn:
     print('FAIL earn.html kyc_proven branch missing Level 4 proven copy')
     sys.exit(1)
 
-print('PASS ODWS v0.1 + Level 4 KYC steer (login/earn/id + ODWS.md)')
+print('PASS ODWS v0.1 + Level 4 KYC steer (login/earn/id + ODWS.md) + Country/Phone handlers')

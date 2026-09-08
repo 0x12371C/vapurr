@@ -769,8 +769,11 @@ fn main() {
                 let _ = page.borrow().load_url(&url);
                 paint_chrome();
             }
-            Event::UserEvent(Msg::NewTab) => {
-                let url = home_url(&desk.borrow());
+            Event::UserEvent(Msg::NewTab { url }) => {
+                let url = match url.filter(|u| !u.trim().is_empty()) {
+                    Some(u) => resolve_nav(&u),
+                    None => home_url(&desk.borrow()),
+                };
                 let url = tabs.borrow_mut().new_tab(url);
                 tabs.borrow_mut().suppress = true;
                 set_page_url(&page_url, &url);
