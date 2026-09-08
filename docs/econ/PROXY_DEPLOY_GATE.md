@@ -126,3 +126,7 @@ Client stub on disk (Euler/loop vault UUPS impl; initialize/owner/upgrade walls;
 
 Client stub on disk ($PUSD outbid listings UUPS impl; initialize/owner/upgrade + bid/listings walls; ops; no user IPC encode yet; `TESTNET_OUTBID` still empty until Relic deploy): `crates/vapurr-econ/src/outbid_upgradeable_impl.abi.json` + `OUTBID_UPGRADEABLE_IMPL_ABI` in lib.rs. Prove stub: `scripts/verify-outbid-upgradeable-abi.py`.
 
+### PnsRegistryUpgradeable ABI stub (2026-09-08 ~15:20)
+
+Client stub on disk (.hood Purr Name Service UUPS impl; initialize/upgrade + register/owner/pnsVersion walls; ops/zmail; no user IPC encode yet; `TESTNET_PNS` proxy book still Relic-gated): `crates/vapurr-econ/src/pns_upgradeable_impl.abi.json` + `PNS_UPGRADEABLE_IMPL_ABI` in lib.rs (sourced from vapurr-zmail compile artifact). Prove stub: `scripts/verify-pns-upgradeable-abi.py`.
+

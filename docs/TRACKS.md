@@ -1,3 +1,4 @@
+- 2026-09-08 ~15:20 ET: Programs/channel/DisplayVersion **1.1.23** match (rev 3908d54, sha 76c00a5edc5c); TSL still noted in OVERNIGHT; PnsRegistryUpgradeable ABI stub + PNS needle; signing/TLS still P0.
 - 2026-09-08 ~14:47 ET: Programs/channel/DisplayVersion **1.1.23** match (rev 3908d54, sha 76c00a5edc5c); TSL still 1.1.13; OutbidUpgradeable ABI stub + OUTBID needle; signing/TLS still P0.\nwindows x86_64-pc-windows-gnu
 built 2026-09-08T01:12:43.8889282Z
 rev 3908d54
@@ -58,3 +59,4 @@ Never pack `.mp4` / `.webm`. Host at `https://thesecretlab.app/vapurr/…`. Embe
 - [overnight 13:15] LoopUpgradeable ABI stub wired in vapurr-econ (`LOOP_UPGRADEABLE_IMPL_ABI`); verify-loop-upgradeable-abi.py PASS. Still open: Oliver gV/wgV collateral live; SignPath / TLS / TSL promote; BondMarket/CD/remit IPC after CA.
 
 - [overnight 14:47] OutbidUpgradeable ABI stub wired in vapurr-econ (`OUTBID_UPGRADEABLE_IMPL_ABI`); verify-outbid-upgradeable-abi.py PASS. Still open: Oliver gV/wgV collateral live; SignPath / TLS / TSL promote; BondMarket/CD/remit IPC after CA.
+- [overnight 15:20] PnsRegistryUpgradeable ABI stub wired in vapurr-econ (`PNS_UPGRADEABLE_IMPL_ABI`); verify-pns-upgradeable-abi.py PASS. Still open: Oliver gV/wgV collateral live; SignPath / TLS / TSL promote; BondMarket/CD/remit IPC after CA.

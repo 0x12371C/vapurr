@@ -1,4 +1,14 @@
 
+## 2026-09-08 ~15:20 ET - hourly watch
+
+- **justin:** online
+- **Programs:** VERSION **vapurr 1.1.23** (sha 76c00a5edc5c..., rev 3908d54) at Local\Programs\vapurr; Uninstall DisplayVersion **1.1.23**; **NotSigned** (signing still P0 ship blocker; Relic: unsigned OK for build/test)
+- **dist/channel:** AppData channel **1.1.23** (sha 76c00a5edc5c..., rev 3908d54) - Programs **SKEW vs Programs vapurr 1.1.23** channel; Cargo **1.1.23**; **TSL thesecretlab.app/vapurr/channel **200** at **1.1.13** (rev e590ef3, sha 324286bf6f68...)**; **www.thesecretlab.app TLS expired**
+- **workers:** KFX **idle (grok 21016)**; PayId **idle (grok 9228)**; Bind **idle (PID gone)** - no respawn. Extra grok windows present (House+Pilot keep; Charts/Psy/Tube park) - not watch-spawned. No new organizer procs.
+- **branch:** pack/d59912d (+ this slice)
+- **build slice:** PnsRegistryUpgradeable ABI stub wire - `PNS_UPGRADEABLE_IMPL_ABI` from zmail compile artifact into `crates/vapurr-econ/src/pns_upgradeable_impl.abi.json` + lib.rs include; `scripts/verify-pns-upgradeable-abi.py` PASS; PROXY_DEPLOY_GATE needle. Still open P1: Oliver gV/wgV collateral live (Relic), live BondMarket/CD/remit IPC after CA fill, House Uni v4 e2e / remittance live CAs, SignPath, renew www TLS, promote TSL after signed pack, proxy cutover for bare Lithe/V/PUSD.
+
+
 ## 2026-09-05 13:12 ET — hourly watch
 
 - **justin:** online

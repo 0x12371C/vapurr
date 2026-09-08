@@ -88,6 +88,8 @@ const KETLIST_UPGRADEABLE_IMPL_ABI: &str = include_str!("ketlist_upgradeable_imp
 const LOOP_UPGRADEABLE_IMPL_ABI: &str = include_str!("loop_upgradeable_impl.abi.json");
 // OutbidUpgradeable ABI stub ($PUSD outbid listings UUPS impl; ops; no user IPC encode yet).
 const OUTBID_UPGRADEABLE_IMPL_ABI: &str = include_str!("outbid_upgradeable_impl.abi.json");
+// PnsRegistryUpgradeable ABI stub (.hood PNS UUPS impl; ops/zmail; no user IPC encode yet).
+const PNS_UPGRADEABLE_IMPL_ABI: &str = include_str!("pns_upgradeable_impl.abi.json");
 
 #[derive(Debug, thiserror::Error)]
 pub enum EconError {
