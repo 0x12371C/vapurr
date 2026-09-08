@@ -38,6 +38,14 @@ pub fn serve(
     ) {
         return resp;
     }
+    // zer0ID state for `vapurr://id`. Read-only: reports what verifies against a
+    // trusted issuer and, separately, what the on-disk file merely claims.
+    if rel.split('?').next() == Some("id/api/status") {
+        return json_body(vapurr_id::status_json(
+            &crate::desk::Desk::profile_dir(),
+            &vapurr_id::trusted_issuers_from_env(),
+        ));
+    }
     // Custom-protocol query strings vanish. Keep a path-stuffed `?…` for Scan.
     if let Some(rest) = rel.strip_prefix("wallet/api/transaction/") {
         if let Some((chain, hash)) = rest.split_once('/') {

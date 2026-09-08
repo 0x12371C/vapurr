@@ -316,6 +316,85 @@ pub fn load_verified(profile_dir: &Path, trusted_issuers: &[String]) -> Option<V
     verifier.verify_attestation(&att).ok()
 }
 
+/// The zer0ID ladder, as actually implemented by the issuer. Kept here rather
+/// than in the chrome so the surface can never invent a level that the backend
+/// does not issue. `docs/zeroid/RHC.md` is the source of truth for what each
+/// level really proves — keep the two in step.
+pub const LEVELS: [(u8, &str, &str, &str); 5] = [
+    (0, "Wallet", "Controls this device key", "secp256k1 challenge signature"),
+    (1, "Age", "Self-attested 18+", "Unverified self-declaration"),
+    (2, "Region", "Not in an embargoed jurisdiction", "IP geolocation, country-level only"),
+    (3, "Phone", "Controls a phone number", "SMS one-time code — falls back to an on-screen mock code when carrier SMS is unwired, which proves nothing about the number"),
+    (4, "Unique human", "One account per person", "Ocular scan; open-iris template, kept as a nullifier"),
+];
+
+/// Device zer0ID state for the `vapurr://id` surface.
+///
+/// Reports `verified` strictly from [`load_verified`] — a signature from a
+/// trusted issuer, unexpired. `claimedLevel` is whatever the on-disk file says
+/// and is reported separately and never merged into `trustLevel`, so a
+/// hand-edited `id.json` shows up as a claim that does not verify instead of
+/// silently reading as Proven.
+pub fn status_json(profile_dir: &Path, trusted_issuers: &[String]) -> serde_json::Value {
+    use serde_json::json;
+
+    let raw = std::fs::read_to_string(profile_dir.join(ID_FILE)).ok();
+    let parsed: Option<Attestation> = raw.as_deref().and_then(|r| serde_json::from_str(r).ok());
+    let verified = load_verified(profile_dir, trusted_issuers);
+
+    let claimed_level = parsed.as_ref().map(|a| a.trust_level).unwrap_or(0);
+    let level = if verified.is_some() { claimed_level } else { 0 };
+
+    let reason = if trusted_issuers.is_empty() {
+        "issuer not configured on this device"
+    } else if raw.is_none() {
+        "no attestation on this device"
+    } else if parsed.is_none() {
+        "attestation file is unreadable"
+    } else if verified.is_none() {
+        "attestation does not verify against a trusted issuer"
+    } else {
+        ""
+    };
+
+    let claims: Vec<String> = parsed
+        .as_ref()
+        .map(|a| a.claims.iter().map(|c| c.canonical()).collect())
+        .unwrap_or_default();
+    let expires_at = parsed.as_ref().and_then(|a| a.expires_at).map(|t| t.timestamp());
+
+    let levels: Vec<serde_json::Value> = LEVELS
+        .iter()
+        .map(|(n, name, proves, method)| {
+            json!({
+                "level": n,
+                "name": name,
+                "proves": proves,
+                "method": method,
+                "done": verified.is_some() && *n <= level,
+                "biometric": *n == 4,
+            })
+        })
+        .collect();
+
+    json!({
+        "verified": verified.is_some(),
+        "trustLevel": level,
+        "claimedLevel": claimed_level,
+        "handle": verified.as_ref().map(|v| v.handle.clone()).unwrap_or_default(),
+        "claims": claims,
+        "expiresAt": expires_at,
+        "hasNullifier": parsed.as_ref().map(|a| !a.nullifier.is_empty()).unwrap_or(false),
+        "issuerWired": !trusted_issuers.is_empty(),
+        "reason": reason,
+        "kycUrl": KYC_URL,
+        // Ladder order is phone → scan; level 4 will not issue without 3.
+        "phoneUrl": format!("{KYC_URL}/phone"),
+        "scanUrl": format!("{KYC_URL}/scan"),
+        "levels": levels,
+    })
+}
+
 fn normalize_handle(h: &str) -> Result<String, IdError> {
     let h = h.trim().trim_start_matches('@').to_ascii_lowercase();
     if h.len() < 3 || h.len() > 24 || !h.chars().all(|c| c.is_ascii_alphanumeric() || c == '_') {
