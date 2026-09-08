@@ -114,4 +114,7 @@ Client stub on disk (minimal proxy construct + fallback/receive for cutover of b
 
 Client stub on disk (UUPS Lithe/V/$PUSD market impl for proxy cutover; no user IPC encode yet): `crates/vapurr-econ/src/pusd_market_fed_upgradeable.abi.json` + `PUSD_MARKET_FED_UPGRADEABLE_ABI` in lib.rs. Gate still: never record bare impl as live CA - prove with `scripts/verify-proxy.ps1` / `scripts/verify-proxy-book.py`. Prove stub: `scripts/verify-pusd-market-fed-abi.py`.
 
+### KetlistUpgradeable ABI stub (2026-09-08 ~09:01)
+
+Client stub on disk ($PUSD pay-to-list UUPS impl; list/row/topPaid/stats walls; ops; no user IPC encode yet; `TESTNET_KETLIST` still empty until Relic deploy): `crates/vapurr-econ/src/ketlist_upgradeable_impl.abi.json` + `KETLIST_UPGRADEABLE_IMPL_ABI` in lib.rs. Prove stub: `scripts/verify-ketlist-upgradeable-abi.py`.
 
