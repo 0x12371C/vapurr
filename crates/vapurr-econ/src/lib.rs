@@ -80,6 +80,8 @@ const PUSD_MARKET_FED_UPGRADEABLE_ABI: &str = include_str!("pusd_market_fed_upgr
 const GENESIS_ALLOCATION_ABI: &str = include_str!("genesis_allocation.abi.json");
 // HouseLpUpgradeable ABI stub (House Uni v4 LP proxy impl; ops/adopt/seed; no user IPC encode yet).
 const HOUSE_LP_UPGRADEABLE_IMPL_ABI: &str = include_str!("house_lp_upgradeable_impl.abi.json");
+// HouseSwapUpgradeable ABI stub (House Uni v4 swap proxy impl; ops; no user IPC encode yet).
+const HOUSE_SWAP_UPGRADEABLE_IMPL_ABI: &str = include_str!("house_swap_upgradeable_impl.abi.json");
 
 #[derive(Debug, thiserror::Error)]
 pub enum EconError {

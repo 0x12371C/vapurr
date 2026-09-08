@@ -45,3 +45,5 @@ Never pack `.mp4` / `.webm`. Host at `https://thesecretlab.app/vapurr/…`. Embe
 - 2026-09-07 10:11 ET: Bond/CD/Savings IPC ABI stubs on disk (verify-bond-cd-abi.py PASS); open paths still Need*-gated; TSL channel TLS FAIL (was 1.1.13 skew); signing/TLS still P0.
 
 - 2026-09-07 ~11:27 ET: version-board watch mode — Programs 1.1.19 vs channel 1.1.10 SKEW honest; signing/TLS still P0.
+
+- [overnight 08:01] HouseSwapUpgradeable ABI stub wired in vapurr-econ (`HOUSE_SWAP_UPGRADEABLE_IMPL_ABI`); verify-house-swap-upgradeable-abi.py PASS. Still open: ketlist/loop/outbid upgradeable ABI wires; Oliver gV/wgV collateral live; SignPath / TLS / TSL promote; BondMarket/CD/remit IPC after CA.

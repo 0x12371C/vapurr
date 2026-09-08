@@ -136,3 +136,7 @@ Short ops checklist: [WGV_HOUSE.md](WGV_HOUSE.md) (wrap path, green/open, do-not
 
 Client stub on disk (House Uni v4 LP proxy impl — adopt/seed/snapshot/upgrade walls; ops; no user IPC encode yet): `crates/vapurr-econ/src/house_lp_upgradeable_impl.abi.json` + `HOUSE_LP_UPGRADEABLE_IMPL_ABI` in lib.rs. Prove stub: `scripts/verify-house-lp-upgradeable-abi.py`.
 
+### HouseSwapUpgradeable ABI stub (2026-09-08 ~08:01)
+
+Client stub on disk (House Uni v4 swapExact / fee walls; ops; no user IPC encode yet): `crates/vapurr-econ/src/house_swap_upgradeable_impl.abi.json` + `HOUSE_SWAP_UPGRADEABLE_IMPL_ABI` in lib.rs. Prove stub: `scripts/verify-house-swap-upgradeable-abi.py`.
+
