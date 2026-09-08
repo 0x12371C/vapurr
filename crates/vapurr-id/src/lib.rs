@@ -8,6 +8,7 @@
 //! about (one human, many wallets, many payouts). It's closed now: no
 //! signature from a trusted issuer, no VerifiedAccount, full stop.
 
+pub mod recovery;
 mod sig;
 
 use chrono::{DateTime, Utc};
