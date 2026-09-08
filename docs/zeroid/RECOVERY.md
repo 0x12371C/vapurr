@@ -99,15 +99,47 @@ for the *attestation*: prove "a unique human passed KYC" without revealing who
 — which is what the nullifier already does. Calling recovery "zk" would be a
 misnomer; describing the attestation that way is fair.
 
+## Envelope format
+
+`seal_envelope` splits the secret and seals each share to a factor:
+
+- **KDF** — HKDF-SHA256, domain-separated, with the factor label as `info`, so a
+  share sealed for one slot cannot be opened as another. A fast KDF is correct
+  *only* because every input is already high-entropy (generated backup code,
+  random escrow key, device key). It would be wrong for a password or a 6-digit
+  OTP.
+- **AEAD** — ChaCha20-Poly1305, fresh salt and nonce per share, with the
+  x-coordinate bound as AAD so a share cannot be replayed into another slot.
+- **Verifier** — `SHA-256(domain || secret)`. Shamir is *not* authenticated:
+  combining wrong-but-well-formed shares returns wrong-but-well-formed output.
+  Without the commitment, a bad recovery hands back a plausible seed for an
+  empty wallet. Safe to store, since it commits to 256-bit random material.
+
+A stolen envelope is not a stolen wallet: it is ciphertext plus a commitment.
+
+**Backup codes** are 160 bits from the OS CSPRNG in Crockford base32 (no
+I/L/O/U), grouped in fours, with normalization for the characters people
+reliably mistype.
+
 ## Built vs not built
 
-- **Built:** Shamir split/combine over GF(2^8), threshold enforcement,
-  policy model, factor capability reporting. Algorithm independently validated
-  by executing an equivalent transcription: all 255 inverses round-trip, every
-  3-of-5 subset reconstructs, below-threshold does not, 32-byte seeds recover
-  from any qualifying pair.
-- **Not built:** sealing shares to factors, the fuzzy extractor, server-side
-  share custody, the recovery UI, and re-enrolment/rotation.
+- **Built:** Shamir split/combine over GF(2^8), threshold enforcement, policy
+  model, factor capability reporting, share sealing/opening, envelope
+  serialization, backup-code generation and normalization.
+- **Not built:** the fuzzy extractor (blocked on the helper-data decision),
+  server-side escrow for the phone share, wiring to the wallet seed, the
+  recovery UI, and re-enrolment/rotation.
+
+**Validation.** Tests type-check but could not be executed on this machine —
+running them needs codegen and there is no GNU assembler here (see
+`docs/STATUS.md`). The scheme was therefore validated by executing an
+equivalent transcription end to end: all 255 field inverses round-trip, every
+3-of-5 subset reconstructs while below-threshold does not, any 2 of 3 sealed
+factors recover the seed and pass the verifier, a wrong factor secret is
+rejected by the AEAD tag, a share spliced from a different envelope is caught
+by the verifier, and the envelope never contains the seed. Run
+`cargo test -p vapurr-id` on a box with mingw binutils to confirm the Rust
+itself.
 
 ## Open decisions
 
