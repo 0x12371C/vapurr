@@ -572,3 +572,12 @@ emittance_book_snap); empty CAs show NeedRemittance (no live remit enable). Prov
 - **branch:** pack/d59912d (+ this slice)
 - **build slice:** CanonicalLitheFactory ABI stub - extracted forge ABI into `crates/vapurr-econ/src/canonical_lithe_factory.abi.json` + `include_str!` in lib.rs (one-tx successor deploy ops; no user IPC encode). `scripts/verify-canonical-lithe-factory-abi.py` PASS; MINT_AUTHORITY.md needle. Still open P1: Oliver gV/wgV collateral wire (Relic), live BondMarket/CD/remittance IPC after CA fill, House Uni v4 e2e, SignPath, renew www TLS, promote TSL after signed pack, proxy cutover for bare Lithe/V/PUSD.
 
+## 2026-09-08 ~02:01 ET - hourly watch
+
+- **justin:** online
+- **Programs:** VERSION **1.1.23** (sha 76c00a5edc5c..., rev 3908d54) at Local\Programs\vapurr; Uninstall DisplayVersion **1.1.23**; **NotSigned** (signing still P0 ship blocker; Relic: unsigned OK for build/test)
+- **dist/channel:** AppData channel **1.1.23** (sha 76c00a5edc5c..., rev 3908d54) - Programs **matches** channel; Cargo **1.1.23**; **TSL** thesecretlab.app/vapurr/channel **200** at **1.1.13** (rev e590ef3, sha 324286bf6f68...); **www.thesecretlab.app TLS expired**
+- **workers:** KFX **idle** (grok 21016); PayId **idle** (grok 9228); Bind **idle** (PID gone) - no respawn. Extra grok windows present (House+Pilot keep; Charts/Psy/Tube park) - not watch-spawned. No new organizer procs.
+- **branch:** pack/d59912d (+ this slice)
+- **build slice:** LegacyVConverter ABI stub - extracted forge ABI into `crates/vapurr-econ/src/legacy_v_converter.abi.json` + `include_str!` in lib.rs (cutover inventory convert/fund; no user IPC encode). `scripts/verify-legacy-v-converter-abi.py` PASS; MINT_AUTHORITY.md needle. Still open P1: Oliver gV/wgV collateral wire (Relic), live BondMarket/CD/remittance IPC after CA fill, House Uni v4 e2e, SignPath, renew www TLS, promote TSL after signed pack, proxy cutover for bare Lithe/V/PUSD.
+

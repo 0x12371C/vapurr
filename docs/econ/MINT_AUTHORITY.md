@@ -71,6 +71,10 @@ Client stub on disk (ops cutover path: legacy PUSD redeem -> legacy V -> LegacyV
 
 Client stub on disk (ops one-tx successor deploy: canonical V + policy/gV + Lithe + converter + migrator; genesis mint locked; no factory mint of legacy on top): `crates/vapurr-econ/src/canonical_lithe_factory.abi.json` + `CANONICAL_LITHE_FACTORY_ABI` in lib.rs. No user IPC cmd yet - stub only until Relic-approved CutoverDeploy / live CAs. Prove: `scripts/verify-canonical-lithe-factory-abi.py`.
 
+### LegacyVConverter ABI stub (2026-09-08 ~02:01)
+
+Client stub on disk (cutover inventory: fund/convert legacy V into canonical V; no mint authority on converter): `crates/vapurr-econ/src/legacy_v_converter.abi.json` + `LEGACY_V_CONVERTER_ABI` in lib.rs. No user IPC cmd yet - stub only until Relic-approved CutoverDeploy / live CAs. Prove: `scripts/verify-legacy-v-converter-abi.py`.
+
 Gen-5 source is seigniorage Lithe + dual printers. Live 46630 stays gen-4 until Relic-approved CutoverDeploy.
 
 1. Factory deploy of canonical V + gV/policy + Lithe + converter + migrator + Oliver.
