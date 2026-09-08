@@ -1,3 +1,4 @@
+- 2026-09-08 ~13:15 ET: Programs/channel/DisplayVersion **1.1.23** match (rev 3908d54, sha 76c00a5edc5c); TSL still noted in OVERNIGHT; LoopUpgradeable ABI stub + LOOP needle; signing/TLS still P0.
 - 2026-09-08 ~06:01 ET: Programs/channel/DisplayVersion **1.1.23** match (rev 3908d54, sha 76c00a5edc5c); TSL still 1.1.13; GenesisAllocation ABI stub + GENESIS_ALLOCATION needle; signing/TLS still P0.
 - 2026-09-08 ~03:01 ET: Programs/channel/DisplayVersion **1.1.23** match (rev 3908d54, sha 76c00a5edc5c); TSL still 1.1.13; gVAPURR+wgVAPURR ABI stubs + WGV_HOUSE needle; signing/TLS still P0.
 - 2026-09-08 ~04:01 ET: Programs/channel/DisplayVersion **1.1.23** match (rev 3908d54, sha 76c00a5edc5c); TSL still 1.1.13; ERC1967Proxy ABI stub + PROXY_DEPLOY_GATE needle; signing/TLS still P0.
@@ -49,3 +50,5 @@ Never pack `.mp4` / `.webm`. Host at `https://thesecretlab.app/vapurr/…`. Embe
 - [overnight 08:01] HouseSwapUpgradeable ABI stub wired in vapurr-econ (`HOUSE_SWAP_UPGRADEABLE_IMPL_ABI`); verify-house-swap-upgradeable-abi.py PASS. Still open: ketlist/loop/outbid upgradeable ABI wires; Oliver gV/wgV collateral live; SignPath / TLS / TSL promote; BondMarket/CD/remit IPC after CA.
 
 - [overnight 09:01] KetlistUpgradeable ABI stub wired in vapurr-econ (`KETLIST_UPGRADEABLE_IMPL_ABI`); verify-ketlist-upgradeable-abi.py PASS. Still open: loop/outbid upgradeable ABI wires; Oliver gV/wgV collateral live; SignPath / TLS / TSL promote; BondMarket/CD/remit IPC after CA.
+
+- [overnight 13:15] LoopUpgradeable ABI stub wired in vapurr-econ (`LOOP_UPGRADEABLE_IMPL_ABI`); verify-loop-upgradeable-abi.py PASS. Still open: outbid upgradeable ABI wire; Oliver gV/wgV collateral live; SignPath / TLS / TSL promote; BondMarket/CD/remit IPC after CA.

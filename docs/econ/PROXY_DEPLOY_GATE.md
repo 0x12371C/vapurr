@@ -118,3 +118,7 @@ Client stub on disk (UUPS Lithe/V/$PUSD market impl for proxy cutover; no user I
 
 Client stub on disk ($PUSD pay-to-list UUPS impl; list/row/topPaid/stats walls; ops; no user IPC encode yet; `TESTNET_KETLIST` still empty until Relic deploy): `crates/vapurr-econ/src/ketlist_upgradeable_impl.abi.json` + `KETLIST_UPGRADEABLE_IMPL_ABI` in lib.rs. Prove stub: `scripts/verify-ketlist-upgradeable-abi.py`.
 
+### LoopUpgradeable ABI stub (2026-09-08 ~13:15)
+
+Client stub on disk (Euler/loop vault UUPS impl; initialize/owner/upgrade walls; ops; no user IPC encode yet; `TESTNET_LOOP` still empty until Relic deploy): `crates/vapurr-econ/src/loop_upgradeable_impl.abi.json` + `LOOP_UPGRADEABLE_IMPL_ABI` in lib.rs. Prove stub: `scripts/verify-loop-upgradeable-abi.py`.
+
