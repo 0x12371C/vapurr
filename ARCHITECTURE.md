@@ -108,7 +108,7 @@ Passthrough means vapurr is the frontend and policy layer. Settlement is the car
 Mail is a protocol inside the browser, not Gmail in a tab.
 
 - Address: `@name.hood`, `@handle`, or `@0x` (40-hex)
-- **PNS** (`vapurr://pns`): TLD `.hood` on testnet 46630. Registry `0x13C9fCaB70e8f7eED688A5548B0E3849B1ae0fC4`. ENS-shaped (namehash, `addr` / `setAddr`, reverse). Type `name.hood` in the bar.
+- **PNS** (`vapurr://pns`): TLD `.hood` on testnet 46630. Registry `0xC0E6f3217525afc80FE89f077504D9E5377a4bB5` (EIP-1967 proxy — `PnsRegistryUpgradeable`, old bare-impl `0x13C9fCaB…0fC4` retired). ENS-shaped (namehash, `addr` / `setAddr`, reverse). Type `name.hood` in the bar.
 - Seal: X25519 + ChaCha20-Poly1305
 - Body: IPFS-shaped CID of ciphertext (veildb-style: encrypt, then pin). Never on-chain.
 - Postage: **0.25¢** in `$PUSD` or `$VAPURR` as a **gasless voucher** (0 ETH from the sender). Hard cap **1¢** all-in if a relayer later posts a pointer.

@@ -2,6 +2,24 @@
   var MAP = {
     vapurr: "/mascot.png",
     v: "/mascot.png",
+    gv: "/mascot.png",
+    wgv: "/mascot.png",
+    gvapurr: "/mascot.png",
+    wgvapurr: "/mascot.png",
+    amzn: "/tokens/amzn.svg",
+    tsla: "/tokens/tsla.svg",
+    amd: "/tokens/amd.svg",
+    nflx: "/tokens/nflx.svg",
+    pltr: "/tokens/pltr.svg",
+    nvda: "/tokens/nvda.svg",
+    eeth: "/tokens/weth.svg",
+    envda: "/tokens/nvda.svg",
+    eamd: "/tokens/amd.svg",
+    eamzn: "/tokens/amzn.svg",
+    etsla: "/tokens/tsla.svg",
+    enflx: "/tokens/nflx.svg",
+    epltr: "/tokens/pltr.svg",
+    spusd: "/tokens/pusd.svg",
     eth: "/tokens/eth.svg",
     weth: "/tokens/weth.svg",
     usdg: "/tokens/usdg.png",
@@ -27,6 +45,11 @@
       var img = document.createElement("img");
       img.src = url;
       img.alt = "";
+      if (/^e?(amzn|tsla|amd|nflx|pltr|nvda)$/i.test(String(id || symbol))) {
+        img.style.background = "#fff";
+        img.style.padding = "4px";
+        img.style.borderRadius = "50%";
+      }
       wrap.appendChild(img);
     } else {
       wrap.textContent = String(symbol || "?").slice(0, 2);

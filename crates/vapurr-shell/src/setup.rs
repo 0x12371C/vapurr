@@ -66,7 +66,11 @@ pub fn wants_setup(args: &[String]) -> bool {
 
 pub fn is_setup_name(stem: &str) -> bool {
     let s = stem.trim().to_ascii_lowercase();
-    s == "vapurr-setup" || s == "install vapurr" || s.starts_with("install ")
+    // Windows duplicate downloads become `vapurr-setup (1)` ? still the installer.
+    s == "vapurr-setup"
+        || s.starts_with("vapurr-setup ")
+        || s == "install vapurr"
+        || s.starts_with("install ")
 }
 
 pub fn install_dir() -> PathBuf {
@@ -286,6 +290,54 @@ fn reg_set_dword(
     let _ = unsafe { RegSetValueExW(key, name, 0, REG_DWORD, Some(&val.to_le_bytes())) };
 }
 
+
+/// Read a channel/pack VERSION.txt stamp (`vapurr 1.2.3` on the first non-empty line).
+pub fn parse_version_stamp(text: &str) -> Option<String> {
+    for line in text.lines() {
+        let line = line.trim();
+        if line.is_empty() {
+            continue;
+        }
+        let rest = line.strip_prefix("vapurr ").unwrap_or(line);
+        let ver = rest.split_whitespace().next().unwrap_or("").trim();
+        if ver.is_empty() {
+            continue;
+        }
+        if ver.chars().next().is_some_and(|c| c.is_ascii_digit()) {
+            return Some(ver.to_string());
+        }
+    }
+    None
+}
+
+/// Prefer sibling VERSION.txt / manifest.json over Cargo package version so PatchApply stays honest.
+pub fn resolve_display_version(dir: &Path) -> String {
+    let txt = dir.join("VERSION.txt");
+    if let Ok(s) = std::fs::read_to_string(&txt) {
+        if let Some(v) = parse_version_stamp(&s) {
+            return v;
+        }
+    }
+    let man = dir.join("manifest.json");
+    if let Ok(s) = std::fs::read_to_string(&man) {
+        if let Ok(v) = serde_json::from_str::<serde_json::Value>(&s) {
+            if let Some(ver) = v.get("version").and_then(|x| x.as_str()) {
+                if !ver.is_empty() {
+                    return ver.to_string();
+                }
+            }
+        }
+    }
+    SETUP_VER.to_string()
+}
+
+/// Refresh HKCU Uninstall DisplayVersion after a channel patch (or operator repair).
+pub fn refresh_uninstall_key(exe: &Path) {
+    if let Some(dir) = exe.parent() {
+        write_uninstall_key(exe, dir);
+    }
+}
+
 fn write_uninstall_key(exe: &Path, dir: &Path) {
     use windows::core::w;
     use windows::Win32::System::Registry::{
@@ -319,7 +371,8 @@ fn write_uninstall_key(exe: &Path, dir: &Path) {
     let st = unsafe { GetLocalTime() };
     let date = format!("{:04}{:02}{:02}", st.wYear, st.wMonth, st.wDay);
     reg_set_sz(hkey, w!("DisplayName"), "vapurr");
-    reg_set_sz(hkey, w!("DisplayVersion"), SETUP_VER);
+    let display_ver = resolve_display_version(dir);
+    reg_set_sz(hkey, w!("DisplayVersion"), &display_ver);
     reg_set_sz(hkey, w!("Publisher"), "vapurr");
     reg_set_sz(hkey, w!("DisplayIcon"), &icon);
     reg_set_sz(hkey, w!("InstallLocation"), &dir.display().to_string());
@@ -800,6 +853,8 @@ mod tests {
     fn setup_names() {
         assert!(is_setup_name("Install vapurr"));
         assert!(is_setup_name("vapurr-setup"));
+        assert!(is_setup_name("vapurr-setup (1)"));
+        assert!(is_setup_name("vapurr-setup (2)"));
         assert!(is_setup_name("install vapurr"));
         assert!(!is_setup_name("vapurr"));
     }
@@ -849,6 +904,40 @@ mod tests {
         let minted = new_uuid_v4();
         assert!(is_uuid(&minted), "{minted}");
         assert_eq!(minted, minted.to_ascii_lowercase());
+    }
+
+    #[test]
+    fn parse_version_stamp_pack_and_publish_shapes() {
+        assert_eq!(
+            parse_version_stamp("vapurr 1.1.17
+windows x86_64
+").as_deref(),
+            Some("1.1.17")
+        );
+        assert_eq!(
+            parse_version_stamp("vapurr 1.1.17 windows x86_64 built t").as_deref(),
+            Some("1.1.17")
+        );
+        assert_eq!(
+            parse_version_stamp("vapurr 1.2.3
+rev deadbeef
+sha abc
+").as_deref(),
+            Some("1.2.3")
+        );
+        assert!(parse_version_stamp("").is_none());
+        assert!(parse_version_stamp("not-a-stamp").is_none());
+    }
+
+    #[test]
+    fn resolve_display_version_prefers_version_txt() {
+        let dir = std::env::temp_dir().join(format!("vapurr-ver-test-{}", std::process::id()));
+        let _ = std::fs::create_dir_all(&dir);
+        std::fs::write(dir.join("VERSION.txt"), "vapurr 1.1.17
+windows
+").unwrap();
+        assert_eq!(resolve_display_version(&dir), "1.1.17");
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     #[test]

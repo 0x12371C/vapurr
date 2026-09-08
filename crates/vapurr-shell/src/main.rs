@@ -27,6 +27,7 @@ use std::path::PathBuf;
 use std::rc::Rc;
 use std::sync::mpsc;
 use std::sync::{Arc, Mutex};
+use std::time::{Duration, Instant};
 
 use tao::dpi::{LogicalSize, PhysicalSize};
 use tao::event::{Event, WindowEvent};
@@ -99,6 +100,34 @@ use wry::{MemoryUsageLevel, WebViewBuilderExtWindows, WebViewExtWindows};
 use crate::desk::Desk;
 use crate::host::serve;
 use crate::tabs::TabStrip;
+
+fn urlencoding_decode(s: &str) -> String {
+    let mut out = String::with_capacity(s.len());
+    let b = s.as_bytes();
+    let mut i = 0;
+    while i < b.len() {
+        if b[i] == b'%' && i + 2 < b.len() {
+            let h = || -> Option<u8> {
+                let hi = (b[i + 1] as char).to_digit(16)? as u8;
+                let lo = (b[i + 2] as char).to_digit(16)? as u8;
+                Some((hi << 4) | lo)
+            };
+            if let Some(c) = h() {
+                out.push(c as char);
+                i += 3;
+                continue;
+            }
+        }
+        if b[i] == b'+' {
+            out.push(' ');
+        } else {
+            out.push(b[i] as char);
+        }
+        i += 1;
+    }
+    out
+}
+
 fn send_reply(proxy: &tao::event_loop::EventLoopProxy<Msg>, document: Option<security::Document>, msg: Msg) -> Result<(), tao::event_loop::EventLoopClosed<Msg>> {
     proxy.send_event(Msg::Reply(document, Box::new(msg)))
 }
@@ -475,10 +504,16 @@ fn main() {
     }
     let start_url = {
         let d = desk.borrow();
-        if d.prefs.restore_last && !d.last_url.is_empty() {
+        let preferred = if d.prefs.restore_last && !d.last_url.is_empty() {
             d.last_url.clone()
         } else {
             home_url(&d)
+        };
+        // Wallet exists: force passcode surface before chrome when PIN set / not yet set.
+        if let Some(gate) = gate_url("home") {
+            gate
+        } else {
+            preferred
         }
     };
     let tabs = Rc::new(RefCell::new(TabStrip::new(start_url.clone())));
@@ -526,6 +561,12 @@ fn main() {
                             if last_err.elapsed() > std::time::Duration::from_secs(8) {
                                 crash::log(&format!("rhc rpc: {e}"));
                                 last_err = std::time::Instant::now();
+                            }
+                            // Back off hard on rate limits so quote sims can share the public RPC.
+                            let msg = e.to_string().to_ascii_lowercase();
+                            if msg.contains("too many") || msg.contains("rate") || msg.contains("429") {
+                                std::thread::sleep(std::time::Duration::from_secs(20));
+                                continue;
                             }
                         }
                     }
@@ -617,12 +658,41 @@ fn main() {
 
     paint_chrome();
 
+    let last_activity = Rc::new(RefCell::new(Instant::now()));
+    let touch_activity = {
+        let last_activity = last_activity.clone();
+        move || {
+            *last_activity.borrow_mut() = Instant::now();
+        }
+    };
+
     event_loop.run(move |event, _, control_flow| {
-        *control_flow = ControlFlow::Wait;
+        let idle_secs = desk.borrow().prefs.lock_timeout_secs;
+        if idle_secs > 0 && vapurr_wallet::has_pin() && vapurr_wallet::is_logged_in() {
+            let deadline = *last_activity.borrow() + Duration::from_secs(idle_secs);
+            *control_flow = ControlFlow::WaitUntil(deadline);
+            if last_activity.borrow().elapsed() >= Duration::from_secs(idle_secs) {
+                let _ = vapurr_wallet::lock_session();
+                let _ = wallet_tx.send(vapurr_wallet::WalletCmd::LockSession);
+                let url = lock_url("home", "unlock");
+                tabs.borrow_mut().navigate(url.clone());
+                tabs.borrow_mut().suppress = true;
+                set_page_url(&page_url, &url);
+                let _ = page.borrow().load_url(&url);
+                paint_chrome();
+                touch_activity();
+            }
+        } else {
+            *control_flow = ControlFlow::Wait;
+        }
         security::set_document(None);
         let event = match event {
             Event::UserEvent(Msg::Ipc(doc, msg)) => {
                 security::set_document(Some(doc));
+                touch_activity();
+                if matches!(&*msg, Msg::Activity) {
+                    return;
+                }
                 if needs_unlock(&msg) && !vapurr_wallet::is_logged_in() {
                     let _ = security::eval_chrome(&page.borrow(), &js_request_error("Unlock the wallet first."));
                     return;
@@ -699,8 +769,11 @@ fn main() {
                 let _ = page.borrow().load_url(&url);
                 paint_chrome();
             }
-            Event::UserEvent(Msg::NewTab) => {
-                let url = home_url(&desk.borrow());
+            Event::UserEvent(Msg::NewTab { url }) => {
+                let url = match url.filter(|u| !u.trim().is_empty()) {
+                    Some(u) => resolve_nav(&u),
+                    None => home_url(&desk.borrow()),
+                };
                 let url = tabs.borrow_mut().new_tab(url);
                 tabs.borrow_mut().suppress = true;
                 set_page_url(&page_url, &url);
@@ -853,6 +926,14 @@ fn main() {
                         paint_caption(&window, light);
                         window.set_theme(Some(if light { Theme::Light } else { Theme::Dark }));
                     }
+                    "lock_timeout_secs" | "lock_timeout" => {
+                        let secs = value
+                            .as_u64()
+                            .or_else(|| value.as_i64().map(|i| i.max(0) as u64))
+                            .or_else(|| value.as_f64().map(|f| f.max(0.0) as u64))
+                            .unwrap_or(900);
+                        desk.borrow_mut().set_lock_timeout_secs(secs);
+                    }
                     "adblock" | "adblock_privacy" | "adblock_annoyances" | "adblock_cosmetic" => {
                         let old = shield.prefs();
                         match key.as_str() {
@@ -916,10 +997,13 @@ fn main() {
                 paint_chrome();
             }
             Event::UserEvent(Msg::EarnSubmit) => {
-                let proven = vapurr_id::load_verified(&Desk::profile_dir())
-                    .as_ref()
-                    .map(vapurr_id::payout_ready)
-                    .unwrap_or(false);
+                let proven = vapurr_id::load_verified(
+                    &Desk::profile_dir(),
+                    &vapurr_id::trusted_issuers_from_env(),
+                )
+                .as_ref()
+                .map(vapurr_id::payout_ready)
+                .unwrap_or(false);
                 let _ = desk.borrow_mut().submit(proven);
                 snap_desk(&desk.borrow(), &vault);
                 paint_chrome();
@@ -985,6 +1069,7 @@ fn main() {
                 let _ = wallet_tx.send(vapurr_wallet::WalletCmd::Send { asset, to, amt });
             }
             Event::UserEvent(Msg::WalletExec {
+                route_id,
                 to,
                 data,
                 value,
@@ -992,6 +1077,7 @@ fn main() {
                 gas,
             }) => {
                 let _ = wallet_tx.send(vapurr_wallet::WalletCmd::Exec {
+                    route_id,
                     to,
                     data,
                     value,
@@ -1026,6 +1112,15 @@ fn main() {
             Event::UserEvent(Msg::LoginRestore { secret }) => {
                 let _ = wallet_tx.send(vapurr_wallet::WalletCmd::LoginRestore { secret });
             }
+            Event::UserEvent(Msg::WalletSignMessage { message }) => {
+                let _ = wallet_tx.send(vapurr_wallet::WalletCmd::SignMessage { message });
+            }
+            Event::UserEvent(Msg::KycAttestAge { age_confirmed }) => {
+                let _ = wallet_tx.send(vapurr_wallet::WalletCmd::KycAttestAge { age_confirmed });
+            }
+            Event::UserEvent(Msg::KycAttestJurisdiction) => {
+                let _ = wallet_tx.send(vapurr_wallet::WalletCmd::KycAttestJurisdiction);
+            }
             Event::UserEvent(Msg::PatchApply) => match patch::apply_and_relaunch() {
                 Ok(()) => {
                     crash::log("patch apply staged; exiting for swap");
@@ -1041,7 +1136,34 @@ fn main() {
                 }
             },
             Event::UserEvent(Msg::Logout) => {
+                // Wipe vault sync so pane_url("login") sees has_key=false immediately.
+                let _ = vapurr_wallet::logout();
                 let _ = wallet_tx.send(vapurr_wallet::WalletCmd::Logout);
+                let url = pane_url("login");
+                tabs.borrow_mut().navigate(url.clone());
+                tabs.borrow_mut().suppress = true;
+                set_page_url(&page_url, &url);
+                let _ = page.borrow().load_url(&url);
+                paint_chrome();
+            }
+            Event::UserEvent(Msg::LockSession) => {
+                let _ = vapurr_wallet::lock_session();
+                let _ = wallet_tx.send(vapurr_wallet::WalletCmd::LockSession);
+                let url = lock_url("home", if vapurr_wallet::needs_passcode_setup() { "set" } else { "unlock" });
+                tabs.borrow_mut().navigate(url.clone());
+                tabs.borrow_mut().suppress = true;
+                set_page_url(&page_url, &url);
+                let _ = page.borrow().load_url(&url);
+                paint_chrome();
+            }
+            Event::UserEvent(Msg::PasscodeUnlock { code }) => {
+                let _ = wallet_tx.send(vapurr_wallet::WalletCmd::PasscodeUnlock { code });
+            }
+            Event::UserEvent(Msg::PasscodeSet { a, b }) => {
+                let _ = wallet_tx.send(vapurr_wallet::WalletCmd::PasscodeSet { a, b });
+            }
+            Event::UserEvent(Msg::Activity) => {
+                touch_activity();
             }
             Event::UserEvent(Msg::WalletSnap(snap)) => {
                 if wallet_is_bag(&snap) {
@@ -1056,13 +1178,71 @@ fn main() {
                     }
                 }
                 let _ = security::eval_chrome(&page.borrow(), &js_set_wallet(&snap));
+                // Desk KYC phone/scan tabs on thesecretlab need the signed payload in-page
+                // (eval_chrome only runs on vapurr.localhost).
+                if snap.get("kind").and_then(|x| x.as_str()) == Some("signed") {
+                    let cur = tabs.borrow().current().url().to_string();
+                    if security::is_tsl_kyc_url(&cur) {
+                        let js = format!(
+                            "window.__vapurrSigned && window.__vapurrSigned({}); window.__setWallet && window.__setWallet({})",
+                            snap, snap
+                        );
+                        let _ = page.borrow().evaluate_script(&js);
+                    }
+                }
+                let cur = tabs.borrow().current().url().to_string();
+                let on_lock = cur.contains("lock.html");
+                let logged = snap.get("logged_in").and_then(|x| x.as_bool()).unwrap_or(false);
+                let needs_pin = snap.get("needs_pin").and_then(|x| x.as_bool()).unwrap_or(false);
+                if on_lock && logged && !needs_pin {
+                    let _ = security::eval_chrome(
+                        &page.borrow(),
+                        "window.__passcodeOk && window.__passcodeOk(); window.VapurrLock && VapurrLock.unlock && VapurrLock.unlock();",
+                    );
+                    let next = {
+                        let q = cur.split('?').nth(1).unwrap_or("");
+                        let mut n = "home".to_string();
+                        for p in q.split('&') {
+                            if let Some((k, v)) = p.split_once('=') {
+                                if k == "next" && !v.is_empty() {
+                                    n = urlencoding_decode(v);
+                                }
+                            }
+                        }
+                        n
+                    };
+                    let url = pane_url(&next);
+                    tabs.borrow_mut().navigate(url.clone());
+                    tabs.borrow_mut().suppress = true;
+                    set_page_url(&page_url, &url);
+                    let _ = page.borrow().load_url(&url);
+                    paint_chrome();
+                } else if on_lock && needs_pin {
+                    let _ = security::eval_chrome(
+                        &page.borrow(),
+                        "window.__passcodePaint && window.__passcodePaint({mode:'set'});",
+                    );
+                }
             }
             Event::UserEvent(Msg::WalletErr(msg)) => {
-                let js = format!(
-                    "window.__walletErr && window.__walletErr({})",
-                    serde_json::to_string(&msg).unwrap_or_else(|_| "\"failed\"".into())
-                );
+                let on_lock = tabs.borrow().current().url().contains("lock.html");
+                let js = if on_lock {
+                    format!(
+                        "window.__passcodeFail && window.__passcodeFail({}); window.VapurrLock && VapurrLock.fail && VapurrLock.fail({});",
+                        serde_json::to_string(&msg).unwrap_or_else(|_| "\"Wrong passcode\"".into()),
+                        serde_json::to_string(&msg).unwrap_or_else(|_| "\"Wrong passcode\"".into()),
+                    )
+                } else {
+                    format!(
+                        "window.__walletErr && window.__walletErr({})",
+                        serde_json::to_string(&msg).unwrap_or_else(|_| "\"failed\"".into())
+                    )
+                };
                 let _ = security::eval_chrome(&page.borrow(), &js);
+                let cur = tabs.borrow().current().url().to_string();
+                if security::is_tsl_kyc_url(&cur) {
+                    let _ = page.borrow().evaluate_script(&js);
+                }
             }
             Event::UserEvent(Msg::ZzzmailSend { to, body, asset }) => {
                 let snap = host::zzzmail_send_json(&to, &body, &asset);
@@ -1148,6 +1328,15 @@ fn main() {
             Event::UserEvent(Msg::HouseSwap { sell_v, amt }) => {
                 let _ = econ_tx.send(vapurr_econ::EconCmd::HouseSwap { sell_v, amt });
             }
+            Event::UserEvent(Msg::EconBond { asset, amt }) => {
+                let _ = econ_tx.send(vapurr_econ::EconCmd::BondOpen { asset, amt });
+            }
+            Event::UserEvent(Msg::EconCdOpen { amt }) => {
+                let _ = econ_tx.send(vapurr_econ::EconCmd::CdOpen { amt });
+            }
+            Event::UserEvent(Msg::EconHouseFeeRemit { amt }) => {
+                let _ = econ_tx.send(vapurr_econ::EconCmd::HouseFeeRemit { amt });
+            }
             Event::UserEvent(Msg::OutbidSnap(snap)) => {
                 *last_outbid.borrow_mut() = snap.clone();
                 let _ = security::eval_chrome(&page.borrow(), &js_set_outbid(&snap));
@@ -1184,6 +1373,19 @@ fn main() {
                 }
                 if url.contains("login.html") {
                     let _ = wallet_tx.send(vapurr_wallet::WalletCmd::LoginStatus);
+                }
+                if url.contains("lock.html") {
+                    let _ = wallet_tx.send(vapurr_wallet::WalletCmd::LoginStatus);
+                    let mode = if url.contains("mode=set") || vapurr_wallet::needs_passcode_setup() {
+                        "set"
+                    } else {
+                        "unlock"
+                    };
+                    let js = format!(
+                        r#"(function(){{var L=window.VapurrLock;if(L){{L.onSubmit=function(pin){{window.vapurr&&vapurr.send({{cmd:"passcode-submit",code:String(pin||"")}});}};L.onSetPin=function(a,b){{window.vapurr&&vapurr.send({{cmd:"passcode-set",a:String(a||""),b:String(b||"")}});}};}}window.__passcodePaint&&window.__passcodePaint({{mode:{0}}});}})();"#,
+                        serde_json::to_string(mode).unwrap_or_else(|_| "\"unlock\"".into())
+                    );
+                    let _ = security::eval_chrome(&page.borrow(), &js);
                 }
             }
             Event::UserEvent(Msg::ShieldDom { ids, classes }) => {
@@ -1237,6 +1439,19 @@ fn main() {
                     if url.contains("login.html") {
                         let _ = wallet_tx.send(vapurr_wallet::WalletCmd::LoginStatus);
                     }
+                    if url.contains("lock.html") {
+                        let _ = wallet_tx.send(vapurr_wallet::WalletCmd::LoginStatus);
+                        let mode = if url.contains("mode=set") || vapurr_wallet::needs_passcode_setup() {
+                            "set"
+                        } else {
+                            "unlock"
+                        };
+                        let js = format!(
+                            r#"(function(){{var L=window.VapurrLock;if(L){{L.onSubmit=function(pin){{window.vapurr&&vapurr.send({{cmd:"passcode-submit",code:String(pin||"")}});}};L.onSetPin=function(a,b){{window.vapurr&&vapurr.send({{cmd:"passcode-set",a:String(a||""),b:String(b||"")}});}};}}window.__passcodePaint&&window.__passcodePaint({{mode:{0}}});}})();"#,
+                            serde_json::to_string(mode).unwrap_or_else(|_| "\"unlock\"".into())
+                        );
+                        let _ = security::eval_chrome(&page.borrow(), &js);
+                    }
                     if url.contains("cookies.html") {
                         cookies::push(&page.borrow(), &url);
                     }
@@ -1257,9 +1472,19 @@ fn main() {
                 let _ = toolbar.borrow().evaluate_script(&js);
             }
             Event::WindowEvent {
+                event: WindowEvent::CursorMoved { .. }
+                    | WindowEvent::MouseInput { .. }
+                    | WindowEvent::MouseWheel { .. }
+                    | WindowEvent::KeyboardInput { .. },
+                ..
+            } => {
+                touch_activity();
+            }
+            Event::WindowEvent {
                 event: WindowEvent::Focused(on),
                 ..
             } => {
+                touch_activity();
                 host::set_focused(on);
                 #[cfg(windows)]
                 {
@@ -1325,12 +1550,16 @@ mod tests {
     fn wallet_is_chrome_fomo_is_the_site() {
         let w = pane_url("wallet");
         assert!(
-            w.contains("wallet.html") || w.contains("login.html?next=wallet"),
+            w.contains("wallet.html")
+                || w.contains("login.html?next=wallet")
+                || w.contains("lock.html"),
             "{w}"
         );
         let p = pane_url("portfolio");
         assert!(
-            p.contains("wallet.html") || p.contains("login.html?next=portfolio"),
+            p.contains("wallet.html")
+                || p.contains("login.html?next=portfolio")
+                || p.contains("lock.html"),
             "{p}"
         );
         assert_eq!(pane_url("fomo"), FOMO_FAMILY);

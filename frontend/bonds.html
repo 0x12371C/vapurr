@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Bonds / Routing</title>
+  <link rel="stylesheet" href="/tokens.css"/>
+  <link rel="stylesheet" href="/chrome.css"/>
+  <link rel="stylesheet" href="/defi-surface.css"/>
+  <style>
+    html, body { height: 100%; }
+    body {
+      overflow: auto;
+      position: relative;
+      background: var(--color-void);
+    }
+    .aura {
+      position: fixed; inset: 0; z-index: 0;
+      pointer-events: none; overflow: hidden;
+    }
+    .aura canvas { width: 100%; height: 100%; display: block; }
+    .wrap {
+      max-width: 920px;
+      margin: 0 auto;
+      padding: 36px 22px 96px;
+      position: relative;
+      z-index: 1;
+    }
+    .hero { margin-bottom: 28px; }
+    .hero .mono { color: var(--color-lime); margin-bottom: 10px; }
+    .hero h1 {
+      font-size: clamp(42px, 8vw, 64px);
+      font-weight: 600;
+      letter-spacing: -0.05em;
+      line-height: 0.95;
+    }
+    .lede {
+      margin-top: 12px;
+      color: var(--color-muted);
+      font-size: 15px;
+      line-height: 1.45;
+      max-width: 36em;
+    }
+    .lede b { color: var(--color-snow); font-weight: 600; }
+
+    .map-label {
+      margin: 8px 0 12px;
+      color: var(--color-lime);
+    }
+
+    .map {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+    @media (max-width: 640px) {
+      .map { grid-template-columns: 1fr; }
+    }
+
+    .lane {
+      text-align: left;
+      padding: 18px 18px 16px;
+      border-radius: var(--radius-panel, 18px);
+      background: var(--glass-bg, color-mix(in srgb, var(--color-steel) 50%, transparent));
+      backdrop-filter: var(--glass-blur, blur(24px) saturate(1.5));
+      -webkit-backdrop-filter: var(--glass-blur, blur(24px) saturate(1.5));
+      border: 1px solid var(--glass-border, color-mix(in srgb, var(--color-snow) 8%, transparent));
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0;
+      min-height: 168px;
+    }
+    .lane:hover {
+      background: color-mix(in srgb, var(--color-forest) 48%, transparent);
+      border-color: color-mix(in srgb, var(--color-lime) 28%, transparent);
+    }
+    .lane.focus {
+      border-color: var(--color-lime);
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-lime) 35%, transparent);
+    }
+    .lane .mono { color: var(--color-lime); }
+    .lane b.title {
+      display: block;
+      margin-top: 8px;
+      font-size: 26px;
+      font-weight: 600;
+      letter-spacing: -0.03em;
+    }
+    .lane .hint {
+      margin-top: 8px;
+      color: var(--color-muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .lane .hint b { color: var(--color-snow); font-weight: 600; }
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 14px;
+    }
+    .chip {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      color: var(--color-snow);
+      border: 1px solid var(--color-forest);
+      border-radius: 999px;
+      padding: 4px 10px;
+      background: color-mix(in srgb, var(--color-void) 35%, transparent);
+    }
+    .chip.on {
+      border-color: var(--color-lime);
+      color: var(--color-lime);
+    }
+
+
+    .depth {
+      margin: 0 0 28px;
+      padding: 18px 18px 16px;
+      border-radius: var(--radius-panel, 18px);
+      background: var(--glass-bg, color-mix(in srgb, var(--color-steel) 50%, transparent));
+      backdrop-filter: var(--glass-blur, blur(24px) saturate(1.5));
+      -webkit-backdrop-filter: var(--glass-blur, blur(24px) saturate(1.5));
+      border: 1px solid color-mix(in srgb, var(--color-lime) 22%, transparent);
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 14px;
+      align-items: center;
+    }
+    @media (max-width: 640px) {
+      .depth { grid-template-columns: 1fr; }
+    }
+    .depth .mono { color: var(--color-lime); }
+    .depth h2 {
+      margin: 6px 0 8px;
+      font-size: 22px;
+      font-weight: 600;
+      letter-spacing: -0.03em;
+    }
+    .depth p {
+      color: var(--color-muted);
+      font-size: 13px;
+      line-height: 1.45;
+      max-width: 34em;
+    }
+    .depth p b { color: var(--color-snow); font-weight: 600; }
+    .depth .pair {
+      padding: 14px 14px 12px;
+      border-radius: 14px;
+      background: color-mix(in srgb, var(--color-void) 40%, transparent);
+      border: 1px solid color-mix(in srgb, var(--color-lime) 20%, transparent);
+      text-align: center;
+    }
+    .depth .pair .book {
+      margin-top: 6px;
+      font-size: 20px;
+      font-weight: 600;
+      letter-spacing: -0.03em;
+    }
+    .depth .pair .sub {
+      margin-top: 4px;
+      color: var(--color-muted);
+      font-size: 11px;
+      line-height: 1.35;
+    }
+    html[data-theme="light"] .depth {
+      background: color-mix(in srgb, var(--color-steel) 88%, transparent);
+    }
+    .panel {
+      margin-top: 8px;
+      padding: 20px 20px 18px;
+      border-radius: var(--radius-panel, 18px);
+      background: var(--glass-bg, color-mix(in srgb, var(--color-steel) 50%, transparent));
+      border: 1px solid var(--glass-border, color-mix(in srgb, var(--color-snow) 8%, transparent));
+      backdrop-filter: var(--glass-blur, blur(24px) saturate(1.5));
+      -webkit-backdrop-filter: var(--glass-blur, blur(24px) saturate(1.5));
+    }
+    .panel h2 {
+      font-size: 22px;
+      font-weight: 600;
+      letter-spacing: -0.03em;
+      margin: 6px 0 8px;
+    }
+    .panel .lede { margin-top: 0; margin-bottom: 16px; font-size: 14px; }
+
+    .tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .tab {
+      height: 36px;
+      padding: 0 14px;
+      border-radius: 999px;
+      border: 1px solid var(--color-forest);
+      background: color-mix(in srgb, var(--color-void) 40%, transparent);
+      color: var(--color-muted);
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .tab:hover { color: var(--color-snow); background: color-mix(in srgb, var(--color-forest) 55%, transparent); }
+    .tab.on {
+      color: var(--color-on-lime);
+      background: var(--color-lime);
+      border-color: var(--color-lime);
+    }
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    @media (max-width: 720px) {
+      .steps { grid-template-columns: 1fr; }
+    }
+    .step {
+      padding: 14px 14px 12px;
+      border-radius: 14px;
+      background: color-mix(in srgb, var(--color-void) 45%, transparent);
+      border: 1px solid color-mix(in srgb, var(--color-snow) 7%, transparent);
+    }
+    .step .mono { color: var(--color-lime); margin-bottom: 6px; }
+    .step b { display: block; font-size: 15px; margin-bottom: 4px; }
+    .step p { color: var(--color-muted); font-size: 12px; line-height: 1.4; }
+
+    .quote {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    @media (max-width: 720px) {
+      .quote { grid-template-columns: 1fr; }
+    }
+    .stat {
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: color-mix(in srgb, var(--color-forest) 35%, transparent);
+      border: 1px solid color-mix(in srgb, var(--color-lime) 18%, transparent);
+    }
+    .stat .mono { color: var(--color-muted); }
+    .stat .val {
+      margin-top: 4px;
+      font-size: 22px;
+      font-weight: 600;
+      letter-spacing: -0.03em;
+      font-variant-numeric: tabular-nums;
+    }
+    .stat .val em {
+      font-style: normal;
+      font-size: 13px;
+      color: var(--color-muted);
+      font-weight: 600;
+      margin-left: 4px;
+    }
+
+    .actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .note {
+      margin-top: 14px;
+      color: var(--color-muted);
+      font-size: 12px;
+      line-height: 1.45;
+      max-width: 42em;
+    }
+
+    .flow {
+      margin-top: 22px;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+    }
+    @media (max-width: 720px) {
+      .flow { grid-template-columns: 1fr 1fr; }
+    }
+    .flow .node {
+      padding: 12px 12px 10px;
+      border-radius: 12px;
+      border: 1px dashed color-mix(in srgb, var(--color-lime) 30%, transparent);
+      background: color-mix(in srgb, var(--color-void) 30%, transparent);
+      text-align: center;
+    }
+    .flow .node .mono { color: var(--color-lime); }
+    .flow .node b { display: block; margin-top: 4px; font-size: 14px; }
+    .flow .node span { display: block; margin-top: 4px; color: var(--color-muted); font-size: 11px; line-height: 1.35; }
+
+
+
+    .lane .mini {
+      margin-top: 12px;
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      padding-top: 10px;
+      border-top: 1px solid color-mix(in srgb, var(--color-snow) 8%, transparent);
+    }
+    .lane .mini .k { color: var(--color-muted); font-size: 11px; }
+    .lane .mini .v {
+      font-size: 13px;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -0.02em;
+    }
+
+    html[data-theme="light"] .lane,
+    html[data-theme="light"] .panel {
+      background: color-mix(in srgb, var(--color-steel) 88%, transparent);
+    }
+    .cd-grid {
+      display: grid;
+      grid-template-columns: 1.1fr 1fr 1fr;
+      gap: 10px;
+      margin-top: 14px;
+    }
+    @media (max-width: 720px) {
+      .cd-grid { grid-template-columns: 1fr; }
+    }
+    .cd-card {
+      padding: 14px 14px 12px;
+      border-radius: var(--radius-tile, 14px);
+      background: color-mix(in srgb, var(--color-void) 40%, transparent);
+      border: 1px solid var(--glass-border, color-mix(in srgb, var(--color-snow) 8%, transparent));
+      transition:
+        transform 0.18s var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1)),
+        border-color 0.18s ease,
+        box-shadow 0.18s ease;
+    }
+    .cd-card.focus {
+      border-color: color-mix(in srgb, var(--color-lime) 40%, transparent);
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-lime) 22%, transparent);
+    }
+    .cd-card .mono { color: var(--color-lime); margin-bottom: 6px; }
+    .cd-card b { display: block; font-size: 16px; margin-bottom: 4px; }
+    .cd-card p { color: var(--color-muted); font-size: 12px; line-height: 1.4; margin: 0 0 10px; }
+    .cd-card .row {
+      display: flex; justify-content: space-between; gap: 8px;
+      font-size: 12px; margin-top: 4px;
+    }
+    .cd-card .row .k { color: var(--color-muted); }
+    .cd-card .row .v { font-weight: 600; font-variant-numeric: tabular-nums; }
+
+    .gate-banner {
+      display: none;
+      margin: 0 0 14px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid color-mix(in srgb, var(--color-lime) 35%, transparent);
+      background: color-mix(in srgb, var(--color-void) 45%, transparent);
+      color: var(--color-snow);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .gate-banner.on { display: block; }
+    .gate-banner .mono { color: var(--color-lime); margin-bottom: 4px; }
+    .gate-banner b { font-weight: 600; }
+    .quote.gated .val { color: var(--color-muted); opacity: 0.55; }
+    .tab.gated {
+      opacity: 0.72;
+      border-style: dashed;
+    }
+    .tab.gated.on {
+      color: var(--color-on-lime);
+      background: color-mix(in srgb, var(--color-lime) 70%, var(--color-forest));
+      border-style: solid;
+    }
+
+
+    /* defi-surface bonds polish */
+    .have{margin:8px 0 0;padding:8px 10px;border-radius:10px;border:1px solid color-mix(in srgb,var(--color-snow) 10%,transparent);color:var(--color-muted);font-size:12px;line-height:1.45}
+    .lane, .panel, .depth, .cd-card, .step {
+      transition:
+        transform 0.2s var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1)),
+        border-color 0.18s ease,
+        background 0.18s ease,
+        box-shadow 0.2s ease;
+    }
+    .lane:hover { transform: translateY(-2px); }
+    .panel {
+      padding: 24px 22px 20px;
+      margin-top: 12px;
+      box-shadow: 0 16px 44px color-mix(in srgb, #000 18%, transparent);
+    }
+    .actions .btn {
+      min-width: 128px;
+      height: 48px;
+      border-radius: 14px;
+      letter-spacing: 0.02em;
+      box-shadow: 0 10px 28px color-mix(in srgb, var(--color-lime) 18%, transparent);
+    }
+    .actions .btn-ghost {
+      height: 48px;
+      padding: 0 16px;
+      border-radius: 14px;
+      border: 1px solid color-mix(in srgb, var(--color-snow) 12%, transparent);
+    }
+    .cd-card:hover {
+      border-color: color-mix(in srgb, var(--color-lime) 28%, transparent);
+      transform: translateY(-1px);
+    }
+    .map { gap: 14px; margin-bottom: 32px; }
+    .lane { padding: 20px 18px 18px; min-height: 176px; }
+    #bond-amt, #cd-amt {
+      height: 48px;
+      box-sizing: border-box;
+      transition: border-color 0.15s ease, box-shadow 0.18s var(--ease-out, ease);
+    }
+    #bond-amt:focus, #cd-amt:focus {
+      border-color: var(--color-lime) !important;
+      outline: none;
+      box-shadow:
+        0 0 0 3px color-mix(in srgb, var(--color-lime) 22%, transparent),
+        0 0 18px color-mix(in srgb, var(--color-lime) 12%, transparent);
+    }
+    .lane:focus-visible {
+      outline: none;
+      border-color: color-mix(in srgb, var(--color-lime) 45%, transparent);
+      box-shadow: var(--shadow-lime);
+    }
+    .cd-grid { gap: 12px; margin-top: 4px; }
+    .cd-card { padding: 16px 16px 14px; }
+    .panel { margin-top: 16px; }
+    .panel + .panel { margin-top: 18px; }
+    .actions { gap: 10px; margin-top: 4px; }
+    .flow { margin-top: 26px; gap: 10px; }
+    .hero { margin-bottom: 26px; }
+
+  
+    .routing-visual {
+      display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 10px;
+      margin: 10px 0 18px; padding: 10px 12px;
+      border: 1px solid color-mix(in srgb, var(--color-ink) 12%, transparent);
+      border-radius: 14px;
+      background: color-mix(in srgb, var(--color-panel, #12141a) 80%, transparent);
+    }
+    .routing-visual .rv-lane { display: flex; flex-direction: column; gap: 2px; min-width: 4.5rem; }
+    .routing-visual .rv-lane b { font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; }
+    .routing-visual .rv-lane em { font-style: normal; font-size: 11px; opacity: 0.72; }
+    .routing-visual .rv-lane.is-here b { color: var(--color-accent, #9fefb0); }
+    .routing-visual .rv-sep { opacity: 0.35; font-size: 12px; }</style>
+  <link rel="stylesheet" href="/defi-flow.css"/>
+</head>
+<body class="finance-ui" data-desk="savings">
+  <div class="wrap">
+    <div data-finance-nav></div>
+    <header class="flow-heading savings-intro"><div><p class="eyebrow">TIME, ON YOUR TERMS</p><h1>Save cash.<br/><em>Build equity.</em></h1></div><p>Choose liquidity or a longer horizon.</p></header>
+    <div class="capital-status" id="capital-strip" role="status"><span class="tiny-dot"></span>Market terms awaiting connection</div>
+    <nav class="routing-visual" id="routing-visual" aria-label="Product map">
+      <span class="rv-lane" data-lane="cash"><b>Cash</b><em>$PUSD / sPUSD</em></span>
+      <span class="rv-sep" aria-hidden="true">/</span>
+      <span class="rv-lane" data-lane="equity"><b>Equity</b><em>gV / wgV</em></span>
+      <span class="rv-sep" aria-hidden="true">/</span>
+      <span class="rv-lane is-here" data-lane="bonds"><b>Bonds</b><em>ETH / USDG / stocks</em></span>
+      <span class="rv-sep" aria-hidden="true">/</span>
+      <span class="rv-lane" data-lane="house"><b>House</b><em>wgV / $PUSD</em></span>
+    </nav>
+    <div class="savings-layout">
+    <div class="panel" id="spusd-cd" aria-label="sPUSD CD">
+      <div class="mono">cash / sPUSD CD</div>
+      <h2>Choose your horizon.</h2>
+      <p class="lede">PUSD savings. Yield comes from available surplus.</p>
+      <div class="have" id="cd-book-note">Savings book empty (NeedSavings) until Relic fills sPUSD / SpusdCd / SavingsRouter CAs. Open CD stays live; on-tx surfaces the miss.</div>
+      <div class="cd-grid">
+        <div class="cd-card"><span data-icon="save"></span>
+          <div class="mono">liquid</div>
+          <b>sPUSD</b>
+          <p>Access your savings on demand.</p>
+          <div class="row"><span class="k">exit</span><span class="v">anytime</span></div>
+          <div class="row"><span class="k">source</span><span class="v">surplus only</span></div>
+        </div>
+        <div class="cd-card"><span data-icon="clock"></span>
+          <div class="mono">30d CD</div>
+          <b>30 days</b>
+          <p>A fixed term. A variable, surplus-funded coupon.</p>
+          <div class="row"><span class="k">target / term</span><span class="v" id="cd-30-target">sketch · awaiting book</span></div>
+          <div class="row"><span class="k">funded preview</span><span class="v" id="cd-30-funded">— until surplus credited</span></div>
+          <div class="row"><span class="k">break fee</span><span class="v" id="cd-30-break">sketch · entry-time</span></div>
+        </div>
+        <div class="cd-card"><span data-icon="lock"></span>
+          <div class="mono">90d CD</div>
+          <b>90 days</b>
+          <p>A longer term. Coupon depends on shared surplus.</p>
+          <div class="row"><span class="k">target / term</span><span class="v" id="cd-90-target">sketch · awaiting book</span></div>
+          <div class="row"><span class="k">funded preview</span><span class="v" id="cd-90-funded">— until surplus credited</span></div>
+          <div class="row"><span class="k">break fee</span><span class="v" id="cd-90-break">sketch · entry-time</span></div>
+        </div>
+      </div>
+      <div class="actions" style="margin-top:14px; flex-wrap:wrap; gap:10px; align-items:center">
+        <input id="cd-amt" type="text" inputmode="decimal" placeholder="Amount $PUSD" aria-label="CD principal" style="flex:1 1 140px;min-width:120px;max-width:220px;padding:12px 14px;border-radius:12px;border:1px solid color-mix(in srgb, var(--color-snow) 12%, transparent);background:color-mix(in srgb, var(--color-void) 55%, transparent);color:var(--color-snow);font-size:15px"/>
+        <button class="btn" type="button" id="cd-cta" title="Open SpusdCd position">Open CD</button>
+      </div>
+      <div id="cd-err" role="alert" style="display:none;margin-top:10px;padding:10px 12px;border-radius:10px;border:1px solid color-mix(in srgb,#f87171 45%,transparent);color:#fecaca;font-size:13px;line-height:1.4"></div>
+      <details class="flow-details"><summary>Yield &amp; early exit</summary><p>CD coupons depend on available surplus. Early withdrawal pays the break fee agreed at deposit. Terms appear when the savings market is connected.</p></details>
+    </div>
+
+    <div class="panel" id="bonds">
+      <div class="mono">bonds / v1 assets</div>
+      <h2>Turn assets into equity.</h2>
+      <p class="lede">Deposit an asset. Claim gV after vesting.</p>
+      <div class="have" id="bond-book-note">BondMarket book empty (NeedBondMarket) until Relic fills the CA. Open Bond stays live; on-tx surfaces the miss.</div>
+
+      <div class="tabs" role="tablist" aria-label="Bond assets">
+        <button class="tab on" type="button" data-asset="ETH" role="tab" aria-selected="true">ETH</button>
+        <button class="tab" type="button" data-asset="USDG" role="tab" aria-selected="false">USDG</button>
+        <button class="tab" type="button" data-asset="AMZN" role="tab" aria-selected="false">AMZN</button>
+        <button class="tab" type="button" data-asset="TSLA" role="tab" aria-selected="false">TSLA</button>
+        <button class="tab" type="button" data-asset="AMD" role="tab" aria-selected="false">AMD</button>
+        <button class="tab" type="button" data-asset="NFLX" role="tab" aria-selected="false">NFLX</button>
+        <button class="tab" type="button" data-asset="PLTR" role="tab" aria-selected="false">PLTR</button>
+      </div>
+
+      <div class="gate-banner on" id="gate-banner" role="status" aria-live="polite"><span>Terms awaiting connection.</span><span id="gate-why"></span>
+      </div>
+
+      <div class="quote" aria-live="polite" id="bond-quote">
+        <div class="stat">
+          <div class="mono">asset</div>
+          <div class="val" id="q-asset">ETH</div>
+        </div>
+        <div class="stat">
+          <div class="mono">discount</div>
+          <div class="val" id="q-discount">-</div>
+          <div class="sub" style="color:var(--color-muted);font-size:11px;margin-top:4px">Awaiting terms</div>
+        </div>
+        <div class="stat">
+          <div class="mono">wait</div>
+          <div class="val" id="q-wait">-</div>
+          <div class="sub" style="color:var(--color-muted);font-size:11px;margin-top:4px">Awaiting terms</div>
+        </div>
+      </div>
+
+      <div class="steps">
+        <div class="step">
+          <span data-icon="wallet"></span><div class="mono">01</div>
+          <b>Deposit</b>
+          <p>Asset to treasury</p>
+        </div>
+        <div class="step">
+          <span data-icon="clock"></span><div class="mono">02</div>
+          <b>Vest</b>
+          <p>Hold to maturity</p>
+        </div>
+        <div class="step">
+          <span data-icon="layers"></span><div class="mono">03</div>
+          <b>Claim gV</b>
+          <p>Receive your equity</p>
+        </div>
+      </div>
+
+      <div class="actions" style="flex-wrap:wrap;gap:10px;align-items:center">
+        <input id="bond-amt" type="text" inputmode="decimal" placeholder="Amount" aria-label="Bond asset amount" style="flex:1 1 140px;min-width:120px;max-width:220px;padding:12px 14px;border-radius:12px;border:1px solid color-mix(in srgb, var(--color-snow) 12%, transparent);background:color-mix(in srgb, var(--color-void) 55%, transparent);color:var(--color-snow);font-size:15px"/>
+        <button class="btn" type="button" id="bond-cta" title="Open Bond">Open Bond</button>
+      </div>
+      <div id="bond-err" role="alert" style="display:none;margin-top:10px;padding:10px 12px;border-radius:10px;border:1px solid color-mix(in srgb,#f87171 45%,transparent);color:#fecaca;font-size:13px;line-height:1.4"></div>
+      <details class="flow-details"><summary>Bond terms</summary><p>Discount, vesting, capacity and haircuts come from the connected market. Your deposit funds the treasury. gV becomes claimable after vesting.</p></details>
+    </div>
+
+    </div>
+    <footer class="finance-footer"><span>VAPURR ECONOMY</span><span>Browse. Own. Spend.</span></footer>
+  </div>
+  <script src="/ipc.js"></script>
+  <script>
+
+
+    // Live-by-default markets. Quotes/capacity/haircut stay "-" until chain reads land.
+    // Relic: nothing product-critical stays gated - do not hide Bond/CD behind Unavailable.
+        // US equity regular session (America/New_York). Banner-only — never gray-gate CTAs.
+    // Fed still owns setValuation/setEnabled for corp-action / halt; calendar is advisory.
+    var US_EQUITY_HOLIDAYS = {
+      "2026-01-01": 1, "2026-01-19": 1, "2026-02-16": 1, "2026-04-03": 1,
+      "2026-05-25": 1, "2026-06-19": 1, "2026-07-03": 1, "2026-09-07": 1,
+      "2026-11-26": 1, "2026-12-25": 1
+    };
+    // NYSE early closes (1:00 PM ET). 2026: day before Independence Day observance,
+    // day after Thanksgiving, Christmas Eve. Banner-only - never gray-gate CTAs.
+    var US_EQUITY_EARLY_CLOSE = {
+      "2026-07-02": 13 * 60,
+      "2026-11-27": 13 * 60,
+      "2026-12-24": 13 * 60
+    };
+
+    // Per-ticker Fed ops advisories (halt / corp-action). Empty = none. Banner-only - never gray-gate CTAs.
+    // When address-book reads land, fill from BondMarket enabled/priceWad; until then manual Fed notes only.
+    var US_EQUITY_FED_OPS = {
+      // Example shape (kept empty for ship): "AMZN": { halt: true, note: "circuit" }
+      // "TSLA": { corpAction: "split", note: "await Fed reprice" }
+    };
+
+    function equityFedOpsNote(asset) {
+      var op = US_EQUITY_FED_OPS[asset];
+      if (!op) return "";
+      if (op.halt) {
+        return " Fed ops: halt/circuit advisory" + (op.note ? " (" + op.note + ")" : "") + " - CTA stays; on-tx may revert until Fed clears.";
+      }
+      if (op.corpAction) {
+        return " Fed ops: corp-action (" + op.corpAction + ")" + (op.note ? " - " + op.note : "") + " - no auto-reprice; Fed setEnabled/setValuation; CTA stays.";
+      }
+      if (op.note) {
+        return " Fed ops: " + op.note + " - CTA stays.";
+      }
+      return "";
+    }
+
+    // ETH/USDG valuation Fed-ops advisories (stale / jump / intake pause). Empty = none. Banner-only - never gray-gate CTAs.
+    // When address-book reads land, fill from BondMarket enabled/priceWad heartbeat; until then manual Fed notes only.
+    var CRYPTO_BOND_FED_OPS = {
+      // Example shape (kept empty for ship): "ETH": { stale: true, note: "heartbeat miss" }
+      // "USDG": { jump: true, note: "circuit" }
+      // "USDG": { intakePause: true, note: "Fed paused USDG bond intake" }
+    };
+
+    function valuationFedOpsNote(asset) {
+      var op = CRYPTO_BOND_FED_OPS[asset];
+      if (!op) return "";
+      if (op.stale) {
+        return " Fed ops: oracle stale/heartbeat" + (op.note ? " (" + op.note + ")" : "") + " - CTA stays; on-tx may revert until Fed setValuation/setEnabled clears.";
+      }
+      if (op.jump) {
+        return " Fed ops: oracle jump/circuit" + (op.note ? " (" + op.note + ")" : "") + " - valuation paused advisory; CTA stays; Fed setEnabled/setValuation.";
+      }
+      if (op.intakePause) {
+        return " Fed ops: intake pause" + (op.note ? " (" + op.note + ")" : "") + " - tab stays; USDG remains BondAssetTag-only; CTA stays.";
+      }
+      if (op.note) {
+        return " Fed ops: " + op.note + " - CTA stays.";
+      }
+      return "";
+    }
+
+    function equitySessionNow(when) {
+      var d = when || new Date();
+      var parts;
+      try {
+        parts = new Intl.DateTimeFormat("en-US", {
+          timeZone: "America/New_York",
+          year: "numeric", month: "2-digit", day: "2-digit",
+          weekday: "short", hour: "2-digit", minute: "2-digit",
+          hourCycle: "h23"
+        }).formatToParts(d);
+      } catch (e) {
+        return { session: "closed", label: "calendar unavailable" };
+      }
+      var map = {};
+      for (var i = 0; i < parts.length; i++) map[parts[i].type] = parts[i].value;
+      var ymd = map.year + "-" + map.month + "-" + map.day;
+      var wd = map.weekday;
+      var hh = parseInt(map.hour, 10);
+      var mm = parseInt(map.minute, 10);
+      var mins = hh * 60 + mm;
+      if (US_EQUITY_HOLIDAYS[ymd]) {
+        return { session: "closed", label: "holiday (ET " + ymd + ")" };
+      }
+      if (wd === "Sat" || wd === "Sun") {
+        return { session: "closed", label: "weekend" };
+      }
+      // Regular session 09:30-16:00 ET; early-close days end at 13:00 ET.
+      var closeMins = 16 * 60;
+      var early = US_EQUITY_EARLY_CLOSE[ymd];
+      if (typeof early === "number") closeMins = early;
+      if (mins >= (9 * 60 + 30) && mins < closeMins) {
+        if (typeof early === "number") {
+          return { session: "open", label: "early close 09:30-13:00 ET (" + ymd + ")" };
+        }
+        return { session: "open", label: "regular 09:30–16:00 ET" };
+      }
+      if (typeof early === "number" && mins >= closeMins) {
+        return { session: "closed", label: "early close done (ET " + ymd + ")" };
+      }
+      return { session: "closed", label: "outside regular hours" };
+    }
+
+    function applyEquitySessionCalendar() {
+      var st = equitySessionNow();
+      Object.keys(MARKET).forEach(function (k) {
+        if (MARKET[k].tag === "STOCKS") {
+          MARKET[k].session = st.session;
+          MARKET[k].sessionLabel = st.label;
+        }
+      });
+      return st;
+    }
+
+    var MARKET = {
+      // STOCKS session filled by applyEquitySessionCalendar(); ETH/USDG stay n/a.
+      // STOCKS closed/corp-action => Fed setValuation/setEnabled — CTA stays (no gray-gate).
+      ETH:  { enabled: true, capacity: "-", oracle: "ETH/USD", haircut: "-", tag: "ETH", session: "n/a" },
+      USDG: { enabled: true, capacity: "-", oracle: "USDG", haircut: "-", tag: "USDG", session: "n/a" },
+      AMZN: { enabled: true, capacity: "-", oracle: "AMZN", haircut: "-", tag: "STOCKS", session: "open" },
+      TSLA: { enabled: true, capacity: "-", oracle: "TSLA", haircut: "-", tag: "STOCKS", session: "open" },
+      AMD:  { enabled: true, capacity: "-", oracle: "AMD", haircut: "-", tag: "STOCKS", session: "open" },
+      NFLX: { enabled: true, capacity: "-", oracle: "NFLX", haircut: "-", tag: "STOCKS", session: "open" },
+      PLTR: { enabled: true, capacity: "-", oracle: "PLTR", haircut: "-", tag: "STOCKS", session: "open" }
+    };
+
+    applyEquitySessionCalendar();
+
+    function marketFor(asset) {
+      return MARKET[asset] || { enabled: true, capacity: "-", oracle: asset, haircut: "-", tag: asset };
+    }
+
+    function paintAsset(asset) {
+      var m = marketFor(asset);
+
+      document.getElementById("q-asset").textContent = asset;
+      // Honest empty until BondMarket chain reads exist - never fabricate discount/wait.
+      document.getElementById("q-discount").textContent = "-";
+      document.getElementById("q-wait").textContent = "-";
+
+      var quote = document.getElementById("bond-quote");
+      if (quote) quote.classList.remove("gated");
+
+      var banner = document.getElementById("gate-banner");
+      var why = document.getElementById("gate-why");
+      if (banner) {
+        banner.classList.add("on");
+        banner.setAttribute("aria-hidden", "false");
+      }
+      if (why) {
+        var sessionNote = "";
+        if (m.tag === "STOCKS") {
+          // Refresh calendar each paint so overnight/weekend flips without reload.
+          var cal = equitySessionNow();
+          m.session = cal.session;
+          m.sessionLabel = cal.label;
+          sessionNote = m.session === "closed"
+            ? " Session: closed (" + (m.sessionLabel || "ET calendar") + ") — valuation may be paused; CTA stays; on-tx may revert."
+            : " Session: open (" + (m.sessionLabel || "regular ET") + ") — corp-action / halt = Fed setValuation or setEnabled, not a gray tab.";
+          sessionNote += equityFedOpsNote(asset);
+        } else if (m.tag === "ETH" || m.tag === "USDG") {
+          // No equity calendar - oracle/valuation ops only (see BONDS.md ETH/USDG Fed ops).
+          sessionNote = " Valuation: 24/7 (no session clock) - stale/jump = Fed setValuation or setEnabled; CTA stays.";
+          sessionNote += valuationFedOpsNote(asset);
+        }
+        why.textContent = " Oracle: " + m.oracle + "." + sessionNote;
+      }
+
+      var cta = document.getElementById("bond-cta");
+      if (cta) {
+        cta.disabled = false;
+        cta.removeAttribute("aria-disabled");
+        currentAsset = asset;
+        cta.textContent = "Open Bond";
+        cta.title = "Open Bond / " + asset + " - capacity " + m.capacity + ", haircut " + m.haircut;
+        showErr("bond-err", null);
+      }
+
+      document.querySelectorAll(".tab").forEach(function (t) {
+        var a = t.getAttribute("data-asset");
+        var on = a === asset;
+        t.classList.toggle("on", on);
+        t.classList.remove("gated");
+        t.setAttribute("aria-selected", on ? "true" : "false");
+        t.removeAttribute("aria-disabled");
+        t.title = "";
+      });
+    }
+
+    var currentAsset = "ETH";
+
+    function showErr(id, msg) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      if (!msg) { el.style.display = "none"; el.textContent = ""; return; }
+      el.textContent = msg;
+      el.style.display = "block";
+    }
+
+    function surfaceTxErr(which, title, lede) {
+      showErr(which, lede);
+      if (window.vapurr && typeof vapurr.showTx === "function") {
+        vapurr.showTx({ ok: false, title: title, lede: lede, rows: [] });
+      }
+    }
+
+    document.querySelectorAll("[data-go]").forEach(function (el) {
+      el.onclick = function () {
+        var go = el.getAttribute("data-go");
+        if (!go) return;
+        if (go.charAt(0) === "#") {
+          var target = document.querySelector(go);
+          if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+          return;
+        }
+        if (window.vapurr && vapurr.go) vapurr.go(go);
+      };
+    });
+
+    document.querySelectorAll(".tab").forEach(function (el) {
+      var prev = el.onclick;
+      el.onclick = function () {
+        currentAsset = el.getAttribute("data-asset");
+        paintAsset(currentAsset);
+      };
+    });
+
+    var bondCta = document.getElementById("bond-cta");
+    if (bondCta) bondCta.onclick = function () {
+      var amt = ((document.getElementById("bond-amt") || {}).value || "").trim();
+      if (!amt || !(Number(amt) > 0)) {
+        surfaceTxErr("bond-err", "Bond needs an amount", "Enter a positive amount, then Open Bond again.");
+        return;
+      }
+      if (window.vapurr && typeof vapurr.send === "function") {
+        vapurr.send({ cmd: "econ-bond", asset: currentAsset, amt: amt });
+      }
+      // Empty bond_market book -> NeedBondMarket; keep CTA live (not a gray gate).
+      surfaceTxErr(
+        "bond-err",
+        "Bond tx not configured",
+        "BondMarket book empty (NeedBondMarket) until Relic fills the CA. Open Bond stays live."
+      );
+    };
+
+    var cdCta = document.getElementById("cd-cta");
+    if (cdCta) cdCta.onclick = function () {
+      var amt = ((document.getElementById("cd-amt") || {}).value || "").trim();
+      if (!amt || !(Number(amt) > 0)) {
+        surfaceTxErr("cd-err", "CD needs an amount", "Enter a positive $PUSD amount, then Open CD again.");
+        return;
+      }
+      if (window.vapurr && typeof vapurr.send === "function") {
+        vapurr.send({ cmd: "econ-cd-open", amt: amt });
+      }
+      surfaceTxErr(
+        "cd-err",
+        "CD tx not configured",
+        "Savings book empty (NeedSavings) until Relic fills sPUSD / SpusdCd / SavingsRouter. Open CD stays live."
+      );
+    };
+
+    function paintBooks(s) {
+      var Sav = (s && s.savings) || {};
+      var Bon = (s && s.bonds) || {};
+      var cdNote = document.getElementById("cd-book-note");
+      var bondNote = document.getElementById("bond-book-note");
+      var strip = document.getElementById("capital-strip");
+      if (cdNote) {
+        cdNote.textContent = Sav.configured
+          ? "Savings book live - CD open ABI / coupon reads still open after Relic deploy review."
+          : "Savings book empty (NeedSavings) until Relic fills sPUSD / SpusdCd / SavingsRouter CAs. Open CD stays live; on-tx surfaces the miss.";
+      }
+      if (bondNote) {
+        bondNote.textContent = Bon.configured
+          ? "BondMarket book live - quote/capacity reads still open after Relic deploy review."
+          : "BondMarket book empty (NeedBondMarket) until Relic fills the CA. Open Bond stays live; on-tx surfaces the miss.";
+      }
+      if (strip) {
+        var parts = [];
+        parts.push(Bon.configured ? "BondMarket connected" : "BondMarket awaiting CA");
+        parts.push(Sav.configured ? "Savings connected" : "Savings awaiting CA");
+        strip.innerHTML = '<span class="tiny-dot"></span>' + parts.join(" · ");
+      }
+    }
+    window.__setEcon = function (s) { paintBooks(s); };
+    if (window.vapurr && typeof vapurr.send === "function") {
+      vapurr.send({ cmd: "econ" });
+      setInterval(function () {
+        if (vapurr.pendingTx) return;
+        vapurr.send({ cmd: "econ" });
+      }, 8000);
+    }
+
+    paintAsset("ETH");
+  </script>
+  <script src="/defi-flow.js"></script>
+</body>
+</html>

@@ -5,25 +5,76 @@ pub(crate) fn vapurr_url(page: &str) -> String {
 }
 
 pub(crate) const FOMO_FAMILY: &str = "https://fomo.family";
+pub(crate) const PENDULUM_ARCHIVE: &str = "https://archive.pendulumflow.com";
 
 pub(crate) fn needs_login(id: &str) -> bool {
     matches!(id, "wallet" | "portfolio")
+}
+
+pub(crate) fn lock_url(next: &str, mode: &str) -> String {
+    let next = if next.is_empty() { "home" } else { next };
+    if mode == "set" {
+        vapurr_url(&format!("lock.html?mode=set&next={next}"))
+    } else {
+        vapurr_url(&format!("lock.html?next={next}"))
+    }
+}
+
+pub(crate) fn gate_url(next: &str) -> Option<String> {
+    if !vapurr_wallet::has_key() {
+        return None;
+    }
+    if vapurr_wallet::needs_passcode_setup() {
+        return Some(lock_url(next, "set"));
+    }
+    if vapurr_wallet::has_pin() && !vapurr_wallet::is_logged_in() {
+        return Some(lock_url(next, "unlock"));
+    }
+    None
 }
 
 pub(crate) fn pane_url(id: &str) -> String {
     if matches!(id, "fomo" | "family") {
         return FOMO_FAMILY.into();
     }
-    if needs_login(id) && !vapurr_wallet::is_logged_in() {
-        return vapurr_url(&format!("login.html?next={id}"));
+    if matches!(id, "pendulum" | "polyarchive" | "pmarchive") {
+        return PENDULUM_ARCHIVE.into();
+    }
+    if matches!(id, "lock" | "passcode" | "unlock") {
+        let mode = if vapurr_wallet::needs_passcode_setup() { "set" } else { "unlock" };
+        return lock_url("home", mode);
+    }
+    if needs_login(id) {
+        if !vapurr_wallet::has_key() {
+            return vapurr_url(&format!("login.html?next={id}"));
+        }
+        if let Some(url) = gate_url(id) {
+            return url;
+        }
+    } else if let Some(url) = gate_url(id) {
+        // PIN set / needs set: surface lock on cold start panes that hit chrome.
+        // Only force when session is locked and user has a wallet.
+        if matches!(id, "home" | "settings" | "wallet" | "portfolio") {
+            return url;
+        }
     }
     let page = match id {
-        "login" | "signin" | "signup" => "login.html",
+        "login" | "signin" | "signup" => {
+            if vapurr_wallet::has_key() {
+                if let Some(url) = gate_url("wallet") {
+                    return url;
+                }
+            }
+            "login.html"
+        }
         "wallet" | "portfolio" => "wallet.html?v=in",
         "pay" | "ketpay" => "pay.html",
         "card" => "card.html",
         "zzzmail" | "zmail" | "mail" => "zzzmail.html",
         "id" => "id.html",
+        // NOTE: "gas"/"gwei" are already claimed below (explorer.html?tab=gas) —
+        // don't add them here too, or that arm becomes unreachable.
+        "gasless" | "savings" => "gasless.html",
         "shield" | "adblock" => "shield.html",
         "swap" => "swap.html",
         "defi" | "finance" => "defi.html",
@@ -37,10 +88,12 @@ pub(crate) fn pane_url(id: &str) -> String {
         "gas" | "gwei" => "explorer.html?tab=gas",
         "floor" | "list" | "projects" => "floor.html",
         "ketflix" => "ketflix.html",
+        "poly" | "polymarket" | "polydata" | "polydesk" => "poly.html",
         "ketcharts" | "charts" | "chart" => "ketcharts.html",
         "trenches" | "tape" | "hood-tape" => "trenches.html",
         "ketbook" | "docs" | "honkit" | "book" => "ketbook.html",
         "earn" => "earn.html",
+        "bonds" | "routing" | "markets" => "bonds.html",
         "history" => "history.html",
         "bookmarks" => "bookmarks.html",
         "cookies" | "cookie" | "jar" => "cookies.html",
@@ -118,6 +171,14 @@ pub(crate) fn home_url(desk: &Desk) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn pendulum_opens_archive() {
+        assert_eq!(pane_url("pendulum"), PENDULUM_ARCHIVE);
+        assert_eq!(pane_url("polyarchive"), PENDULUM_ARCHIVE);
+        assert!(pane_url("poly").ends_with("poly.html"));
+        assert!(pane_url("polymarket").ends_with("poly.html"));
+    }
 
     #[test]
     fn secretlab_www_never_loads() {

@@ -479,6 +479,8 @@ pub fn swap_cli(args: &[String]) -> Result<(), String> {
             copy_if_present(parent, dir, "VERSION.txt");
         }
     }
+    // Keep Programs & Uninstall DisplayVersion aligned with channel VERSION.txt / manifest.
+    setup::refresh_uninstall_key(&dest);
     crash::log(&format!("patched {}", dest.display()));
     setup_spawn(&dest)?;
     Ok(())

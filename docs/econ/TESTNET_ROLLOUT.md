@@ -1,0 +1,254 @@
+# Testnet rollout — gen-5 full stack (prep)
+
+**Chain:** Robinhood testnet **46630**.  
+**Mode:** preparation + dry-run only until Relic approves CutoverDeploy.  
+**Honesty gate:** **gen-4 is live** on 46630 until cutover. Do not treat gen-4 addresses as the one-token book. Do not silently broadcast.
+
+Vanity Lithe / market proxy target (STATUS `MAINNET_MARKET_VANITY`, reused for staged rollout):
+
+| | |
+|--|--|
+| Target | `0xC47f00D61F8379337f9fb42E6DcC695AE2d6EBD2` |
+| STATUS deployer | `0x48043E2Cda4D403c10dbB1F4614c4F6ad0f9AeA5` |
+| Verified | `VANITY == CREATE(deployer, nonce=0)` |
+
+Proxy pattern: **UUPS + ERC1967Proxy** (`contracts/proxy/*`, `PusdMarketFedUpgradeable.sol`).
+
+USDG is **bond / treasury intake only** (`BondAssetTag`). No USDG AMM / peg-pool.
+
+**Genesis allocation (locked):** `bootstrapV` default **200_000 ether** (fatter: BrowserStream 50k / V/ETH 80k / V/NVDA 25k / V/AMD 25k / House 20k) + DevFund **200k** separate. See `GENESIS_ALLOCATION.md`.
+
+**Script coverage legend:** `[IN SCRIPT]` = composed by `script/TestnetRollout.s.sol` dry-run / gated live path. `[MANUAL]` / `[FOLLOW-UP]` = still operator or later PR.
+
+---
+
+## Ordered deploy checklist
+
+Execute in order. Record each address in `docs/STATUS.md` only after a successful, approved broadcast.
+
+### 0. Preconditions
+
+- [ ] Operator wallet funded on **46630**
+- [x] `CONFIRM_TESTNET_DEPLOY` **unset** for dry-runs (script default; dry-run simulates stack locally with no broadcast)
+- [ ] Gen-4 market `0x47Aca529…3617` still treated as live until cutover flag
+- [x] Parallel tracks composed via existing `LaunchBootstrap` / `DevFundStream` / `ExogenousPairRegistry` (do not thrash those files mid-flight)
+- Observed **2026-09-05 ~14:06 ET** (RPC `https://rpc.testnet.chain.robinhood.com`, chainId 46630): STATUS deployer `0x48043E2Cda4D403c10dbB1F4614c4F6ad0f9AeA5` **nonce=0** (Path A CREATE proxy at vanity still open); **balance=0** ETH (unfunded). Vanity `0xC47f00D61F8379337f9fb42E6DcC695AE2d6EBD2` has no code.
+
+### 1. Fed V + gV + RebasePolicy (dynamic 1–9%) — [IN SCRIPT]
+
+- [x] Deploy `VapurrToken` (Fed V) — in `TestnetRolloutDeploy`
+- [x] Deploy `RebasePolicy` (floor **1%/yr**, ceiling **9%/yr**, mid **3.5%** unbound — see `POLICY_RATE.md`)
+- [x] Deploy `gVAPURR`; `policy.bindGV(gV)`
+- [x] **Do not** `setMinter(gV)` until genesis mint + DevFund allocation complete (enforced by step order)
+
+### 2. Lithe — `PusdMarketFed` behind upgradeable proxy (vanity) — [IN SCRIPT]
+
+- [x] Deploy `PusdMarketFedUpgradeable` **implementation**
+- [x] Deploy `ERC1967Proxy(impl, initialize(vapurr, rate, owner))`
+  - **Preferred vanity land (path A):** STATUS deployer **nonce 0** CREATE of the proxy → exact vanity (no salt) — still operator land; dry-run logs MATCH/MISS
+  - **CREATE2 (path B):** salt-hunt with fixed `initCodeHash` — `script/VanityCreate2Hunt.s.sol`
+- [ ] Verify proxy `owner`, `vapurr`, `pusd`, `litheVersion()==1` on live chain after approved broadcast
+- [x] No Lithe redeem V inventory fund (seigniorage: `swapPusdToV` mints via `marketMinter`; see §8 handoff)
+
+### 3. Oliver (`PusdLoopUpgradeable`) behind UUPS ERC1967Proxy — [IN SCRIPT]
+
+- [x] Deploy `PusdLoopUpgradeable` **implementation** (not user-facing) — `contracts/PusdLoopUpgradeable.sol`
+- [x] Deploy `ERC1967Proxy(impl, initialize(market_, owner_))` against **proxy** market address (not the impl) — same shape as §2 Lithe, required by `docs/econ/PROXY_DEPLOY_GATE.md` (2026-09-06 hard lock, post-GT). Bare-impl-as-live is the exact anti-pattern that locked this gate.
+- [x] `scripts/verify-proxy.ps1 -Address 0x07d1085b545d5e1f55668a6a2EA9332233AaeC69` exits 0 (impl `0x982f20837FBC9112225504580e0d9dc23b3eAAa5`) — script did not exist yet, written this pass alongside the deploy
+- [x] `setOwner` to rollout owner (after wiring)
+- [x] DevFund path locks V as Oliver collateral only (`DEV_FUND.md`) via LaunchBootstrap
+- [x] Boot economics eased in this impl: `BOOT_SLOPE1` 150%→30%, `BOOT_CASH` 100,000→5,000 PUSD (gen-4 vault sat at ~0.0007 PUSD total cash after two days at the old settings — a genuine deadlock, not a slow ramp). `constant`s, not storage — a further retune still needs an upgrade, which is the point of doing this behind UUPS this time.
+
+### 4. BondMarket (USDG bond-only) — [IN SCRIPT]
+
+- [x] Deploy `BondMarket` wired to gV payout + Fed V supply assertion
+- [x] Confirm **USDG `BondAssetTag` only** — ETH/STOCKS tabs unset; no PUSD/USDG pool
+- [x] `policy.bindBondMarket(bonds)` for dynamic 1–9% rate
+- [ ] Live valuation oracle / capacity ops after cutover (params env-tunable: `BOND_USDG_CAPACITY`, `BOND_TREASURY`, `USDG`)
+
+### 5. Remittance + savings — [IN SCRIPT]
+
+- [x] Deploy / wire `RemittanceSink` + `RunwayFloor`
+- [x] `market.setRemittance(sink, runway, autoRemit)` + Oliver same sink/floor
+- [x] Deploy `SPUSD` + `SpusdCd` + `SavingsRouter(sink, liquid, cd)`
+- [x] `sink.setForward(savingsRouter)` — post-floor split per `EARNINGS_ENGINE.md` / `SPUSD.md`
+- [x] **Starts DISABLED** (`setAllocation(false, 0)`) — safe default until liquid shares are seeded / operator enables
+- [ ] Operator enable + seed liquid vault (or all-CD allocation) before first `forwardSurplus` — **[MANUAL]** post-deploy
+
+### 6. DevFund (200k stream → Oliver collateral only) — [IN SCRIPT]
+
+- [x] Genesis mint is **1.2M** (1M launch + **200_000 V** DevFund) **before** `setMinter(gV)`
+- [x] `LaunchBootstrap`: `DevFundStream` fund + `startStream`
+- [x] Unlock settles **only** into Oliver collateral; recipient draws **$PUSD** only
+- [x] Distinct from BrowserStream (50k / 3y) — `LaunchBootstrap` funds BrowserStream from the 1M launch
+
+### 7. Exogenous pair registry — V/ETH + V/NVDA + V/AMD — [IN SCRIPT]
+
+- [x] `ExogenousPairRegistry` via `LaunchBootstrap`
+- [x] Register genesis books: **V/ETH**, **V/NVDA**, **V/AMD** (trading / POL — not bond purchase)
+- [x] Ban USDG / PUSD as exogenous pair legs (registry constructor)
+- [x] POL V earmarks: V/ETH **80k** · V/NVDA **25k** · V/AMD **25k** (`fundV`); exo leg optional (`SEED_POL`)
+
+### 8. Minter handoff + cutover inventory — [IN SCRIPT]
+
+- [x] Dual-minter handoff (match `CanonicalLitheFactory` / `MINT_AUTHORITY.md`):
+  - Genesis mint complete (**1.2M**; cutover inventory carved from 800k treasury remainder) **before** policy handoff
+  - `canonicalV.setMarketMinter(Lithe)` — Lithe seigniorage printer (while deployer still holds policy minter)
+  - `canonicalV.setMinter(gV)` — gV policy inflate 1–9%
+  - No Lithe redeem inventory fund — redeem mints V via `marketMinter`
+- [x] Policy owner = rollout owner
+- [x] `LegacyVConverter` + `LitheCutoverMigrator` composed like factory:
+  - **Dry-run (CONFIRM unset):** local mock legacy market/V if `LEGACY_*` unset — **not** live gen-4 addresses
+  - **Live (`CONFIRM_TESTNET_DEPLOY=1`):** requires `LEGACY_MARKET` + `LEGACY_V` + `LEGACY_V_SUPPLY` (verified vs `vapurr()` / `totalSupply()`); otherwise cutover skipped (no invented addresses)
+  - Converter funded 1:1 with canonical V inventory; migrator constructed against Lithe proxy
+- [ ] Snapshot desk ABI (`snapshot(address)` 12 words) against proxy on live chain
+- [ ] Migrator fork verify against real gen-4 before CutoverDeploy — **[MANUAL]**
+
+### 9. House / wgV follow-up (not in factory) — [FOLLOW-UP] scripted dry-run
+
+**Gate:** run **after** core `TestnetRollout` / CutoverDeploy lands gen-5 Lithe proxy + Fed V + gV + $PUSD. Core cutover is **not** blocked on this section.
+
+Script: `contracts/script/TestnetHouseFollowup.s.sol` (`TestnetHouseFollowup`).
+- Default = local dry-run (no broadcast). Composes a local Lithe+gV stack when env addrs unset.
+- Live broadcast only with `CONFIRM_HOUSE_FOLLOWUP=1` **or** `CONFIRM_TESTNET_DEPLOY=1`, and real post-cutover `GV` + (`PUSD` and/or `LITHE_PROXY`). Never invents addresses.
+- Does **not** fund vanity deployer / move ETH. Does **not** deploy HouseLp/HouseSwap (Uni v4 POSM/PM/Permit2 still open).
+
+**Ordered steps (post-core):**
+
+1. [ ] Record gen-5 addresses from STATUS / approved rollout log: `LITHE_PROXY` (prefer vanity `0xC47f…EBD2`), Fed V, `GV`, `$PUSD` (= `market.pusd()`)
+2. [ ] Dry-run: `forge script script/TestnetHouseFollowup.s.sol:TestnetHouseFollowup -vv` (CONFIRM unset)
+3. [ ] Live (Relic-approved only): set env below + `CONFIRM_HOUSE_FOLLOWUP=1` + `PRIVATE_KEY`; broadcast against 46630
+4. [ ] Deploy `wgVAPURR(gV)` — House equity SoT (wrap path; never pool raw gV)
+5. [ ] Deploy `HousePairConfig(wgV, pusd, gV)` + `HousePairFactory`; `validateAndMark(wgV, pusd)`
+6. [ ] Record wgV + pairConfig in STATUS; clear gen-4 house/pair_config from local cutover book
+7. [ ] **[STILL OPEN / MANUAL]** HouseLp + HouseSwap when Uni v4 PositionManager + Permit2 + PoolManager exist; seed **wgV** inventory (stake V→gV→wrap), not raw V/gV
+8. [ ] **[STILL OPEN]** HouseFeeRemit / HouseUniSkim + Rust `house_deploy` / `swap_deploy` ABI (`pairConfig` first)
+9. [ ] Remittance skim / fee attribution e2e as separate PR after Uni path
+
+**Env vars (House follow-up):**
+
+| Var | Required when | Meaning |
+|-----|---------------|---------|
+| `GV` | live broadcast | gen-5 `gVAPURR` |
+| `PUSD` | live (or Lithe) | gen-5 `$PUSD` cash leg |
+| `LITHE_PROXY` | live (or PUSD) | gen-5 Lithe proxy; script reads `pusd()` / checks `litheVersion()==1` |
+| `HOUSE_LITHE_PROXY` | optional alias | same as `LITHE_PROXY` if unset |
+| `CONFIRM_HOUSE_FOLLOWUP` | live | `1` to allow House follow-up broadcast |
+| `CONFIRM_TESTNET_DEPLOY` | alt live gate | `1` also unlocks (same as core) — prefer House-specific flag |
+| `PRIVATE_KEY` | live | deployer key (not STATUS vanity fund step) |
+| `ROLLOUT_OWNER` | optional | owner for dry-run local Lithe compose |
+| `LITHE_RATE_WAD` | dry-run local only | rate when composing local Lithe (default 1e18) |
+
+```powershell
+# From contracts/ — dry-run (default)
+forge script script/TestnetHouseFollowup.s.sol:TestnetHouseFollowup -vv
+
+# LIVE after core cutover — Relic gate only (example)
+# $env:CONFIRM_HOUSE_FOLLOWUP = "1"
+# $env:GV = "0x..."
+# $env:LITHE_PROXY = "0xC47f00D61F8379337f9fb42E6DcC695AE2d6EBD2"  # or real landed proxy
+# $env:PUSD = "0x..."   # optional if LITHE_PROXY set
+# forge script script/TestnetHouseFollowup.s.sol:TestnetHouseFollowup --rpc-url $TESTNET_RPC --broadcast
+```
+
+Canon: `HOUSE_PAIR.md`, `WGV_HOUSE.md`.
+
+### 10. Cutover / UI honesty — [MANUAL]
+
+- [ ] Approved CutoverDeploy only — no silent prod
+- [ ] UI / desk address book updated to gen-5 proxy + Fed V
+- [ ] Gen-4 addresses marked retired in STATUS after cutover
+- [ ] Migrator / `LegacyVConverter` inventory route verified on fork first
+
+---
+
+## Dry-run commands
+
+From `contracts/`:
+
+```powershell
+# Plan + local full-stack simulation (default) — no broadcast
+forge script script/TestnetRollout.s.sol:TestnetRollout -vv
+
+# Optional CREATE2 notes / hunt (still no broadcast)
+forge script script/VanityCreate2Hunt.s.sol:VanityCreate2Hunt -vv
+
+# LIVE broadcast — explicit gate required
+$env:CONFIRM_TESTNET_DEPLOY = "1"
+# Also set LEGACY_MARKET / LEGACY_V / LEGACY_V_SUPPLY for cutover inventory (else skipped)
+# forge script script/TestnetRollout.s.sol:TestnetRollout --rpc-url $TESTNET_RPC --broadcast
+
+# House / wgV follow-up (AFTER core) — dry-run default; see §9
+forge script script/TestnetHouseFollowup.s.sol:TestnetHouseFollowup -vv
+```
+
+Optional env (dry-run deploys MockUsdg / mock exo legs when unset): `USDG`, `EXO_ETH`, `EXO_NVDA`, `EXO_AMD`, `BOOTSTRAP_V` (default **200000 ether** / `200_000 ether` — see `GENESIS_ALLOCATION.md`), `RUNWAY_FLOOR`, `BOND_USDG_CAPACITY`, `BOND_TREASURY`, `DEVFUND_RECIPIENT`, `SEED_POL`, `AUTO_REMIT`, `ROLLOUT_OWNER`, `LITHE_RATE_WAD`, `CD_COUPON_BPS`, `CD_BREAK_FEE_BPS`, `CD_TERM`, `LEGACY_MARKET`, `LEGACY_V`, `LEGACY_V_SUPPLY`.
+
+House follow-up env: `GV`, `PUSD`, `LITHE_PROXY` / `HOUSE_LITHE_PROXY`, `CONFIRM_HOUSE_FOLLOWUP` (see §9).
+
+Proxy upgrade proofs:
+
+```powershell
+forge test --match-contract PusdMarketFedProxyTest -vv
+```
+
+---
+
+## CREATE2 / vanity achievability
+
+| Question | Answer |
+|----------|--------|
+| Is STATUS vanity the nonce-0 CREATE of STATUS deployer? | **Yes** (verified) |
+| Can UUPS proxy land there via CREATE at nonce 0? | **Yes**, if deployer nonce is still **0** and impl already exists on another key |
+| Can CREATE2 from STATUS deployer hit the same vanity? | **Only with a salt hunt** for the exact `proxy initCodeHash` (impl + init calldata fixed first). Not guaranteed inside a small iteration budget |
+| If STATUS deployer nonce already > 0? | Path A dead; use path B salt hunt or accept a non-vanity proxy on testnet |
+
+**Recommendation for staged 46630 rollout:** use path A on a fresh vanity-capable key if mainnet deployer nonce is reserved/spent; keep CREATE2 hunt script for mainnet land when impl bytecode is frozen.
+
+---
+
+## Dry-run notes (prep — no live addresses)
+
+Captured from `forge script script/TestnetRollout.s.sol:TestnetRollout -vv` (CONFIRM unset).
+
+**Now in script (local simulate, no broadcast):**
+
+1. Fed V + RebasePolicy + gV (dynamic 1–9%)
+2. Lithe impl + ERC1967Proxy (UUPS) — prefer vanity `0xC47f…EBD2`
+3. Oliver (`PusdLoopUpgradeable`) behind its own UUPS ERC1967Proxy, wired to the market proxy
+4. BondMarket (USDG BondAssetTag only) + `policy.bindBondMarket`
+5. RemittanceSink + RunwayFloor + `setRemittance` on Lithe + Oliver
+6. **SavingsRouter + SPUSD + SpusdCd** + `sink.setForward` — **starts DISABLED**
+7. Genesis mint DevFund 200k (+ `BOOTSTRAP_V` default **200_000 ether**) + cutover converter inventory **before** `setMinter(gV)`
+8. **LegacyVConverter + LitheCutoverMigrator** (factory-shaped; dry-run mocks if `LEGACY_*` unset)
+9. LaunchBootstrap: DevFund 200k + Browser 50k + POL 80/25/25 + House 20k + `GenesisTreasury` (gV then Oliver)
+10. Dual-minter: `setMarketMinter(Lithe)` then `setMinter(gV)` (no Lithe redeem inventory)
+
+**Still manual / follow-up:**
+
+- Enable SavingsRouter + seed liquid vault (or all-CD) before first `forwardSurplus`
+- House / wgV — **scripted follow-up** `TestnetHouseFollowup.s.sol` (dry-run ready; live after core; Uni Lp/Swap still open) — see §9
+- Live `LEGACY_*` env for real gen-4 cutover inventory (no invented addresses)
+- Vanity land via STATUS deployer nonce-0 (or CREATE2 hunt) — **Relic funds deployer; do not move ETH from bots**
+- Relic-approved CutoverDeploy + UI address book + migrator fork verify
+
+HONEST: gen-4 remains live on 46630 until Relic-approved CutoverDeploy. Do not invent live gen-5 addresses here.
+
+**Last dry-run (2026-09-05 ~2:05pm ET):** `forge script script/TestnetRollout.s.sol:TestnetRollout -vv` from `contracts/` — **exit 0**, `CONFIRM_TESTNET_DEPLOY 0`, no broadcast. Local simulate composed prior stack + SPUSD/SpusdCd/SavingsRouter (`sink.setForward`, **savings enabled 0 / cdBps 0**), + LegacyVConverter+LitheCutoverMigrator (dry-run mock legacy, inventory 288k V (carved from 800k)). Gas used ~44.7M. Vanity MISS expected off STATUS deployer nonce-0 path. No live gen-5 addresses — dry-run only.
+
+**House follow-up dry-run (2026-09-05 ~2:15pm ET):** `forge script script/TestnetHouseFollowup.s.sol:TestnetHouseFollowup -vv` — **exit 0**, both CONFIRM flags unset, no broadcast. Local compose Fed V + gV + Lithe proxy → `wgVAPURR` + `HousePairConfig` + factory `validateAndMark(wgV,pusd)`. HouseLp/HouseSwap not deployed (Uni still open). No ETH moved.
+
+## Related
+
+- TESTNET_PROXY_46630.md — CREATE2 factory / salt miner companion (parallel)
+- scripts/mine-lithe-vanity.ps1 — cast-assisted salt search
+
+- `STATUS.md` — live gen-4 addresses + vanity line
+- `POLICY_RATE.md` — 1–9% bond-utilization policy
+- `GENESIS_ALLOCATION.md` — locked bootstrapV 200k split + launch markets
+- `GENESIS_ALLOCATION.md` — 1.2M mint lock
+- `DEV_FUND.md` — 200k → Oliver collateral
+- `BONDS.md` / `ROUTING.md` — USDG bond-only lock
+- `SPUSD.md` / `EARNINGS_ENGINE.md` — savings forward + post-floor split
+- `TESTNET_SHAPE.md` — historical LP shape (gen-4 context)
+- Contracts: `PusdMarketFedUpgradeable`, `proxy/ERC1967Proxy`, `LaunchBootstrap`, `CanonicalLitheFactory`, `BondMarket`, `Remittance`, `SavingsRouter`, `SPUSD`, `SpusdCd`, `LegacyVConverter`, `LitheCutoverMigrator`, `wgVAPURR`, `HousePairConfig` / `script/TestnetHouseFollowup.s.sol`

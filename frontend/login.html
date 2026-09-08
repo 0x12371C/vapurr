@@ -87,6 +87,123 @@
     html[data-theme="light"] .door {
       background: color-mix(in srgb, var(--color-steel) 84%, transparent);
     }
+
+    .odws-card {
+      margin-top: 10px;
+      padding: 14px 14px 12px;
+      border-radius: 14px;
+      background: color-mix(in srgb, var(--color-void) 42%, transparent);
+      border: 1px solid color-mix(in srgb, var(--color-lime) 18%, transparent);
+    }
+    .odws-card .odws-title {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .odws-card .odws-title strong {
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      color: var(--color-snow);
+    }
+    .odws-card .odws-ver {
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--color-lime);
+    }
+    .odws-card ul {
+      margin: 0;
+      padding: 0 0 0 16px;
+      color: var(--color-muted);
+      font-size: 12.5px;
+      line-height: 1.5;
+    }
+    .odws-card ul li { margin: 4px 0; }
+    .odws-card ul b { color: var(--color-snow); font-weight: 600; }
+    .odws-card .odws-foot {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid color-mix(in srgb, var(--color-snow) 8%, transparent);
+      color: color-mix(in srgb, var(--color-muted) 88%, transparent);
+      font-size: 11.5px;
+      line-height: 1.45;
+    }
+    .odws-ack {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      margin-top: 14px;
+      padding: 12px 12px;
+      border-radius: 12px;
+      background: color-mix(in srgb, var(--color-void) 28%, transparent);
+      border: 1px solid color-mix(in srgb, var(--color-snow) 7%, transparent);
+      font-size: 13px;
+      color: var(--color-snow);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .kyc-ladder {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin: 0 0 10px;
+      padding: 0;
+    }
+    .kyc-ladder span {
+      font-size: 11px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: color-mix(in srgb, var(--color-muted) 78%, transparent);
+      padding: 4px 8px;
+      border-radius: 999px;
+      border: 1px solid color-mix(in srgb, var(--color-snow) 8%, transparent);
+      background: color-mix(in srgb, var(--color-void) 28%, transparent);
+    }
+    .kyc-ladder span.on {
+      color: var(--color-lime);
+      border-color: color-mix(in srgb, var(--color-lime) 34%, transparent);
+      background: color-mix(in srgb, var(--color-lime) 10%, transparent);
+    }
+    .kyc-ladder span.done {
+      color: color-mix(in srgb, var(--color-snow) 72%, transparent);
+      border-color: color-mix(in srgb, var(--color-lime) 14%, transparent);
+    }
+    .odws-ack input {
+      margin-top: 2px;
+      width: 16px;
+      height: 16px;
+      accent-color: var(--color-lime);
+      flex: 0 0 auto;
+    }
+    .zkkyc-card {
+      margin: 0 0 12px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid color-mix(in srgb, var(--color-lime) 18%, transparent);
+      background: color-mix(in srgb, var(--color-lime) 6%, transparent);
+    }
+    .zkkyc-card b {
+      display: block;
+      font-size: 13px;
+      color: var(--color-lime);
+      letter-spacing: 0.02em;
+      margin-bottom: 6px;
+    }
+    .zkkyc-card p {
+      margin: 0 0 6px;
+      font-size: 12.5px;
+      line-height: 1.45;
+      color: color-mix(in srgb, var(--color-muted) 92%, var(--color-snow));
+    }
+    .zkkyc-card p:last-child { margin-bottom: 0; }
+    .zkkyc-card .mono-bit {
+      color: var(--color-snow);
+      font-weight: 600;
+    }
   </style>
 </head>
 <body>
@@ -100,15 +217,86 @@
 
     <div class="door" id="cont-box" hidden>
       <label class="mono">This device</label>
-      <div class="addr" id="cont-addr">—</div>
+      <div class="addr" id="cont-addr">-</div>
       <div class="hint">Continue as this wallet.</div>
       <button class="btn" id="cont" type="button">Continue</button>
     </div>
 
-    <div class="door" id="create-box" hidden>
+    <div class="door" id="odws-box" hidden>
+      <label class="mono">Before you create</label>
+      <div class="odws-card" id="odws-hint">
+        <div class="odws-title">
+          <strong>Open Digital Wallet Standard</strong>
+          <span class="odws-ver">v0.1</span>
+        </div>
+        <ul>
+          <li>Keys stay <b>encrypted on this PC</b>, behind your passcode.</li>
+          <li><b>zer0ID</b> ZKKYC: browse-earn <b>claims need L4</b> ocular (open-iris).</li>
+          <li>We <b>don't store</b> your scan or personal info - nullifier-only ZK attestation in vapurrDB.</li>
+        </ul>
+        <div class="odws-foot">Builds on Worldcoin open-iris (MIT) + OpenAI technology where used. Not official partnerships.</div>
+      </div>
+      <label class="odws-ack" for="odws-ack">
+        <input type="checkbox" id="odws-ack"/>
+        <span>I understand - create under ODWS v0.1</span>
+      </label>
+      <button class="btn" id="odws-go" type="button" disabled>Create wallet</button>
+    </div>
+
+<div class="door" id="create-box" hidden>
       <label class="mono">New</label>
       <div class="hint" id="create-hint">A new wallet on this PC.</div>
       <button class="btn" id="create" type="button">Create wallet</button>
+    </div>
+
+    <div class="door" id="kyc-box" hidden>
+      <label class="mono" id="kyc-label">zer0ID | ZKKYC ladder</label>
+      <div class="odws-card" id="kyc-card">
+        <div class="zkkyc-card" id="zkkyc-explain">
+          <b>What is ZKKYC?</b>
+          <p><span class="mono-bit">zer0ID</span> uses zero-knowledge KYC: prove uniqueness and a few attributes without handing over a biometric database or raw photos.</p>
+          <p>Durable state is <span class="mono-bit">nullifier-only</span> - opaque in vapurrDB. No raw biometrics, no PII, no photo archive.</p>
+          <p>Trust ladder <span class="mono-bit">L1-L4</span> (Age -> Country -> Phone -> <span class="mono-bit">open-iris</span>). Browse-earn claims need <span class="mono-bit">L4</span> ocular.</p>
+          <p>Builds on Worldcoin <span class="mono-bit">open-iris</span> (MIT) and OpenAI technology where used - not official partnerships.</p>
+        </div>
+        <div class="kyc-ladder" id="kyc-ladder" aria-label="zer0ID ZKKYC steps">
+          <span data-step="1">Age</span>
+          <span data-step="2">Country</span>
+          <span data-step="3">Phone</span>
+          <span data-step="4">open-iris</span>
+        </div>
+        <div class="odws-title">
+          <strong id="kyc-title">Verify to unlock claims</strong>
+          <span class="odws-ver" id="kyc-step-pill">1/4</span>
+        </div>
+        <div class="hint" id="kyc-hint" style="min-height:0;margin-top:0"></div>
+        <div id="kyc-age" hidden>
+          <label class="odws-ack" for="kyc-age-ack" style="margin-top:10px">
+            <input type="checkbox" id="kyc-age-ack"/>
+            <span>I confirm I am 18 or older - self-attest (not a DOB document check)</span>
+          </label>
+          <button class="btn" id="kyc-age-go" type="button" disabled>Sign &amp; continue</button>
+        </div>
+        <div id="kyc-geo" hidden>
+          <p class="hint" style="margin-top:8px">Country comes from this connection (CDN/IP geo) - not a dropdown. Embargoed jurisdictions are refused.</p>
+          <button class="btn" id="kyc-geo-go" type="button">Detect country &amp; continue</button>
+          <div id="kyc-geo-result" style="margin-top:10px;min-height:28px"></div>
+        </div>
+        <div id="kyc-phone" hidden>
+          <p class="hint" style="margin-top:8px">Level 3 - phone possession on Secret Lab. If carrier SMS isn't wired yet, the page shows an <b>on-screen mock code</b> (no text sent). Browse-earn <b>claims stay locked</b> until Level 4.</p>
+          <button class="btn" id="kyc-phone-open" type="button">Start phone verify</button>
+          <button class="btn" id="kyc-phone-done" type="button" disabled style="margin-top:8px">Done - continue</button>
+          <button class="btn-ghost" id="kyc-phone-later" type="button" style="width:100%;margin-top:8px;height:44px;border-radius:12px">I&apos;ll do KYC later</button>
+        </div>
+                <div id="kyc-iris" hidden>
+          <p class="hint" style="margin-top:8px"><b>zer0ID</b> L4 - <b>open-iris</b> ocular uniqueness unlocks <b>browse-earn claims</b>. <b>iPhone Safari first</b>; on desktop open the scan page, finish on phone if needed. ZKKYC keeps nullifier-only state in vapurrDB - no raw scan. Builds on Worldcoin open-iris (MIT) + OpenAI tech where used - not partnerships.</p>
+          <button class="btn" id="kyc-iris-open" type="button">Start open-iris L4 scan</button>
+          <button class="btn" id="kyc-iris-done" type="button" disabled style="margin-top:8px">Done - set passcode</button>
+          <button class="btn-ghost" id="kyc-iris-later" type="button" style="width:100%;margin-top:8px;height:44px;border-radius:12px">I&apos;ll do KYC later</button>
+        </div>
+        <div class="odws-foot" id="kyc-foot" style="margin-top:10px">zer0ID ZKKYC: L1 Age -> L2 Country -> L3 Phone -> L4 open-iris. Nullifier-only in vapurrDB. Browse-earn needs L4.</div>
+      </div>
+      <div class="err" id="kyc-err"></div>
     </div>
 
     <div class="door" id="backup-box" hidden>
@@ -149,6 +337,127 @@
     var restoring = false;
     var hasKey = false;
     var backup = "";
+    var needKyc = false;
+    var kycStep = 0; // 1 age, 2 geo, 3 phone, 4 iris
+    var lastCountry = "";
+    function countryFlag(cc) {
+      cc = String(cc || "").toUpperCase();
+      if (!/^[A-Z]{2}$/.test(cc)) return "";
+      return String.fromCodePoint(127397 + cc.charCodeAt(0), 127397 + cc.charCodeAt(1));
+    }
+    function paintCountryResult(cc, opts) {
+      opts = opts || {};
+      var gr = document.getElementById("kyc-geo-result");
+      if (!gr) return;
+      cc = String(cc || "").toUpperCase();
+      if (!/^[A-Z]{2}$/.test(cc)) {
+        gr.innerHTML = "";
+        gr.textContent = opts.emptyMsg || "";
+        return;
+      }
+      lastCountry = cc;
+      var flag = countryFlag(cc);
+      gr.innerHTML = "";
+      var row = document.createElement("div");
+      row.style.cssText = "display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;border:1px solid rgba(192,248,0,0.35);background:rgba(192,248,0,0.08)";
+      var fl = document.createElement("span");
+      fl.textContent = flag;
+      fl.style.cssText = "font-size:28px;line-height:1";
+      fl.setAttribute("aria-hidden", "true");
+      var lab = document.createElement("div");
+      lab.innerHTML = "<div style=\"font-size:15px;font-weight:600;color:#e8fff8\">" + flag + " " + cc + "</div><div style=\"font-size:12px;color:rgba(232,255,248,0.55);margin-top:2px\">Detected from this connection (CDN/IP) — not a self-report</div>";
+      row.appendChild(fl);
+      row.appendChild(lab);
+      gr.appendChild(row);
+    }
+    var kycPhoneOpened = false;
+    var kycIrisOpened = false;
+    var KYC_STORE = "vapurr.createKyc";
+    function saveKyc() {
+      try {
+        if (!needKyc || kycStep < 1) { sessionStorage.removeItem(KYC_STORE); return; }
+        sessionStorage.setItem(KYC_STORE, JSON.stringify({
+          step: kycStep, phoneOpened: !!kycPhoneOpened, irisOpened: !!kycIrisOpened
+        }));
+      } catch (e) {}
+    }
+    function loadKyc() {
+      try {
+        var raw = sessionStorage.getItem(KYC_STORE);
+        if (!raw) return;
+        var o = JSON.parse(raw);
+        if (o && o.step >= 1) {
+          needKyc = true;
+          kycStep = o.step | 0;
+          kycPhoneOpened = !!o.phoneOpened;
+          kycIrisOpened = !!o.irisOpened;
+        }
+      } catch (e) {}
+    }
+    function clearKyc() {
+      needKyc = false;
+      kycStep = 0;
+      kycPhoneOpened = false;
+      kycIrisOpened = false;
+      try { sessionStorage.removeItem(KYC_STORE); } catch (e) {}
+    }
+    function openKycTab(url) {
+      // Persist before navigate; single newtab+url IPC (old newtab-then-open raced).
+      try { saveKyc(); } catch (e) {}
+      var u = String(url || "").trim();
+      if (!u) { setKycErr("Missing KYC URL"); return false; }
+      var ok = false;
+      try { ok = !!(window.vapurr && vapurr.send({ cmd: "newtab", url: u })); } catch (e) { ok = false; }
+      if (!ok) { setKycErr("Could not open KYC tab - try again from this desk"); return false; }
+      return true;
+    }
+    function setKycErr(msg) {
+      var e = document.getElementById("kyc-err");
+      if (e) e.textContent = msg || "";
+    }
+    function paintKycStep() {
+      var age = document.getElementById("kyc-age");
+      var geo = document.getElementById("kyc-geo");
+      var phone = document.getElementById("kyc-phone");
+      var iris = document.getElementById("kyc-iris");
+      if (age) age.hidden = kycStep !== 1;
+      if (geo) geo.hidden = kycStep !== 2;
+      if (phone) phone.hidden = kycStep !== 3;
+      if (iris) iris.hidden = kycStep !== 4;
+      var title = document.getElementById("kyc-title");
+      var pill = document.getElementById("kyc-step-pill");
+      var hint = document.getElementById("kyc-hint");
+      var label = document.getElementById("kyc-label");
+      var titles = {
+        1: "Step 1 - Age (L1)",
+        2: "Step 2 - Country (L2)",
+        3: "Step 3 - Phone (L3)",
+        4: "Step 4 - open-iris (L4)"
+      };
+      var hints = {
+        1: "Self-attest AgeOver18 with a wallet signature. Not a government ID or DOB document.",
+        2: "Issuer reads country from this connection (CDN/IP). No name / PII stored.",
+        3: "Open phone verify in desk tab (desk wallet-sign). Mock/on-screen code when carrier SMS isn't live. Then tap Done. Claims still need L4 open-iris.",
+        4: "L4 open-iris unlocks browse-earn claims. ZKKYC: nullifier-only in vapurrDB. Tap Done when that tab is open. Soft-skip keeps claims locked."
+      };
+      if (title) title.textContent = titles[kycStep] || "zer0ID";
+      if (pill) pill.textContent = kycStep ? (kycStep + "/4") : "";
+      if (hint) hint.textContent = hints[kycStep] || "";
+      if (label) label.textContent = kycStep ? ("zer0ID | ZKKYC " + kycStep + " of 4") : "zer0ID | ZKKYC ladder";
+      var ladder = document.getElementById("kyc-ladder");
+      if (ladder) {
+        var bits = ladder.querySelectorAll("span[data-step]");
+        for (var i = 0; i < bits.length; i++) {
+          var n = parseInt(bits[i].getAttribute("data-step"), 10) || 0;
+          bits[i].className = n < kycStep ? "done" : (n === kycStep ? "on" : "");
+        }
+      }
+      var pd = document.getElementById("kyc-phone-done");
+      if (pd) pd.disabled = !kycPhoneOpened;
+      var idn = document.getElementById("kyc-iris-done");
+      if (idn) idn.disabled = !kycIrisOpened;
+      saveKyc();
+    }
 
     function next() {
       var q = (location.search || "").replace(/^\?/, "");
@@ -160,20 +469,33 @@
       if (n === "login" || n === "signin" || n === "signup") n = "wallet";
       return n;
     }
+    function wantSwitch() {
+      return /(?:^|[?&])switch=1(?:&|$)/.test(location.search || "");
+    }
     function goIn() {
       vapurr.send({ cmd: "pane", id: next() });
     }
+    function goSetPin() {
+      // pane_url gates to lock.html?mode=set&next=… when needs_pin
+      vapurr.send({ cmd: "pane", id: next() });
+    }
     function shortAddr(a) {
-      if (!a || a.length < 12) return a || "—";
+      if (!a || a.length < 12) return a || "-";
       return a.slice(0, 6) + "…" + a.slice(-4);
     }
     function layout() {
       var holding = !!backup;
+      var showKyc = needKyc && kycStep >= 1 && !holding && !restoring;
       document.getElementById("backup-box").hidden = !holding;
+      var kb = document.getElementById("kyc-box");
+      if (kb) kb.hidden = !showKyc;
+      if (showKyc) paintKycStep();
       document.getElementById("restore-box").hidden = holding || !restoring;
-      document.getElementById("cont-box").hidden = holding || restoring || !hasKey;
-      document.getElementById("create-box").hidden = holding || restoring;
-      document.getElementById("other-box").hidden = holding;
+      document.getElementById("cont-box").hidden = holding || restoring || !hasKey || needKyc;
+      document.getElementById("create-box").hidden = holding || restoring || needKyc;
+      var ob = document.getElementById("odws-box");
+      if (ob && (holding || restoring || needKyc)) ob.hidden = true;
+      document.getElementById("other-box").hidden = holding || needKyc;
       document.getElementById("other").textContent = restoring
         ? "Back"
         : (hasKey ? "Use a different wallet" : "I have a wallet");
@@ -186,9 +508,61 @@
     }
     function paint(s) {
       if (!s) return;
+      if (s.kind === "signed") return;
+      if (s.kyc) {
+        busy = false;
+        var ageBtn = document.getElementById("kyc-age-go");
+        var geoBtn = document.getElementById("kyc-geo-go");
+        if (ageBtn) ageBtn.textContent = "Sign & continue";
+        if (geoBtn) geoBtn.textContent = "Detect country & continue";
+        if (!s.ok) {
+          setKycErr(s.error || "KYC step failed");
+          layout();
+          return;
+        }
+        setKycErr("");
+        if (s.level === 1) {
+          kycStep = 2;
+          document.getElementById("lede").textContent = "Jurisdiction next - then phone & ocular.";
+        } else if (s.level === 2) {
+          var country = s.country != null && s.country !== "" ? String(s.country).toUpperCase() : "";
+          if (!/^[A-Z]{2}$/.test(country)) {
+            setKycErr("Could not determine country from this connection — check network / VPN and tap Detect again");
+            paintCountryResult("", { emptyMsg: "No country detected (honest empty — not faked)." });
+            layout();
+            return;
+          }
+          paintCountryResult(country);
+          document.getElementById("lede").textContent = "Country " + countryFlag(country) + " " + country + " — phone next.";
+          // Brief pause so Relic can see the flag before the ladder advances.
+          setTimeout(function () {
+            if (kycStep !== 2) return;
+            kycStep = 3;
+            saveKyc();
+            layout();
+          }, 900);
+          layout();
+          return;
+        }
+        saveKyc();
+        layout();
+        return;
+      }
       if (s.seed) backup = String(s.seed);
-      if (s.logged_in && !backup) {
-        goIn();
+      // Mid create-KYC: never auto-skip to passcode (login-status race).
+      if (needKyc && kycStep >= 1) {
+        if (typeof s.has_key === "boolean") hasKey = !!s.has_key;
+        busy = false;
+        layout();
+        return;
+      }
+      if (s.logged_in && !backup && !wantSwitch()) {
+        if (s.needs_pin) goSetPin();
+        else goIn();
+        return;
+      }
+      if (s.has_key && s.has_pin && !s.logged_in && !wantSwitch()) {
+        vapurr.send({ cmd: "pane", id: next() });
         return;
       }
       if (typeof s.has_key !== "boolean" && typeof s.logged_in !== "boolean") return;
@@ -213,6 +587,15 @@
       document.getElementById("restore").textContent = "Sign in";
       document.getElementById("cont").textContent = "Continue";
       document.getElementById("create").textContent = "Create wallet";
+      var ageBtn = document.getElementById("kyc-age-go");
+      var geoBtn = document.getElementById("kyc-geo-go");
+      if (ageBtn) ageBtn.textContent = "Sign & continue";
+      if (geoBtn) geoBtn.textContent = "Detect country & continue";
+      if (needKyc && kycStep >= 1) {
+        setKycErr(msg || "KYC step failed");
+        layout();
+        return;
+      }
       showRestore(true);
       document.getElementById("err").textContent = msg || "could not sign in";
     };
@@ -223,17 +606,138 @@
       document.getElementById("cont").textContent = "Signing in…";
       vapurr.send({ cmd: "login-continue" });
     };
-    document.getElementById("create").onclick = function () {
+    function doCreate() {
       if (busy) return;
       busy = true;
       document.getElementById("err").textContent = "";
-      document.getElementById("create").textContent = "Creating…";
+      var c = document.getElementById("create");
+      var g = document.getElementById("odws-go");
+      if (c) c.textContent = "Creating…";
+      if (g) g.textContent = "Creating…";
       vapurr.send({ cmd: "login-create" });
+    }
+    document.getElementById("create").onclick = function () {
+      document.getElementById("create-box").hidden = true;
+      document.getElementById("odws-box").hidden = false;
+      document.getElementById("other-box").hidden = true;
+      if (hasKey) {
+        var h = document.getElementById("odws-hint");
+        if (h) {
+          h.querySelector(".odws-title strong").textContent = "Replaces the wallet on this PC";
+          h.querySelector("ul").innerHTML =
+            "<li>ODWS still applies: <b>encrypted vault</b> + passcode.</li>" +
+            "<li>Browse-earn <b>claims need Level 4</b> ocular KYC (open-iris).</li>" +
+            "<li>We <b>don't store</b> your scan - ZK attestation in vapurrDB only.</li>";
+        }
+      }
+    };
+    document.getElementById("odws-ack").onchange = function () {
+      document.getElementById("odws-go").disabled = !this.checked;
+    };
+    document.getElementById("odws-go").onclick = function () {
+      if (!document.getElementById("odws-ack").checked) return;
+      doCreate();
     };
     document.getElementById("got-seed").onclick = function () {
       backup = "";
-      goIn();
+      needKyc = true;
+      kycStep = 1;
+      kycPhoneOpened = false;
+      kycIrisOpened = false;
+      setKycErr("");
+      document.getElementById("lede").textContent = "Complete KYC - claims need Level 4.";
+      saveKyc();
+      layout();
     };
+    document.getElementById("kyc-age-ack").onchange = function () {
+      document.getElementById("kyc-age-go").disabled = !this.checked;
+    };
+    document.getElementById("kyc-age-go").onclick = function () {
+      if (busy) return;
+      if (!document.getElementById("kyc-age-ack").checked) return;
+      busy = true;
+      setKycErr("");
+      this.textContent = "Signing…";
+      vapurr.send({ cmd: "kyc-attest-age", ageConfirmed: true });
+    };
+    document.getElementById("kyc-geo-go").onclick = function () {
+      if (busy) return;
+      busy = true;
+      setKycErr("");
+      var btn = this;
+      btn.textContent = "Detecting…";
+      var sent = false;
+      try { sent = !!(window.vapurr && vapurr.send({ cmd: "kyc-attest-jurisdiction" })); } catch (e) { sent = false; }
+      if (!sent) {
+        busy = false;
+        btn.textContent = "Detect country & continue";
+        setKycErr("Could not reach desk KYC - reopen Sign in and retry Country");
+        return;
+      }
+      setTimeout(function () {
+        if (!busy || kycStep !== 2) return;
+        busy = false;
+        btn.textContent = "Detect country & continue";
+        setKycErr("Country detect timed out - check network and tap Detect again");
+      }, 28000);
+    };
+    document.getElementById("kyc-phone-open").onclick = function () {
+      setKycErr("");
+      kycPhoneOpened = true;
+      saveKyc();
+      paintKycStep();
+      var opened = openKycTab("https://thesecretlab.app/kyc/phone?from=vapurr");
+      if (!opened) {
+        setKycErr("Phone tab did not open - visit thesecretlab.app/kyc/phone then tap Done");
+      }
+    };
+    document.getElementById("kyc-phone-done").onclick = function () {
+      if (!kycPhoneOpened) return;
+      kycStep = 4;
+      setKycErr("");
+      document.getElementById("lede").textContent = "Level 4 ocular unlocks browse-earn claims.";
+      saveKyc();
+      layout();
+    };
+    document.getElementById("kyc-iris-open").onclick = function () {
+      setKycErr("");
+      kycIrisOpened = true;
+      saveKyc();
+      paintKycStep();
+      var opened = openKycTab("https://thesecretlab.app/kyc/scan?from=vapurr");
+      if (!opened) {
+        setKycErr("Iris tab did not open - visit thesecretlab.app/kyc/scan then tap Done");
+      }
+    };
+    document.getElementById("kyc-iris-done").onclick = function () {
+      if (!kycIrisOpened) return;
+      clearKyc();
+      goSetPin();
+    };
+    function skipKycLater() {
+      // Soft skip - browse-earn claims stay locked without Level 4.
+      clearKyc();
+      goSetPin();
+    }
+    document.getElementById("kyc-phone-later").onclick = skipKycLater;
+    document.getElementById("kyc-iris-later").onclick = skipKycLater;
+    (function wireKycLadder() {
+      var ladder = document.getElementById("kyc-ladder");
+      if (!ladder) return;
+      ladder.addEventListener("click", function (ev) {
+        var bit = ev.target && ev.target.closest ? ev.target.closest("span[data-step]") : null;
+        if (!bit) return;
+        var n = parseInt(bit.getAttribute("data-step"), 10) || 0;
+        if (n !== kycStep) {
+          setKycErr(n < kycStep ? "That step is done - continue below." : "Finish the current step first.");
+          return;
+        }
+        setKycErr("");
+        var id = ({ 1: "kyc-age-go", 2: "kyc-geo-go", 3: "kyc-phone-open", 4: "kyc-iris-open" })[n];
+        var btn = id && document.getElementById(id);
+        if (btn && !btn.disabled) btn.click();
+      });
+    })();
     document.getElementById("restore").onclick = function () {
       if (busy) return;
       var secret = document.getElementById("seed").value;
@@ -257,6 +761,11 @@
         document.getElementById("restore").click();
       }
     });
+    loadKyc();
+    if (needKyc && kycStep >= 1) {
+      document.getElementById("lede").textContent = "Complete KYC - claims need Level 4.";
+      layout();
+    }
     vapurr.send({ cmd: "login-status" });
   </script>
 </body>

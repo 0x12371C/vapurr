@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8"/>
@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="/chrome.css"/>
   <style>
     body { overflow: auto; }
-    .wrap { max-width: 560px; margin: 0 auto; padding: 36px 24px 72px; }
+    .wrap { max-width: 640px; margin: 0 auto; padding: 36px 24px 72px; }
     .mark-wrap {
       width: 64px; height: 64px; border-radius: 18px; overflow: hidden;
       margin-bottom: 18px; background: #0e0e0e;
@@ -17,9 +17,9 @@
     .mark { width: 100%; height: 100%; object-fit: contain; display: block; }
     .kicker { color: var(--color-lime); margin-bottom: 8px; }
     h1 { font-size: 32px; font-weight: 600; letter-spacing: -0.03em; margin-bottom: 8px; }
-    .lede { color: var(--color-muted); margin-bottom: 24px; max-width: 460px; line-height: 1.5; }
+    .lede { color: var(--color-muted); margin-bottom: 24px; max-width: 500px; line-height: 1.5; }
     .card {
-      padding: 18px 20px 20px; margin-bottom: 18px;
+      padding: 18px 20px 20px; margin-bottom: 14px;
       background: color-mix(in srgb, var(--color-steel) 58%, transparent);
       backdrop-filter: blur(24px) saturate(1.45);
       -webkit-backdrop-filter: blur(24px) saturate(1.45);
@@ -27,6 +27,55 @@
     }
     .card b { display: block; font-size: 15px; margin-bottom: 6px; }
     .card p { color: var(--color-muted); font-size: 14px; line-height: 1.5; margin: 0; }
+
+    .status-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 4px; }
+    .status-state { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; }
+    .chip {
+      font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase;
+      padding: 3px 8px; border: 1px solid var(--color-forest); color: var(--color-muted);
+    }
+    .chip.ok { color: #7dffb3; border-color: color-mix(in srgb, #7dffb3 40%, transparent); }
+    .chip.warn { color: #ff8a80; border-color: color-mix(in srgb, #ff8a80 40%, transparent); }
+    .status-sub { color: var(--color-muted); font-size: 13px; line-height: 1.5; }
+
+    .ladder { list-style: none; padding: 0; margin: 0; }
+    .rung { display: flex; gap: 12px; padding: 12px 0; border-top: 1px solid var(--color-forest); }
+    .rung:first-child { border-top: 0; }
+    .dot {
+      flex: 0 0 auto; width: 18px; height: 18px; border-radius: 50%; margin-top: 2px;
+      border: 1px solid var(--color-forest); display: grid; place-items: center;
+      font-size: 10px; color: var(--color-muted);
+    }
+    .rung.done .dot { border-color: var(--color-lime); color: var(--color-lime); }
+    .rung.next .dot { border-color: color-mix(in srgb, var(--color-lime) 55%, transparent); }
+    .rung-body { min-width: 0; }
+    .rung-name { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
+    .rung.done .rung-name { color: var(--color-snow); }
+    .rung-proves { color: var(--color-muted); font-size: 13px; line-height: 1.45; }
+    .rung-method { color: var(--color-muted); font-size: 12px; opacity: 0.75; margin-top: 3px; }
+    .rung-caveat { color: #ff8a80; font-size: 12px; margin-top: 3px; opacity: 0.85; }
+
+    .stage { display: none; }
+    .stage.on { display: block; }
+    .qr-row { display: flex; gap: 18px; align-items: flex-start; flex-wrap: wrap; margin-bottom: 12px; }
+    canvas.qr { width: 168px; height: 168px; border: 1px solid var(--color-forest); }
+    .qr-help { flex: 1 1 220px; min-width: 200px; }
+    .steps { list-style: none; padding: 0; margin: 0 0 10px; counter-reset: s; }
+    .steps li {
+      counter-increment: s; position: relative; padding: 0 0 8px 26px;
+      color: var(--color-muted); font-size: 13px; line-height: 1.5;
+    }
+    .steps li::before {
+      content: counter(s); position: absolute; left: 0; top: 0;
+      color: var(--color-lime); font-size: 11px;
+    }
+    .split { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 12px 0; }
+    @media (max-width: 560px) { .split { grid-template-columns: 1fr; } }
+    .split h4 { font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-lime); margin: 0 0 8px; }
+    .split ul { list-style: none; padding: 0; margin: 0; }
+    .split li { color: var(--color-muted); font-size: 13px; line-height: 1.5; padding: 4px 0; }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 4px; }
+    .note { color: var(--color-muted); font-size: 12px; line-height: 1.5; margin-top: 10px; }
     .facts { list-style: none; padding: 0; margin: 0 0 22px; }
     .facts li {
       padding: 12px 0; border-top: 1px solid var(--color-forest);
@@ -34,41 +83,304 @@
     }
     .facts li:first-child { border-top: 0; }
     .facts strong { color: var(--color-snow); font-weight: 600; }
-    .row { display: flex; gap: 10px; flex-wrap: wrap; }
   </style>
 </head>
 <body>
   <div class="wrap">
     <div class="mark-wrap"><img class="mark" src="/mascot.png" alt=""/></div>
-    <div class="mono kicker">IDENTITY</div>
+    <div class="mono kicker">IDENTITY | ODWS</div>
     <h1>zer0ID</h1>
-    <p class="lede">Prove a person. We keep a handle, not a passport. Browse-earn payout requires KYC.</p>
+    <p class="lede"><b>zer0ID</b> ZKKYC - prove a person for browse-earn without a biometric database. Wallet keys stay on this device under ODWS. Durable state is nullifier-only - a handle and a one-way nullifier, not a passport, not a face.</p>
+
     <div class="steel card">
-      <b>KYC via Secret Lab</b>
-      <p>Complete zer0ID at thesecretlab.app/kyc. Attestation stays claims-only (over-18, unique human, sanctions-clear). No passport or selfie stored in vapurr.</p>
+      <div class="status-head">
+        <span class="status-state" id="state">Checking…</span>
+        <span class="chip" id="chip-level">level -</span>
+        <span class="chip" id="chip-handle" hidden></span>
+      </div>
+      <div class="status-sub" id="state-why">Reading this device's attestation.</div>
     </div>
+
+    <div class="steel card" id="mismatch" hidden>
+      <b>This device's file claims more than it proves</b>
+      <p><span id="mismatch-detail"></span> vapurr reports the verified level only. An attestation counts when it carries a signature from a trusted issuer and has not expired - editing <span class="mono">id.json</span> by hand cannot raise your level.</p>
+    </div>
+
+    <div class="steel card" id="zkkyc-explain">
+      <b>What is ZKKYC?</b>
+      <p><b>zer0ID</b> uses zero-knowledge KYC: prove uniqueness and a few attributes without handing over a biometric database or raw photos. Durable state is <b>nullifier-only</b> - opaque in vapurrDB. Trust ladder <b>L1-L4</b>; browse-earn needs <b>L4</b> ocular via <b>open-iris</b>. Builds on Worldcoin open-iris (MIT) and OpenAI technology where used - not official partnerships.</p>
+    </div>
+
+    <div class="steel card">
+      <b>The zer0ID ladder (L1-L4)</b>
+      <p style="margin-bottom:12px">Each rung proves one specific thing. Higher is not "more trusted" in general - it is a different claim. Order is <span class="mono">/kyc/phone</span> -> <span class="mono">/kyc/scan</span> (<b>open-iris</b>).</p>
+      <ul class="ladder" id="ladder"></ul>
+    </div>
+
+    <div class="steel card">
+      <b>Level 4 - open-iris ocular (Full KYC)</b>
+
+      <div class="stage on" id="stage-idle">
+        <p>The only rung that proves <strong>one account per person</strong>. <strong>Level 4 is required to claim browse-earn</strong> tokens. Capture is phone-first - an iPhone front camera running <b>open-iris</b>, not Orb hardware.</p>
+        <div class="row"><button class="btn" id="go-consent" type="button">Start open-iris L4 scan</button></div>
+      </div>
+
+      <div class="stage" id="stage-phone">
+        <p><strong>Phone verify comes first.</strong> Level 3 is the prerequisite for the ocular scan - the ladder runs <span class="mono">/kyc/phone</span> then <span class="mono">/kyc/scan</span>.</p>
+        <p class="note">Heads up: when carrier SMS isn't wired, the phone step shows an on-screen mock code and <strong>no text is sent</strong>. A mock code proves you can read your own screen, not that you control a phone number - so treat a level 3 earned that way as a placeholder, not possession.</p>
+        <div class="row">
+          <button class="btn" id="go-phone" type="button">Open phone verify</button>
+          <button class="btn-ghost" id="skip-phone" type="button">Continue to scan anyway</button>
+          <button class="btn-ghost" id="cancel-phone" type="button">Back</button>
+        </div>
+      </div>
+
+      <div class="stage" id="stage-consent">
+        <p>Before the camera opens, plainly: what happens, and what each party can actually promise.</p>
+        <div class="split">
+          <div>
+            <h4>vapurr verifies</h4>
+            <ul>
+              <li>The attestation is signed by a trusted issuer</li>
+              <li>It has not expired</li>
+              <li>A nullifier is present, so one human cannot hold two accounts</li>
+              <li>No image or template is written into the vapurr tree</li>
+            </ul>
+          </div>
+          <div>
+            <h4>Secret Lab states</h4>
+            <ul>
+              <li>Frames are deleted right after inference</li>
+              <li>The iris template is never written to disk</li>
+              <li>Only a one-way nullifier is kept</li>
+              <li>Template computed with Worldcoin open-iris (MIT)</li>
+            </ul>
+          </div>
+        </div>
+        <p class="note">The right-hand column happens on Secret Lab servers. vapurr cannot verify it from here - it is their published commitment, not something this app can prove to you. What vapurr can prove is the left column.</p>
+        <div class="row">
+          <button class="btn" id="go-handoff" type="button">I understand - continue</button>
+          <button class="btn-ghost" id="cancel-consent" type="button">Back</button>
+        </div>
+      </div>
+
+      <div class="stage" id="stage-handoff">
+        <p style="margin-bottom:14px">Capture wants a phone camera. Scan this with your iPhone rather than trying to align an eye on a desktop webcam.</p>
+        <div class="qr-row">
+          <canvas class="qr" id="qr" width="336" height="336"></canvas>
+          <div class="qr-help">
+            <ul class="steps">
+              <li>Open the camera on your iPhone and point it at this code.</li>
+              <li>Align one eye inside the ring and hold steady.</li>
+              <li>Come back here - this page picks up the new level on its own.</li>
+            </ul>
+            <div class="mono" id="scan-url" style="font-size:11px;color:var(--color-muted);word-break:break-all"></div>
+          </div>
+        </div>
+        <div class="row">
+          <button class="btn" id="go-wait" type="button">I've finished on my phone</button>
+          <button class="btn-ghost" id="open-here" type="button">Open on this device instead</button>
+          <button class="btn-ghost" id="cancel-handoff" type="button">Back</button>
+        </div>
+      </div>
+
+      <div class="stage" id="stage-wait">
+        <p id="wait-copy">Watching for a proven attestation on this device…</p>
+        <div class="row">
+          <button class="btn-ghost" id="check-now" type="button">Check now</button>
+          <button class="btn-ghost" id="cancel-wait" type="button">Stop waiting</button>
+        </div>
+        <p class="note" id="wait-note">Nothing is claimed until the issuer's signature verifies here. If the scan failed, this will simply keep saying unproven.</p>
+      </div>
+
+      <div class="stage" id="stage-done">
+        <p><strong>Unique human proven.</strong> Browse-earn claims are unlocked on this device. ZKKYC durable state is nullifier-only in vapurrDB - one-way, so it never maps back to your face.</p>
+        <div class="row"><button class="btn-ghost" id="to-earn-2" type="button">Go to Earn</button></div>
+      </div>
+
+      <div class="stage" id="stage-unwired">
+        <p><strong>No issuer is configured on this device.</strong> Without a trusted issuer key nothing can be proven here, and vapurr will not pretend otherwise. Set <span class="mono">VAPURR_ZEROID_ISSUER_ADDRESS</span> and restart.</p>
+      </div>
+    </div>
+
+    <div class="steel card">
+      <b>Builds on</b>
+      <p>Worldcoin <b>open-iris</b> (MIT) for ocular uniqueness. OpenAI technology where the Secret Lab / vapurr tooling integrates it. Not official partnerships - we build on open / available tech.</p>
+    </div>
+
     <ul class="facts">
       <li><strong>Earn gate.</strong> Without a proven attestation, browse-data claim pays nothing. Machine install_id still binds the install.</li>
       <li><strong>Handle, not hex.</strong> When verified, pay and zzzmail prefer a handle.</li>
       <li><strong>Ad block is Shield.</strong> This page is identity only.</li>
+      <li><strong>ODWS.</strong> Local encrypted vault, passcode lock, seed backup at create. Spec: docs/wallet/ODWS.md.</li>
     </ul>
+
     <div class="row">
-      <button class="btn" id="kyc" type="button">Start KYC</button>
+      <button class="btn-ghost" id="kyc-basic" type="button">Basic KYC (levels 0-3)</button>
       <button class="btn-ghost" id="to-shield" type="button">Open Shield</button>
       <button class="btn-ghost" id="to-earn" type="button">Earn</button>
     </div>
   </div>
+
   <script src="/ipc.js"></script>
+  <script src="/qr.js"></script>
   <script>
-    document.getElementById("kyc").onclick = function () {
-      vapurr.send({ cmd: "open", url: "https://thesecretlab.app/kyc" });
+  (function () {
+    var KYC = "https://thesecretlab.app/kyc";
+    var SCAN = KYC + "/scan";
+    var PHONE = KYC + "/phone";
+    var level = 0, verified = false;
+    var poll = null, polls = 0;
+
+    function $(id) { return document.getElementById(id); }
+    function stage(name) {
+      ["idle", "phone", "consent", "handoff", "wait", "done", "unwired"].forEach(function (s) {
+        $("stage-" + s).classList.toggle("on", s === name);
+      });
+    }
+
+    function renderLadder(levels) {
+      var ul = $("ladder");
+      ul.innerHTML = "";
+      levels.forEach(function (L) {
+        var done = !!L.done;
+        var next = !done && L.level === (verified ? level + 1 : 0);
+        var li = document.createElement("li");
+        li.className = "rung" + (done ? " done" : "") + (next ? " next" : "");
+        var dot = document.createElement("div");
+        dot.className = "dot";
+        dot.textContent = done ? "✓" : String(L.level);
+        var body = document.createElement("div");
+        body.className = "rung-body";
+        var nm = document.createElement("div");
+        nm.className = "rung-name";
+        nm.textContent = L.level + " | " + L.name + (L.biometric ? " | biometric" : "");
+        var pr = document.createElement("div");
+        pr.className = "rung-proves";
+        pr.textContent = L.proves;
+        var me = document.createElement("div");
+        me.className = "rung-method";
+        me.textContent = L.method;
+        body.appendChild(nm); body.appendChild(pr); body.appendChild(me);
+        if (L.level === 3) {
+          var cv = document.createElement("div");
+          cv.className = "rung-caveat";
+          cv.textContent = "If carrier SMS isn't wired, this shows an on-screen mock code - no text is sent.";
+          body.appendChild(cv);
+        }
+        li.appendChild(dot); li.appendChild(body);
+        ul.appendChild(li);
+      });
+    }
+
+    function apply(s) {
+      verified = !!s.verified;
+      level = s.trustLevel || 0;
+      $("state").textContent = verified ? ("Proven | level " + level) : "Not proven";
+      var chip = $("chip-level");
+      chip.textContent = "level " + level;
+      chip.className = "chip " + (verified ? "ok" : "warn");
+      var h = $("chip-handle");
+      if (s.handle) { h.textContent = "@" + s.handle; h.hidden = false; } else { h.hidden = true; }
+
+      var why = verified
+        ? "Verified against a trusted issuer on this device."
+        : (s.reason || "No attestation on this device.");
+      if (verified && s.expiresAt) {
+        var days = Math.floor((s.expiresAt * 1000 - Date.now()) / 86400000);
+        why += " Expires in " + days + " day" + (days === 1 ? "" : "s") + ".";
+      }
+      // Earn gate comes from the payout path itself, never recomputed here
+      // from the level number — the two must not be able to disagree.
+      if (typeof s.payoutReady === "boolean") {
+        why += s.payoutReady
+          ? " Browse-earn payout is unlocked."
+          : " Browse-earn payout stays locked until level " + (s.earnMinLevel || 4) +
+            " proves one human.";
+      }
+      $("state-why").textContent = why;
+
+      var claimed = s.claimedLevel || 0;
+      if (claimed > level) {
+        $("mismatch").hidden = false;
+        $("mismatch-detail").textContent =
+          "The stored file claims level " + claimed + ", but only level " + level + " verifies.";
+      } else {
+        $("mismatch").hidden = true;
+      }
+
+      if (Array.isArray(s.levels)) renderLadder(s.levels);
+      if (s.scanUrl) SCAN = s.scanUrl;
+      if (s.kycUrl) { KYC = s.kycUrl; PHONE = s.kycUrl + "/phone"; }
+      if (s.phoneUrl) PHONE = s.phoneUrl;
+
+      if (!s.issuerWired) { stage("unwired"); return true; }
+      if (level >= 4) { stage("done"); return true; }
+      return false;
+    }
+
+    function load() {
+      return fetch("/id/api/status", { cache: "no-store" })
+        .then(function (r) { return r.json(); })
+        .then(apply)
+        .catch(function () {
+          $("state").textContent = "Unknown";
+          $("state-why").textContent =
+            "This build cannot read zer0ID state locally, so nothing is claimed either way.";
+          $("chip-level").className = "chip";
+          return false;
+        });
+    }
+
+    function stopPolling() { if (poll) { clearInterval(poll); poll = null; } }
+    function startPolling() {
+      stopPolling();
+      polls = 0;
+      poll = setInterval(function () {
+        polls++;
+        if (polls > 45) {
+          stopPolling();
+          $("wait-copy").textContent = "Still not proven.";
+          $("wait-note").textContent =
+            "Nothing arrived. If the scan failed or was abandoned, start it again - nothing was claimed.";
+          return;
+        }
+        load().then(function (settled) { if (settled) stopPolling(); });
+      }, 4000);
+    }
+
+    // Ladder order: phone (3) is the prerequisite for the ocular scan (4).
+    $("go-consent").onclick = function () { stage(level >= 3 ? "consent" : "phone"); };
+    $("go-phone").onclick = function () { vapurr.send({ cmd: "open", url: PHONE }); stage("wait"); startPolling(); };
+    $("skip-phone").onclick = function () { stage("consent"); };
+    $("cancel-phone").onclick = function () { stage("idle"); };
+    $("cancel-consent").onclick = function () { stage("idle"); };
+    $("go-handoff").onclick = function () {
+      stage("handoff");
+      $("scan-url").textContent = SCAN;
+      var c = $("qr");
+      if (!window.drawQr || !drawQr(c, SCAN)) {
+        c.hidden = true;
+        $("scan-url").textContent = "Open on your phone: " + SCAN;
+      }
     };
-    document.getElementById("to-shield").onclick = function () {
-      vapurr.send({ cmd: "pane", id: "shield" });
-    };
-    document.getElementById("to-earn").onclick = function () {
-      vapurr.send({ cmd: "pane", id: "earn" });
-    };
+    $("cancel-handoff").onclick = function () { stage("idle"); };
+    $("open-here").onclick = function () { vapurr.send({ cmd: "open", url: SCAN }); };
+    $("go-wait").onclick = function () { stage("wait"); startPolling(); };
+    $("cancel-wait").onclick = function () { stopPolling(); stage("idle"); };
+    $("check-now").onclick = function () { load(); };
+    $("to-earn-2").onclick = function () { vapurr.send({ cmd: "pane", id: "earn" }); };
+
+    $("kyc-basic").onclick = function () { vapurr.send({ cmd: "open", url: KYC }); };
+    $("to-shield").onclick = function () { vapurr.send({ cmd: "pane", id: "shield" }); };
+    $("to-earn").onclick = function () { vapurr.send({ cmd: "pane", id: "earn" }); };
+
+    document.addEventListener("visibilitychange", function () {
+      if (!document.hidden) load();
+    });
+
+    load();
+  })();
   </script>
 </body>
 </html>

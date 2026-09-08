@@ -2,22 +2,34 @@
 <html>
 <head>
   <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Swap</title>
   <link rel="stylesheet" href="/tokens.css"/>
   <link rel="stylesheet" href="/chrome.css"/>
+  <link rel="stylesheet" href="/defi-surface.css"/>
   <link rel="stylesheet" href="/route.css"/>
+  <link rel="stylesheet" href="/defi-flow.css"/>
 </head>
-<body>
+<body class="finance-ui" data-desk="swap">
   <div class="globe-layer" aria-hidden="true"><canvas id="globe"></canvas></div>
+  <div class="finance-shell">
+    <div data-finance-nav></div>
+  </div>
   <div class="wrap">
     <div class="hero">
       <div class="mono">SWAP</div>
       <h1 id="receive" hidden></h1>
-      <p class="lede">Full route. House kicks back 0.03% in $VAPURR. This device simulates, then you sign.</p>
+      <p class="lede">Review the route. Simulate. Sign.</p>
+      <div class="route-network"><span id="route-network">Robinhood Testnet</span><button type="button" id="refresh-tokens" aria-label="Reload token catalog">↻</button></div>
       <div class="meta">
-        <div class="chip"><span>Refund</span><b id="chip-refund">0.03%</b></div>
+        <div class="chip"><span>Refund</span><b id="chip-refund">None</b></div>
         <div class="chip"><span>Sim</span><b id="chip-sim">idle</b></div>
         <div class="chip"><span>Route</span><b id="chip-hops">—</b></div>
+      </div>
+      <div class="route-cross" role="navigation" aria-label="Route desks">
+        <button type="button" data-go="vapurr://swap" aria-current="page">Swap</button>
+        <button type="button" data-go="vapurr://bridge">Bridge</button>
+        <button type="button" data-go="vapurr://defi">DeFi home</button>
       </div>
     </div>
 
@@ -45,7 +57,12 @@
       </div>
       <div class="quote" id="route"></div>
     </div>
-    <button class="btn go" type="button" id="go" disabled>Swap</button>
+    <button class="btn go slide-hold" type="button" id="go" disabled aria-label="Swap">
+      <span class="sh-fill" aria-hidden="true"></span>
+      <span class="sh-knob" aria-hidden="true"><svg class="sh-chev" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      <span class="sh-lab">Swap</span>
+      <span class="sh-hint" aria-hidden="true">slide or hold</span>
+    </button>
   </div>
   <div id="tok-sheet" hidden>
     <div class="dimmer" id="tok-dim"></div>
@@ -58,6 +75,7 @@
   <script src="/sign.js"></script>
   <script src="/tokens.js"></script>
   <script src="/route.js"></script>
+  <script src="/defi-flow.js"></script>
   <script type="importmap">
   {
     "imports": {

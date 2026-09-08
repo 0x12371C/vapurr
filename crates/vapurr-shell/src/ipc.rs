@@ -11,7 +11,9 @@ pub(crate) enum Msg {
     Url(String),
     Title(String),
     Chain(String),
-    NewTab,
+    NewTab {
+        url: Option<String>,
+    },
     CloseTab(Option<u64>),
     SelectTab(u64),
     SelectTabAt(u64),
@@ -97,6 +99,16 @@ pub(crate) enum Msg {
         sell_v: bool,
         amt: String,
     },
+    EconBond {
+        asset: String,
+        amt: String,
+    },
+    EconCdOpen {
+        amt: String,
+    },
+    EconHouseFeeRemit {
+        amt: String,
+    },
     RadioLayout {
         float: bool,
         corner: String,
@@ -109,6 +121,7 @@ pub(crate) enum Msg {
         amt: String,
     },
     WalletExec {
+        route_id: String,
         to: String,
         data: String,
         value: String,
@@ -131,6 +144,15 @@ pub(crate) enum Msg {
         secret: String,
     },
     Logout,
+    LockSession,
+    PasscodeUnlock {
+        code: String,
+    },
+    PasscodeSet {
+        a: String,
+        b: String,
+    },
+    Activity,
     PatchApply,
     WalletSnap(serde_json::Value),
     WalletErr(String),
@@ -143,6 +165,13 @@ pub(crate) enum Msg {
     ZzzmailHood {
         name: String,
     },
+    WalletSignMessage {
+        message: String,
+    },
+    KycAttestAge {
+        age_confirmed: bool,
+    },
+    KycAttestJurisdiction,
 }
 
 pub(crate) fn authorized_ipc(source: &str, body: &str) -> Option<Msg> {
@@ -150,10 +179,22 @@ pub(crate) fn authorized_ipc(source: &str, body: &str) -> Option<Msg> {
     let msg = parse_ipc(body)?;
     if !crate::security::is_chrome_url(source) {
         // Page keyboard shortcuts and cosmetic selectors carry no private authority.
-        return matches!(&msg, Msg::ShieldDom { .. } | Msg::Back | Msg::Forward | Msg::Reload |
+        // Exception: Secret Lab KYC tabs may request wallet-sign (desk has no injected ethereum).
+        let guest_nav = matches!(&msg, Msg::ShieldDom { .. } | Msg::Back | Msg::Forward | Msg::Reload |
             Msg::FocusUrl | Msg::ShowFind | Msg::ZoomIn | Msg::ZoomOut | Msg::ZoomReset |
-            Msg::NewTab | Msg::CloseTab(_) | Msg::SelectTabAt(_) | Msg::CycleTab { .. })
-            .then_some(msg);
+            Msg::NewTab { .. } | Msg::CloseTab(_) | Msg::SelectTabAt(_) | Msg::CycleTab { .. });
+        // ...and only over a zer0ID challenge. A guest origin must never be able
+        // to sign arbitrary bytes: SignMessage needs no per-signature prompt, so
+        // an unconstrained bridge is a signing oracle for whoever controls that
+        // page. See security::is_zeroid_challenge.
+        let tsl_kyc_sign = match &msg {
+            Msg::WalletSignMessage { message } => {
+                crate::security::is_tsl_kyc_url(source)
+                    && crate::security::is_zeroid_challenge(message)
+            }
+            _ => false,
+        };
+        return (guest_nav || tsl_kyc_sign).then_some(msg);
     }
     let path = crate::security::chrome_path(source)?;
     let allowed = match &msg {
@@ -161,6 +202,11 @@ pub(crate) fn authorized_ipc(source: &str, body: &str) -> Option<Msg> {
         Msg::WalletSend { .. } => matches!(path.as_str(), "/wallet.html" | "/pay.html"),
         Msg::WalletExec { .. } => matches!(path.as_str(), "/swap.html" | "/bridge.html"),
         Msg::LoginCreate | Msg::LoginContinue | Msg::LoginRestore { .. } => path == "/login.html",
+        Msg::KycAttestAge { .. } | Msg::KycAttestJurisdiction => path == "/login.html",
+        Msg::WalletSignMessage { .. } => matches!(path.as_str(), "/login.html" | "/id.html" | "/earn.html"),
+        Msg::PasscodeUnlock { .. } | Msg::PasscodeSet { .. } => path == "/lock.html",
+        Msg::Logout => path == "/wallet.html",
+        Msg::LockSession | Msg::Activity => true,
         Msg::WalletImport { .. } => matches!(path.as_str(), "/wallet.html" | "/settings.html" | "/login.html"),
         Msg::EconMint(_) | Msg::EconRedeem(_) | Msg::EconDeploy | Msg::EconSeed { .. } |
         Msg::LoopDeploy | Msg::LoopOp { .. } | Msg::HouseDeploy | Msg::HouseSeed { .. } |
@@ -190,6 +236,7 @@ pub(crate) fn confirmation(msg: &Msg) -> Option<String> {
         Msg::LoginContinue => "Unlock this device wallet for this browser session? Transactions and secret exports still require authorization.".into(),
         Msg::LoginCreate => "Create a new wallet on this device? Save your existing wallet recovery material before replacing it.".into(),
         Msg::LoginRestore { .. } | Msg::WalletImport { .. } => "Replace this device wallet with the imported wallet? Save your existing recovery material first.".into(),
+        Msg::Logout => "Remove this wallet from this PC? Deletes the encrypted vault and passcode here. Your on-chain funds stay; you need the seed or key to restore.".into(),
         Msg::EconMint(a) => format!("Burn {a} VAPURR to mint PUSD?"),
         Msg::EconRedeem(a) => format!("Burn {a} PUSD to mint VAPURR?"),
         Msg::LoopOp { op, amt, steps } => format!("Authorize Oliver vault operation: {op}\nAmount: {amt}\nSteps: {steps}"),
@@ -207,7 +254,18 @@ pub(crate) fn confirmation(msg: &Msg) -> Option<String> {
 }
 
 pub(crate) fn needs_unlock(msg: &Msg) -> bool {
-    confirmation(msg).is_some() && !matches!(msg, Msg::LoginContinue | Msg::LoginCreate | Msg::LoginRestore { .. } | Msg::WalletImport { .. })
+    confirmation(msg).is_some()
+        && !matches!(
+            msg,
+            Msg::LoginContinue
+                | Msg::LoginCreate
+                | Msg::LoginRestore { .. }
+                | Msg::WalletImport { .. }
+                | Msg::PasscodeUnlock { .. }
+                | Msg::PasscodeSet { .. }
+                | Msg::LockSession
+                | Msg::Activity
+        )
 }
 
 pub(crate) fn parse_ipc(body: &str) -> Option<Msg> {
@@ -219,7 +277,9 @@ pub(crate) fn parse_ipc(body: &str) -> Option<Msg> {
         "forward" => Some(Msg::Forward),
         "reload" => Some(Msg::Reload),
         "pane" => Some(Msg::Pane(v.get("id")?.as_str()?.to_string())),
-        "newtab" => Some(Msg::NewTab),
+        "newtab" => Some(Msg::NewTab {
+            url: v.get("url").and_then(|x| x.as_str()).map(|s| s.to_string()),
+        }),
         "closetab" => Some(Msg::CloseTab(v.get("id").and_then(|x| x.as_u64()))),
         "selecttab" => Some(Msg::SelectTab(v.get("id")?.as_u64()?)),
         "selecttabi" => Some(Msg::SelectTabAt(v.get("i")?.as_u64()?)),
@@ -282,6 +342,7 @@ pub(crate) fn parse_ipc(body: &str) -> Option<Msg> {
             amt: v.get("amt").and_then(|x| x.as_str()).unwrap_or("").into(),
         }),
         "wallet-exec" => Some(Msg::WalletExec {
+            route_id: v.get("route_id")?.as_str()?.to_string(),
             to: v.get("to").and_then(|x| x.as_str()).unwrap_or("").into(),
             data: v.get("data").and_then(|x| x.as_str()).unwrap_or("").into(),
             value: v.get("value").and_then(|x| x.as_str()).unwrap_or("0x0").into(),
@@ -316,6 +377,22 @@ pub(crate) fn parse_ipc(body: &str) -> Option<Msg> {
                 .unwrap_or("")
                 .into(),
         }),
+        "wallet-sign" | "personal-sign" => Some(Msg::WalletSignMessage {
+            message: v.get("message").and_then(|x| x.as_str())?.to_string(),
+        }),
+        "kyc-attest-age" => Some(Msg::KycAttestAge {
+            age_confirmed: v.get("ageConfirmed").or_else(|| v.get("age_confirmed")).and_then(|x| x.as_bool()).unwrap_or(false),
+        }),
+        "kyc-attest-jurisdiction" => Some(Msg::KycAttestJurisdiction),
+        "passcode-submit" | "passcode-unlock" => Some(Msg::PasscodeUnlock {
+            code: v.get("code").or_else(|| v.get("pin")).and_then(|x| x.as_str())?.to_string(),
+        }),
+        "passcode-set" => Some(Msg::PasscodeSet {
+            a: v.get("a").and_then(|x| x.as_str())?.to_string(),
+            b: v.get("b").and_then(|x| x.as_str())?.to_string(),
+        }),
+        "lock-session" | "passcode-lock" => Some(Msg::LockSession),
+        "activity" | "touch" => Some(Msg::Activity),
         "logout" => Some(Msg::Logout),
         "patch-apply" => Some(Msg::PatchApply),
         "zzzmail-send" => Some(Msg::ZzzmailSend {
@@ -388,6 +465,16 @@ pub(crate) fn parse_ipc(body: &str) -> Option<Msg> {
                 .unwrap_or("")
                 .into(),
         }),
+        "econ-bond" => Some(Msg::EconBond {
+            asset: v.get("asset").and_then(|x| x.as_str()).unwrap_or("").into(),
+            amt: v.get("amt").and_then(|x| x.as_str()).unwrap_or("").into(),
+        }),
+        "econ-cd-open" => Some(Msg::EconCdOpen {
+            amt: v.get("amt").and_then(|x| x.as_str()).unwrap_or("").into(),
+        }),
+        "econ-house-fee-remit" => Some(Msg::EconHouseFeeRemit {
+            amt: v.get("amt").and_then(|x| x.as_str()).unwrap_or("").into(),
+        }),
         "radio-layout" => Some(Msg::RadioLayout {
             float: v.get("mode").and_then(|x| x.as_str()) == Some("float"),
             corner: v
@@ -440,8 +527,9 @@ mod tests {
 
     #[test]
     fn wallet_exec_cmd() {
+        assert!(parse_ipc(r#"{"cmd":"wallet-exec","to":"0xabc","data":"0x12","value":"0x0","chain_id":4663}"#).is_none());
         match parse_ipc(
-            r#"{"cmd":"wallet-exec","to":"0xabc","data":"0x12","value":"0x0","chain_id":4663,"gas":21000}"#,
+            r#"{"cmd":"wallet-exec","route_id":"test-route","to":"0xabc","data":"0x12","value":"0x0","chain_id":4663,"gas":21000}"#,
         )
         .expect("exec")
         {
@@ -520,4 +608,33 @@ mod tests {
             _ => panic!("swap"),
         }
     }
+
+
+    #[test]
+    fn parses_econ_bond() {
+        match parse_ipc(r#"{"cmd":"econ-bond","asset":"ETH","amt":"5"}"#).expect("bond") {
+            Msg::EconBond { asset, amt } => {
+                assert_eq!(asset, "ETH");
+                assert_eq!(amt, "5");
+            }
+            _ => panic!("bond"),
+        }
+    }
+
+    #[test]
+    fn parses_econ_cd_open() {
+        match parse_ipc(r#"{"cmd":"econ-cd-open","amt":"25"}"#).expect("cd") {
+            Msg::EconCdOpen { amt } => assert_eq!(amt, "25"),
+            _ => panic!("cd"),
+        }
+    }
+
+    #[test]
+    fn parses_econ_house_fee_remit() {
+        match parse_ipc(r#"{"cmd":"econ-house-fee-remit","amt":"10"}"#).expect("remit") {
+            Msg::EconHouseFeeRemit { amt } => assert_eq!(amt, "10"),
+            _ => panic!("remit"),
+        }
+    }
+
 }

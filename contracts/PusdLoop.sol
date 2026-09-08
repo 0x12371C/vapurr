@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.24;
 
+import "./Remittance.sol";
+
 /// Isolated $PUSD credit vault. Euler-shaped, not an Euler fork.
 /// Credit asset is $PUSD only. Collateral is $VAPURR plus supplied $PUSD.
 /// Supply P, borrow P, loop under LTV. Utilization IRM. Liquidations.
@@ -11,12 +13,20 @@ interface IERC20 {
     function balanceOf(address) external view returns (uint256);
     function transfer(address, uint256) external returns (bool);
     function transferFrom(address, address, uint256) external returns (bool);
+    function approve(address, uint256) external returns (bool);
 }
 
 interface IMarket {
     function vapurr() external view returns (address);
     function pusd() external view returns (address);
-    function lunaRate() external view returns (uint256);
+    function vapurrRate() external view returns (uint256);
+    function creditVapurrRate(uint256 maxAge) external view returns (uint256);
+}
+
+/// Optional bounded LOLR / Fed backstop. Stub-safe: vault try/catches failures.
+interface IFedBackstop {
+    /// Pull/cover up to `need` $PUSD into `vault`. Returns assets actually delivered.
+    function coverBadDebt(address vault, uint256 need) external returns (uint256 funded);
 }
 
 contract PusdLoop {
@@ -37,8 +47,10 @@ contract PusdLoop {
     /// Looping does not raise cash â€” only real supply / Lithe drip does.
     uint256 public constant BOOT_CASH = 100_000 * DEC;
     uint256 public constant MAX_STEPS = 16;
+    /// Max age of market oracle heartbeat for borrow / withdraw / liq sizing.
+    uint256 public constant MAX_RATE_AGE = 1 hours;
 
-    address public immutable owner;
+    address public owner;
     IMarket public immutable market;
     IERC20 public immutable vapurr;
     IERC20 public immutable pusd;
@@ -48,6 +60,17 @@ contract PusdLoop {
     uint256 public totalBorrowAssets;
     uint256 public lastAccrue;
     uint256 private _locked = 1;
+    /// Cumulative socialized bad debt (written down without backstop cover).
+    uint256 public badDebtSocialized;
+
+    IRemittance public remittance; // surplus sink (RemittanceSink / sPUSD)
+    IRunwayView public runway; // optional shared floor view (sink enforces)
+    bool public remitOnAccrue; // when true, _accrue best-effort pushes reserve cash to sink
+    IFedBackstop public backstop; // optional bounded LOLR cover
+    /// Unpaid reserve fee assets from accrue (not remittable until collected).
+    uint256 public pendingReserve;
+    /// Collected reserve fee cash eligible for remittance (realized RFV source).
+    uint256 public realizedReserve;
 
     mapping(address => uint256) public supplyShares;
     mapping(address => uint256) public borrowShares;
@@ -63,6 +86,12 @@ contract PusdLoop {
     event Unwind(address indexed user, uint256 steps, uint256 repaid);
     event Liquidate(address indexed user, address indexed keeper, uint256 repay, uint256 vOut, uint256 pOut);
     event Accrue(uint256 interest, uint256 borrows);
+    event RemittanceSet(address indexed sink, address indexed runway_, bool autoRemit);
+    event Remitted(address indexed sink, uint256 assets, uint256 shares);
+    event BackstopSet(address indexed backstop);
+    event OwnerUpdated(address indexed owner);
+    event BadDebtCovered(address indexed user, address indexed backstop, uint256 covered);
+    event BadDebtWritten(address indexed user, uint256 written);
 
     modifier lock() {
         require(_locked == 1, "LOCK");
@@ -83,7 +112,91 @@ contract PusdLoop {
         lastAccrue = block.timestamp;
     }
 
-    function accrue() external { _accrue(); }
+    function accrue() external lock {
+        _accrue();
+    }
+
+    /// Factory deployments hand configuration authority to their initiating wallet.
+    function setOwner(address owner_) external {
+        require(msg.sender == owner && owner_ != address(0), "OWN");
+        owner = owner_;
+        emit OwnerUpdated(owner_);
+    }
+
+    function setRemittance(address sink, address runway_, bool autoRemit) external {
+        require(msg.sender == owner, "OWN");
+        remittance = IRemittance(sink);
+        runway = IRunwayView(runway_);
+        remitOnAccrue = autoRemit;
+        emit RemittanceSet(sink, runway_, autoRemit);
+    }
+
+    function setBackstop(address backstop_) external {
+        require(msg.sender == owner, "OWN");
+        backstop = IFedBackstop(backstop_);
+        emit BackstopSet(backstop_);
+    }
+
+    /// Push owner reserve out as $PUSD to remittance sink (consolidated RFV).
+    /// INVARIANT: only *realized* surplus (collected fee cash in realizedReserve, or
+    /// sole-owner cash when no external depositor claims). Sink-level RunwayFloor
+    /// retains consolidated cash; branches do not apply a second local floor.
+    /// Unpaid pendingReserve interest is not remittable RFV.
+    function remitReserve(uint256 assets) public lock returns (uint256 sent) {
+        _accrue();
+        sent = _remitReserve(assets);
+    }
+
+    /// Realized remittable pool (to sink). Floor is enforced at RemittanceSink.
+    function realizedRemittable() public view returns (uint256) {
+        return _realizedPool();
+    }
+
+    function _realizedPool() internal view returns (uint256 realized) {
+        uint256 cash = pusd.balanceOf(address(this));
+        uint256 ownerAssets = _assetsOf(owner);
+        uint256 totalAssets = cash + totalBorrowAssets;
+        uint256 userClaims = totalAssets > ownerAssets ? totalAssets - ownerAssets : 0;
+        // With external depositors: only collected fee cash (realizedReserve).
+        // Sole-owner book: owner cash is not circular against third-party claims.
+        // No branch-local runway.surplus — sink consolidates RFV and retains floor.
+        realized = userClaims == 0 ? cash : realizedReserve;
+        if (realized > cash) realized = cash;
+        if (realized > ownerAssets) realized = ownerAssets;
+    }
+
+    function _remitReserve(uint256 assets) internal returns (uint256 sent) {
+        require(address(remittance) != address(0), "REMIT");
+        require(assets > 0, "TINY");
+        uint256 ownerAssets = _assetsOf(owner);
+        uint256 cash = pusd.balanceOf(address(this));
+        uint256 realized = _realizedPool();
+        if (assets > realized) assets = realized;
+        if (assets > ownerAssets) assets = ownerAssets;
+        if (assets > cash) assets = cash;
+        if (assets == 0) return 0;
+        uint256 sh = _supplySharesForAssets(assets);
+        uint256 have = supplyShares[owner];
+        if (sh > have) {
+            sh = have;
+            assets = _assetsFromSupplyShares(sh);
+        }
+        require(sh > 0 && assets > 0, "TINY");
+        require(pusd.balanceOf(address(this)) >= assets, "CASH");
+        supplyShares[owner] = have - sh;
+        totalSupplyShares -= sh;
+        // Burn collected fee cash ledger when remitting from realizedReserve path.
+        if (realizedReserve > 0) {
+            uint256 dec = assets < realizedReserve ? assets : realizedReserve;
+            realizedReserve -= dec;
+        }
+        require(pusd.approve(address(remittance), assets), "ALLOW");
+        require(remittance.receiveRemittance(assets), "SINK");
+        // Owner supply is collateral; remittance must leave owner within LTV.
+        _requireLtv(owner);
+        emit Remitted(address(remittance), assets, sh);
+        return assets;
+    }
 
     function supply(uint256 amt) external lock {
         _accrue();
@@ -104,8 +217,9 @@ contract PusdLoop {
         require(pusd.balanceOf(address(this)) >= amt, "CASH");
         supplyShares[msg.sender] = have - sh;
         totalSupplyShares -= sh;
-        _requireLtv(msg.sender);
+        // Health against post-withdraw cash (supply collateral must not be inflated mid-exit).
         require(pusd.transfer(msg.sender, amt), "PUSD");
+        _requireLtv(msg.sender);
         emit Withdraw(msg.sender, amt, sh);
     }
 
@@ -136,8 +250,9 @@ contract PusdLoop {
         borrowShares[msg.sender] += sh;
         totalBorrowShares += sh;
         totalBorrowAssets += amt;
-        _requireLtv(msg.sender);
+        // Health against post-borrow cash / utilization (no mid-transfer collateral inflation).
         require(pusd.transfer(msg.sender, amt), "PUSD");
+        _requireLtv(msg.sender);
         emit Borrow(msg.sender, amt, sh);
     }
 
@@ -148,6 +263,8 @@ contract PusdLoop {
         if (amt > debt) amt = debt;
         uint256 got = _pull(pusd, amt);
         if (got > debt) got = debt;
+        // Interest-first: repay cash realizes pending reserve fees (not depositor principal).
+        _realizeFromRepay(got);
         uint256 sh = _debtSharesForAssets(got);
         uint256 have = borrowShares[msg.sender];
         if (sh > have || got == debt) {
@@ -163,6 +280,14 @@ contract PusdLoop {
         totalBorrowShares -= sh;
         totalBorrowAssets -= got;
         emit Repay(msg.sender, got, sh);
+    }
+
+    /// Move pending (unpaid) reserve fees into realizedReserve as repay cash arrives.
+    function _realizeFromRepay(uint256 got) internal {
+        if (got == 0 || pendingReserve == 0) return;
+        uint256 realize = got < pendingReserve ? got : pendingReserve;
+        pendingReserve -= realize;
+        realizedReserve += realize;
     }
 
     /// Recursive supply/borrow. Tokens never leave; utilization rises.
@@ -213,12 +338,14 @@ contract PusdLoop {
             supplyShares[msg.sender] = sHave - sSh;
             totalSupplyShares -= sSh;
             if (dSh == dHave) {
+                _realizeFromRepay(debt);
                 totalBorrowAssets -= debt;
                 borrowShares[msg.sender] = 0;
                 totalBorrowShares -= dHave;
                 repaid += debt;
                 break;
             }
+            _realizeFromRepay(pay);
             borrowShares[msg.sender] = dHave - dSh;
             totalBorrowShares -= dSh;
             totalBorrowAssets -= pay;
@@ -249,7 +376,69 @@ contract PusdLoop {
         emit Liquidate(user, msg.sender, got, vOut, pOut);
     }
 
+    /// Resolve residual bad debt when liq cannot clear (underwater, collat < debt).
+    /// Sweeps dust collat, tries optional Fed backstop, then socializes remainder.
+    /// Does not freeze repay/borrow for others - only clears the underwater account.
+    function absorbBadDebt(address user) external lock {
+        require(user != address(0), "USER");
+        _accrue();
+        // Freshness required so underwater status is not an artifact of a stale inflated rate.
+        uint256 px = _px();
+        uint256 debt = _debtOf(user);
+        require(debt > 0, "DEBT");
+        uint256 cv = _collatValuePreview(user, _assetsOf(user), px);
+        require(debt * 10_000 > cv * LLTV_BPS, "LIQ");
+        require(cv < debt, "COVERED");
+
+        // Sweep remaining collat: V to caller; P supply shares burned in-vault (cash stays).
+        uint256 vHave = collatV[user];
+        if (vHave > 0) {
+            collatV[user] = 0;
+            require(vapurr.transfer(msg.sender, vHave), "VAPURR");
+        }
+        uint256 sHave = supplyShares[user];
+        if (sHave > 0) {
+            supplyShares[user] = 0;
+            totalSupplyShares -= sHave;
+        }
+
+        uint256 covered = _tryBackstopCover(user, debt);
+        if (covered > 0) {
+            _burnDebt(user, covered, debt);
+            emit BadDebtCovered(user, address(backstop), covered);
+            debt = _debtOf(user);
+            if (debt == 0) return;
+        }
+
+        uint256 sh = borrowShares[user];
+        borrowShares[user] = 0;
+        totalBorrowShares -= sh;
+        if (debt >= totalBorrowAssets) {
+            totalBorrowAssets = 0;
+            if (totalBorrowShares > 0) totalBorrowShares = 0;
+        } else {
+            totalBorrowAssets -= debt;
+        }
+        badDebtSocialized += debt;
+        emit BadDebtWritten(user, debt);
+    }
+
+    function _tryBackstopCover(address /* user */, uint256 need) internal returns (uint256 funded) {
+        if (address(backstop) == address(0) || need == 0) return 0;
+        uint256 before = pusd.balanceOf(address(this));
+        try backstop.coverBadDebt(address(this), need) returns (uint256 got) {
+            uint256 balAfter = pusd.balanceOf(address(this));
+            funded = balAfter > before ? balAfter - before : 0;
+            if (got < funded) funded = got;
+            if (funded > need) funded = need;
+        } catch {
+            funded = 0;
+        }
+    }
+
     function _burnDebt(address u, uint256 got, uint256 debt) internal {
+        // Same interest-first path as repay: cash covering debt realizes pending fees.
+        _realizeFromRepay(got);
         uint256 dSh = _debtSharesForAssets(got);
         uint256 dHave = borrowShares[u];
         if (dSh > dHave || got == debt) {
@@ -334,7 +523,12 @@ contract PusdLoop {
             : (rate * s.util / DEC) * (10_000 - RESERVE_BPS) / 10_000 * 10_000 / DEC;
         s.ltvBps = LTV_BPS;
         s.lltvBps = LLTV_BPS;
-        s.px = market.lunaRate();
+        // Snapshot prefers fresh credit rate; falls back to raw rate if heartbeat stale.
+        try market.creditVapurrRate(MAX_RATE_AGE) returns (uint256 fresh) {
+            s.px = fresh;
+        } catch {
+            s.px = market.vapurrRate();
+        }
         s.supplied = _assetsOfPreview(a, cash, borrows);
         s.collatV_ = collatV[a];
         s.debt = _debtOfPreview(a, borrows);
@@ -373,10 +567,23 @@ contract PusdLoop {
                 if (sh > 0) {
                     supplyShares[owner] += sh;
                     totalSupplyShares += sh;
+                    pendingReserve += fee; // unpaid until repay realizes it
                 }
             }
         }
         emit Accrue(interest, totalBorrowAssets);
+        // Remittance hook: best-effort push *realized* reserve cash to sink.
+        // Isolated so a sink revert cannot freeze repay / withdraw / liquidate / accrue.
+        // Unpaid fee shares alone do not create remittable cash (realizedRemittable).
+        if (remitOnAccrue && address(remittance) != address(0) && fee > 0) {
+            try this.remitReserveFromAccrue(fee) {} catch {}
+        }
+    }
+
+    /// External only so accrue can try/catch sink failures without holding a nested lock.
+    function remitReserveFromAccrue(uint256 assets) external returns (uint256) {
+        require(msg.sender == address(this), "SELF");
+        return _remitReserve(assets);
     }
 
     function _flow(uint256 cash) internal pure returns (uint256) {
@@ -409,7 +616,8 @@ contract PusdLoop {
     }
 
     function _px() internal view returns (uint256) {
-        return market.lunaRate();
+        // Borrow / withdraw / liq sizing reject stale oracle (STALE).
+        return market.creditVapurrRate(MAX_RATE_AGE);
     }
 
     function _mintSupply(address u, uint256 assets, bool alreadyIn) internal returns (uint256 sh) {

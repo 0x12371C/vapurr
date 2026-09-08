@@ -2,12 +2,254 @@
   var root = null;
   var mode = "review";
   var resolveFn = null;
+  var slideApi = null;
 
   function el(tag, cls, text) {
     var n = document.createElement(tag);
     if (cls) n.className = cls;
     if (text != null) n.textContent = text;
     return n;
+  }
+
+  function prefersReduce() {
+    try { return !!(g.matchMedia && g.matchMedia("(prefers-reduced-motion: reduce)").matches); }
+    catch (e) { return false; }
+  }
+
+  /* Shared slide / hold confirm — used by sign sheet + route #go */
+  g.vapurr = g.vapurr || {};
+  g.vapurr.bindSlideHold = function (btn, opts) {
+    opts = opts || {};
+    if (!btn || btn._slideHold) return btn._slideHold;
+    var reduce = prefersReduce();
+    var threshold = opts.threshold != null ? opts.threshold : 0.88;
+    var holdMs = opts.holdMs != null ? opts.holdMs : (reduce ? 520 : 780);
+    var onConfirm = typeof opts.onConfirm === "function" ? opts.onConfirm : function () {};
+    var filling = false;
+    var dragging = false;
+    var armed = false;
+    var startX = 0;
+    var startP = 0;
+    var progress = 0;
+    var holdTimer = 0;
+    var holdT0 = 0;
+    var ptrId = null;
+
+    if (!btn.querySelector(".sh-lab")) {
+      var labText = (btn.textContent || opts.label || "Confirm").trim();
+      btn.textContent = "";
+      btn.classList.add("slide-hold");
+      btn.innerHTML =
+        '<span class="sh-fill" aria-hidden="true"></span>' +
+        '<span class="sh-knob" aria-hidden="true"><svg class="sh-chev" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>' +
+        '<span class="sh-lab"></span>' +
+        '<span class="sh-hint" aria-hidden="true"></span>';
+      btn.querySelector(".sh-lab").textContent = labText;
+    }
+    btn.classList.add("slide-hold");
+    var fill = btn.querySelector(".sh-fill");
+    var knob = btn.querySelector(".sh-knob");
+    var lab = btn.querySelector(".sh-lab");
+    var hint = btn.querySelector(".sh-hint");
+    if (hint) hint.textContent = reduce ? "hold" : "slide or hold";
+
+    function trackW() {
+      var pad = 6;
+      var kw = knob ? knob.offsetWidth : 40;
+      return Math.max(1, btn.clientWidth - kw - pad * 2);
+    }
+    function paint() {
+      var p = Math.max(0, Math.min(1, progress));
+      if (fill) fill.style.transform = "scaleX(" + p + ")";
+      if (knob) knob.style.transform = "translate3d(" + (p * trackW()) + "px,0,0)";
+      btn.style.setProperty("--sh-p", String(p));
+      btn.classList.toggle("sh-hot", p > 0.08);
+      btn.classList.toggle("sh-ready", p >= threshold);
+      if (hint) {
+        if (btn.disabled) hint.textContent = "";
+        else if (p >= threshold) hint.textContent = "release";
+        else hint.textContent = reduce ? "hold" : "slide or hold";
+      }
+    }
+    function setProgress(p) {
+      progress = Math.max(0, Math.min(1, p));
+      paint();
+    }
+    function reset() {
+      clearInterval(holdTimer);
+      holdTimer = 0;
+      filling = false;
+      dragging = false;
+      armed = false;
+      ptrId = null;
+      btn.classList.remove("sh-active", "sh-done");
+      setProgress(0);
+    }
+    var fired = false;
+    function fire() {
+      if (btn.disabled || fired) { reset(); return; }
+      fired = true;
+      clearInterval(holdTimer);
+      holdTimer = 0;
+      filling = false;
+      armed = false;
+      dragging = false;
+      ptrId = null;
+      setProgress(1);
+      btn.classList.add("sh-done");
+      btn.classList.remove("sh-active");
+      try { onConfirm(); } finally {
+        setTimeout(function () {
+          btn.classList.remove("sh-done");
+          fired = false;
+          reset();
+        }, reduce ? 80 : 220);
+      }
+    }
+    function startHold() {
+      if (btn.disabled || filling) return;
+      filling = true;
+      holdT0 = performance.now();
+      btn.classList.add("sh-active");
+      clearInterval(holdTimer);
+      holdTimer = setInterval(function () {
+        var t = (performance.now() - holdT0) / holdMs;
+        setProgress(Math.min(1, t));
+        if (t >= 1) {
+          clearInterval(holdTimer);
+          holdTimer = 0;
+          fire();
+        }
+      }, reduce ? 40 : 16);
+    }
+    function onPtrDown(e) {
+      if (btn.disabled || (e.button != null && e.button !== 0)) return;
+      if (btn.classList.contains("sh-tap")) return;
+      e.preventDefault();
+      try { btn.setPointerCapture(e.pointerId); } catch (err) {}
+      ptrId = e.pointerId;
+      startX = e.clientX;
+      startP = progress;
+      dragging = false;
+      armed = true;
+      btn.classList.add("sh-active");
+      startHold();
+    }
+    function onPtrMove(e) {
+      if (!armed || (ptrId != null && e.pointerId !== ptrId)) return;
+      if (reduce) return;
+      var dx = e.clientX - startX;
+      if (Math.abs(dx) > 6) {
+        dragging = true;
+        clearInterval(holdTimer);
+        holdTimer = 0;
+        filling = false;
+        setProgress(startP + dx / trackW());
+      }
+    }
+    function onPtrUp(e) {
+      if (!armed || (ptrId != null && e.pointerId !== ptrId)) return;
+      try { btn.releasePointerCapture(e.pointerId); } catch (err) {}
+      var p = progress;
+      clearInterval(holdTimer);
+      holdTimer = 0;
+      filling = false;
+      armed = false;
+      dragging = false;
+      ptrId = null;
+      btn.classList.remove("sh-active");
+      if (p >= threshold) fire();
+      else reset();
+    }
+    function onPtrCancel() {
+      if (!armed) return;
+      reset();
+    }
+    function onKeyDown(e) {
+      if (btn.disabled || btn.classList.contains("sh-tap")) return;
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        if (e.repeat) return;
+        startHold();
+      }
+    }
+    function onKeyUp(e) {
+      if (btn.classList.contains("sh-tap")) return;
+      if (e.key === "Enter" || e.key === " ") {
+        if (progress >= threshold) fire();
+        else reset();
+      }
+    }
+
+    btn.addEventListener("pointerdown", onPtrDown);
+    btn.addEventListener("pointermove", onPtrMove);
+    btn.addEventListener("pointerup", onPtrUp);
+    btn.addEventListener("pointercancel", onPtrCancel);
+    btn.addEventListener("lostpointercapture", onPtrCancel);
+    btn.addEventListener("keydown", onKeyDown);
+    btn.addEventListener("keyup", onKeyUp);
+    btn.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+
+    var api = {
+      setLabel: function (t) {
+        if (lab) lab.textContent = t;
+        btn.setAttribute("aria-label", t);
+      },
+      setDisabled: function (d) {
+        btn.disabled = !!d;
+        if (d) reset();
+        else paint();
+      },
+      reset: reset,
+      el: btn
+    };
+    btn._slideHold = api;
+    paint();
+    return api;
+  };
+
+  function ensureInk(panel) {
+    var ink = panel.querySelector(".vapurr-sign-ink");
+    if (ink) return ink;
+    ink = el("div", "vapurr-sign-ink");
+    ink.hidden = true;
+    ink.setAttribute("aria-hidden", "true");
+    ink.innerHTML =
+      '<div class="vsi-stage">' +
+        '<svg class="vsi-pen" viewBox="0 0 48 48" fill="none" aria-hidden="true">' +
+          '<path d="M34.5 6.5l7 7-22 22-9.2 2.2 2.2-9.2 22-22z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>' +
+          '<path class="vsi-nib" d="M12.5 35.5l-2.2 9.2 9.2-2.2" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>' +
+        '</svg>' +
+        '<svg class="vsi-stroke" viewBox="0 0 280 72" fill="none" aria-hidden="true">' +
+          '<path class="vsi-path" d="M18 48 C 48 18, 72 58, 98 34 S 148 12, 172 40 S 222 62, 262 28" ' +
+            'stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>' +
+          '<path class="vsi-hash" d="M40 60h28M78 60h22M118 60h34M170 60h26M214 60h30" ' +
+            'stroke="currentColor" stroke-width="1.4" stroke-linecap="round" opacity="0.45"/>' +
+        '</svg>' +
+        '<div class="vsi-bits" aria-hidden="true">' +
+          '<i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>' +
+        '</div>' +
+      '</div>' +
+      '<div class="vsi-cap mono">Signing on this device</div>';
+    var lede = panel.querySelector("#vs-lede");
+    if (lede && lede.parentNode) lede.parentNode.insertBefore(ink, lede.nextSibling);
+    else panel.appendChild(ink);
+    return ink;
+  }
+
+  function setInk(on) {
+    if (!root) return;
+    var panel = root.querySelector(".vapurr-sign-panel");
+    if (!panel) return;
+    var ink = ensureInk(panel);
+    ink.hidden = !on;
+    ink.classList.toggle("on", !!on);
+    root.classList.toggle("is-signing", !!on);
+    if (on && !prefersReduce()) {
+      ink.classList.remove("vsi-replay");
+      void ink.offsetWidth;
+      ink.classList.add("vsi-replay");
+    }
   }
 
   function ensure() {
@@ -23,7 +265,12 @@
       '<p id="vs-lede"></p>' +
       '<div id="vs-rows"></div>' +
       '<div class="err" id="vs-err" hidden></div>' +
-      '<button class="btn" type="button" id="vs-go">Sign</button>' +
+      '<button class="btn slide-hold" type="button" id="vs-go" aria-label="Sign">' +
+        '<span class="sh-fill" aria-hidden="true"></span>' +
+        '<span class="sh-knob" aria-hidden="true"><svg class="sh-chev" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>' +
+        '<span class="sh-lab">Sign</span>' +
+        '<span class="sh-hint" aria-hidden="true">slide or hold</span>' +
+      '</button>' +
       '<button class="btn vapurr-sign-ghost" type="button" id="vs-no">Reject</button>' +
       "</div>";
     document.body.appendChild(root);
@@ -32,7 +279,9 @@
       if (mode === "done") close(true);
       else reject();
     };
-    root.querySelector("#vs-go").onclick = accept;
+    slideApi = g.vapurr.bindSlideHold(root.querySelector("#vs-go"), {
+      onConfirm: accept
+    });
     document.addEventListener("keydown", function (e) {
       if (e.key === "Escape" && root && !root.hidden) {
         e.preventDefault();
@@ -73,17 +322,28 @@
     }
     var go = document.getElementById("vs-go");
     var no = document.getElementById("vs-no");
+    if (!slideApi) slideApi = g.vapurr.bindSlideHold(go, { onConfirm: accept });
     if (mode === "done") {
-      go.textContent = spec.txUrl ? "Open explorer" : "Done";
-      go.disabled = false;
+      setInk(false);
+      go.classList.add("sh-tap");
+      slideApi.setLabel(spec.txUrl ? "Open explorer" : "Done");
+      slideApi.setDisabled(false);
+      go.onclick = accept;
       no.textContent = spec.txUrl ? "Done" : "Close";
     } else if (mode === "wait") {
-      go.textContent = "Waiting on chain…";
-      go.disabled = true;
+      setInk(true);
+      go.classList.remove("sh-tap");
+      go.onclick = null;
+      slideApi.setLabel("Signing…");
+      slideApi.setDisabled(true);
       no.textContent = "Hide";
     } else {
-      go.textContent = spec.confirmLabel || "Sign and send";
-      go.disabled = false;
+      setInk(false);
+      go.classList.remove("sh-tap");
+      go.onclick = null;
+      slideApi.setLabel(spec.confirmLabel || "Sign and send");
+      slideApi.setDisabled(false);
+      slideApi.reset();
       no.textContent = "Reject";
     }
     root._spec = spec;
@@ -91,6 +351,7 @@
 
   function close(ok) {
     if (!root) return;
+    setInk(false);
     root.hidden = true;
     var fn = resolveFn;
     resolveFn = null;
@@ -116,7 +377,6 @@
     close(true);
   }
 
-  g.vapurr = g.vapurr || {};
   g.vapurr.pendingTx = null;
 
   g.vapurr.txUrl = function (tx, explorer) {

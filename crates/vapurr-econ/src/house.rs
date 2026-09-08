@@ -1,4 +1,5 @@
-//! House Uniswap v4 CL book. $VAPURR / $PUSD only. Empty until this device deploys it.
+//! House Uniswap v4 CL book. Canon: wgV / $PUSD via HousePairConfig. Empty until this device deploys it.
+//! LIVE GAP: bootstrap still seeds raw V balances — must wrap to wgV before seed; need live pair_config in market.json.
 
 use serde_json::{json, Value};
 
@@ -27,6 +28,9 @@ impl Client {
         if self.live_house().is_some() {
             return Ok(self.cfg.house.clone());
         }
+        let pair_config = self
+            .live_ca(&self.cfg.pair_config)
+            .ok_or_else(|| EconError::Rpc("need HousePairConfig (cfg.pair_config)".into()))?;
         let market = self.live_market().ok_or(EconError::NotLive)?;
         let posm = addr_from_hex(rhc::UNI_V4_POSITION_MANAGER)
             .ok_or_else(|| EconError::Rpc("posm".into()))?;
@@ -38,6 +42,8 @@ impl Client {
             return Err(EconError::NeedGas);
         }
         let mut bytecode = house_bytecode()?;
+        // Constructor: (pairConfig, market, posm, permit2, fee, tickSpacing)
+        bytecode.extend_from_slice(&vapurr_wallet::tx::abi_addr(pair_config));
         bytecode.extend_from_slice(&vapurr_wallet::tx::abi_addr(market));
         bytecode.extend_from_slice(&vapurr_wallet::tx::abi_addr(posm));
         bytecode.extend_from_slice(&vapurr_wallet::tx::abi_addr(permit2));
@@ -83,7 +89,7 @@ impl Client {
         let lp_budget = bal / 2;
         let burn = lp_budget / 2;
         let seed_v = lp_budget - burn;
-        self.transact("swapLunaToUst(uint256)", burn)?;
+        self.swap_v_to_pusd(burn)?;
         let pusd = self.live_pusd().ok_or(EconError::NotLive)?;
         let pbal = self.token_raw(pusd, from);
         if pbal == 0 || seed_v == 0 {
@@ -108,7 +114,7 @@ impl Client {
             .live_pusd()
             .map(|a| a.to_hex())
             .unwrap_or_else(|| rhc::TESTNET_PUSD.to_string());
-        let px = self.luna_rate().unwrap_or(DEC);
+        let px = self.vapurr_rate().unwrap_or(DEC);
         let sqrt_p = sqrt_price_x96(px, &v_addr, &p_addr);
         let tick_l = -TICK_BAND;
         let tick_u = TICK_BAND;
@@ -191,6 +197,7 @@ impl Client {
             "vapurr": fmt_tok(v_bal),
             "pusd": fmt_tok(p_bal),
             "px": fmt_price(s.px),
+            // Snap.wgVToken — JSON key kept as vapurr_token for UI compat until frontend rename.
             "vapurr_token": s.vapurr_token,
             "pusd_token": s.pusd_token,
             "posm": s.posm,
@@ -250,15 +257,9 @@ impl Client {
         self.live_ca(&self.cfg.house)
     }
 
-    fn luna_rate(&self) -> Option<u128> {
+    fn vapurr_rate(&self) -> Option<u128> {
         let m = self.live_market()?;
-        let data = encode_fn("lunaRate()");
-        let raw = self
-            .rpc
-            .eth_call(&self.key.address.to_hex(), Some(&m.to_hex()), &hex0x(&data))
-            .ok()?;
-        let bytes = decode_hex_bytes(&raw).ok()?;
-        decode_word_u128(&bytes, 0)
+        self.read_vapurr_rate(m)
     }
 
     fn stock_bals(&self, holder: Address) -> Vec<Value> {
@@ -321,9 +322,9 @@ fn sorted_amounts(vapurr_addr: &str, pusd_addr: &str, vapurr: u128, pusd: u128) 
     }
 }
 
-fn sqrt_price_x96(luna_rate: u128, vapurr_addr: &str, pusd_addr: &str) -> u128 {
-    // Uniswap sqrtPrice is sqrt(token1/token0) * 2^96. lunaRate is P per V.
-    let s = isqrt(luna_rate.max(1));
+fn sqrt_price_x96(vapurr_rate: u128, vapurr_addr: &str, pusd_addr: &str) -> u128 {
+    // Uniswap sqrtPrice is sqrt(token1/token0) * 2^96. vapurrRate is P per V.
+    let s = isqrt(vapurr_rate.max(1));
     let v_is_token0 = vapurr_addr.to_ascii_lowercase() < pusd_addr.to_ascii_lowercase();
     if v_is_token0 {
         s.saturating_mul(Q96) / 1_000_000_000

@@ -1,4 +1,4 @@
-﻿[workspace]
+[workspace]
 resolver = "2"
 members = [
     "crates/vapurr-rhc",
@@ -15,14 +15,15 @@ members = [
     "crates/vapurr-shield",
     "crates/vapurr-fomo",
     "crates/vapurr-econ",
+    "crates/vapurr-relay",
 ]
 
 [workspace.package]
-version = "1.1.9"
+version = "1.1.23"
 edition = "2021"
 license = "MIT"
 authors = ["vapurr"]
-description = "vapurr Ã¢â‚¬â€ the on-chain browser"
+description = "vapurr - the on-chain browser"
 
 [workspace.dependencies]
 base64 = "0.22"
@@ -47,6 +48,9 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 url = "2"
 x25519-dalek = { version = "2", features = ["static_secrets", "getrandom"] }
 zeroize = { version = "1", features = ["zeroize_derive"] }
+axum = "0.7"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "signal", "time", "sync"] }
+tower-http = { version = "0.5", features = ["cors"] }
 
 vapurr-rhc = { path = "crates/vapurr-rhc" }
 vapurr-core = { path = "crates/vapurr-core" }
@@ -61,6 +65,7 @@ vapurr-ui = { path = "crates/vapurr-ui" }
 vapurr-shield = { path = "crates/vapurr-shield" }
 vapurr-fomo = { path = "crates/vapurr-fomo" }
 vapurr-econ = { path = "crates/vapurr-econ" }
+vapurr-relay = { path = "crates/vapurr-relay" }
 
 [profile.release]
 opt-level = 3

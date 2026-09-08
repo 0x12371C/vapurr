@@ -100,6 +100,9 @@ pub struct Prefs {
     pub boost: bool,
     #[serde(default = "default_theme")]
     pub theme: String,
+    /// Idle auto-lock seconds. Default 900 (15 min). 0 disables.
+    #[serde(default = "default_lock_timeout")]
+    pub lock_timeout_secs: u64,
 }
 
 fn default_zoom() -> f64 {
@@ -113,6 +116,10 @@ fn default_true() -> bool {
 }
 fn default_theme() -> String {
     "dark".into()
+}
+
+fn default_lock_timeout() -> u64 {
+    900
 }
 
 impl Default for Prefs {
@@ -129,6 +136,7 @@ impl Default for Prefs {
             adblock_cosmetic: true,
             boost: false,
             theme: default_theme(),
+            lock_timeout_secs: default_lock_timeout(),
         }
     }
 }
@@ -481,6 +489,16 @@ impl Desk {
         self.save();
     }
 
+    pub fn set_lock_timeout_secs(&mut self, secs: u64) {
+        // Clamp to sane set: 0 (off) or 60..=86400
+        self.prefs.lock_timeout_secs = if secs == 0 {
+            0
+        } else {
+            secs.clamp(60, 86_400)
+        };
+        self.save();
+    }
+
     pub fn clear_history(&mut self) {
         self.history.clear();
         self.save();
@@ -664,7 +682,7 @@ impl Desk {
             .unwrap_or_else(|_| ".".into());
         let pending = format!("{:.3}", self.pending_usdg_minor as f64 / 1_000_000.0);
         let paid = format!("{:.3}", self.paid_usdg_minor as f64 / 1_000_000.0);
-        let kyc = vapurr_id::load_verified(&Self::profile_dir());
+        let kyc = vapurr_id::load_verified(&Self::profile_dir(), &vapurr_id::trusted_issuers_from_env());
         let install_id = fs::read_to_string(Self::profile_dir().join("install_id"))
             .ok()
             .map(|s| s.trim().to_string())

@@ -1,10 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.24;
 
+import "./Remittance.sol";
+
 /// $VAPURR / $PUSD market on Robinhood Chain.
 /// Burn offer, mint ask. No USDG in the swap.
 /// Lithe: $PUSD index drips at 9%.
 
+/// INTERIM: market-embedded V (immutable minter = market). Distinct from Fed `GvFed.VapurrToken`
+/// until one-token migration. Lithe seigniorage: burn V to mint PUSD; mint V to redeem PUSD.
+/// Canonical cutover uses Fed V + marketMinter role — see docs/econ/MINT_AUTHORITY.md.
 contract VapurrToken {
     string public constant name = "VAPURR";
     string public constant symbol = "VAPURR";
@@ -12,6 +17,7 @@ contract VapurrToken {
     uint256 public totalSupply;
     mapping(address => uint256) public balanceOf;
     mapping(address => mapping(address => uint256)) public allowance;
+    /// Immutable self-minter (market). Cannot adopt Fed `setMinter` without redeploy/migration.
     address public immutable minter;
     event Transfer(address indexed from, address indexed to, uint256 value);
     event Approval(address indexed owner, address indexed spender, uint256 value);
@@ -96,6 +102,18 @@ contract PusdToken {
         emit Transfer(from, address(0), amt);
     }
 
+    /// Clear all shares for `from` (minter fee-cash dust after index moves).
+    function burnAll(address from) external onlyMinter {
+        uint256 s = shares[from];
+        if (s == 0) return;
+        uint256 bal = (s * index) / DEC;
+        unchecked {
+            shares[from] = 0;
+            totalShares -= s;
+        }
+        emit Transfer(from, address(0), bal);
+    }
+
     function drip(uint256 pay) external onlyMinter {
         uint256 supply = totalSupply();
         if (pay == 0 || supply == 0) return;
@@ -129,13 +147,17 @@ contract PusdToken {
     }
 }
 
+
+/// Gen-4 live market still ships this embedded-V layout (e.g. 0x47Ac…). Source uses
+/// Terra-style seigniorage (burn V / mint PUSD; burn PUSD / mint V). Live gen-4 bytecode may
+/// still be inventory until Relic-approved cutover — no silent 46630 broadcast.
 contract PusdMarket {
     uint256 public constant DEC = 1e18;
-    /// terra-fork/params.go DefaultBasePool = 1_000_000 SDR
+    /// stability-pool math (internal).
     uint256 public constant BASE_POOL = 1_000_000 * DEC;
-    /// terra-fork/params.go DefaultPoolRecoveryPeriod = BlocksPerDay = 14400
+    /// stability-pool math (internal).
     uint256 public constant POOL_RECOVERY_PERIOD = 14400;
-    /// terra-fork/params.go DefaultMinStabilitySpread = 2%
+    /// stability-pool math (internal).
     uint256 public constant MIN_STABILITY_SPREAD = 2e16;
     /// Lithe. 9% APY cap. Spread from mint and redeem funds it.
     uint256 public constant MAX_APY_BPS = 900;
@@ -146,118 +168,196 @@ contract PusdMarket {
     VapurrToken public immutable vapurr;
     PusdToken public immutable pusd;
 
-    /// GetLunaExchangeRate(uusd): PUSD per 1 VAPURR, 18 dec. First spot of the block.
-    uint256 public lunaRate;
+    /// getVapurrExchangeRate(pusd): PUSD per 1 VAPURR, 18 dec. First spot of the block.
+    uint256 public vapurrRate;
     uint256 public pendingRate;
     uint256 public liveBlock;
+    /// Last oracle heartbeat (`feed`) or first-spot apply. Oliver credit paths require freshness.
+    uint256 public rateUpdatedAt;
+    /// Max relative jump per `feed` vs live rate (0.5e18 = 50%). Rejects inflated spikes.
+    uint256 public constant MAX_FEED_JUMP_WAD = 5e17;
 
-    /// terra-fork/keeper GetTerraPoolDelta — signed, SDR/UST units
-    int256 public terraPoolDelta;
+    /// stability-pool math (internal).
+    int256 public poolDelta;
     uint256 public lastReplenish;
 
     uint256 public yieldReserve;
     uint256 public lastAccrue;
 
-    event Swap(address indexed trader, bool offerLuna, uint256 offer, uint256 ask, uint256 fee);
+    IRemittance public remittance; // surplus sink (RemittanceSink / sPUSD)
+    IRunwayView public runway; // optional shared floor view (sink enforces)
+    bool public remitOnAccrue; // when true, accrue best-effort pushes realized surplus to sink
+
+    event Swap(address indexed trader, bool offerV, uint256 offer, uint256 ask, uint256 fee);
     event Feed(uint256 rate);
     event Accrue(uint256 pay, uint256 index);
+    event RemittanceSet(address indexed sink, address indexed runway_, bool autoRemit);
+    event Remitted(address indexed sink, uint256 assets);
 
     modifier onlyOwner() { require(msg.sender == owner, "OWN"); _; }
 
-    constructor(uint256 lunaRate_) {
-        require(lunaRate_ > 0, "PRICE");
+    constructor(uint256 vapurrRate_) {
+        require(vapurrRate_ > 0, "PRICE");
         owner = msg.sender;
         vapurr = new VapurrToken();
         pusd = new PusdToken();
-        lunaRate = lunaRate_;
-        pendingRate = lunaRate_;
+        vapurrRate = vapurrRate_;
+        pendingRate = vapurrRate_;
         liveBlock = block.number;
+        rateUpdatedAt = block.timestamp;
         lastReplenish = block.number;
         lastAccrue = block.timestamp;
         vapurr.mint(msg.sender, GENESIS);
     }
 
     /// Oracle vote. Live rate snapshots on first swap of the block (first-spot).
+    /// Heartbeats `rateUpdatedAt` here only — swaps must not refresh credit freshness.
     function feed(uint256 rate) external onlyOwner {
         require(rate > 0, "PRICE");
+        if (vapurrRate > 0) {
+            uint256 hi = vapurrRate + (vapurrRate * MAX_FEED_JUMP_WAD) / DEC;
+            uint256 lo = vapurrRate - (vapurrRate * MAX_FEED_JUMP_WAD) / DEC;
+            require(rate <= hi && rate >= lo, "JUMP");
+        }
         pendingRate = rate;
+        rateUpdatedAt = block.timestamp;
         emit Feed(rate);
+    }
+
+    /// Conservative credit oracle for Oliver: requires fresh heartbeat; prefers lower of live vs pending
+    /// so a pending devaluation tightens LTV before the next swap applies first-spot.
+    function creditVapurrRate(uint256 maxAge) external view returns (uint256) {
+        require(maxAge > 0, "AGE");
+        require(rateUpdatedAt > 0 && block.timestamp >= rateUpdatedAt, "STALE");
+        require(block.timestamp - rateUpdatedAt <= maxAge, "STALE");
+        uint256 px = vapurrRate;
+        if (pendingRate > 0 && pendingRate < px) px = pendingRate;
+        require(px > 0, "PRICE");
+        return px;
+    }
+
+    function setRemittance(address sink, address runway_, bool autoRemit) external onlyOwner {
+        remittance = IRemittance(sink);
+        runway = IRunwayView(runway_);
+        remitOnAccrue = autoRemit;
+        emit RemittanceSet(sink, runway_, autoRemit);
+    }
+
+    /// Push realized yieldReserve (collected mint-spread fees in hand) to the
+    /// remittance sink. amount==0 remits all free realized surplus.
+    /// INVARIANT: yieldReserve is fee cash only — never unpaid
+    /// claims against depositor principal. Sink-level RunwayFloor retains
+    /// consolidated RFV; do not apply a second local floor here.
+    function remitSurplus(uint256 amount) public returns (uint256 sent) {
+        accrue(); // settle holder drip first (Oliver-style)
+        sent = _remitSurplus(amount);
+    }
+
+    function _remitSurplus(uint256 amount) internal returns (uint256 sent) {
+        require(address(remittance) != address(0), "REMIT");
+        // Realized fee cash only; floor retained at RemittanceSink.
+        uint256 free = yieldReserve;
+        sent = amount == 0 ? free : amount;
+        if (sent > free) sent = free;
+        if (sent > yieldReserve) sent = yieldReserve;
+        uint256 cash = pusd.balanceOf(address(this));
+        if (sent > cash) sent = cash;
+        if (sent == 0) return 0;
+        yieldReserve -= sent;
+        require(pusd.approve(address(remittance), sent), "ALLOW");
+        require(remittance.receiveRemittance(sent), "SINK");
+        // Share rounding can leave 1 wei stranded — snap reserve to cash, burn dust
+        // on a full surplus sweep so accounting cannot claim a phantom unit.
+        uint256 cashLeft = pusd.balanceOf(address(this));
+        if (yieldReserve > cashLeft) yieldReserve = cashLeft;
+        if (amount == 0 && cashLeft > 0 && cashLeft < 1e3) {
+            pusd.burnAll(address(this));
+            yieldReserve = 0;
+        }
+        emit Remitted(address(remittance), sent);
     }
 
     function _spot() internal {
         if (liveBlock != block.number) {
-            if (pendingRate > 0) lunaRate = pendingRate;
+            if (pendingRate > 0) vapurrRate = pendingRate;
             liveBlock = block.number;
+            // Do NOT refresh rateUpdatedAt here — only owner feed() heartbeats.
+            // Swap applying pending must not launder a stale oracle past Oliver STALE.
         }
-        require(lunaRate > 0, "PRICE");
+        require(vapurrRate > 0, "PRICE");
     }
 
-    /// terra-fork/oracle keeper.go GetLunaExchangeRate
-    function getLunaExchangeRate(bool luna) public view returns (uint256) {
-        if (luna) return DEC;
-        return lunaRate;
+    /// stability-pool math (internal).
+    function getVapurrExchangeRate(bool isV) public view returns (uint256) {
+        if (isV) return DEC;
+        return vapurrRate;
     }
 
-    /// terra-fork/swap.go ComputeInternalSwap
+    /// stability-pool math (internal).
     /// retAmount = offer.Amount * askRate / offerRate
-    function computeInternalSwap(uint256 offerAmt, bool offerLuna, bool askLuna) public view returns (uint256) {
-        if (offerLuna == askLuna) return offerAmt;
-        uint256 offerRate = getLunaExchangeRate(offerLuna);
-        uint256 askRate = getLunaExchangeRate(askLuna);
+    function computeInternalSwap(uint256 offerAmt, bool offerV, bool askV) public view returns (uint256) {
+        if (offerV == askV) return offerAmt;
+        uint256 offerRate = getVapurrExchangeRate(offerV);
+        uint256 askRate = getVapurrExchangeRate(askV);
         uint256 ret = (offerAmt * askRate) / offerRate;
         require(ret > 0, "TINY");
         return ret;
     }
 
-    /// terra-fork/keeper.go ReplenishPools — one EndBlocker step per missed block, capped.
+    /// stability-pool math (internal).
     function replenishPools() internal {
         if (block.number <= lastReplenish) return;
         uint256 n = block.number - lastReplenish;
         lastReplenish = block.number;
-        if (terraPoolDelta == 0) return;
+        if (poolDelta == 0) return;
         if (n > 256) n = 256;
         int256 period = int256(POOL_RECOVERY_PERIOD);
         for (uint256 i = 0; i < n; i++) {
-            terraPoolDelta -= terraPoolDelta / period;
+            poolDelta -= poolDelta / period;
         }
     }
 
-    /// terra-fork/swap.go ComputeSwap (Luna<>Terra branch; one stable so SDR = UST)
-    function computeSwap(uint256 offerAmt, bool offerLuna)
+    /// stability-pool math (internal).
+    function computeSwap(uint256 offerAmt, bool offerV)
         public
         view
         returns (uint256 retAmt, uint256 spread)
     {
         require(offerAmt > 0, "TINY");
-        // Swap offer to base denom (UST), then base to ask — swap.go ComputeSwap
-        uint256 baseOffer = computeInternalSwap(offerAmt, offerLuna, false);
-        retAmt = computeInternalSwap(baseOffer, false, !offerLuna);
+        // Swap offer to stable denom, then base to ask (stability-pool math).
+        uint256 baseOffer = computeInternalSwap(offerAmt, offerV, false);
+        retAmt = computeInternalSwap(baseOffer, false, !offerV);
 
         uint256 basePool = BASE_POOL;
         uint256 cp = basePool * basePool;
-        int256 terraPoolI = int256(basePool) + terraPoolDelta;
-        require(terraPoolI > 0, "THIN");
-        uint256 terraPool = uint256(terraPoolI);
-        uint256 lunaPool = cp / terraPool;
+        int256 stablePoolI = int256(basePool) + poolDelta;
+        require(stablePoolI > 0, "THIN");
+        uint256 stablePool = uint256(stablePoolI);
+        uint256 vapurrPool = cp / stablePool;
 
-        uint256 offerPool = offerLuna ? lunaPool : terraPool;
-        uint256 askPool = offerLuna ? terraPool : lunaPool;
+        uint256 offerPool = offerV ? vapurrPool : stablePool;
+        uint256 askPool = offerV ? stablePool : vapurrPool;
         uint256 askBaseAmount = askPool - (cp / (offerPool + baseOffer));
-        require(baseOffer >= askBaseAmount, "THIN");
-        spread = ((baseOffer - askBaseAmount) * DEC) / baseOffer;
+        // One-sided flow can invert CP spread (askBase > baseOffer). Do not THIN
+        // on negative calculated spread — seigniorage redeem mints V (no INV gate).
+        if (baseOffer > askBaseAmount) {
+            spread = ((baseOffer - askBaseAmount) * DEC) / baseOffer;
+        } else {
+            spread = 0;
+        }
         if (spread < MIN_STABILITY_SPREAD) spread = MIN_STABILITY_SPREAD;
     }
 
-    /// terra-fork/swap.go ApplySwapToPool
-    function applySwapToPool(bool offerLuna, uint256 offerAmt, uint256 askAmtAfterFee) internal {
-        if (offerLuna) {
-            // Luna -> Terra: delta -= ask in UST
+    /// stability-pool math (internal).
+    function applySwapToPool(bool offerV, uint256 offerAmt, uint256 askAmtAfterFee) internal {
+        if (offerV) {
+            // V -> PUSD: delta -= ask in PUSD
             uint256 askBase = computeInternalSwap(askAmtAfterFee, false, false);
-            terraPoolDelta -= int256(askBase);
+            poolDelta -= int256(askBase);
         } else {
-            // Terra -> Luna: delta += offer in UST
+            // PUSD -> V: delta += offer in PUSD
             uint256 offerBase = computeInternalSwap(offerAmt, false, false);
-            terraPoolDelta += int256(offerBase);
+            poolDelta += int256(offerBase);
         }
     }
 
@@ -270,14 +370,46 @@ contract PusdMarket {
         uint256 maxPay = (supply * MAX_APY_BPS * dt) / 10_000 / YEAR;
         uint256 pay = yieldReserve < maxPay ? yieldReserve : maxPay;
         if (pay == 0) return;
+        // Single-count Lithe: fee PUSD lives as cash for remit OR is consumed by
+        // drip — never both. Pull ALL fee cash out of the rebasing supply before
+        // drip so the market does not earn Lithe on its own fees; remint the remainder
+        // afterward so yieldReserve stays cash-backed for remittance.
+        uint256 cash = pusd.balanceOf(address(this));
+        if (cash > 0) {
+            // Prefer burning the tracked reserve; if cash drifted, burn all cash.
+            uint256 pull = cash < yieldReserve ? cash : yieldReserve;
+            if (cash > yieldReserve) pull = cash; // sweep dust with the reserve pull
+            if (pull > 0) pusd.burn(address(this), pull);
+            if (yieldReserve > cash) yieldReserve = cash;
+        }
+        if (pay > yieldReserve) pay = yieldReserve;
+        if (pay == 0) return;
         pusd.drip(pay);
         yieldReserve -= pay;
+        if (yieldReserve > 0) {
+            pusd.mint(address(this), yieldReserve);
+        }
         emit Accrue(pay, pusd.index());
+        // Remittance hook: best-effort push remaining surplus above runway to sink.
+        if (remitOnAccrue && address(remittance) != address(0) && yieldReserve > 0) {
+            _remitSurplus(0);
+        }
     }
 
-    /// terra-fork/msg_server.go handleSwapRequest — Luna -> UST
-    /// Burn VAPURR, mint PUSD at oracle minus spread. Spread -> Lithe reserve.
-    function swapLunaToUst(uint256 offer) external returns (uint256 ask, uint256 fee) {
+    /// Residual V held by this market (should be ~0 under seigniorage; not redeem float).
+    function vInventory() public view returns (uint256) {
+        return vapurr.balanceOf(address(this));
+    }
+
+    /// Deprecated: seigniorage redeem mints V — no inventory float required.
+    /// Kept for ABI compatibility; pulls V into market without minting.
+    function fundVInventory(uint256 amt) external {
+        require(amt > 0, "TINY");
+        vapurr.take(msg.sender, amt);
+    }
+
+    /// Seigniorage expand: burn VAPURR, mint PUSD at oracle minus spread. Spread -> Lithe reserve.
+    function swapVToPusd(uint256 offer) external returns (uint256 ask, uint256 fee) {
         _spot();
         accrue();
         (uint256 ret, uint256 spread) = computeSwap(offer, true);
@@ -285,19 +417,20 @@ contract PusdMarket {
         ask = ret - fee;
         require(ask > 0, "TINY");
         applySwapToPool(true, offer, ask);
-        vapurr.take(msg.sender, offer);
-        vapurr.burn(address(this), offer);
+        vapurr.burn(msg.sender, offer);
         pusd.mint(msg.sender, ask);
         if (fee > 0) {
+            // Fee cash + yieldReserve claim the SAME fee once. accrue burns fee cash
+            // on drip; remitSurplus transfers cash — never double-pay.
             pusd.mint(address(this), fee);
             yieldReserve += fee;
         }
         emit Swap(msg.sender, true, offer, ask, fee);
     }
 
-    /// terra-fork/msg_server.go handleSwapRequest — UST -> Luna
-    /// Burn PUSD, mint VAPURR at oracle minus spread. V fee is not minted (burned).
-    function swapUstToLuna(uint256 offer) external returns (uint256 ask, uint256 fee) {
+    /// Seigniorage contract: burn PUSD, mint VAPURR at oracle minus spread.
+    /// Market is V minter on this embedded book. gV policy inflate is a separate printer on Fed V.
+    function swapPusdToV(uint256 offer) external returns (uint256 ask, uint256 fee) {
         _spot();
         accrue();
         (uint256 ret, uint256 spread) = computeSwap(offer, false);
@@ -321,7 +454,7 @@ contract PusdMarket {
         uint256 apy;
         address vapurrToken;
         address pusdToken;
-        uint256 terraPool;
+        uint256 stablePool;
         uint256 minSpread;
     }
 
@@ -335,7 +468,7 @@ contract PusdMarket {
     function snapshot(address a) external view returns (Snap memory s) {
         s.vapurrBal = vapurr.balanceOf(a);
         s.pusdBal = pusd.balanceOf(a);
-        s.px = lunaRate;
+        s.px = vapurrRate;
         s.idx = pusd.index();
         s.vapurrSupply = vapurr.totalSupply();
         s.pusdSupply = pusd.totalSupply();
@@ -343,8 +476,8 @@ contract PusdMarket {
         s.apy = apyBps();
         s.vapurrToken = address(vapurr);
         s.pusdToken = address(pusd);
-        int256 tp = int256(BASE_POOL) + terraPoolDelta;
-        s.terraPool = tp > 0 ? uint256(tp) : 0;
+        int256 tp = int256(BASE_POOL) + poolDelta;
+        s.stablePool = tp > 0 ? uint256(tp) : 0;
         s.minSpread = MIN_STABILITY_SPREAD;
     }
 }

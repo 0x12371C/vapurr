@@ -3,10 +3,13 @@
 use serde::{Deserialize, Serialize};
 use vapurr_rhc as rhc;
 
-pub(crate) const GEN: u32 = 4;
+pub(crate) const GEN: u32 = 5;
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub(crate) struct MarketCfg {
+    /// Preserve deployment fields owned by other desks (including wgV).
+    #[serde(flatten)]
+    pub(crate) extra: std::collections::BTreeMap<String, serde_json::Value>,
     #[serde(default)]
     pub(crate) gen: u32,
     #[serde(default)]
@@ -27,6 +30,51 @@ pub(crate) struct MarketCfg {
     pub(crate) house: String,
     #[serde(default)]
     pub(crate) swap: String,
+    /// HousePairConfig address (wgV + PUSD SoT). Required for HouseLp/HouseSwap deploy.
+    #[serde(default)]
+    pub(crate) pair_config: String,
+    /// Previous Lithe book retained for cutover provenance and the PUSD migration route.
+    #[serde(default)]
+    pub(crate) legacy_market: String,
+    #[serde(default)]
+    pub(crate) legacy_vapurr: String,
+    #[serde(default)]
+    pub(crate) legacy_pusd: String,
+    /// Successor one-token deployment record.
+    #[serde(default)]
+    pub(crate) cutover_factory: String,
+    #[serde(default)]
+    pub(crate) v_converter: String,
+    #[serde(default)]
+    pub(crate) pusd_migrator: String,
+    #[serde(default)]
+    pub(crate) rebase_policy: String,
+    #[serde(default)]
+    pub(crate) gv: String,
+    /// BondMarket intake. Empty until Relic signs a bonds deploy.
+    #[serde(default)]
+    pub(crate) bond_market: String,
+    /// Liquid sPUSD vault. Empty until Relic signs a savings deploy.
+    #[serde(default)]
+    pub(crate) spusd: String,
+    /// Term CD vault. Empty until Relic signs a savings deploy.
+    #[serde(default)]
+    pub(crate) spusd_cd: String,
+    /// SavingsRouter surplus splitter. Empty until Relic signs a savings deploy.
+    #[serde(default)]
+    pub(crate) savings_router: String,
+    /// HouseFeeRemit credit. Empty until Relic signs a remittance deploy.
+    #[serde(default)]
+    pub(crate) house_fee_remit: String,
+    /// HouseUniSkim adapter. Empty until Relic signs a remittance deploy.
+    #[serde(default)]
+    pub(crate) house_uni_skim: String,
+    /// FeeAttribution source ledger. Empty until Relic signs a remittance deploy.
+    #[serde(default)]
+    pub(crate) fee_attribution: String,
+    /// RemittanceSink runway. Empty until Relic signs a remittance deploy.
+    #[serde(default)]
+    pub(crate) remittance_sink: String,
     #[serde(default)]
     pub(crate) net: String,
 }
@@ -72,6 +120,30 @@ impl MarketCfg {
         if self.house.is_empty() && !rhc::TESTNET_HOUSE.is_empty() {
             self.house = rhc::TESTNET_HOUSE.into();
         }
+        if self.bond_market.is_empty() && !rhc::TESTNET_BOND_MARKET.is_empty() {
+            self.bond_market = rhc::TESTNET_BOND_MARKET.into();
+        }
+        if self.spusd.is_empty() && !rhc::TESTNET_SPUSD.is_empty() {
+            self.spusd = rhc::TESTNET_SPUSD.into();
+        }
+        if self.spusd_cd.is_empty() && !rhc::TESTNET_SPUSD_CD.is_empty() {
+            self.spusd_cd = rhc::TESTNET_SPUSD_CD.into();
+        }
+        if self.savings_router.is_empty() && !rhc::TESTNET_SAVINGS_ROUTER.is_empty() {
+            self.savings_router = rhc::TESTNET_SAVINGS_ROUTER.into();
+        }
+        if self.house_fee_remit.is_empty() && !rhc::TESTNET_HOUSE_FEE_REMIT.is_empty() {
+            self.house_fee_remit = rhc::TESTNET_HOUSE_FEE_REMIT.into();
+        }
+        if self.house_uni_skim.is_empty() && !rhc::TESTNET_HOUSE_UNI_SKIM.is_empty() {
+            self.house_uni_skim = rhc::TESTNET_HOUSE_UNI_SKIM.into();
+        }
+        if self.fee_attribution.is_empty() && !rhc::TESTNET_FEE_ATTRIBUTION.is_empty() {
+            self.fee_attribution = rhc::TESTNET_FEE_ATTRIBUTION.into();
+        }
+        if self.remittance_sink.is_empty() && !rhc::TESTNET_REMITTANCE_SINK.is_empty() {
+            self.remittance_sink = rhc::TESTNET_REMITTANCE_SINK.into();
+        }
         if self.swap.is_empty() || dead_swap(&self.swap) {
             if !rhc::TESTNET_SWAP.is_empty() {
                 self.swap = rhc::TESTNET_SWAP.into();
@@ -81,7 +153,8 @@ impl MarketCfg {
 
     pub(crate) fn load() -> Self {
         let mut c = if let Ok(bytes) = std::fs::read(Self::path()) {
-            if let Ok(c) = serde_json::from_slice::<MarketCfg>(&bytes) {
+            let bytes = bytes.strip_prefix(&[0xef, 0xbb, 0xbf]).unwrap_or(&bytes);
+            if let Ok(c) = serde_json::from_slice::<MarketCfg>(bytes) {
                 if c.gen >= GEN {
                     c
                 } else {
@@ -121,6 +194,16 @@ mod tests {
     use super::*;
 
     #[test]
+    fn deployment_extensions_survive_roundtrip() {
+        let input = r#"{"gen":5,"net":"testnet","market":"active","wgv":"wrapped","bonds":"launched-bonds"}"#;
+        let cfg: MarketCfg = serde_json::from_str(input).unwrap();
+        let saved = serde_json::to_value(cfg).unwrap();
+        assert_eq!(saved["wgv"], "wrapped");
+        assert_eq!(saved["bonds"], "launched-bonds");
+        assert_eq!(saved["market"], "active");
+    }
+
+    #[test]
     fn empty_testnet_adopts_gen4_book() {
         let mut c = MarketCfg {
             net: "testnet".into(),
@@ -135,6 +218,14 @@ mod tests {
         assert!(c.outbid.is_empty());
         assert!(c.ketlist.is_empty());
         assert!(c.usdg.is_empty());
+        assert!(c.bond_market.is_empty());
+        assert!(c.spusd.is_empty());
+        assert!(c.spusd_cd.is_empty());
+        assert!(c.savings_router.is_empty());
+        assert!(c.house_fee_remit.is_empty());
+        assert!(c.house_uni_skim.is_empty());
+        assert!(c.fee_attribution.is_empty());
+        assert!(c.remittance_sink.is_empty());
         assert_eq!(rhc::TESTNET_MARKET.len(), 42);
         assert_eq!(rhc::TESTNET_HOUSE.len(), 42);
         assert_eq!(rhc::TESTNET_LOOP.len(), 42);

@@ -30,6 +30,14 @@ pub enum WalletCmd {
         secret: String,
     },
     Logout,
+    LockSession,
+    PasscodeUnlock {
+        code: String,
+    },
+    PasscodeSet {
+        a: String,
+        b: String,
+    },
     SetNet(String),
     RevealSeed,
     ExportKey,
@@ -37,12 +45,23 @@ pub enum WalletCmd {
         to: String,
     },
     Exec {
+        route_id: String,
         to: String,
         data: String,
         value: String,
         chain_id: u64,
         gas: u64,
     },
+    /// EIP-191 personal_sign for chrome pages (KYC challenge, etc.).
+    SignMessage {
+        message: String,
+    },
+    /// Level 1 age self-attest via thesecretlab issuer.
+    KycAttestAge {
+        age_confirmed: bool,
+    },
+    /// Level 2 jurisdiction via issuer CDN/IP geo.
+    KycAttestJurisdiction,
 }
 
 struct Net {
@@ -79,7 +98,7 @@ fn write_net(net: &str) -> Result<(), WalletError> {
     let path = crate::data_dir().join("market.json");
     let mut v = std::fs::read(&path)
         .ok()
-        .and_then(|b| serde_json::from_slice::<Value>(&b).ok())
+        .and_then(|b| serde_json::from_slice::<Value>(b.strip_prefix(&[0xef, 0xbb, 0xbf]).unwrap_or(&b)).ok())
         .unwrap_or_else(|| json!({}));
     if !v.is_object() {
         v = json!({});
@@ -96,7 +115,7 @@ fn write_net(net: &str) -> Result<(), WalletError> {
 fn load_net() -> Net {
     let v = std::fs::read(crate::data_dir().join("market.json"))
         .ok()
-        .and_then(|b| serde_json::from_slice::<Value>(&b).ok())
+        .and_then(|b| serde_json::from_slice::<Value>(b.strip_prefix(&[0xef, 0xbb, 0xbf]).unwrap_or(&b)).ok())
         .unwrap_or(Value::Null);
     let testnet = v.get("net").and_then(|x| x.as_str()).unwrap_or("testnet") != "mainnet";
     let mut pusd = cfg_str(&v, "pusd");
@@ -200,7 +219,7 @@ impl Desk {
 
     pub fn run(&mut self, cmd: WalletCmd) -> Result<Value, WalletError> {
         self.reload_net();
-        if matches!(&cmd, WalletCmd::Send { .. } | WalletCmd::Exec { .. } | WalletCmd::RevealSeed | WalletCmd::ExportKey) {
+        if matches!(&cmd, WalletCmd::Send { .. } | WalletCmd::Exec { .. } | WalletCmd::RevealSeed | WalletCmd::ExportKey | WalletCmd::SignMessage { .. } | WalletCmd::KycAttestAge { .. } | WalletCmd::KycAttestJurisdiction) {
             crate::require_unlocked()?;
             self.key = DeviceKey::load_result()?.ok_or_else(|| WalletError::Fail("No wallet on this PC".into()))?;
         }
@@ -233,7 +252,23 @@ impl Desk {
                 self.reload_key();
                 Ok(self.snap())
             }
-            WalletCmd::Logout => Ok(crate::session::logout()),
+            WalletCmd::Logout => {
+                let _ = crate::session::logout();
+                // Drop any cached signing key; generate is ephemeral until create/import saves.
+                self.key = DeviceKey::generate();
+                Ok(self.snap())
+            }
+            WalletCmd::LockSession => Ok(crate::session::lock_session()),
+            WalletCmd::PasscodeUnlock { code } => {
+                crate::session::unlock_with_pin(&code)?;
+                self.reload_key();
+                Ok(self.snap())
+            }
+            WalletCmd::PasscodeSet { a, b } => {
+                crate::session::set_passcode(&a, &b)?;
+                self.reload_key();
+                Ok(self.snap())
+            }
             WalletCmd::SetNet(net) => {
                 write_net(&net)?;
                 self.reload_net();
@@ -241,14 +276,18 @@ impl Desk {
             }
             WalletCmd::RevealSeed => crate::session::reveal_seed(),
             WalletCmd::ExportKey => crate::session::export_key(),
+            WalletCmd::SignMessage { message } => crate::kyc::sign_message(&self.key, &message),
+            WalletCmd::KycAttestAge { age_confirmed } => crate::kyc::attest_age(&self.key, age_confirmed),
+            WalletCmd::KycAttestJurisdiction => crate::kyc::attest_jurisdiction(&self.key),
             WalletCmd::Resolve { to } => resolve_preview(&to),
             WalletCmd::Exec {
+                route_id,
                 to,
                 data,
                 value,
                 chain_id,
                 gas,
-            } => self.exec_route(&to, &data, &value, chain_id, gas),
+            } => self.exec_route(&route_id, &to, &data, &value, chain_id, gas),
         }
     }
 
@@ -269,6 +308,8 @@ impl Desk {
     pub fn snap(&self) -> Value {
         let logged_in = crate::session::is_logged_in();
         let has_key = crate::session::has_key();
+        let has_pin = crate::session::has_pin();
+        let needs_pin = crate::session::needs_passcode_setup();
         if has_key && DeviceKey::load_result().ok().flatten().is_none() {
             return json!({"ok":false,"has_key":true,"logged_in":false,"assets":[],"address":"","error":"Wallet storage could not be opened. Restore access to the encrypted wallet; no new key was created."});
         }
@@ -278,6 +319,8 @@ impl Desk {
                 "live": false,
                 "logged_in": false,
                 "has_key": false,
+                "has_pin": false,
+                "needs_pin": false,
                 "error": "",
                 "address": "",
                 "chain_id": self.chain_id,
@@ -472,6 +515,8 @@ impl Desk {
             "live": err.is_empty(),
             "logged_in": logged_in,
             "has_key": has_key,
+            "has_pin": has_pin,
+            "needs_pin": needs_pin,
             "error": err,
             "address": address,
             "chain_id": self.chain_id,
@@ -613,6 +658,7 @@ impl Desk {
 
     fn exec_route(
         &mut self,
+        route_id: &str,
         to: &str,
         data: &str,
         value: &str,
@@ -620,6 +666,8 @@ impl Desk {
         gas: u64,
     ) -> Result<Value, WalletError> {
         let _signing = crate::transactions::signing_guard()?;
+        let authorization = rhc::route::take_execution(route_id, &self.key.address.to_hex(), to, data, value, chain_id)
+            .map_err(WalletError::Fail)?;
         let rpc_url = rhc::rpc_http(chain_id).ok_or_else(|| {
             WalletError::Fail("unsupported chain".into())
         })?;
@@ -628,7 +676,7 @@ impl Desk {
         if data_b.is_empty() && value.trim().is_empty() {
             return Err(WalletError::Fail("empty route tx".into()));
         }
-        let value_n = crate::parse_hex_u128(value)?;
+        let value_n = route_value_wei(value)?;
         let rpc = Rpc::at(rpc_url);
         let from = self.key.address.to_hex();
         let eth = rpc.eth_balance(&from).map_err(rpc_err)?;
@@ -658,6 +706,7 @@ impl Desk {
             value: value_n,
             data: data_b,
         };
+        authorization.ensure_fresh().map_err(WalletError::Fail)?;
         let raw = self.key.sign_tx(&tx)?;
         let hash = rpc.eth_send_raw(&hex0x(&raw)).map_err(rpc_err)?;
         crate::transactions::record(&hash, chain_id, &from, "pending")?;
@@ -1184,10 +1233,29 @@ pub fn fmt_units(n: u128, decimals: u8) -> String {
     format!("{whole}.{f}")
 }
 
+fn route_value_wei(value: &str) -> Result<u128, WalletError> {
+    let parsed = if let Some(hex) = value.strip_prefix("0x") {
+        u128::from_str_radix(hex, 16)
+    } else {
+        value.parse::<u128>()
+    };
+    parsed.map_err(|_| WalletError::Fail("Invalid native transaction value".into()))
+}
+
 #[cfg(test)]
 mod tests {
     use super::{fmt_units, fmt_usd_bag, map_blockscout_xfer, normalize_net, parse_units};
     use serde_json::json;
+
+    #[test]
+    fn route_value_preserves_decimal_and_hex_wei() {
+        assert_eq!(super::route_value_wei("100").unwrap(), 100);
+        assert_eq!(super::route_value_wei("0x64").unwrap(), 100);
+        assert_eq!(super::route_value_wei("0").unwrap(), 0);
+        for value in ["", "0x", "-1", "1.5", "1e3", "340282366920938463463374607431768211456"] {
+            assert!(super::route_value_wei(value).is_err(), "{value}");
+        }
+    }
 
     #[test]
     fn units_round_trip() {

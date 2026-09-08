@@ -1,10 +1,12 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>$PUSD</title>
   <link rel="stylesheet" href="/tokens.css"/>
   <link rel="stylesheet" href="/chrome.css"/>
+  <link rel="stylesheet" href="/defi-surface.css"/>
   <style>
     html, body { height: 100%; }
     body {
@@ -113,7 +115,7 @@
       margin: 10px 0 0;
     }
     #e-unwind-bar.on { display: block; }
-    #e-unwind-bar .btn { width: 100%; height: 44px; border-radius: 12px; }
+    #e-unwind-bar .btn { width: 100%; height: 48px; border-radius: 14px; }
     .hero-v {
 
       margin-top: 8px;
@@ -231,11 +233,16 @@
     .act:active { transform: scale(0.94); }
     .card {
       padding: 18px 18px 16px;
-      border-radius: 18px;
-      background: color-mix(in srgb, var(--color-steel) 58%, transparent);
-      backdrop-filter: blur(24px) saturate(1.5);
-      -webkit-backdrop-filter: blur(24px) saturate(1.5);
-      border: 1px solid color-mix(in srgb, var(--color-snow) 8%, transparent);
+      border-radius: var(--radius-panel, 18px);
+      background: var(--glass-bg, color-mix(in srgb, var(--color-steel) 50%, transparent));
+      backdrop-filter: var(--glass-blur, blur(24px) saturate(1.5));
+      -webkit-backdrop-filter: var(--glass-blur, blur(24px) saturate(1.5));
+      border: 1px solid var(--glass-border, color-mix(in srgb, var(--color-snow) 8%, transparent));
+      box-shadow: 0 16px 44px color-mix(in srgb, #000 16%, transparent);
+      transition:
+        border-color 0.18s ease,
+        transform 0.2s var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1)),
+        box-shadow 0.2s ease;
     }
     .card h2 {
       font-size: 20px;
@@ -281,7 +288,7 @@
       letter-spacing: -0.02em;
       min-height: 1.2em;
     }
-    .card .btn { width: 100%; margin-top: 16px; height: 50px; border-radius: 14px; font-size: 16px; }
+    .card .btn { width: 100%; margin-top: 16px; height: 48px; border-radius: 14px; font-size: 15px; }
     .err { color: #ff8a80; font-size: 13px; min-height: 16px; margin-top: 8px; }
     .sec {
       margin: 28px 4px 8px;
@@ -289,12 +296,12 @@
       font-weight: 600;
     }
     .glass {
-      border-radius: 16px;
+      border-radius: var(--radius-panel, 18px);
       overflow: hidden;
-      background: color-mix(in srgb, var(--color-steel) 58%, transparent);
-      backdrop-filter: blur(22px) saturate(1.45);
-      -webkit-backdrop-filter: blur(22px) saturate(1.45);
-      border: 1px solid color-mix(in srgb, var(--color-snow) 8%, transparent);
+      background: var(--glass-bg, color-mix(in srgb, var(--color-steel) 50%, transparent));
+      backdrop-filter: var(--glass-blur, blur(24px) saturate(1.5));
+      -webkit-backdrop-filter: var(--glass-blur, blur(24px) saturate(1.5));
+      border: 1px solid var(--glass-border, color-mix(in srgb, var(--color-snow) 8%, transparent));
     }
     .row {
       display: flex;
@@ -426,7 +433,7 @@
     .two .btn,
     .two .btn-ghost {
       margin-top: 12px;
-      height: 50px;
+      height: 48px;
       width: 100%;
     }
     #loop-steps-wrap { display: none; margin-top: 8px; }
@@ -507,11 +514,82 @@
       font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
     }
     .jump button:hover { border-color: var(--color-lime); color: var(--color-lime); }
+  
+    /* defi-surface appendix — Oliver / House / CD glass; no business JS */
+    #euler.card,
+    #house.card,
+    #book.card,
+    #lithe.card {
+      background: var(--glass-bg, color-mix(in srgb, var(--color-steel) 50%, transparent));
+      backdrop-filter: var(--glass-blur, blur(24px) saturate(1.5));
+      -webkit-backdrop-filter: var(--glass-blur, blur(24px) saturate(1.5));
+      box-shadow: 0 16px 44px color-mix(in srgb, #000 18%, transparent);
+      border-color: color-mix(in srgb, var(--color-snow) 10%, transparent);
+      transition:
+        border-color 0.18s ease,
+        transform 0.2s var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1)),
+        box-shadow 0.2s ease;
+    }
+    #euler.card:hover,
+    #house.card:hover {
+      border-color: color-mix(in srgb, var(--color-lime) 28%, transparent);
+      box-shadow: 0 20px 48px color-mix(in srgb, #000 24%, transparent);
+    }
+    #euler .btn,
+    #house .btn,
+    #book .btn,
+    .card .btn {
+      min-width: 120px;
+      height: 48px;
+      letter-spacing: 0.02em;
+      box-shadow: 0 10px 28px color-mix(in srgb, var(--color-lime) 16%, transparent);
+    }
+    #euler .btn-ghost,
+    #house .btn-ghost,
+    .two .btn-ghost {
+      height: 48px;
+      border: 1px solid color-mix(in srgb, var(--color-snow) 12%, transparent);
+      border-radius: 14px;
+    }
+    #euler-boot .note,
+    #house-swap:empty,
+    .card .defi-empty {
+      padding: 18px 14px;
+      border-radius: 14px;
+      border: 1px dashed color-mix(in srgb, var(--color-snow) 14%, transparent);
+      background: color-mix(in srgb, var(--color-void) 32%, transparent);
+    }
+    #euler .facts,
+    #house .facts {
+      gap: 8px;
+      margin: 12px 0 10px;
+    }
+    #euler .chip,
+    #house .chip {
+      backdrop-filter: blur(18px) saturate(1.4);
+      -webkit-backdrop-filter: blur(18px) saturate(1.4);
+      box-shadow: 0 6px 16px color-mix(in srgb, #000 10%, transparent);
+      transition: border-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+    }
+    #euler .chip:hover,
+    #house .chip:hover {
+      border-color: color-mix(in srgb, var(--color-lime) 30%, transparent);
+      transform: translateY(-1px);
+    }
+    .jump { margin-bottom: 16px; gap: 10px; }
+    .jump button {
+      backdrop-filter: blur(16px) saturate(1.35);
+      -webkit-backdrop-filter: blur(16px) saturate(1.35);
+      transition: border-color 0.16s ease, color 0.16s ease, transform 0.16s ease;
+    }
+    .jump button:hover { transform: translateY(-1px); }
+
   </style>
+  <link rel="stylesheet" href="/defi-flow.css"/>
 </head>
-<body>
-  <div class="globe-layer" aria-hidden="true"><canvas id="globe"></canvas></div>
+<body class="finance-ui" data-desk="cash">
   <div class="wrap">
+    <div data-finance-nav></div>
     <div class="card" id="boot">
       <h2 id="boot-title">Set up $PUSD</h2>
       <p class="note" id="st">This device deploys the market. You receive 1,000,000 $VAPURR.</p>
@@ -527,7 +605,7 @@
           <div class="live"><span class="pip" id="pip"></span><span id="live">…</span></div>
         </div>
         <h1><em>$</em><span id="bal-p">0.00</span></h1>
-        <p class="hero-net">Net Oliver · wallet $PUSD + supplied − debt</p>
+        <p class="hero-net">Net PUSD · wallet + supplied − debt</p>
         <p class="hero-v hero-collat"><b id="bal-collat-v">0</b> $VAPURR collateral</p>
         <p class="hero-v"><b id="bal-v">0.00</b> wallet $VAPURR</p>
         <div class="err-chip" id="snap-err" hidden></div>
@@ -550,39 +628,39 @@
         </div>
       </div>
       <div class="card" id="lithe">
-        <h2>Lithe</h2>
-        <p class="rate"><b id="apy">9.00%</b><span id="earned"></span></p>
-        <p class="say">Every <b>$PUSD</b> earns in place — no claim. Mint spread funds it. Oliver stacks on top. Browse-earn is separate (<code>vapurr://earn</code>).</p>
+        <h2>Combined yield</h2>
+        <p class="rate"><b id="apy">—</b><span id="earned"></span></p>
+        <p class="say">PUSD + Oliver. Rates vary.</p>
       </div>
     </div>
 
     
-    <div class="jump" id="jump" hidden>
-      <button type="button" data-jump="book">Mint</button>
-      <button type="button" data-jump="euler">Oliver</button>
-      <button type="button" data-jump="house">House</button>
-      <button type="button" data-jump="lithe">Lithe</button>
+    <div class="jump" id="jump" role="tablist" aria-label="Choose a desk">
+      <button type="button" data-jump="book" role="tab" aria-controls="book" aria-selected="true">Lithe · Mint / redeem</button>
+      <button type="button" data-jump="euler" role="tab" aria-controls="euler" aria-selected="false">Oliver · Credit</button>
+      <button type="button" data-jump="house" role="tab" aria-controls="house" aria-selected="false">House · Trade</button>
     </div>
     <div class="board" id="board">
-    <div class="card" id="book">
-      <h2>Mint and redeem</h2>
-      <p class="say">Burn <b>$VAPURR</b> → mint <b>$PUSD</b> (and reverse). Oracle = first spot of the block. Spread ≥2% funds Lithe. Not USDG.</p>
+    <div class="card" id="book" role="tabpanel" aria-label="Lithe mint and redeem">
+      <h2><span data-icon="exchange"></span>Lithe</h2>
+      <p class="say">Mint PUSD. Redeem back to VAPURR.</p><div class="mini-route" aria-label="VAPURR through Lithe to PUSD"><span>VAPURR</span><b aria-hidden="true">→</b><span><i data-icon="exchange"></i>Lithe</span><b aria-hidden="true">→</b><span>PUSD</span></div><label class="flow-field-label" for="amt">You exchange</label>
       <div class="amt">
-        <input class="field" id="amt" placeholder="0" inputmode="decimal" autocomplete="off"/>
+        <input class="field" id="amt" aria-label="Exchange amount" placeholder="0" inputmode="decimal" autocomplete="off"/>
         <button class="btn-ghost" id="max" type="button" style="height:44px">Max</button>
       </div>
       <div class="have" id="have">0.00 $VAPURR</div>
       <div class="quote" id="quote"></div>
       <button class="btn" id="go" type="button">Mint $PUSD</button>
-      <div class="err" id="book-err"></div>
+      <div class="err" id="book-err" role="alert"></div><details class="flow-details"><summary>Exchange details</summary><p>Oracle-priced mint and redeem. The spread reduces the amount received. Review the estimate before signing.</p></details>
     </div>
 
-    <div class="card" id="euler">
+    <div class="card" id="euler" role="tabpanel" aria-label="Oliver credit">
       <div class="eh">
-        <h2>Oliver</h2>
+        <h2><span data-icon="borrow"></span>Oliver</h2>
         <span class="hint" id="e-hint"></span>
       </div>
-      <p class="say">Isolated <b>$PUSD</b> credit with <b>$VAPURR</b> collateral. <b>Loop</b> is leverage against collateral (virtual shares, capped by vault cash). <b>Withdraw</b> needs real <b>cash</b>. <b>Unwind</b> burns supply vs debt without needing cash. Borrow ≤ <b>85%</b> LTV. Liq under 90% health. Boot <b>150% → 6%</b> as cash fills.</p>
+      <p class="say">Supply cash. Borrow against collateral.</p>
+      <div class="have" id="e-collat-note">Live collateral is $VAPURR only. gV/wgV Oliver collateral types stay closed until Relic opens the type switch (House still wraps gV to wgV for the book).</div>
       <div id="e-tick">Supplied $0.00</div>
       <div id="euler-boot">
         <p class="note" id="euler-st">Deploy Oliver after the market is live.</p>
@@ -598,8 +676,9 @@
           <div class="chip"><span>Max</span><b id="e-maxltv">85%</b></div>
           <div class="chip"><span>Health</span><b id="e-hf">∞</b></div>
         </div>
+        <div class="credit-meter" id="credit-meter" role="img" aria-label="Loan to value"><div class="section-line"><span>Borrowing limit</span><span id="credit-meter-label">—</span></div><div class="meter-track"><div class="meter-fill"></div></div></div>
         <div class="have" id="e-have">Supplied 0 · Debt 0 · $VAPURR 0 · Cash 0</div>
-        <div id="e-unwind-bar"><button class="btn" id="e-unwind" type="button">Unwind (burn supply vs debt)</button></div>
+        <div id="e-unwind-bar"><button class="btn" id="e-unwind" type="button">Unwind position</button></div>
         <div class="two" id="e-idle-wd" style="display:none;margin-top:8px">
           <button class="btn-ghost" id="e-wd-p" type="button" style="height:44px;margin-top:0">Withdraw P</button>
           <button class="btn-ghost" id="e-wd-v" type="button" style="height:44px;margin-top:0">Withdraw V</button>
@@ -611,35 +690,45 @@
           <button type="button" data-emode="v">$VAPURR<em id="em-v">collateral</em></button>
         </div>
           <div class="amt">
-            <input class="field" id="e-amt" placeholder="0" inputmode="decimal" autocomplete="off"/>
+            <input class="field" id="e-amt" aria-label="Oliver amount" placeholder="0" inputmode="decimal" autocomplete="off"/>
             <button class="btn-ghost" id="e-max" type="button" style="height:44px">Max</button>
           </div>
           <div id="loop-steps-wrap">
             <span>Steps</span>
-            <input class="field" id="e-steps" value="8" inputmode="numeric" autocomplete="off"/>
+            <input class="field" id="e-steps" aria-label="Loop steps" value="8" inputmode="numeric" autocomplete="off"/>
           </div>
           <div class="have" id="e-pos">0.00 $PUSD</div>
           <div class="quote" id="e-quote">Supply $PUSD.</div>
           <div class="two">
             <button class="btn" id="e-go" type="button">Supply $PUSD</button>
-            <button class="btn-ghost" id="e-alt" type="button" style="height:50px;margin-top:16px">Withdraw</button>
+            <button class="btn-ghost" id="e-alt" type="button" style="height:48px;margin-top:16px">Withdraw</button>
           </div>
-          <div class="err" id="euler-err"></div>
+          <div class="err" id="euler-err" role="alert"></div><details class="flow-details"><summary>Position &amp; risk</summary><p>Borrowing accrues interest. Higher LTV increases liquidation risk. Loops increase both exposure and debt.</p><p>Withdrawals need available vault cash. Unwind offsets supplied PUSD against debt.</p></details>
       </div>
     </div>
 
-    <div class="card" id="house">
+    <div class="card" id="house" role="tabpanel" aria-label="House trading">
       <div class="eh">
-        <h2>House book</h2>
+        <h2><span data-icon="trade"></span>House</h2>
         <span class="hint" id="h-hint"></span>
       </div>
-      <p class="say"><b>$VAPURR / $PUSD</b> Uni v4 CL — <b>0.30%</b> fee, ±20% around oracle. Seed 50/50: half treasury, quarter burn→mint $PUSD, rest LP. No USDG.</p>
+      <p class="say">Wrapped equity to cash.</p><div class="mini-route" aria-label="wgV through House to PUSD"><span>wgV</span><b aria-hidden="true">-&gt;</b><span><i data-icon="trade"></i>House</span><b aria-hidden="true">-&gt;</b><span>$PUSD</span></div>
         <div class="facts">
-          <div class="chip"><span>$VAPURR</span><b id="h-v">0.00</b></div>
+          <div class="chip"><span>wgV</span><b id="h-v">0.00</b></div>
           <div class="chip"><span>$PUSD</span><b id="h-p">0.00</b></div>
           <div class="chip"><span id="h-treas-lab">Treasury</span><b id="h-treas">0.00</b></div>
           <div class="chip"><span id="h-lpv-lab">LP</span><b id="h-lpv">0.00</b></div>
         </div>
+        <div class="have" id="h-gate">Wrap gV to wgV before supplying House.</div>
+        <div class="have" id="h-fee-note">Protocol fee carve remits House / Lithe / Oliver through FeeAttribution into RemittanceSink. Book empty (NeedRemittance) until Relic fills CAs. LP fees stay with LPs. Live Uni v4 skim e2e still open.</div>
+        <div class="facts" id="h-attrib" aria-label="FeeAttribution who paid"><div class="chip"><span>House</span><b id="h-attrib-house">—</b></div><div class="chip"><span>Lithe</span><b id="h-attrib-lithe">—</b></div><div class="chip"><span>Oliver</span><b id="h-attrib-oliver">—</b></div></div>
+        <div class="facts" id="h-remit-book" aria-label="Remittance destination address book"><div class="chip"><span>FeeRemit</span><b id="h-remit-fee">—</b></div><div class="chip"><span>UniSkim</span><b id="h-remit-skim">—</b></div><div class="chip"><span>FeeAttr</span><b id="h-remit-attr">—</b></div><div class="chip"><span>Sink</span><b id="h-remit-sink">—</b></div></div>
+        <div class="have" id="h-remit-note">Remittance book empty (NeedRemittance) until Relic fills FeeRemit / UniSkim / FeeAttr / Sink CAs. Remit fees stays live; on-tx surfaces the miss.</div>
+        <div class="two" id="h-remit-row" style="margin-top:8px;gap:8px;align-items:center">
+          <input class="field" id="h-remit-amt" aria-label="House fee remit amount" placeholder="0" inputmode="decimal" autocomplete="off"/>
+          <button class="btn" type="button" id="h-remit-cta" title="Remit protocol fee carve via FeeAttribution">Remit fees</button>
+        </div>
+        <div id="h-remit-err" role="alert" style="display:none;margin-top:8px;padding:10px 12px;border-radius:10px;border:1px solid color-mix(in srgb,#f87171 45%,transparent);color:#fecaca;font-size:13px;line-height:1.4"></div>
         <div class="have" id="h-have">Not seeded.</div>
         <div class="have" id="h-stocks"></div>
         <div class="two" id="house-boot-row">
@@ -648,11 +737,11 @@
         </div>
         <div id="house-swap" style="display:none">
           <div class="seg" id="h-seg">
-            <button type="button" class="on" data-hmode="v">Sell $VAPURR</button>
+            <button type="button" class="on" data-hmode="v">Sell wgV</button>
             <button type="button" data-hmode="p">Sell $PUSD</button>
           </div>
           <div class="amt">
-            <input class="field" id="h-amt" placeholder="0" inputmode="decimal" autocomplete="off"/>
+            <input class="field" id="h-amt" aria-label="House swap amount" placeholder="0" inputmode="decimal" autocomplete="off"/>
           </div>
           <div class="quote" id="h-quote">0.30% fee.</div>
           <button class="btn" id="h-go" type="button">Swap</button>
@@ -662,7 +751,7 @@
 
     <div class="card" id="side">
       <h2>Spend</h2>
-      <p class="say">$PUSD is the dollar this window spends. USDG is not these rails.</p>
+      <p class="say">Put your PUSD to use.</p>
       <div class="spend">
         <button type="button" class="row" id="go-mail">zzzmail <span>0.25¢</span></button>
         <button type="button" class="row" id="go-bid">vapurrbid <span>rank</span></button>
@@ -671,10 +760,7 @@
       </div>
     </div>
 
-    <div class="card" id="more">
-      <div class="eh">
-        <h2>Market</h2>
-      </div>
+    <div class="card" id="more"><details class="flow-details"><summary>Market &amp; contracts</summary>
       <div class="strip">
         <div class="chip"><span>Oracle</span><b id="oracle">—</b></div>
         <div class="chip"><span>Spread</span><b id="spread">2%</b></div>
@@ -691,32 +777,19 @@
         <button type="button" class="row" id="ca-house" hidden><span>House</span><b>—</b></button>
         <button type="button" class="row" id="ca-swap" hidden><span>Swapper</span><b>—</b></button>
       </div>
-    </div>
+    </details></div>
     </div>
   </div>
   <script src="/ipc.js"></script>
   <script src="/sign.js"></script>
-  <script type="importmap">
-  {
-    "imports": {
-      "three": "/vendor/three.webgpu.min.js",
-      "three/webgpu": "/vendor/three.webgpu.min.js",
-      "three/tsl": "/vendor/three.tsl.min.js"
-    }
-  }
-  </script>
-  <script type="module">
-    import { startGlobe } from "/globe.js?v=faucet";
-    startGlobe(document.getElementById("globe"));
-  </script>
-  <script>
+<script>
     var snap = null;
     var waitHash = "";
     var mode = "mint";
     var emode = "supply";
     var hmode = "v";
     var YEAR = 365.25 * 24 * 3600;
-    var tick = { t: 0, p: 0, sup: 0, debt: 0, apyP: 9, apyS: 0, apyD: 0, net0: 0, lastTx: "" };
+    var tick = { t: 0, p: 0, sup: 0, debt: 0, apyP: null, apyS: 0, apyD: 0, net0: 0, lastTx: "" };
     function n(v) {
       var x = parseFloat(String(v || "0").replace(/,/g, ""));
       return isFinite(x) ? x : 0;
@@ -831,6 +904,13 @@
       }
     }
     function setMode(next) {
+      var path = document.querySelector('#book .mini-route');
+      if (path) {
+        var ends = path.querySelectorAll(':scope > span');
+        ends[0].textContent = next === 'mint' ? 'VAPURR' : 'PUSD';
+        ends[2].textContent = next === 'mint' ? 'PUSD' : 'VAPURR';
+        path.setAttribute('aria-label', ends[0].textContent + ' through Lithe to ' + ends[2].textContent);
+      }
       mode = next;
       Array.prototype.forEach.call(document.querySelectorAll("#seg button"), function (b) {
         b.classList.toggle("on", b.getAttribute("data-mode") === mode);
@@ -962,9 +1042,8 @@
       return base * (1 + (apyPct / 100) * dt / YEAR);
     }
     function fmtBag(x) {
-      if (!(x > 0)) return "0.00";
-      if (x >= 1000) return x.toFixed(4);
-      return x.toFixed(6);
+      if (!Number.isFinite(x)) return "—";
+      return x.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
     function paintTick() {
       if (!tick.t) return;
@@ -976,10 +1055,10 @@
       if (el) el.textContent = fmtBag(net);
       var earned = net - tick.net0;
       var er = document.getElementById("earned");
-      if (er) er.textContent = earned > 0 ? ("  +$" + earned.toFixed(6)) : "";
+      if (er) er.textContent = earned >= 0.005 ? ("+$" + fmtBag(earned) + " est.") : "";
       var et = document.getElementById("e-tick");
       if (et && tick.sup > 0) {
-        et.textContent = "Supplied $" + fmtBag(sup) + (tick.debt > 0 ? (" · debt $" + fmtBag(debt)) : "") + " · ticking";
+        et.textContent = "Supplied $" + fmtBag(sup) + (tick.debt > 0 ? (" · debt $" + fmtBag(debt)) : "");
       }
     }
     function armTick(s) {
@@ -1125,7 +1204,7 @@
       document.getElementById("oracle").textContent = px > 0 ? trimNum(s.price) : "—";
       document.getElementById("spread").textContent = spreadPct().toFixed(2) + "%";
       var y = stackApy(s);
-      document.getElementById("apy").textContent = y.user.toFixed(2) + "%";
+      document.getElementById("apy").textContent = (tick.apyP == null && !(s && s.apy != null && s.apy !== "")) ? "—" : (y.user.toFixed(2) + "%");
       document.getElementById("index").textContent = s.index || "1.000000";
       document.getElementById("index-big").textContent = s.index || "1.000000";
       document.getElementById("reserve").textContent = s.yield_reserve || "0.00";
@@ -1220,6 +1299,43 @@
       var swapBox = document.getElementById("house-swap");
       if (bootRow) bootRow.style.display = H.live ? "none" : "";
       if (swapBox) swapBox.style.display = H.live ? "block" : "none";
+      var R = (s && s.remittance) || {};
+      var feeNote = document.getElementById("h-fee-note");
+      var ah = document.getElementById("h-attrib-house");
+      var al = document.getElementById("h-attrib-lithe");
+      var ao = document.getElementById("h-attrib-oliver");
+      // Source shares stay em-dash until live FeeAttribution.breakdown() reads land.
+      if (ah) ah.textContent = "—";
+      if (al) al.textContent = "—";
+      if (ao) ao.textContent = "—";
+      // Destination CAs from remittance_book_snap; empty book stays NeedRemittance-honest.
+      var rf = document.getElementById("h-remit-fee");
+      var rsk = document.getElementById("h-remit-skim");
+      var ra = document.getElementById("h-remit-attr");
+      var rk = document.getElementById("h-remit-sink");
+      function remitCa(v) {
+        var s = shortCa(v);
+        return (s && s !== "—" && s !== "-") ? s : "NeedRemittance";
+      }
+      if (rf) rf.textContent = remitCa(R.house_fee_remit);
+      if (rsk) rsk.textContent = remitCa(R.house_uni_skim);
+      if (ra) ra.textContent = remitCa(R.fee_attribution);
+      if (rk) rk.textContent = remitCa(R.remittance_sink);
+      if (feeNote) {
+        if (R.configured) {
+          feeNote.textContent = "FeeAttribution book live — source share reads still open. LP fees stay with LPs.";
+        } else {
+          feeNote.textContent = "Protocol fee carve remits House / Lithe / Oliver through FeeAttribution into RemittanceSink. Book empty (NeedRemittance) until Relic fills CAs. LP fees stay with LPs. Live Uni v4 skim e2e still open.";
+        }
+      }
+      var remitNote = document.getElementById("h-remit-note");
+      if (remitNote) {
+        if (R.configured) {
+          remitNote.textContent = "Remittance book live — FeeAttribution source-share reads + live Uni v4 skim e2e still open. Remit fees stays live.";
+        } else {
+          remitNote.textContent = "Remittance book empty (NeedRemittance) until Relic fills FeeRemit / UniSkim / FeeAttr / Sink CAs. Remit fees stays live; on-tx surfaces the miss.";
+        }
+      }
       quoteHouse();
     }
     document.getElementById("amt").addEventListener("input", quote);
@@ -1246,15 +1362,15 @@
         title: mint ? "Mint $PUSD" : "Redeem $PUSD",
         kicker: "This device signs",
         lede: mint
-          ? "Burn $VAPURR, mint $PUSD. Spread funds Lithe. Hash or it failed."
-          : "Burn $PUSD, mint $VAPURR. Spread is not minted back. Hash or it failed.",
+          ? "Exchange VAPURR for PUSD through Lithe."
+          : "Exchange PUSD for VAPURR through Lithe.",
         rows: [
           { k: "Network", v: netLabel() },
           { k: "From", v: (snap && snap.address) || "this device" },
-          { k: mint ? "Burn V" : "Burn P", v: amt },
-          { k: "Path", v: mint ? "burn VAPURR → mint PUSD" : "burn PUSD → mint VAPURR" },
+          { k: "You exchange", v: amt + (mint ? " VAPURR" : " PUSD") },
+          { k: "Estimated receipt", v: document.getElementById("quote").textContent || "—" },
           { k: "Spread", v: spreadPct().toFixed(2) + "%" },
-          { k: "Lithe", v: (snap && snap.apy ? snap.apy : "9.00") + "%" }
+          { k: "Route", v: "Lithe · mint / redeem" }
         ],
         confirmLabel: mint ? "Sign and mint" : "Sign and redeem",
         doneTitle: mint ? "Minted" : "Redeemed",
@@ -1448,7 +1564,7 @@
         return;
       }
       var out = amt * 0.997;
-      q.textContent = "≈ " + out.toFixed(2) + (sellV ? " $PUSD" : " $VAPURR");
+      q.textContent = "≈ " + out.toFixed(2) + (sellV ? " $PUSD" : " wgV");
     }
     document.getElementById("h-amt").addEventListener("input", quoteHouse);
     document.getElementById("h-seg").addEventListener("click", function (e) {
@@ -1472,14 +1588,14 @@
       var sellV = hmode !== "p";
       var H = (snap && snap.house) || {};
       vapurr.beginTx({
-        title: sellV ? "Sell $VAPURR" : "Sell $PUSD",
+        title: sellV ? "Sell wgV" : "Sell $PUSD",
         kicker: "House Uni v4",
         kind: "house-swap",
-        lede: "Exact-in on the house $VAPURR / $PUSD book. Hash or it failed.",
+        lede: "Exact-in on the house wgV / $PUSD book. Hash or it failed.",
         rows: [
           { k: "Network", v: netLabel() },
-          { k: "Sell", v: amt + (sellV ? " $VAPURR" : " $PUSD") },
-          { k: "Buy", v: sellV ? "$PUSD" : "$VAPURR" },
+          { k: "Sell", v: amt + (sellV ? " wgV" : " $PUSD") },
+          { k: "Buy", v: sellV ? "$PUSD" : "wgV" },
           { k: "Swapper", v: H.swap || "house swap" }
         ],
         confirmLabel: "Sign and swap",
@@ -1492,6 +1608,26 @@
         vapurr.send({ cmd: "econ-swap", sell_v: sellV, amt: amt });
       });
     };
+        var remitCta = document.getElementById("h-remit-cta");
+    if (remitCta) remitCta.onclick = function () {
+      var amt = ((document.getElementById("h-remit-amt") || {}).value || "").trim();
+      var err = document.getElementById("h-remit-err");
+      if (err) { err.style.display = "none"; err.textContent = ""; }
+      if (!amt || !(Number(amt) > 0)) {
+        if (err) {
+          err.style.display = "block";
+          err.textContent = "Remit needs an amount — enter positive $PUSD, then Remit fees again.";
+        }
+        return;
+      }
+      if (window.vapurr && typeof vapurr.send === "function") {
+        vapurr.send({ cmd: "econ-house-fee-remit", amt: amt });
+      }
+      if (err) {
+        err.style.display = "block";
+        err.textContent = "Remittance book empty (NeedRemittance) until Relic fills FeeRemit / UniSkim / FeeAttr / Sink. Remit fees stays live.";
+      }
+    };
     document.getElementById("house-deploy").onclick = function () {
       if (vapurr.pendingTx) return;
       document.getElementById("house-err").textContent = "";
@@ -1499,11 +1635,11 @@
         title: "Deploy house book",
         kicker: "This device signs",
         kind: "house-deploy",
-        lede: "Uniswap v4 concentrated $VAPURR / $PUSD helper. No USDG. Empty until this hash lands.",
+        lede: "Uniswap v4 concentrated wgV / $PUSD helper. Wrap first. No USDG. Empty until this hash lands.",
         rows: [
           { k: "Network", v: netLabel() },
           { k: "From", v: (snap && snap.address) || "this device" },
-          { k: "Pool", v: "$VAPURR / $PUSD 0.30%" },
+          { k: "Pool", v: "wgV / $PUSD 0.30%" },
           { k: "Range", v: "±20% around oracle" }
         ],
         confirmLabel: "Sign and deploy",
@@ -1523,12 +1659,12 @@
       vapurr.beginTx({
         title: "Seed house book 50/50",
         kicker: "This device signs",
-        lede: "Keep 50% $VAPURR as treasury. Burn a quarter to mint $PUSD. Seed the rest plus $PUSD as a Uni v4 CL NFT. Multiple txs. Hash or it failed.",
+        lede: "Keep 50% wgV as treasury (wrap gV first). Burn a quarter path mints $PUSD. Seed the rest plus $PUSD as a Uni v4 CL NFT. Multiple txs. Hash or it failed.",
         rows: [
           { k: "Network", v: netLabel() },
           { k: "From", v: (snap && snap.address) || "this device" },
           { k: "Treasury keep", v: (H.treasury_v || "0") + " V" },
-          { k: "LP $VAPURR", v: (H.lp_v || "0") + " V + minted P" },
+          { k: "LP wgV", v: (H.lp_v || "0") + " wgV + minted P" },
           { k: "Range", v: "±20% · 0.30%" }
         ],
         confirmLabel: "Sign and seed",
@@ -1613,7 +1749,7 @@
     }
     if (/lithe/i.test(location.hash + location.search)) {
       setTimeout(function () {
-        var el = document.getElementById("lithe");
+        var el = document.getElementById("book");
         if (el) el.scrollIntoView({ block: "start" });
       }, 80);
     }
@@ -1627,11 +1763,12 @@
       document.body.classList.add("is-live");
     }
     vapurr.send({ cmd: "econ" });
-    setInterval(paintTick, 100);
+    setInterval(paintTick, 1000);
     setInterval(function () {
       if (vapurr.pendingTx) return;
       vapurr.send({ cmd: "econ" });
     }, 8000);
   </script>
+  <script src="/defi-flow.js"></script>
 </body>
 </html>

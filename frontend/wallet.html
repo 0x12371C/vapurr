@@ -5,6 +5,7 @@
   <title>Wallet</title>
   <link rel="stylesheet" href="/tokens.css"/>
   <link rel="stylesheet" href="/chrome.css"/>
+  <link rel="stylesheet" href="/defi-surface.css"/>
   <style>
     html, body { height: 100%; }
     body { overflow: hidden; background: var(--color-void); }
@@ -21,7 +22,7 @@
     }
     .top { flex-shrink: 0; padding: 14px 22px 8px; }
     .nav {
-      display: flex; align-items: center; justify-content: flex-end; min-height: 36px;
+      display: flex; align-items: center; justify-content: flex-end; gap: 8px; min-height: 36px;
     }
     .icon-btn {
       width: 36px; height: 36px; padding: 0; border: 0; border-radius: 50%;
@@ -47,9 +48,12 @@
     .who {
       margin: 14px auto 0; display: inline-flex; align-items: center; gap: 10px;
       padding: 6px 12px 6px 6px; border-radius: 999px;
-      background: color-mix(in srgb, var(--color-steel) 48%, transparent);
-      border: 1px solid color-mix(in srgb, var(--color-snow) 8%, transparent);
+      background: var(--glass-bg, color-mix(in srgb, var(--color-steel) 48%, transparent));
+      backdrop-filter: blur(18px) saturate(1.4);
+      -webkit-backdrop-filter: blur(18px) saturate(1.4);
+      border: 1px solid var(--glass-border, color-mix(in srgb, var(--color-snow) 8%, transparent));
       color: var(--color-snow); height: auto;
+      transition: border-color 0.18s ease, transform 0.18s var(--ease-out, ease);
     }
     .who:hover { border-color: color-mix(in srgb, var(--color-lime) 35%, transparent); }
     .who canvas {
@@ -77,8 +81,10 @@
     }
     .banner {
       display: none; max-width: 430px; margin: 12px auto 0; text-align: left;
-      padding: 12px 14px; border-radius: 16px; gap: 12px; align-items: center;
-      background: color-mix(in srgb, var(--color-steel) 55%, transparent);
+      padding: 12px 14px; border-radius: var(--radius-panel, 18px); gap: 12px; align-items: center;
+      background: var(--glass-bg, color-mix(in srgb, var(--color-steel) 50%, transparent));
+      backdrop-filter: var(--glass-blur, blur(24px) saturate(1.5));
+      -webkit-backdrop-filter: var(--glass-blur, blur(24px) saturate(1.5));
       border: 1px solid color-mix(in srgb, var(--color-lime) 22%, transparent);
     }
     .banner.on { display: flex; }
@@ -117,9 +123,9 @@
     }
     .sec span { color: var(--color-muted); font-weight: 400; font-size: 12px; }
     .glass {
-      border-radius: 16px; overflow: hidden;
-      background: color-mix(in srgb, var(--color-steel) 58%, transparent);
-      border: 1px solid color-mix(in srgb, var(--color-snow) 8%, transparent);
+      border-radius: var(--radius-panel, 18px); overflow: hidden;
+      background: var(--glass-bg, color-mix(in srgb, var(--color-steel) 50%, transparent));
+      border: 1px solid var(--glass-border, color-mix(in srgb, var(--color-snow) 8%, transparent));
     }
     .asset {
       display: grid; grid-template-columns: 44px 1fr auto 12px; gap: 12px; align-items: center;
@@ -224,7 +230,7 @@
       text-align: center; color: var(--color-lime); font-size: 13px; font-weight: 600;
       min-height: 1.2em; margin-bottom: 14px;
     }
-    .panel .btn { width: 100%; height: 50px; border-radius: 14px; font-size: 16px; }
+    .panel .btn { width: 100%; height: 48px; border-radius: 14px; font-size: 15px; }
     .panel .btn + .btn { margin-top: 8px; }
     .ghost {
       background: transparent;
@@ -316,6 +322,51 @@
     html[data-theme="light"] .panel {
       background: color-mix(in srgb, var(--color-steel) 90%, transparent);
     }
+  
+    /* defi-surface appendix — glass/CTA/empty polish only */
+    .glass {
+      background: var(--glass-bg, color-mix(in srgb, var(--color-steel) 50%, transparent));
+      backdrop-filter: var(--glass-blur, blur(24px) saturate(1.5));
+      -webkit-backdrop-filter: var(--glass-blur, blur(24px) saturate(1.5));
+      border: 1px solid var(--glass-border, color-mix(in srgb, var(--color-snow) 8%, transparent));
+      box-shadow: 0 14px 40px color-mix(in srgb, #000 16%, transparent);
+      transition: border-color 0.18s ease, box-shadow 0.2s ease;
+    }
+    .who, .banner, .icon-btn {
+      backdrop-filter: blur(18px) saturate(1.35);
+      -webkit-backdrop-filter: blur(18px) saturate(1.35);
+    }
+    .empty {
+      padding: 32px 20px;
+      border-radius: 0;
+      letter-spacing: 0.01em;
+    }
+    #act-empty::before,
+    #list > .empty::before {
+      content: "";
+      display: block;
+      width: 36px;
+      height: 36px;
+      margin: 0 auto 12px;
+      border-radius: 50%;
+      border: 1px dashed color-mix(in srgb, var(--color-lime) 40%, transparent);
+      background: color-mix(in srgb, var(--color-lime) 8%, transparent);
+      box-shadow: 0 0 0 6px color-mix(in srgb, var(--color-lime) 6%, transparent);
+    }
+    .panel .btn {
+      height: 48px;
+      letter-spacing: 0.02em;
+      box-shadow: 0 10px 28px color-mix(in srgb, var(--color-lime) 16%, transparent);
+    }
+    .panel .btn.ghost,
+    .panel .ghost {
+      height: 48px;
+      box-shadow: none;
+      border: 1px solid color-mix(in srgb, var(--color-snow) 12%, transparent);
+    }
+    .asset:hover { background: color-mix(in srgb, var(--color-forest) 48%, transparent); }
+    .sec { margin: 4px 4px 10px; letter-spacing: 0.01em; }
+
   </style>
 </head>
 <body>
@@ -323,6 +374,9 @@
   <div class="app" id="app">
     <header class="top">
       <div class="nav">
+        <button class="icon-btn" id="go-lock" type="button" title="Lock wallet" aria-label="Lock wallet">
+          <svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>
+        </button>
         <button class="icon-btn" id="go-settings" type="button" title="Wallet settings" aria-label="Wallet settings">
           <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.2a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.2a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.2a1.7 1.7 0 001.1 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9c.3.6.9 1 1.5 1.1H21a2 2 0 110 4h-.2a1.7 1.7 0 00-1.4.9z"/></svg>
         </button>
@@ -420,7 +474,7 @@
     <div class="panel">
       <div class="grab"></div>
       <h2 id="book-title">Mint $PUSD</h2>
-      <p id="book-copy">Burn $VAPURR, mint $PUSD at the oracle.</p>
+      <p id="book-copy">Seigniorage: burn $VAPURR → mint $PUSD at the oracle. Not inventory.</p>
       <div class="seg" id="book-seg" style="width:100%;margin:0 0 8px">
         <button type="button" id="book-mint" class="on" data-book="mint">Mint</button>
         <button type="button" id="book-red" data-book="redeem">Redeem</button>
@@ -429,7 +483,7 @@
         <input class="cash-amt" id="book-amt" placeholder="0" inputmode="decimal" autocomplete="off"/>
         <div class="cash-sym" id="book-lab">VAPURR</div>
       </div>
-      <div class="sub" id="book-hint" style="margin:0 0 16px">Burn V to mint P.</div>
+      <div class="sub" id="book-hint" style="margin:0 0 16px">Seigniorage: burn V → mint P (not inventory).</div>
       <div class="empty" id="book-err" hidden style="padding:0 0 12px;text-align:left;color:#ff8a80"></div>
       <button class="btn" id="book-go" type="button">Review</button>
       <button class="btn ghost" id="book-send" type="button">Send token instead</button>
@@ -497,6 +551,7 @@
       <div class="set-block">
         <label class="mono">Security</label>
         <div class="words" id="set-secret" hidden></div>
+        <button class="btn ghost" id="set-lock" type="button">Lock wallet</button>
         <button class="btn ghost" id="set-seed" type="button">Show seed</button>
         <button class="btn ghost" id="set-hex" type="button">Export key</button>
       </div>
@@ -505,13 +560,14 @@
         <button class="btn" id="set-copy" type="button" style="margin-top:8px">Copy address</button>
         <button class="btn ghost" id="set-scan" type="button">View on Scan</button>
         <button class="btn ghost" id="set-hood-go" type="button">Claim .hood</button>
-        <button class="btn ghost" id="set-lithe" type="button">Lithe 9%</button>
+        <button class="btn ghost" id="set-lithe" type="button">Lithe</button>
         <button class="btn ghost" id="set-faucet" type="button" style="display:none">Faucet</button>
       </div>
       <div class="set-block">
         <label class="mono">This PC</label>
         <button class="btn ghost" id="set-restore" type="button">Use a different wallet</button>
-        <button class="btn ghost" id="set-out" type="button">Sign out</button>
+        <button class="btn ghost" id="set-out" type="button">Remove wallet</button>
+        <div class="hint" style="margin-top:8px;color:var(--color-muted);font-size:12px;line-height:1.4">Remove deletes the encrypted vault on this PC. Lock only closes the session.</div>
       </div>
       <button class="btn ghost" data-close="1" type="button">Done</button>
     </div>
@@ -775,7 +831,7 @@
         b.querySelector("b").textContent = prettySym(a.symbol);
         var hint = a.hint || "";
         if (!hint && (a.id === "pusd" || String(a.symbol || "").toUpperCase() === "PUSD")) {
-          hint = "Lithe 9% · vault stacks";
+          hint = "Lithe · vault stacks";
         }
         b.querySelector(".hint").textContent = hint;
         b.querySelector(".amt").textContent = fmtAmt(a.amount || "0");
@@ -1093,7 +1149,7 @@
       document.getElementById("usd").innerHTML = "<em>$</em>" + fmtUsd(s.total_usd || "0");
       wtick.t = Date.now();
       wtick.usd = parseFloat(String(s.total_usd || "0").replace(/,/g, "")) || 0;
-      wtick.apy = 9;
+      wtick.apy = null;
       var test = s.net === "testnet" || s.chain_id === 46630;
       document.getElementById("net-pill").textContent = test ? "Testnet" : "Mainnet";
       document.getElementById("rpc-lab").textContent = (s.net || "") + " " + String(s.chain_id || "");
@@ -1172,8 +1228,8 @@
       document.getElementById("book-red").classList.toggle("on", !mint);
       document.getElementById("book-title").textContent = mint ? "Mint $PUSD" : "Redeem $PUSD";
       document.getElementById("book-copy").textContent = mint
-        ? "Burn $VAPURR, mint $PUSD at the oracle. Spread ≥ 2%. Lithe is 9%."
-        : "Burn $PUSD, mint $VAPURR at the oracle. Spread ≥ 2%.";
+        ? "Seigniorage: burn $VAPURR → mint $PUSD at the oracle. Spread ≥ 2%. Not inventory."
+        : "Seigniorage: burn $PUSD → mint $VAPURR at the oracle. Spread ≥ 2%. Not inventory unwrap.";
       document.getElementById("book-lab").textContent = mint ? "VAPURR" : "PUSD";
       var v = (snap && snap.vapurr) || "0";
       var p = (snap && snap.pusd) || "0";
@@ -1225,6 +1281,9 @@
     document.getElementById("gas-ban").onclick = function () { openSheet("sheet-recv"); };
     document.getElementById("backup-ban").onclick = openSettings;
     document.getElementById("go-settings").onclick = openSettings;
+    function lockWallet() { vapurr.send({ cmd: "lock-session" }); }
+    document.getElementById("go-lock").onclick = lockWallet;
+    document.getElementById("set-lock").onclick = lockWallet;
     document.getElementById("act-sec").onclick = function () {
       if (lastAct.length) openActSheet(lastAct);
     };
@@ -1268,10 +1327,13 @@
       if (secretArmed !== "hex") { secretArmed = "hex"; this.textContent = "Tap again — this is the key"; return; }
       vapurr.send({ cmd: "wallet-export-key" });
     };
-    document.getElementById("set-restore").onclick = function () { vapurr.send({ cmd: "pane", id: "login" }); };
+    document.getElementById("set-restore").onclick = function () {
+      // Stay unlocked; login?switch=1 skips auto-continue so create/import is reachable.
+      vapurr.send({ cmd: "go", url: "http://vapurr.localhost/login.html?switch=1" });
+    };
     document.getElementById("set-out").onclick = function () {
+      // Native confirm + wipe + navigate happen in the shell Logout handler.
       vapurr.send({ cmd: "logout" });
-      vapurr.send({ cmd: "pane", id: "login" });
     };
     document.getElementById("copy-addr").onclick = copyAddr;
     document.getElementById("send-half").onclick = function () { fillAmt(0.5); };
@@ -1318,15 +1380,15 @@
         title: mint ? "Mint $PUSD" : "Redeem $PUSD",
         kicker: "This device signs",
         lede: mint
-          ? "Burn $VAPURR, mint $PUSD at the oracle. Spread ≥ 2%. Lithe 9%. Hash or it failed."
-          : "Burn $PUSD, mint $VAPURR at the oracle. Spread ≥ 2%. Hash or it failed.",
+          ? "Seigniorage: burn $VAPURR → mint $PUSD at the oracle. Not inventory. Spread ≥ 2%. Hash or it failed."
+          : "Seigniorage: burn $PUSD → mint $VAPURR at the oracle. Not inventory unwrap. Spread ≥ 2%. Hash or it failed.",
         rows: [
           { k: "Network", v: netName() },
           { k: "From", v: addr },
           { k: mint ? "Burn V" : "Burn P", v: amt },
-          { k: "Path", v: mint ? "burn VAPURR → mint PUSD" : "burn PUSD → mint VAPURR" },
+          { k: "Path", v: mint ? "seigniorage: burn VAPURR → mint PUSD" : "seigniorage: burn PUSD → mint VAPURR" },
           { k: "Spread", v: "≥ 2%" },
-          { k: "Lithe", v: "9%" }
+          { k: "Lithe", v: "—" }
         ],
         confirmLabel: mint ? "Sign and mint" : "Sign and redeem",
         doneTitle: mint ? "Minted" : "Redeemed",

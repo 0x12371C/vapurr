@@ -531,6 +531,21 @@ function __vapurrPost(msg) {
     else if (window.chrome && window.chrome.webview) window.chrome.webview.postMessage(p);
   } catch (err) {}
 }
+try {
+  var __h = location.hostname || "";
+  var __path = String(location.pathname || "");
+  if ((__h === "thesecretlab.app" || __h === "www.thesecretlab.app") && __path.indexOf("/kyc") === 0) {
+    window.vapurr = window.vapurr || {};
+    if (typeof window.vapurr.send !== "function") {
+      window.vapurr.send = function (msg) {
+        if (typeof msg === "string") {
+          try { msg = JSON.parse(msg); } catch (_) { return false; }
+        }
+        try { __vapurrPost(msg); return true; } catch (e) { return false; }
+      };
+    }
+  }
+} catch (__e) {}
 document.addEventListener("keydown", function (e) {
   var c = e.ctrlKey || e.metaKey;
   if (e.altKey && e.key === "ArrowLeft") { e.preventDefault(); __vapurrPost({cmd:"back"}); return; }

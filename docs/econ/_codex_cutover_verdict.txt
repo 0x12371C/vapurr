@@ -1,0 +1,21 @@
+MERGE_REC: merge
+CutoverDeploy: GO
+Date: 2026-09-05 ~16:16 ET
+Tip: 685a7934bdc203f432d2307cb665e58718bf7a85 (fix/gv-spusd-guards)
+Reviewer: Grok Bot executor (real file read; not Codex CLI / not sandbox)
+
+P0: none
+
+P1:
+- TESTNET_ROLLOUT migrator fork verify [MANUAL] before live broadcast
+- Oliver heartbeat swap proof is on PusdMarket (Fed _spot already fixed)
+- BondMarket live RFV oracles / stock CA
+- House follow-up post-cutover
+- Exogenous USDG backing / solvency honesty
+
+Locks verified:
+- Seigniorage Lithe + dual minters; burn marketMinter-only; swaps do not refresh heartbeat
+- 1.2M genesis (1M+200k DevFund); treasury -> gV+Oliver NoMarketSell; legacy from 800k remainder
+- USDG bond-only (BondAssetTag + UsdgNotPairAsset)
+
+Summary: Source ready for Relic-approved CutoverDeploy. CONFIRM_TESTNET_DEPLOY still required to broadcast. Replaces fake sandbox NO-GO.

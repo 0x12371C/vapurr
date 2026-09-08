@@ -38,6 +38,14 @@ pub fn serve(
     ) {
         return resp;
     }
+    // zer0ID state for `vapurr://id`. Read-only: reports what verifies against a
+    // trusted issuer and, separately, what the on-disk file merely claims.
+    if rel.split('?').next() == Some("id/api/status") {
+        return json_body(vapurr_id::status_json(
+            &crate::desk::Desk::profile_dir(),
+            &vapurr_id::trusted_issuers_from_env(),
+        ));
+    }
     // Custom-protocol query strings vanish. Keep a path-stuffed `?…` for Scan.
     if let Some(rest) = rel.strip_prefix("wallet/api/transaction/") {
         if let Some((chain, hash)) = rest.split_once('/') {
@@ -177,6 +185,11 @@ pub fn serve(
     }
     // Prefer the live frontend folder so logo/html edits show without a rebuild.
     if let Some(bytes) = read_frontend(rel) {
+        let bytes = if matches!(rel, "swap.html" | "bridge.html") {
+            let catalog = vapurr_rhc::route::tokens_json("").replace('<', "\\u003c");
+            let seed = format!("<script type=\"application/json\" id=\"route-catalog\">{catalog}</script></head>");
+            Cow::Owned(String::from_utf8_lossy(&bytes).replacen("</head>", &seed, 1).into_bytes())
+        } else { bytes };
         let mut b = Response::builder()
             .header(CONTENT_TYPE, mime(rel))
             .header("Access-Control-Allow-Origin", crate::security::CHROME_ORIGIN)

@@ -1,0 +1,85 @@
+# wgV House notes (operator)
+
+Relic lock 2026-09-05. Short checklist for House equity leg. Pair canon stays in `HOUSE_PAIR.md`.
+
+## One rule
+
+House AMM / LP quotes **wgVAPURR / $PUSD** only. Raw rebasing **gVAPURR** is never a pool currency.
+
+## Wrap path (ops)
+
+1. Stake `$VAPURR` to `gVAPURR` (Fed dynamic 1–9%/yr index from bond util; policy-only; see `POLICY_RATE.md`).
+2. Wrap `gVAPURR` to `wgVAPURR` before any House seed / LP / swap.
+3. Unwrap `wgVAPURR` to `gVAPURR` (more gV after rebase), then unstake if needed.
+
+Bootstrap that seeds raw `$VAPURR` or market.vapurr into House is wrong. Wrap first.
+
+## Enforce in code
+
+| Check | Where |
+|-------|-------|
+| `requireHousePair` / `requireHouseEquity` | `HousePairConfig.sol` (+ factory mark) |
+| Equity/cash immutables from config | `HouseLp.sol` / `HouseSwap.sol` constructors |
+| Guard proofs | `HousePairGuard.t.sol`, `HouseLpWiring.t.sol`, `HouseSwapWiring.t.sol` |
+
+Revert class: `RawGvNotHouseEquity` if either Uni currency is raw gV.
+
+## Green vs open (2026-09-07)
+
+**Green (sketch / in-tree):**
+
+- PairConfig walls + HouseLp/HouseSwap equity = wgV
+- HouseFeeRemit (fee carve -> RemittanceSink)
+- HouseUniSkim (authorized skim -> creditFees)
+- BrowserStream / browse never call gV rebase mint
+- House tab remittance live CTA stub (`#h-remit-cta` Remit fees, NeedRemittance-honest) — `scripts/verify-remittance-book.py`
+- Operator notes + UI prove — `scripts/verify-wgv-house.py`
+- Oliver collateral boundary prove — `scripts/verify-oliver-collateral.py` ($VAPURR only; gV/wgV closed)
+
+**Open (needs Relic go):**
+
+- Post-cutover follow-up script (dry-run ready): `contracts/script/TestnetHouseFollowup.s.sol` — deploys `wgVAPURR` + `HousePairConfig` against gen-5 Lithe/`gV` (see `TESTNET_ROLLOUT.md`). Core cutover not blocked on this.
+- Live Uni v4 deploy: HousePairConfig address into HouseLp/HouseSwap; Rust `house_deploy` / `swap_deploy` ABI encodes `pairConfig` first
+- PositionManager + Permit2 approvals for wgV; PoolManager unlock/settle e2e
+- Full Uni v4 `IHooks` / swapper integration beyond HouseUniSkim inventory bridge
+- Remittance / FeeAttribution live CAs (UI CTA already un-gated; book still NeedRemittance)
+- Pool-held `$PUSD` Lithe-index rebase allocation to LPs (**P1** — wgV fixes equity leg only)
+- Oliver gV/wgV collateral type switch (separate Relic go; UI stays closed)
+
+
+## Oliver collateral boundary (2026-09-05)
+
+House equity = **wgV only**. Oliver credit collateral today = **$VAPURR only** (UI + vault). Accepting gV or wgV as Oliver collateral is a **separate Relic go** — not implied by the House wrap path.
+
+UI honesty: `frontend/pusd.html` Oliver tab `#e-collat-note` states live collateral is $VAPURR; House tab keeps wrap-first / wgV book labels.
+
+## Do not
+
+- Pair raw gV or raw `$VAPURR` as House equity once staking is live
+- Treat House volume as `$PUSD` peg depth (peg = mint-redeem ~par; USDG is BondAssetTag only — see `PUSD_LIQUIDITY.md`)
+- Fund browse earn from gV rebase mint (BrowserStream = treasury earmark only)
+
+## UI visual stub (2026-09-05)
+
+`frontend/pusd.html` House tab now labels the book **wgV / $PUSD** with an explicit wrap-first gate and fee-skim to RemittanceSink note. Live `econ-house-*` cmds unchanged; backend still surfaces `house.vapurr` until deploy encodes `pairConfig` / wgV inventory.
+
+
+### IPC ABI stubs (2026-09-07)
+
+Client stubs on disk (not live-wired): `crates/vapurr-econ/src/house_fee_remit.abi.json`, `house_uni_skim.abi.json`, `fee_attribution.abi.json`, `remittance_sink.abi.json`. `house_fee_remit` stays `NeedRemittance` until Relic fills remittance CAs and reviews IPC. Prove: `scripts/verify-house-fee-abi.py`.
+
+### HousePairConfig IPC ABI stub (2026-09-07 ~21:20)
+
+Client stub on disk (not live-wired): `crates/vapurr-econ/src/house_pair_config.abi.json` + `HOUSE_PAIR_CONFIG_ABI` in lib.rs. Ops/deploy walls only — no user IPC encoder until Relic fills pairConfig into HouseLp/HouseSwap. Prove: `scripts/verify-house-pair-abi.py`.
+
+## Pointers
+
+- Pair canon: `HOUSE_PAIR.md`
+- Routing map: `ROUTING.md`
+- Fee path: `HouseFeeRemit.sol`, `HouseUniSkim.sol`
+
+### gVAPURR + wgVAPURR ABI stubs (2026-09-08 ~03:01)
+
+Client stubs on disk (Oliver surplus-only rebase / wrap for House pair walls; no live collateral wire yet): `crates/vapurr-econ/src/gv_apurr.abi.json` + `GV_APURR_ABI`, `crates/vapurr-econ/src/wgv_apurr.abi.json` + `WGV_APURR_ABI` in lib.rs. No user IPC cmd yet - stub only until Relic-approved Oliver gV/wgV collateral wire / live CAs. Prove: `scripts/verify-gv-wgv-abi.py`.
+
+

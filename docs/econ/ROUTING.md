@@ -1,0 +1,89 @@
+# VAPURR economic routing (canon)
+
+Relic lock 2026-09-05. Living truth for Fed/branches split.
+
+## Swap / bridge execution — 2026-09-06
+
+The router reads the deployed `market.json` House book (including PowerShell UTF-8 BOM), verifies the swapper's `wgV()`, `pusd()` and `fee()` getters, and presents wgV/PUSD. It does not substitute legacy V/PUSD addresses. On 2026-09-06, read-only RPC verified swapper `0xBBec0a2Db7fDabf22cB09E10914Ac8952260D52b`, equity `0x0599C4C4d24Bc4bbbaAdeC5CfD783Fc1cB09964a`, cash `0x78AD4C4Fd6007051f5321c3850BCE762f5FefBcd`, and fee 3000 ppm (0.30%).
+
+No current swap transaction contains a VAPURR rebate or the previously advertised 25-bps buy/burn conversion. Refund amounts and scoring contributions are zero; only the actual route and provider/pool fees are shown. A future rebate needs an executed payout before UI or rankings count it.
+
+Wallet execution requires a native-issued ID bound to sender, chain, destination, calldata and value. IDs expire after 45 seconds, are single-use, and are checked again immediately before signing. The UI invalidates on input/wallet changes, rejects stale responses and changed reviews, and requests exact-input ERC20 allowances. House minimum output is 0.50% below simulated output; the final calldata must pass both call and gas simulation without balance overrides.
+
+LI.FI metadata must match requested chains, token addresses/decimals, recipient, amount and a nonzero minimum. Step transaction refreshes cannot silently replace the quote. The executor supports one signed route step; routes requiring additional signatures need a sequential executor. A successful source receipt does not prove destination bridge settlement. These checks do not independently decode every provider's calldata or audit their contracts. See LI.FI's [manual execution requirements](https://docs.li.fi/sdk/execute-routes) and [transaction fields](https://docs.li.fi/agents/workflows/execution).
+
+**Earnings / NERDOMICS:** `EARNINGS_ENGINE.md` - who pays whom, BrowserStream 50k **global** budget, flat-V solvency, Oliver ~6x banking leverage, `FeeAttribution` source ledger (House/Lithe/Oliver) -> RemittanceSink -> sPUSD.
+
+## Institutional map
+
+| Layer | Role | Surfaces |
+|-------|------|----------|
+| **Fed / Treasury** | Macro reserves, POL, policy inflation | RFV, **bonds** (visible: ETH / USDG / stocks), **exogenous POL books** (V/ETH, V/NVDA, V/AMD), gV **dynamic 1–9%/yr** rebase (bond-util; mid ~3.5% unbound), BrowserStream earmark, **DevFundStream** 200k/4y genesis, runway floor |
+| **Mint / branches** | Working cash + credit | Lithe + mint-spread ($PUSD), Oliver (secured $PUSD vs gV/V) |
+| **Interbank market** | Equity meets cash | House: **wgV / $PUSD** (locked - see HOUSE_PAIR.md; not raw rebasing gV) |
+| **Savings** | Slow-growth cash claim | **sPUSD**: liquid base yield; time locks earn more (CD-shaped, break fee) |
+
+## Visible product map (user-facing)
+
+What normals open in the app - not plumbing labels:
+
+| Surface | Tokens / assets | One-liner |
+|---------|-----------------|-----------|
+| **Cash** | `$PUSD` · `sPUSD` | Spend/mint rail · savings after runway. Peg = mint-redeem ~par (see `PUSD_LIQUIDITY.md`). |
+| **Equity** | `gV` · stake | Bond claim / stake path; Fed **1–9%/yr** policy rate to stakers only |
+| **Bonds** | **ETH · USDG · major stocks** | Park asset -> get **gV at a discount** after a wait. Exogenous RFV in. |
+| **House** | **wgV / $PUSD** | Equity meets cash. Wrap gV -> wgV before LP. **Not** peg defense. |
+
+Bonds are a **first-class visible surface** (see `BONDS.md` + `vapurr://bonds`). They are not a hidden OMO footnote.
+
+`$PUSD` **stability = social-proof / forced float** (mint-redeem ~par). **USDG is BondAssetTag only** (Fed treasury bond -> gV); no `$PUSD`/USDG pools or peg-depth books — see `PUSD_LIQUIDITY.md`. Do not read House volume as dollar tightness.
+
+## Hard walls
+
+1. **Dual V printers** — Lithe holds `marketMinter` (Terra-style seigniorage: burn V→mint `$PUSD`, burn `$PUSD`→mint V). gV is policy minter with **dynamic 1–9%/yr** rebase to stakers from bond-market utilization (mid ~3.5% when unbound). Browse never funded by either mint. See `POLICY_RATE.md` + `MINT_AUTHORITY.md`.
+2. **BrowserStream** - **50k $VAPURR / 3y** from **already-minted treasury** (float migration). No USD cap (intentional convexity). Claim: install_id + KYC.
+2b. **DevFundStream** - **200k $VAPURR / 4y** genesis mint; unlocked V auto-locks as Oliver collateral; $PUSD-only draw; expansion-aware. See `DEV_FUND.md`.
+3. **$PUSD** - forced product float; mint/redeem ~**par** for social trust (**this** is the peg story). Not an equity lottery. USDG is **bond-in RFV only** - never a `$PUSD`/USDG depth/peg pool.
+4. **Branch remittance** - Lithe/House/Oliver realized surplus -> one RemittanceSink (sink-level runway floor) -> **sPUSD** (not into gV rebase).
+5. **404 != payments** - pay is HTTP 402 / x402.
+
+## Inflows -> RFV battery
+
+- House fees, Lithe + mint-spread, Oliver interest/liq surplus
+- **Bonds (visible):** ETH / USDG / major stocks -> treasury cash / POL (see `BONDS.md`)
+
+## Outflows
+
+- BrowserStream (treasury V earmark)
+- DevFundStream (genesis 200k lockup; expansion-aware)
+- Post-stream $PUSD browse only from **surplus** above runway (later)
+- gV rebase (policy mint to stakers only)
+- sPUSD yield (cash surplus to savers)
+
+## Open eng choices
+
+- House leg: **wgV locked** (wstETH pattern) - see HOUSE_PAIR.md + WGV_HOUSE.md. Do not pair raw rebasing gV in AMM.
+- Fed LOLR *policy params* / funding for Oliver bad debt (absorbBadDebt + optional IFedBackstop stub landed; proofs OliverOracleBadDebt 10/10)
+- Bond capacity / when not to bond
+- BondMarket gated skeleton + HouseFeeRemit sketch + FeeAttribution ledger landed (P1 live enable still open; Uni skim adapter HouseUniSkim landed; client remittance book empty / NeedRemittance until Relic fills CAs) - sPUSD CD sketch + Bonds `#spusd-cd` UI stub landed; Bonds live-by-default CTAs + params banner landed; stock session/corp-action Fed ops + UI session stub landed (empty bond_market / NeedBondMarket landed; live BondMarket reads + auto calendar still open); House tab **wgV / $PUSD** visual stub on `pusd.html` (wrap-first gate; live pairConfig deploy still open); **shared `#routing-visual` product map** on Cash (`pusd.html`) + Bonds (`bonds.html`) + Swap/Bridge/Overview via `defi-flow.js` / `defi-flow.css` (lane clicks: Cash->Lithe, Equity/Bonds->bonds, House->house; highlight follows Cash/Bonds/House desks; route desks show the map without a lane highlight)
+- **Banned:** `$PUSD`/USDG AMM/pool/peg-depth product (hurts `$PUSD`). USDG stays BondAssetTag only — see `PUSD_LIQUIDITY.md` / `BONDS.md`
+
+## Market V redeem fence (2026-09-05)
+
+`PusdMarket` / `PusdMarketFed` are **seigniorage**: `swapVToPusd` **burns** V and mints PUSD; `swapPusdToV` **mints** V and burns PUSD.
+Fed/gV rebase is an **additional** V printer (staker policy inflate 1-9%). Lithe holds `marketMinter` on Fed V.
+
+## Shared runway + realized remittance (2026-09-05)
+
+One `RemittanceSink` consolidates branch RFV cash; one `RunwayFloor` is enforced **at the sink** on `accountedRfv` (not as dual local pools on Oliver/Lithe). Branches remit **all realized** surplus into that sink; `forwardSurplus` cannot drain below the shared floor. Unpaid accrued interest and depositor principal are **not** exogenous RFV (circular if counted as both RFV and a user claim). Oliver: `pendingReserve`->`realizedReserve` on repay/liq, then remit realized (sole-owner cash OK). Lithe: fee-cash `yieldReserve` remits in full to the same sink. See `RunwayRfv.t.sol` (`test_two_branches_remit_one_sink_floor`).
+
+
+Tagged remits (UI/TVL "who paid") — House `#h-attrib` stub paints source chips (em-dash / NeedRemittance until CAs): wire branches through `FeeAttribution` (House/Lithe/Oliver) before `RemittanceSink`. Direct sink remits remain valid but unattributed. See `EARNINGS_ENGINE.md` + `FeeAttribution.t.sol`.
+
+## Lithe remittance (2026-09-05)
+
+`PusdMarket` (Lithe) remits realized `yieldReserve` to the same `IRemittance` / `RemittanceSink` path as Oliver (`setRemittance` / `remitSurplus`). Floor retain is sink-level (`ITreasuryRfv`); branches do not hold a second local floor. Holder drip (9% APY cap) still runs on accrue; remittance feeds sink -> sPUSD so branch fees can hit the savings path later. See `PUSD_LIQUIDITY.md`: peg remains mint-redeem ~par / social proof. Remittance and sink-held nominal `$PUSD` do **not** invent a USDG depth book (USDG = bond asset only).
+
+## 2026-09-05 - shared savings allocation
+
+RemittanceSink -> SavingsRouter -> SPUSD / SpusdCd now implements the shared surplus split. The router starts disabled, accepts only its configured sink, checks matching assets, and cannot pierce the sink runway floor. Its CD allocation bps is a share of future receipts, not an APY. CD coupon targets and break fees are fixed per position; underfunding is proportional across open targets. Local tests are green; live deploy/address-book/IPC remains open. See [SPUSD.md](SPUSD.md) and [STACK_ECON_REVIEW_2026-09-05.md](STACK_ECON_REVIEW_2026-09-05.md).

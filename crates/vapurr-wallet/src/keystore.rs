@@ -124,6 +124,19 @@ pub(crate) fn save(key: &DeviceKey, seed: Option<String>) -> Result<(), WalletEr
     write_record(&path(), &Record { key: raw.to_vec(), seed })
 }
 
+/// Delete encrypted vault + legacy key/seed files on this PC. Passcode is cleared separately.
+pub(crate) fn wipe() -> Result<(), WalletError> {
+    let _guard = STORE_LOCK.lock().map_err(|_| failure())?;
+    let dir = crate::data_dir();
+    for name in ["wallet.vault", "device.sk", "seed.phrase"] {
+        let p = dir.join(name);
+        if p.exists() {
+            std::fs::remove_file(&p).map_err(|_| failure())?;
+        }
+    }
+    Ok(())
+}
+
 #[cfg(all(test, windows))]
 mod tests {
     use super::*;

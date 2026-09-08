@@ -1,0 +1,1130 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="color-scheme" content="dark"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
+  <title>Unlock</title>
+  <link rel="preload" href="/mascot.png" as="image" fetchpriority="high"/>
+  <link rel="stylesheet" href="/tokens.css"/>
+  <link rel="stylesheet" href="/chrome.css"/>
+  <style>
+    html, body { height: 100%; overflow: hidden; }
+    body {
+      margin: 0;
+      background: #000;
+      color: var(--color-snow);
+      display: grid;
+      place-items: center;
+      position: relative;
+      -webkit-font-smoothing: antialiased;
+      font-family: var(--font-sans, var(--font), system-ui, -apple-system, Segoe UI, sans-serif);
+    }
+
+    /* Void + soft lime bokeh â€” matches mock 00 */
+    .void {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(ellipse 55% 42% at 18% 58%, color-mix(in srgb, var(--color-lime) 14%, transparent), transparent 70%),
+        radial-gradient(ellipse 40% 36% at 78% 32%, color-mix(in srgb, var(--color-lime) 8%, transparent), transparent 68%),
+        radial-gradient(circle 2px at 22% 28%, color-mix(in srgb, var(--color-lime) 55%, transparent), transparent 60%),
+        radial-gradient(circle 3px at 68% 18%, color-mix(in srgb, var(--color-lime) 40%, transparent), transparent 60%),
+        radial-gradient(circle 2px at 84% 62%, color-mix(in srgb, var(--color-lime) 35%, transparent), transparent 60%),
+        radial-gradient(circle 1.5px at 40% 72%, color-mix(in srgb, var(--color-lime) 45%, transparent), transparent 60%),
+        radial-gradient(ellipse 80% 50% at 50% 100%, color-mix(in srgb, #111 90%, transparent), transparent 55%),
+        #000;
+    }
+    .void::after {
+      content: "";
+      position: absolute;
+      left: 8%;
+      right: 8%;
+      bottom: 0;
+      height: 28%;
+      background: linear-gradient(180deg, transparent, color-mix(in srgb, #000 70%, transparent));
+      mask-image: linear-gradient(180deg, transparent, #000 40%);
+      opacity: 0.55;
+    }
+
+    .stage {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: clamp(12px, 3.5vw, 36px);
+      padding: 24px 16px 40px;
+      max-width: 920px;
+      width: 100%;
+      animation: stage-in 0.48s cubic-bezier(0.22, 1.2, 0.36, 1) both;
+    }
+    @keyframes stage-in {
+      from { opacity: 0; transform: translateY(16px) scale(0.97); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    /* Mascot beside the floating card */
+    .mascot-side {
+      flex: 0 0 auto;
+      width: clamp(132px, 22vw, 210px);
+      display: grid;
+      place-items: end center;
+      filter:
+        drop-shadow(0 18px 28px color-mix(in srgb, #000 55%, transparent))
+        drop-shadow(0 0 28px color-mix(in srgb, var(--color-lime) 28%, transparent));
+      align-self: center;
+      margin-bottom: 0;
+    }
+    .mascot-side img {
+      width: 100%;
+      height: auto;
+      display: block;
+      object-fit: contain;
+      user-select: none;
+      -webkit-user-drag: none;
+      pointer-events: none;
+      border-radius: 8px;
+    }
+    .mascot-glow {
+      position: absolute;
+      width: clamp(100px, 18vw, 170px);
+      height: 48px;
+      bottom: 4px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: radial-gradient(ellipse at center, color-mix(in srgb, var(--color-lime) 35%, transparent), transparent 70%);
+      filter: blur(10px);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .mascot-side { position: relative; }
+    .mascot-side img { position: relative; z-index: 1; }
+
+    /*
+      Floating dark liquid-glass wallet card (mock 00 chrome).
+      Clear refractive slab â€” NO frost / milk / backdrop-blur.
+    */
+    .wallet-card {
+      --card-w: min(340px, calc(100vw - 28px));
+      position: relative;
+      z-index: 2;
+      width: var(--card-w);
+      border-radius: 28px;
+      padding: 18px 16px 16px;
+      background:
+        linear-gradient(165deg,
+          color-mix(in srgb, var(--color-snow) 9%, transparent) 0%,
+          color-mix(in srgb, #8ec8ff 3.5%, transparent) 28%,
+          color-mix(in srgb, var(--color-steel) 55%, transparent) 52%,
+          color-mix(in srgb, #0a0c0e 78%, transparent) 100%);
+      border: 1px solid color-mix(in srgb, var(--color-snow) 14%, transparent);
+      box-shadow:
+        0 0 0 1px color-mix(in srgb, #000 55%, transparent),
+        0 28px 64px color-mix(in srgb, #000 62%, transparent),
+        0 8px 24px color-mix(in srgb, #000 40%, transparent),
+        0 0 48px color-mix(in srgb, var(--color-lime) 8%, transparent),
+        inset 0 1.5px 0 color-mix(in srgb, var(--color-snow) 42%, transparent),
+        inset 0 -1px 0 color-mix(in srgb, #000 35%, transparent),
+        inset 1px 0 0 color-mix(in srgb, var(--color-snow) 12%, transparent),
+        inset -1px 0 0 color-mix(in srgb, #7ec8ff 10%, transparent);
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+      display: flex;
+      flex-direction: column;
+      isolation: isolate;
+      overflow: hidden;
+    }
+
+    .glass-sheen {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      border-radius: inherit;
+      background:
+        radial-gradient(ellipse 90% 48% at 12% 0%,
+          color-mix(in srgb, var(--color-snow) 38%, transparent),
+          transparent 55%),
+        radial-gradient(ellipse 48% 26% at 88% 12%,
+          color-mix(in srgb, var(--color-snow) 12%, transparent),
+          transparent 58%),
+        radial-gradient(ellipse 70% 40% at 50% 110%,
+          color-mix(in srgb, #7ec8ff 7%, transparent),
+          transparent 60%),
+        linear-gradient(118deg,
+          color-mix(in srgb, #ff8a80 5%, transparent) 0%,
+          transparent 10%,
+          color-mix(in srgb, var(--color-snow) 9%, transparent) 18%,
+          transparent 36%,
+          color-mix(in srgb, #7ec8ff 6%, transparent) 58%,
+          transparent 72%,
+          color-mix(in srgb, var(--color-lime) 5%, transparent) 88%,
+          transparent 100%);
+      mix-blend-mode: screen;
+      opacity: 0.68;
+    }
+    .glass-sheen::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: linear-gradient(
+        105deg,
+        transparent 0%,
+        transparent 38%,
+        color-mix(in srgb, var(--color-snow) 16%, transparent) 49%,
+        transparent 58%,
+        transparent 100%
+      );
+      background-size: 220% 100%;
+      animation: glass-sweep 7.5s ease-in-out infinite;
+      opacity: 0.5;
+      mix-blend-mode: soft-light;
+    }
+    .glass-sheen::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      pointer-events: none;
+      box-shadow:
+        inset 0 0 0 1px color-mix(in srgb, var(--color-snow) 22%, transparent),
+        inset 0 2px 10px color-mix(in srgb, var(--color-snow) 10%, transparent),
+        inset 0 -14px 28px color-mix(in srgb, #7ec8ff 6%, transparent);
+    }
+    @keyframes glass-sweep {
+      0%, 100% { background-position: 120% 0; opacity: 0.32; }
+      45% { background-position: -20% 0; opacity: 0.65; }
+    }
+
+    .glass-rim {
+      position: absolute;
+      inset: 0;
+      z-index: 3;
+      pointer-events: none;
+      border-radius: inherit;
+      overflow: hidden;
+    }
+    .glass-rim svg { display: block; width: 100%; height: 100%; }
+
+    .wallet-card > :not(.glass-sheen):not(.glass-rim):not(.crypto-viz) {
+      position: relative;
+      z-index: 2;
+    }
+
+    .crypto-viz {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0.55;
+      border-radius: inherit;
+    }
+
+    /* Header â€” VAPURR WALLET chrome from mock 00 */
+    .card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+    .brand-mark {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+      border: 1.5px solid color-mix(in srgb, var(--color-lime) 70%, transparent);
+      box-shadow:
+        0 0 14px color-mix(in srgb, var(--color-lime) 25%, transparent),
+        inset 0 0 8px color-mix(in srgb, var(--color-lime) 12%, transparent);
+      color: var(--color-lime);
+    }
+    .brand-mark svg { width: 18px; height: 18px; display: block; }
+    .brand-text {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.05;
+      gap: 2px;
+    }
+    .brand-text .name {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: var(--color-snow);
+    }
+    .brand-text .sub {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.18em;
+      color: color-mix(in srgb, var(--color-snow) 55%, var(--color-muted));
+      text-transform: uppercase;
+    }
+
+    .status-led {
+      --led: #ff2a32;
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      background:
+        radial-gradient(circle at 32% 28%,
+          color-mix(in srgb, #fff 70%, var(--led)) 0%,
+          var(--led) 46%,
+          color-mix(in srgb, #000 40%, var(--led)) 100%);
+      box-shadow:
+        0 0 0 1px color-mix(in srgb, #000 45%, transparent),
+        0 0 10px color-mix(in srgb, var(--led) 85%, transparent),
+        0 0 22px color-mix(in srgb, var(--led) 45%, transparent),
+        inset 0 1px 1px color-mix(in srgb, #fff 45%, transparent);
+      animation: led-pulse 1.55s ease-in-out infinite;
+    }
+    .status-led[data-state="ok"] {
+      --led: #c0f800;
+      animation: led-ok 1.1s ease-in-out infinite;
+    }
+    .status-led[data-state="fail"] {
+      --led: #ff2a32;
+      animation: led-fail 0.28s steps(2, end) infinite;
+    }
+    .status-led[data-state="entering"] {
+      --led: #ff2a32;
+      animation: led-pulse 0.9s ease-in-out infinite;
+    }
+    @keyframes led-pulse {
+      0%, 100% { opacity: 0.62; filter: brightness(0.88); }
+      50%      { opacity: 1;    filter: brightness(1.28); }
+    }
+    @keyframes led-ok {
+      0%, 100% { opacity: 0.88; filter: brightness(1.05); }
+      50%      { opacity: 1;    filter: brightness(1.35); }
+    }
+    @keyframes led-fail {
+      0% { opacity: 1; }
+      50% { opacity: 0.25; }
+    }
+
+    /* Unlock section replaces fake TOTAL BALANCE */
+    .unlock-block {
+      margin-bottom: 14px;
+    }
+    .unlock-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: color-mix(in srgb, var(--color-snow) 45%, var(--color-muted));
+      margin-bottom: 6px;
+    }
+    h1 {
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -0.04em;
+      line-height: 1.1;
+      margin: 0 0 6px;
+      color: var(--color-snow);
+      text-shadow: 0 1px 0 color-mix(in srgb, #000 35%, transparent);
+    }
+    .hint {
+      color: var(--color-muted);
+      font-size: 12px;
+      line-height: 1.4;
+      min-height: 16px;
+      margin: 0 0 14px;
+    }
+    .hint.err { color: #ff8a80; }
+    .hint.ok { color: var(--color-lime); }
+
+    .dots {
+      display: flex;
+      gap: 14px;
+      margin: 4px 0 18px;
+      padding: 2px 0;
+    }
+    .dots.shake {
+      animation: shake 0.42s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+    }
+    .dots.ok-pulse .dot.on {
+      animation: ok-pop 0.35s cubic-bezier(0.22, 1.4, 0.36, 1) both;
+    }
+    @keyframes shake {
+      10%, 90% { transform: translateX(-1px); }
+      20%, 80% { transform: translateX(2px); }
+      30%, 50%, 70% { transform: translateX(-6px); }
+      40%, 60% { transform: translateX(6px); }
+    }
+    @keyframes ok-pop {
+      0% { transform: scale(1); }
+      45% { transform: scale(1.22); }
+      100% { transform: scale(1); }
+    }
+    .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      border: 1.5px solid color-mix(in srgb, var(--color-lime) 55%, var(--color-muted));
+      background: transparent;
+      box-shadow:
+        inset 0 1px 1px color-mix(in srgb, #000 30%, transparent),
+        0 0 0 1px color-mix(in srgb, var(--color-snow) 8%, transparent);
+      transition: background 0.12s ease, border-color 0.12s ease, transform 0.16s cubic-bezier(0.22, 1.4, 0.36, 1), box-shadow 0.12s ease;
+    }
+    .dot.on {
+      background: var(--color-lime);
+      border-color: var(--color-lime);
+      transform: scale(1.08);
+      box-shadow:
+        0 0 12px color-mix(in srgb, var(--color-lime) 48%, transparent),
+        0 0 2px color-mix(in srgb, var(--color-snow) 40%, transparent);
+    }
+    .dot.bad {
+      background: #ff8a80;
+      border-color: #ff8a80;
+      box-shadow: 0 0 10px color-mix(in srgb, #ff8a80 45%, transparent);
+    }
+
+    /* Keypad inside the glass card â€” dark glass keys */
+    .pad {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px 12px;
+      user-select: none;
+      margin-bottom: 14px;
+      perspective: 600px;
+    }
+    .key {
+      --key-face: color-mix(in srgb, var(--color-steel) 72%, #12151a);
+      --key-depth: 4px;
+      position: relative;
+      height: 56px;
+      border-radius: 16px;
+      border: 0;
+      padding: 0;
+      background: transparent;
+      color: var(--color-snow);
+      font-size: 22px;
+      font-weight: 600;
+      letter-spacing: -0.03em;
+      cursor: default;
+      -webkit-tap-highlight-color: transparent;
+      outline: none;
+      transition: transform 0.18s cubic-bezier(0.22, 1.5, 0.36, 1);
+    }
+    .key::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: color-mix(in srgb, #000 50%, transparent);
+      transform: translateY(var(--key-depth));
+      z-index: 0;
+    }
+    .key::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background:
+        linear-gradient(165deg,
+          color-mix(in srgb, var(--color-snow) 10%, transparent) 0%,
+          color-mix(in srgb, var(--key-face) 88%, transparent) 42%,
+          color-mix(in srgb, #000 28%, var(--key-face)) 100%);
+      border: 1px solid color-mix(in srgb, var(--color-snow) 10%, transparent);
+      box-shadow:
+        inset 0 1px 0 color-mix(in srgb, var(--color-snow) 16%, transparent),
+        inset 0 -1px 0 color-mix(in srgb, #000 30%, transparent);
+      z-index: 1;
+      transition: transform 0.14s cubic-bezier(0.22, 1.5, 0.36, 1), background 0.12s ease, box-shadow 0.14s ease;
+    }
+    .key > span {
+      position: relative;
+      z-index: 2;
+      display: grid;
+      place-items: center;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+    .key:hover::after {
+      background:
+        linear-gradient(165deg,
+          color-mix(in srgb, var(--color-forest) 40%, var(--key-face)) 0%,
+          color-mix(in srgb, var(--color-steel) 70%, var(--color-forest)) 100%);
+      border-color: color-mix(in srgb, var(--color-lime) 22%, transparent);
+    }
+    .key:focus-visible::after {
+      box-shadow:
+        inset 0 1px 0 color-mix(in srgb, var(--color-snow) 14%, transparent),
+        0 0 0 2px color-mix(in srgb, var(--color-lime) 55%, transparent);
+    }
+    .key:active,
+    .key.is-press { transform: translateY(2px); }
+    .key:active::after,
+    .key.is-press::after {
+      transform: translateY(var(--key-depth));
+      background:
+        linear-gradient(180deg,
+          color-mix(in srgb, var(--color-lime) 22%, var(--key-face)) 0%,
+          color-mix(in srgb, var(--color-steel) 75%, #000) 100%);
+      box-shadow:
+        inset 0 2px 6px color-mix(in srgb, #000 45%, transparent),
+        inset 0 1px 0 color-mix(in srgb, var(--color-lime) 18%, transparent);
+    }
+    .key:active > span,
+    .key.is-press > span {
+      color: var(--color-lime);
+      transform: scale(0.96);
+    }
+
+    .key.ghost {
+      color: var(--color-muted);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .key.ghost::before { opacity: 0; }
+    .key.ghost::after {
+      background: transparent;
+      border-color: transparent;
+      box-shadow: none;
+    }
+    .key.ghost:hover { color: var(--color-snow); }
+    .key.ghost:hover::after { background: color-mix(in srgb, var(--color-snow) 6%, transparent); }
+    .key.ghost:active::after,
+    .key.ghost.is-press::after {
+      background: color-mix(in srgb, var(--color-lime) 12%, transparent);
+      transform: translateY(2px);
+      box-shadow: none;
+    }
+    .key.ghost:active,
+    .key.ghost.is-press { transform: scale(0.96); }
+    .key.ghost.spacer,
+    .key.ghost.spacer:disabled {
+      opacity: 0;
+      pointer-events: none;
+      cursor: default;
+    }
+    .key.ghost.del {
+      color: var(--color-lime);
+      font-size: 24px;
+      font-weight: 500;
+      letter-spacing: 0;
+      text-transform: none;
+      opacity: 0.95;
+    }
+    .key.ghost.del > span {
+      line-height: 1;
+      transform: translateY(-1px);
+    }
+    .key.ghost.del:hover {
+      color: color-mix(in srgb, var(--color-lime) 85%, var(--color-snow));
+    }
+    .key.ghost.del:hover::after {
+      background: color-mix(in srgb, var(--color-lime) 10%, transparent);
+    }
+    .key.ghost.del:active,
+    .key.ghost.del.is-press { color: var(--color-lime); }
+    .key.ghost.del:active::after,
+    .key.ghost.del.is-press::after {
+      background: color-mix(in srgb, var(--color-lime) 18%, transparent);
+    }
+    .key:disabled { opacity: 0.35; pointer-events: none; }
+    .key.ghost.spacer:disabled { opacity: 0; }
+
+    /* Lime CTA bar â€” mock 00 ENTER SUPERAPP chrome */
+    .cta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      width: 100%;
+      min-height: 48px;
+      padding: 0 18px;
+      border: 0;
+      border-radius: 9999px;
+      background: var(--color-lime);
+      color: var(--color-on-lime, #0e0e0e);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      box-shadow:
+        0 0 24px color-mix(in srgb, var(--color-lime) 35%, transparent),
+        inset 0 1px 0 color-mix(in srgb, #fff 35%, transparent);
+      cursor: default;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .cta svg {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+    }
+    .cta[data-state="ok"] {
+      box-shadow:
+        0 0 32px color-mix(in srgb, var(--color-lime) 55%, transparent),
+        inset 0 1px 0 color-mix(in srgb, #fff 35%, transparent);
+    }
+    .cta[data-state="fail"] {
+      background: #ff8a80;
+      box-shadow: 0 0 20px color-mix(in srgb, #ff8a80 40%, transparent);
+    }
+
+    .foot {
+      margin-top: 12px;
+      color: var(--color-muted);
+      font-size: 10px;
+      text-align: center;
+      line-height: 1.4;
+      opacity: 0.9;
+    }
+    .foot b { color: var(--color-snow); font-weight: 600; }
+
+    @media (max-width: 560px) {
+      .stage {
+        flex-direction: column;
+        gap: 10px;
+        padding-top: 12px;
+      }
+      .mascot-side {
+        width: clamp(88px, 28vw, 120px);
+        align-self: center;
+        margin-bottom: 0;
+        order: -1;
+      }
+      .mascot-glow { height: 28px; }
+      h1 { font-size: 22px; }
+      .key { height: 52px; font-size: 20px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .stage { animation: none; }
+      .crypto-viz { display: none; }
+      .glass-sheen::before { animation: none; opacity: 0.4; }
+      .status-led { animation: none; opacity: 1; filter: none; }
+      .dots.shake, .dots.ok-pulse .dot.on { animation: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="void" aria-hidden="true"></div>
+  <div class="stage">
+    <div class="mascot-side" aria-hidden="true">
+      <span class="mascot-glow"></span>
+      <img src="/mascot.png" alt="" width="210" height="210" decoding="async"/>
+    </div>
+
+    <div class="wallet-card" role="dialog" aria-modal="true" aria-labelledby="lock-title" id="wallet-card">
+      <canvas class="crypto-viz" id="crypto-viz" aria-hidden="true"></canvas>
+      <div class="glass-sheen" aria-hidden="true"></div>
+      <div class="glass-rim" aria-hidden="true">
+        <svg viewBox="0 0 300 520" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="rimSpec" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#ffffff" stop-opacity="0.55"/>
+              <stop offset="22%" stop-color="#8ec8ff" stop-opacity="0.22"/>
+              <stop offset="55%" stop-color="#ffffff" stop-opacity="0.06"/>
+              <stop offset="78%" stop-color="#c0f800" stop-opacity="0.14"/>
+              <stop offset="100%" stop-color="#ff8a80" stop-opacity="0.12"/>
+            </linearGradient>
+            <linearGradient id="rimInner" x1="0.15" y1="0" x2="0.9" y2="1">
+              <stop offset="0%" stop-color="#ffffff" stop-opacity="0.28"/>
+              <stop offset="40%" stop-color="#7ec8ff" stop-opacity="0.08"/>
+              <stop offset="100%" stop-color="#000000" stop-opacity="0.12"/>
+            </linearGradient>
+          </defs>
+          <rect x="1.2" y="1.2" width="297.6" height="517.6" rx="26" ry="26"
+                fill="none" stroke="url(#rimSpec)" stroke-width="1.6"/>
+          <rect x="3.5" y="3.5" width="293" height="513" rx="24" ry="24"
+                fill="none" stroke="url(#rimInner)" stroke-width="0.8" opacity="0.85"/>
+        </svg>
+      </div>
+
+      <div class="card-head">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true">
+            <img src="/cat.svg" alt="" width="20" height="20" decoding="async" style="display:block;width:20px;height:20px"/>
+          </span>
+          <div class="brand-text">
+            <span class="name">VAPURR</span>
+            <span class="sub" id="kicker">Wallet</span>
+          </div>
+        </div>
+        <span class="status-led" id="status-led" data-state="locked" role="img" aria-label="Locked"></span>
+      </div>
+
+      <div class="unlock-block">
+        <div class="unlock-label">Unlock</div>
+        <h1 id="lock-title">Enter passcode</h1>
+        <p class="hint" id="hint">4-digit PIN Â· stays on this device</p>
+        <div class="dots" id="dots" aria-label="Passcode progress">
+          <span class="dot" data-i="0"></span>
+          <span class="dot" data-i="1"></span>
+          <span class="dot" data-i="2"></span>
+          <span class="dot" data-i="3"></span>
+        </div>
+      </div>
+
+      <div class="pad" id="pad" aria-label="Number pad">
+        <button class="key" type="button" data-d="1"><span>1</span></button>
+        <button class="key" type="button" data-d="2"><span>2</span></button>
+        <button class="key" type="button" data-d="3"><span>3</span></button>
+        <button class="key" type="button" data-d="4"><span>4</span></button>
+        <button class="key" type="button" data-d="5"><span>5</span></button>
+        <button class="key" type="button" data-d="6"><span>6</span></button>
+        <button class="key" type="button" data-d="7"><span>7</span></button>
+        <button class="key" type="button" data-d="8"><span>8</span></button>
+        <button class="key" type="button" data-d="9"><span>9</span></button>
+        <button class="key ghost spacer" type="button" tabindex="-1" aria-hidden="true" disabled><span></span></button>
+        <button class="key" type="button" data-d="0"><span>0</span></button>
+        <button class="key ghost del" type="button" id="key-del" aria-label="Delete"><span aria-hidden="true">â†</span></button>
+      </div>
+
+      <button class="cta" type="button" id="cta" data-state="locked" tabindex="-1">
+        <span id="cta-label">Unlock wallet</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M5 12h14M13 6l6 6-6 6"/>
+        </svg>
+      </button>
+
+      <p class="foot" id="foot">Auto-locks after <b>15 min</b> idle by default.</p>
+    </div>
+  </div>
+
+  <script src="/ipc.js"></script>
+  <script>
+    (function () {
+      var LEN = 4;
+      var code = "";
+      var pendingSet = "";
+      var busy = false;
+      var mode = "unlock";
+      var visible = true;
+
+      var dots = document.getElementById("dots");
+      var hint = document.getElementById("hint");
+      var title = document.getElementById("lock-title");
+      var kicker = document.getElementById("kicker");
+      var root = document.getElementById("wallet-card");
+      var pad = document.getElementById("pad");
+      var led = document.getElementById("status-led");
+      var cta = document.getElementById("cta");
+      var ctaLabel = document.getElementById("cta-label");
+
+      function setLed(state) {
+        if (!led) return;
+        led.setAttribute("data-state", state);
+        led.setAttribute("aria-label", state === "ok" ? "Unlocked" : "Locked");
+        if (cta) cta.setAttribute("data-state", state === "ok" ? "ok" : state === "fail" ? "fail" : "locked");
+        if (ctaLabel) {
+          if (state === "ok") ctaLabel.textContent = "Unlocked";
+          else if (state === "fail") ctaLabel.textContent = "Try again";
+          else if (mode === "set") ctaLabel.textContent = "Set passcode";
+          else if (mode === "confirm") ctaLabel.textContent = "Confirm passcode";
+          else ctaLabel.textContent = "Unlock wallet";
+        }
+      }
+
+      function haptic(pattern) {
+        try {
+          if (typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
+            navigator.vibrate(pattern);
+          }
+        } catch (e) {}
+      }
+
+      function flashPress(el) {
+        if (!el) return;
+        el.classList.add("is-press");
+        window.setTimeout(function () { el.classList.remove("is-press"); }, 120);
+      }
+
+      function paintDots(bad) {
+        var nodes = dots.querySelectorAll(".dot");
+        for (var i = 0; i < nodes.length; i++) {
+          nodes[i].classList.toggle("on", i < code.length);
+          nodes[i].classList.toggle("bad", !!bad && i < LEN);
+        }
+      }
+
+      function setHint(text, isErr) {
+        hint.textContent = text || "";
+        hint.classList.toggle("err", !!isErr);
+        hint.classList.toggle("ok", false);
+      }
+
+      function clearCode() {
+        code = "";
+        paintDots(false);
+      }
+
+      function clearPending() {
+        pendingSet = "";
+      }
+
+      function shake() {
+        haptic([40, 30, 60]);
+        dots.classList.remove("shake", "ok-pulse");
+        void dots.offsetWidth;
+        dots.classList.add("shake");
+        paintDots(true);
+        window.setTimeout(function () {
+          dots.classList.remove("shake");
+          clearCode();
+          busy = false;
+        }, 420);
+      }
+
+      function paintMode() {
+        if (mode === "set") {
+          title.textContent = "Set passcode";
+          kicker.textContent = "Secure";
+          setHint("Choose a 4-digit passcode", false);
+          if (ctaLabel) ctaLabel.textContent = "Set passcode";
+        } else if (mode === "confirm") {
+          title.textContent = "Confirm passcode";
+          kicker.textContent = "Secure";
+          setHint("Enter the same passcode again", false);
+          if (ctaLabel) ctaLabel.textContent = "Confirm passcode";
+        } else {
+          mode = "unlock";
+          title.textContent = "Enter passcode";
+          kicker.textContent = "Wallet";
+          setHint("4-digit PIN Â· stays on this device", false);
+          if (ctaLabel) ctaLabel.textContent = "Unlock wallet";
+        }
+      }
+
+      function callSubmit(pin) {
+        var fn = api.onSubmit || window.onSubmit;
+        if (typeof fn === "function") {
+          fn(pin);
+          return true;
+        }
+        if (window.vapurr && vapurr.send) {
+          vapurr.send({ cmd: "passcode-submit", code: pin, mode: mode });
+          return true;
+        }
+        return false;
+      }
+
+      function finishFour() {
+        if (busy || code.length !== LEN) return;
+        busy = true;
+        var pin = code;
+
+        if (mode === "set") {
+          haptic(18);
+          pendingSet = pin;
+          clearCode();
+          mode = "confirm";
+          paintMode();
+          busy = false;
+          return;
+        }
+
+        if (mode === "confirm") {
+          var a = pendingSet;
+          var b = pin;
+          clearCode();
+          clearPending();
+          var setFn = api.onSetPin || window.onSetPin;
+          if (typeof setFn === "function") {
+            setFn(a, b);
+          } else if (window.vapurr && vapurr.send) {
+            vapurr.send({ cmd: "passcode-set", a: a, b: b });
+          } else {
+            callSubmit(b);
+          }
+          a = "";
+          b = "";
+          busy = false;
+          return;
+        }
+
+        haptic(22);
+        var ok = callSubmit(pin);
+        clearCode();
+        pin = "";
+        if (!ok) {
+          api.fail("Wire onSubmit(pin) in shell");
+        }
+      }
+
+      function pushDigit(d) {
+        if (busy || !visible) return;
+        if (code.length >= LEN) return;
+        haptic(12);
+        code += String(d);
+        paintDots(false);
+        setLed("entering");
+        if (code.length === LEN) {
+          window.setTimeout(finishFour, 80);
+        }
+      }
+
+      function del() {
+        if (busy || !visible) return;
+        if (!code.length) return;
+        haptic(8);
+        code = code.slice(0, -1);
+        paintDots(false);
+        setLed(code.length ? "entering" : "locked");
+      }
+
+      pad.addEventListener("pointerdown", function (e) {
+        var t = e.target.closest(".key");
+        if (t) flashPress(t);
+      });
+
+      pad.addEventListener("click", function (e) {
+        var t = e.target.closest("[data-d], #key-del");
+        if (!t) return;
+        flashPress(t);
+        if (t.id === "key-del") del();
+        else if (t.getAttribute("data-d") != null) pushDigit(t.getAttribute("data-d"));
+      });
+
+      window.addEventListener("keydown", function (e) {
+        if (busy || !visible) return;
+        if (e.key >= "0" && e.key <= "9") {
+          e.preventDefault();
+          var btn = pad.querySelector('[data-d="' + e.key + '"]');
+          flashPress(btn);
+          pushDigit(e.key);
+        } else if (e.key === "Backspace" || e.key === "Delete") {
+          e.preventDefault();
+          flashPress(document.getElementById("key-del"));
+          del();
+        } else if (e.key === "Escape") {
+          e.preventDefault();
+          clearCode();
+        }
+      });
+
+      var api = {
+        onSubmit: null,
+        onUnlock: null,
+        onSetPin: null,
+
+        lock: function (opts) {
+          opts = opts || {};
+          visible = true;
+          busy = false;
+          clearCode();
+          clearPending();
+          mode = opts.mode || "unlock";
+          paintMode();
+          if (opts.title) title.textContent = opts.title;
+          if (opts.hint) setHint(opts.hint, false);
+          if (opts.kicker) kicker.textContent = opts.kicker;
+          if (root) root.style.display = "";
+          setLed("locked");
+        },
+
+        unlock: function () {
+          busy = false;
+          haptic([20, 40, 35]);
+          dots.classList.remove("shake");
+          dots.classList.add("ok-pulse");
+          hint.classList.remove("err");
+          hint.classList.add("ok");
+          hint.textContent = "Unlocked";
+          setLed("ok");
+          clearCode();
+          clearPending();
+          var fn = api.onUnlock || window.onUnlock;
+          if (typeof fn === "function") fn();
+        },
+
+        fail: function (msg) {
+          busy = true;
+          setHint(msg || "Wrong passcode. Try again.", true);
+          setLed("fail");
+          shake();
+          window.setTimeout(function () { if (led && led.getAttribute("data-state") === "fail") setLed("locked"); }, 520);
+        },
+
+        setMode: function (m) {
+          mode = m || "unlock";
+          clearCode();
+          if (mode !== "confirm") clearPending();
+          paintMode();
+        }
+      };
+
+      window.VapurrLock = api;
+      window.lock = function (opts) { return api.lock(opts); };
+      window.__passcodeFail = function (msg) { api.fail(msg); };
+      window.__passcodeOk = function () { api.unlock(); };
+      window.__passcodePaint = function (s) {
+        s = s || {};
+        api.lock({ mode: s.mode, title: s.title, hint: s.hint, kicker: s.kicker });
+      };
+      window.__passcodeReset = function () { clearCode(); busy = false; };
+
+      (function boot() {
+        var q = (location.search || "").replace(/^\?/, "");
+        var m = "unlock";
+        q.split("&").forEach(function (p) {
+          var kv = p.split("=");
+          if (kv[0] === "mode" && kv[1]) m = decodeURIComponent(kv[1]);
+        });
+        api.lock({ mode: m });
+      })();
+
+      /* Soft cipher field behind glass â€” clear, not milky */
+      (function cryptoGlass() {
+        var canvas = document.getElementById("crypto-viz");
+        if (!canvas || !canvas.getContext) return;
+        if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+        var ctx = canvas.getContext("2d");
+        var dpr = Math.min(window.devicePixelRatio || 1, 2);
+        var layers = [];
+        var sparks = [];
+        var running = true;
+        var last = 0;
+        var HEX = "0123456789abcdef";
+
+        function randHex(n) {
+          var s = "";
+          for (var i = 0; i < n; i++) s += HEX[(Math.random() * 16) | 0];
+          return s;
+        }
+
+        function resize() {
+          var screen = canvas.parentElement;
+          if (!screen) return;
+          var w = screen.clientWidth;
+          var h = screen.clientHeight;
+          canvas.width = Math.max(1, Math.floor(w * dpr));
+          canvas.height = Math.max(1, Math.floor(h * dpr));
+          canvas.style.width = w + "px";
+          canvas.style.height = h + "px";
+          ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+          buildField(w, h);
+        }
+
+        function buildField(w, h) {
+          layers = [
+            { depth: 0.4, cols: [], alpha: 0.1, size: 9, speedMul: 0.4 },
+            { depth: 0.85, cols: [], alpha: 0.2, size: 10, speedMul: 0.9 }
+          ];
+          for (var L = 0; L < layers.length; L++) {
+            var layer = layers[L];
+            var n = Math.max(4, Math.floor(w / (42 - L * 4)));
+            for (var i = 0; i < n; i++) {
+              layer.cols.push({
+                x: (i + 0.35 + Math.random() * 0.3) * (w / n),
+                y: Math.random() * h,
+                speed: (8 + Math.random() * 18) * layer.speedMul,
+                glyphs: (function () {
+                  var g = [];
+                  var len = 6 + ((Math.random() * 6) | 0);
+                  for (var j = 0; j < len; j++) g.push(randHex(2));
+                  return g;
+                })(),
+                phase: Math.random() * Math.PI * 2
+              });
+            }
+          }
+          sparks = [];
+          for (var k = 0; k < 12; k++) {
+            sparks.push({
+              x: Math.random() * w,
+              y: Math.random() * h,
+              r: 0.5 + Math.random() * 1.4,
+              vx: -6 + Math.random() * 12,
+              vy: -10 + Math.random() * 6,
+              a: 0.1 + Math.random() * 0.3
+            });
+          }
+        }
+
+        function tick(ts) {
+          if (!running) return;
+          var dt = Math.min(0.05, (ts - last) / 1000 || 0.016);
+          last = ts;
+          var w = canvas.clientWidth;
+          var h = canvas.clientHeight;
+          ctx.clearRect(0, 0, w, h);
+          ctx.fillStyle = "rgba(10,14,18,0.04)";
+          ctx.fillRect(0, 0, w, h);
+          ctx.textAlign = "center";
+
+          for (var L = 0; L < layers.length; L++) {
+            var layer = layers[L];
+            ctx.font = layer.size + "px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
+            for (var i = 0; i < layer.cols.length; i++) {
+              var c = layer.cols[i];
+              c.y += c.speed * dt;
+              var sway = Math.sin(ts * 0.0006 + c.phase) * (2 + layer.depth * 2);
+              var step = 13;
+              var total = c.glyphs.length * step;
+              if (c.y - total > h + 20) {
+                c.y = -20 - Math.random() * h * 0.3;
+                c.speed = (8 + Math.random() * 18) * layer.speedMul;
+              }
+              var cx = c.x + sway;
+              for (var j = 0; j < c.glyphs.length; j++) {
+                var gy = c.y - j * step;
+                if (gy < -14 || gy > h + 14) continue;
+                var fade = 1 - j / c.glyphs.length;
+                var baseA = layer.alpha * fade;
+                if (j === 0) {
+                  ctx.fillStyle = "rgba(192,248,0," + (baseA * 1.1).toFixed(3) + ")";
+                } else {
+                  ctx.fillStyle = "rgba(190,210,220," + baseA.toFixed(3) + ")";
+                }
+                ctx.fillText(c.glyphs[j], cx, gy);
+              }
+            }
+          }
+
+          for (var s = 0; s < sparks.length; s++) {
+            var p = sparks[s];
+            p.x += p.vx * dt;
+            p.y += p.vy * dt;
+            if (p.x < -4 || p.x > w + 4 || p.y < -4 || p.y > h + 4) {
+              p.x = Math.random() * w;
+              p.y = h + 4;
+              p.vy = -6 - Math.random() * 12;
+            }
+            ctx.beginPath();
+            ctx.fillStyle = "rgba(192,248,0," + p.a.toFixed(3) + ")";
+            ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+            ctx.fill();
+          }
+
+          requestAnimationFrame(tick);
+        }
+
+        resize();
+        window.addEventListener("resize", resize);
+        document.addEventListener("visibilitychange", function () {
+          running = document.visibilityState !== "hidden";
+          if (running) {
+            last = performance.now();
+            requestAnimationFrame(tick);
+          }
+        });
+        requestAnimationFrame(tick);
+      })();
+    })();
+  </script>
+</body>
+</html>

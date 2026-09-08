@@ -2,10 +2,12 @@
 //! $VAPURR / $PUSD. Burn V mint P, burn P mint V. Lithe is 9% on $PUSD.
 
 pub mod cfg;
+pub mod cutover;
 pub mod euler;
 pub mod house;
 pub mod kelly;
 pub mod swap;
+mod market_abi;
 pub mod ketlist;
 pub mod outbid;
 pub mod treasury;
@@ -25,6 +27,69 @@ use vapurr_wallet::{addr_from_hex, Address, DeviceKey};
 pub const DEC: u128 = 1_000_000_000_000_000_000;
 const MARKET_HEX: &str = include_str!("market.hex");
 const MOCK_USDG_HEX: &str = include_str!("mock_usdg.hex");
+// IPC ABI stubs for BondMarket / SpusdCd / SavingsRouter (forge out). Kept for
+// Relic live-wire review; bond_open / cd_open / house_fee_remit stay Need* until
+// CAs + IPC land. Do not delete — verify-bond-cd-abi.py asserts these.
+#[allow(dead_code)]
+const BOND_MARKET_ABI: &str = include_str!("bond_market.abi.json");
+#[allow(dead_code)]
+const SPUSD_CD_ABI: &str = include_str!("spusd_cd.abi.json");
+#[allow(dead_code)]
+const SAVINGS_ROUTER_ABI: &str = include_str!("savings_router.abi.json");
+// House fee remittance IPC stubs (NeedRemittance until Relic fills CAs).
+#[allow(dead_code)] // ABI stub on disk; encode lands after Relic wire
+const HOUSE_FEE_REMIT_ABI: &str = include_str!("house_fee_remit.abi.json");
+#[allow(dead_code)]
+const HOUSE_UNI_SKIM_ABI: &str = include_str!("house_uni_skim.abi.json");
+#[allow(dead_code)]
+const FEE_ATTRIBUTION_ABI: &str = include_str!("fee_attribution.abi.json");
+#[allow(dead_code)]
+const REMITTANCE_SINK_ABI: &str = include_str!("remittance_sink.abi.json");
+// ExoRfvSink treasury-spend ABI stub (ops/keeper; no user IPC cmd yet).
+#[allow(dead_code)]
+const EXO_RFV_SINK_ABI: &str = include_str!("exo_rfv_sink.abi.json");
+// ExogenousPairRegistry POL book ABI stub (ops/bootstrap; no user IPC cmd yet).
+#[allow(dead_code)]
+const EXOGENOUS_PAIR_REGISTRY_ABI: &str = include_str!("exogenous_pair_registry.abi.json");
+// ExogenousSeedMarket POL seed stub (ops/bootstrap; no user IPC cmd yet).
+const EXOGENOUS_SEED_MARKET_ABI: &str = include_str!("exogenous_seed_market.abi.json");
+// DevFundStream genesis lockup ABI stub (ops/treasury; no user IPC cmd yet).
+const DEV_FUND_STREAM_ABI: &str = include_str!("dev_fund_stream.abi.json");
+// BrowserStream 50k/3y treasury earmark ABI stub (ops/earn drip; no user IPC cmd yet).
+const BROWSER_STREAM_ABI: &str = include_str!("browser_stream.abi.json");
+// HousePairConfig ABI stub (wgV/$PUSD pair walls; ops/deploy; no user IPC encode yet).
+const HOUSE_PAIR_CONFIG_ABI: &str = include_str!("house_pair_config.abi.json");
+const GENESIS_TREASURY_ABI: &str = include_str!("genesis_treasury.abi.json");
+// LaunchBootstrap ABI stub (1M launch allocate + DevFund/Browser/exo seeds; ops; no user IPC encode yet).
+const LAUNCH_BOOTSTRAP_ABI: &str = include_str!("launch_bootstrap.abi.json");
+// LitheCutoverMigrator ABI stub (legacy PUSD -> legacy V -> convert -> canonical PUSD; ops; no user IPC encode yet).
+const LITHE_CUTOVER_MIGRATOR_ABI: &str = include_str!("lithe_cutover_migrator.abi.json");
+// CanonicalLitheFactory ABI stub (one-tx successor deploy: canonical V/Lithe/converter/migrator/gV; ops; no user IPC encode yet).
+const CANONICAL_LITHE_FACTORY_ABI: &str = include_str!("canonical_lithe_factory.abi.json");
+// LegacyVConverter ABI stub (cutover inventory: legacy V -> canonical V; ops; no user IPC encode yet).
+const LEGACY_V_CONVERTER_ABI: &str = include_str!("legacy_v_converter.abi.json");
+// gVAPURR ABI stub (Oliver surplus-only rebase / stake; ops; no user IPC encode yet).
+const GV_APURR_ABI: &str = include_str!("gv_apurr.abi.json");
+// wgVAPURR ABI stub (wrap gV for House pair walls; ops; no user IPC encode yet).
+const WGV_APURR_ABI: &str = include_str!("wgv_apurr.abi.json");
+// ERC1967Proxy ABI stub (proxy cutover for bare Lithe/V/PUSD; ops; no user IPC encode yet).
+const ERC1967_PROXY_ABI: &str = include_str!("erc1967_proxy.abi.json");
+// PusdMarketFedUpgradeable ABI stub (bare Lithe/V/PUSD UUPS impl behind ERC1967Proxy; ops; no user IPC encode yet).
+const PUSD_MARKET_FED_UPGRADEABLE_ABI: &str = include_str!("pusd_market_fed_upgradeable.abi.json");
+// GenesisAllocation ABI stub (hard-lock 1.2M mint constants; ops; no user IPC encode yet).
+const GENESIS_ALLOCATION_ABI: &str = include_str!("genesis_allocation.abi.json");
+// HouseLpUpgradeable ABI stub (House Uni v4 LP proxy impl; ops/adopt/seed; no user IPC encode yet).
+const HOUSE_LP_UPGRADEABLE_IMPL_ABI: &str = include_str!("house_lp_upgradeable_impl.abi.json");
+// HouseSwapUpgradeable ABI stub (House Uni v4 swap proxy impl; ops; no user IPC encode yet).
+const HOUSE_SWAP_UPGRADEABLE_IMPL_ABI: &str = include_str!("house_swap_upgradeable_impl.abi.json");
+// KetlistUpgradeable ABI stub ($PUSD pay-to-list UUPS impl; ops; no user IPC encode yet).
+const KETLIST_UPGRADEABLE_IMPL_ABI: &str = include_str!("ketlist_upgradeable_impl.abi.json");
+// LoopUpgradeable ABI stub (Euler/loop vault UUPS impl; ops; no user IPC encode yet).
+const LOOP_UPGRADEABLE_IMPL_ABI: &str = include_str!("loop_upgradeable_impl.abi.json");
+// OutbidUpgradeable ABI stub ($PUSD outbid listings UUPS impl; ops; no user IPC encode yet).
+const OUTBID_UPGRADEABLE_IMPL_ABI: &str = include_str!("outbid_upgradeable_impl.abi.json");
+// PnsRegistryUpgradeable ABI stub (.hood PNS UUPS impl; ops/zmail; no user IPC encode yet).
+const PNS_UPGRADEABLE_IMPL_ABI: &str = include_str!("pns_upgradeable_impl.abi.json");
 
 #[derive(Debug, thiserror::Error)]
 pub enum EconError {
@@ -66,6 +131,12 @@ pub enum EconError {
     NeedHouse,
     #[error("house swap is not on chain yet")]
     NeedSwap,
+    #[error("bond market is not on chain yet")]
+    NeedBondMarket,
+    #[error("savings market is not on chain yet")]
+    NeedSavings,
+    #[error("house fee remittance book is not on chain yet")]
+    NeedRemittance,
     #[error("tx pending {0}")]
     Pending(String),
 }
@@ -82,6 +153,7 @@ pub enum EconCmd {
     Mint(String),
     Redeem(String),
     Deploy,
+    CutoverDeploy,
     Seed { usdg: String, vapurr: String },
     Outbid,
     OutbidBid {
@@ -120,6 +192,19 @@ pub enum EconCmd {
         amt: String,
     },
     Pulse,
+    /// Open a BondMarket position. Fails clearly until bond CA is set.
+    BondOpen {
+        asset: String,
+        amt: String,
+    },
+    /// Open an sPUSD CD. Fails clearly until savings CAs are set.
+    CdOpen {
+        amt: String,
+    },
+    /// Credit/remit House protocol fees. Fails clearly until remittance CAs are set.
+    HouseFeeRemit {
+        amt: String,
+    },
 }
 
 pub struct Client {
@@ -172,6 +257,7 @@ impl Client {
             EconCmd::Mint(_) => "mint",
             EconCmd::Redeem(_) => "redeem",
             EconCmd::Deploy => "deploy",
+            EconCmd::CutoverDeploy => "cutover",
             EconCmd::Seed { .. } => "seed",
             EconCmd::Outbid | EconCmd::OutbidBid { .. } => "outbid",
             EconCmd::OutbidDeploy => "deploy",
@@ -183,6 +269,9 @@ impl Client {
             | EconCmd::HouseBootstrap
             | EconCmd::HouseSwap { .. } => "house",
             EconCmd::SwapDeploy | EconCmd::SwapReplace | EconCmd::Pulse => "pulse",
+            EconCmd::BondOpen { .. } => "bond",
+            EconCmd::CdOpen { .. } => "cd",
+            EconCmd::HouseFeeRemit { .. } => "house-fee",
         };
         match self.run_inner(cmd) {
             Ok(v) => Ok(v),
@@ -198,16 +287,20 @@ impl Client {
             EconCmd::Snap => Ok(self.snapshot()),
             EconCmd::Mint(s) => {
                 let n = parse_amt(&s)?;
-                self.transact("swapLunaToUst(uint256)", n)?;
+                self.swap_v_to_pusd(n)?;
                 Ok(self.snapshot())
             }
             EconCmd::Redeem(s) => {
                 let n = parse_amt(&s)?;
-                self.transact("swapUstToLuna(uint256)", n)?;
+                self.swap_pusd_to_v(n)?;
                 Ok(self.snapshot())
             }
             EconCmd::Deploy => {
                 self.deploy()?;
+                Ok(self.snapshot())
+            }
+            EconCmd::CutoverDeploy => {
+                self.cutover_deploy()?;
                 Ok(self.snapshot())
             }
             EconCmd::Seed { .. } => {
@@ -265,6 +358,9 @@ impl Client {
                 Ok(self.snapshot())
             }
             EconCmd::Pulse => self.pulse(),
+            EconCmd::BondOpen { asset, amt } => self.bond_open(&asset, &amt),
+            EconCmd::CdOpen { amt } => self.cd_open(&amt),
+            EconCmd::HouseFeeRemit { amt } => self.house_fee_remit(&amt),
         }
     }
 
@@ -282,6 +378,9 @@ impl Client {
         };
         v["loop"] = self.euler_snap();
         v["house"] = self.house_snap();
+        v["bonds"] = self.bonds_book_snap();
+        v["savings"] = self.savings_book_snap();
+        v["remittance"] = self.remittance_book_snap();
         v
     }
 
@@ -373,7 +472,74 @@ impl Client {
         })
     }
 
-    pub(crate) fn live_market(&self) -> Option<Address> {
+
+    pub(crate) fn bond_open(&mut self, asset: &str, amt: &str) -> Result<Value, EconError> {
+        let _ = asset;
+        let _ = parse_amt(amt)?;
+        if self.cfg.bond_market.is_empty() {
+            return Err(EconError::NeedBondMarket);
+        }
+        // Live open path lands after Relic fills bond_market CA + reviews IPC (ABI stub on disk).
+        Err(EconError::NeedBondMarket)
+    }
+
+    pub(crate) fn bonds_book_snap(&self) -> Value {
+        json!({
+            "bond_market": self.cfg.bond_market,
+            "configured": !self.cfg.bond_market.is_empty(),
+        })
+    }
+
+    pub(crate) fn cd_open(&mut self, amt: &str) -> Result<Value, EconError> {
+        let _ = parse_amt(amt)?;
+        if self.cfg.spusd_cd.is_empty()
+            || self.cfg.spusd.is_empty()
+            || self.cfg.savings_router.is_empty()
+        {
+            return Err(EconError::NeedSavings);
+        }
+        // Live open path lands after Relic fills savings CAs + reviews IPC (ABI stubs on disk).
+        Err(EconError::NeedSavings)
+    }
+
+    pub(crate) fn savings_book_snap(&self) -> Value {
+        json!({
+            "spusd": self.cfg.spusd,
+            "spusd_cd": self.cfg.spusd_cd,
+            "savings_router": self.cfg.savings_router,
+            "configured": !(self.cfg.spusd.is_empty()
+                || self.cfg.spusd_cd.is_empty()
+                || self.cfg.savings_router.is_empty()),
+        })
+    }
+
+    pub(crate) fn house_fee_remit(&mut self, amt: &str) -> Result<Value, EconError> {
+        let _ = parse_amt(amt)?;
+        if self.cfg.house_fee_remit.is_empty()
+            || self.cfg.house_uni_skim.is_empty()
+            || self.cfg.fee_attribution.is_empty()
+            || self.cfg.remittance_sink.is_empty()
+        {
+            return Err(EconError::NeedRemittance);
+        }
+        // Live credit/remit path lands after Relic reviews remittance deploy + IPC ABI.
+        Err(EconError::NeedRemittance)
+    }
+
+    pub(crate) fn remittance_book_snap(&self) -> Value {
+        json!({
+            "house_fee_remit": self.cfg.house_fee_remit,
+            "house_uni_skim": self.cfg.house_uni_skim,
+            "fee_attribution": self.cfg.fee_attribution,
+            "remittance_sink": self.cfg.remittance_sink,
+            "configured": !(self.cfg.house_fee_remit.is_empty()
+                || self.cfg.house_uni_skim.is_empty()
+                || self.cfg.fee_attribution.is_empty()
+                || self.cfg.remittance_sink.is_empty()),
+        })
+    }
+
+        pub(crate) fn live_market(&self) -> Option<Address> {
         self.live_ca(&self.cfg.market)
     }
 
@@ -396,7 +562,7 @@ impl Client {
         }
     }
 
-    fn transact(&mut self, sig: &str, amt: u128) -> Result<String, EconError> {
+    pub(crate) fn transact(&mut self, sig: &str, amt: u128) -> Result<String, EconError> {
         if amt == 0 {
             return Err(EconError::Tiny);
         }
@@ -517,7 +683,7 @@ impl Client {
             return Err(EconError::NeedGas);
         }
         let mut bytecode = market_bytecode()?;
-        // constructor(uint256 lunaRate_) â€” $1 per V at genesis, first-spot oracle
+        // constructor(uint256 vapurrRate_) â€” $1 per V at genesis, first-spot oracle
         bytecode.extend_from_slice(&vapurr_wallet::tx::abi_u256(DEC));
         let hash = self.send(None, &bytecode)?;
         let receipt = self.wait(&hash)?;
@@ -843,5 +1009,51 @@ mod tests {
         assert_eq!(p.0, pusd);
         assert!(vapurr_wallet::tx::decode_word_addr(&bytes, 12).is_none());
         assert_eq!(fmt_bps(900), "9.00");
+    }
+}
+
+
+
+#[cfg(test)]
+mod bonds_ipc_tests {
+    use super::*;
+
+    #[test]
+    fn bond_open_needs_bond_market_book() {
+        let mut c = Client::open();
+        c.cfg.bond_market.clear();
+        let err = c.bond_open("ETH", "10").unwrap_err();
+        assert!(matches!(err, EconError::NeedBondMarket));
+    }
+}
+
+#[cfg(test)]
+mod savings_ipc_tests {
+    use super::*;
+
+    #[test]
+    fn cd_open_needs_savings_book() {
+        let mut c = Client::open();
+        c.cfg.spusd.clear();
+        c.cfg.spusd_cd.clear();
+        c.cfg.savings_router.clear();
+        let err = c.cd_open("10").unwrap_err();
+        assert!(matches!(err, EconError::NeedSavings));
+    }
+}
+
+#[cfg(test)]
+mod remittance_ipc_tests {
+    use super::*;
+
+    #[test]
+    fn house_fee_remit_needs_remittance_book() {
+        let mut c = Client::open();
+        c.cfg.house_fee_remit.clear();
+        c.cfg.house_uni_skim.clear();
+        c.cfg.fee_attribution.clear();
+        c.cfg.remittance_sink.clear();
+        let err = c.house_fee_remit("10").unwrap_err();
+        assert!(matches!(err, EconError::NeedRemittance));
     }
 }
