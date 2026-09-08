@@ -5,6 +5,7 @@ pub(crate) fn vapurr_url(page: &str) -> String {
 }
 
 pub(crate) const FOMO_FAMILY: &str = "https://fomo.family";
+pub(crate) const PENDULUM_ARCHIVE: &str = "https://archive.pendulumflow.com";
 
 pub(crate) fn needs_login(id: &str) -> bool {
     matches!(id, "wallet" | "portfolio")
@@ -35,6 +36,9 @@ pub(crate) fn gate_url(next: &str) -> Option<String> {
 pub(crate) fn pane_url(id: &str) -> String {
     if matches!(id, "fomo" | "family") {
         return FOMO_FAMILY.into();
+    }
+    if matches!(id, "pendulum" | "polyarchive" | "pmarchive") {
+        return PENDULUM_ARCHIVE.into();
     }
     if matches!(id, "lock" | "passcode" | "unlock") {
         let mode = if vapurr_wallet::needs_passcode_setup() { "set" } else { "unlock" };
@@ -84,6 +88,7 @@ pub(crate) fn pane_url(id: &str) -> String {
         "gas" | "gwei" => "explorer.html?tab=gas",
         "floor" | "list" | "projects" => "floor.html",
         "ketflix" => "ketflix.html",
+        "poly" | "polymarket" | "polydata" | "polydesk" => "poly.html",
         "ketcharts" | "charts" | "chart" => "ketcharts.html",
         "trenches" | "tape" | "hood-tape" => "trenches.html",
         "ketbook" | "docs" | "honkit" | "book" => "ketbook.html",
@@ -166,6 +171,14 @@ pub(crate) fn home_url(desk: &Desk) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn pendulum_opens_archive() {
+        assert_eq!(pane_url("pendulum"), PENDULUM_ARCHIVE);
+        assert_eq!(pane_url("polyarchive"), PENDULUM_ARCHIVE);
+        assert!(pane_url("poly").ends_with("poly.html"));
+        assert!(pane_url("polymarket").ends_with("poly.html"));
+    }
 
     #[test]
     fn secretlab_www_never_loads() {

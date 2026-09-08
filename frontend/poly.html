@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>Polymarket Research</title>
+  <link rel="stylesheet" href="/tokens.css"/>
+  <link rel="stylesheet" href="/chrome.css"/>
+  <style>
+    body { overflow: auto; }
+    .wrap { padding: 32px 40px 64px; max-width: 920px; }
+    .mono { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-muted); }
+    h1 { font-size: 28px; font-weight: 600; letter-spacing: -0.03em; margin-top: 6px; }
+    .lede { color: var(--color-muted); margin-top: 8px; max-width: 62ch; line-height: 1.45; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 28px; }
+    @media (max-width: 780px) { .grid { grid-template-columns: 1fr; } }
+    .card {
+      border: 1px solid var(--color-forest);
+      background: var(--color-steel, transparent);
+      border-radius: 12px;
+      padding: 18px 18px 16px;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .card h2 { font-size: 18px; font-weight: 600; letter-spacing: -0.02em; }
+    .card p { color: var(--color-muted); font-size: 13px; line-height: 1.45; }
+    .chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      border: 1px solid var(--color-forest);
+      padding: 5px 9px; font-size: 12px; width: fit-content;
+    }
+    .chip b { color: var(--color-lime); font-weight: 600; }
+    .chip.warn b { color: var(--color-muted); }
+    .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+    button.cta, a.cta {
+      appearance: none; border: 1px solid var(--color-forest);
+      background: transparent; color: var(--color-snow, #e8efe6);
+      padding: 8px 12px; font: inherit; font-size: 13px; border-radius: 10px;
+      cursor: pointer; text-decoration: none;
+    }
+    button.cta.primary, a.cta.primary {
+      border-color: var(--color-lime);
+      color: var(--color-lime);
+    }
+    button.cta:hover, a.cta:hover { border-color: var(--color-lime); }
+    pre.cmd {
+      margin: 0; padding: 12px 14px;
+      border: 1px solid var(--color-forest);
+      border-radius: 10px;
+      background: rgba(0,0,0,.22);
+      font-size: 12px; line-height: 1.5;
+      overflow-x: auto; white-space: pre-wrap;
+    }
+    .sec { margin-top: 28px; }
+    .sec h3 { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+    ul.notes { margin: 0; padding-left: 18px; color: var(--color-muted); font-size: 13px; line-height: 1.5; }
+    ul.notes li { margin: 4px 0; }
+    a.inline { color: var(--color-lime); }
+    .footnote { margin-top: 28px; color: var(--color-muted); font-size: 12px; line-height: 1.45; max-width: 72ch; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="mono">POLY DESK</div>
+    <h1>Polymarket research</h1>
+    <p class="lede">
+      First-class quant surface in vapurr chrome: local trade history via
+      <a class="inline" href="https://github.com/warproxxx/poly_data">warproxxx/poly_data</a>
+      and second-by-second book events via the
+      <a class="inline" href="https://archive.pendulumflow.com">pendulumflow archive</a>.
+      Not a bookmark tray. No synthetic metrics.
+    </p>
+
+    <div class="grid">
+      <section class="card" id="poly-data">
+        <div class="mono">LOCAL</div>
+        <h2>poly_data</h2>
+        <p>
+          Who / when / price / size / counterparty from Polymarket CTF Exchange V2
+          (Polygon) via Envio HyperSync, joined to CLOB market metadata.
+          First sync is long; updates after that are fast.
+        </p>
+        <div class="chip warn" id="sync-chip"><span>status</span><b>not configured</b></div>
+        <p id="sync-note">
+          No local poly_data path is wired into this install yet. Clone and sync
+          outside the wallet path; this desk only documents commands.
+        </p>
+        <div class="actions">
+          <a class="cta primary" href="https://github.com/warproxxx/poly_data">Open repo</a>
+          <button class="cta" type="button" id="copy-sync">Copy sync commands</button>
+        </div>
+      </section>
+
+      <section class="card" id="pendulum">
+        <div class="mono">ARCHIVE</div>
+        <h2>pendulumflow</h2>
+        <p>
+          Second-by-second orderbook events (Parquet by UTC hour). Free to query;
+          donation-supported. Front page includes ready-made Claude Code questions
+          and hard data notes (touch is not fill, etc.).
+        </p>
+        <div class="chip"><span>host</span><b>archive.pendulumflow.com</b></div>
+        <div class="actions">
+          <button class="cta primary" type="button" id="open-archive">Open archive in this tab</button>
+          <a class="cta" href="https://archive.pendulumflow.com/data-notes">Data notes</a>
+        </div>
+      </section>
+    </div>
+
+    <div class="sec">
+      <h3>poly_data sync</h3>
+      <pre class="cmd" id="sync-cmd"># Windows (PowerShell) -- needs Python 3.10+, uv, HyperSync token
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+git clone https://github.com/warproxxx/poly_data.git
+cd poly_data
+# Create .env with HYPERSYNC_API from https://envio.dev/app/api-tokens
+# Token must include HyperSync product access.
+uv sync
+uv run poly-data
+# First run: full markets + chain backfill (hours to days on free tier).
+# Later runs: incremental; usually seconds.
+# Output: processed/trades.csv (who/when/price/size/counterparty).</pre>
+    </div>
+
+    <div class="sec">
+      <h3>Honesty</h3>
+      <ul class="notes">
+        <li>This surface does not invent fill counts, PnL, or volume. Empty until you sync poly_data locally or open the archive.</li>
+        <li>Credit: <a class="inline" href="https://github.com/warproxxx/poly_data">warproxxx/poly_data</a> (GPL-3.0) and <a class="inline" href="https://archive.pendulumflow.com">pendulumflow</a> (CC BY 4.0; archive runs on donations).</li>
+        <li>Omnibox: <span class="mono" style="letter-spacing:0.04em;text-transform:none">vapurr://poly</span> for this desk, <span class="mono" style="letter-spacing:0.04em;text-transform:none">vapurr://pendulum</span> for the archive tab.</li>
+        <li>Does not touch wallet, KYC, or signing paths.</li>
+      </ul>
+    </div>
+
+    <p class="footnote">
+      If your work leans on the pendulumflow archive, say where it came from and
+      that it runs on donations -- that is what keeps the corpus online.
+    </p>
+  </div>
+  <script src="/ipc.js"></script>
+  <script>
+    function go(url) {
+      if (window.vapurr && vapurr.go) vapurr.go(url);
+      else location.href = url;
+    }
+    document.getElementById("open-archive").onclick = function () {
+      go("https://archive.pendulumflow.com");
+    };
+    document.getElementById("copy-sync").onclick = function () {
+      var t = document.getElementById("sync-cmd").textContent;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(t).catch(function () {});
+      }
+    };
+    // Honest empty: optional local probe. Never invent metrics.
+    // If an operator drops a status JSON beside the chrome later, paint it; else stay "not configured".
+    fetch("/poly/api/status").then(function (r) {
+      if (!r.ok) throw new Error("no status");
+      return r.json();
+    }).then(function (d) {
+      var chip = document.getElementById("sync-chip");
+      var note = document.getElementById("sync-note");
+      if (!d || !d.configured) return;
+      chip.classList.remove("warn");
+      chip.innerHTML = "<span>status</span><b>" + String(d.label || "configured") + "</b>";
+      if (d.note) note.textContent = String(d.note);
+    }).catch(function () {
+      // keep not-configured chip -- honest empty
+    });
+  </script>
+</body>
+</html>

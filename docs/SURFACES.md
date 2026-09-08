@@ -37,6 +37,8 @@ If you add a `vapurr://` id, add a row here in the same change.
 | `scan` | `explorer`, `xray`, `blocks`, `gas`, `gwei` | `explorer.html` | query string kept; `gas`/`gwei` open `?tab=gas` |
 | `floor` | `list`, `projects` | `floor.html` | |
 | `fomo` | `family` | https://fomo.family | Live Trenches — opens fomo.family in this window |
+| `poly` | `polymarket`, `polydata`, `polydesk` | `poly.html` | Polymarket research desk: poly_data sync docs + pendulumflow archive entry. Honest empty if not configured. Credits warproxxx/poly_data + pendulumflow (donations). |
+| `pendulum` | `polyarchive`, `pmarchive` | https://archive.pendulumflow.com | pendulumflow orderbook archive - opens in this window |
 | `ketflix` | | `ketflix.html` | Netflix-style browse. Posters/catalog/trailers at `/ketflix/` |
 | `ketcharts` | `charts`, `chart` | `ketcharts.html` | DexScreener-shaped RHC pair tape. Our `/liq/api/tape` + `/liq/api/trades/{pool}`. Vela™ candles. Gecko/Paprika fill history only. **Listed** is `$PUSD` pay-to-list (`KetList.sol`) — profile (web/X/tg/bio/logo) rides with the paid tx and paints from the snap |
 | `ketbook` | `docs`, `honkit`, `book` | `ketbook.html` | Public product docs (Ketbook). Source `ketbook/`. Not the internal `docs/` folder |
@@ -88,6 +90,8 @@ Not every file is a `vapurr://` id. Named so they do not rot:
 
 - `pane.html` — unknown-id fallback
 - `fomo.html` — redirect stub to https://fomo.family (`pane_url("fomo")` opens the live site, not this file)
+- `pendulum.html` - redirect stub to https://archive.pendulumflow.com (`pane_url("pendulum")` opens the live archive, not this file)
+- `poly.html` - Polymarket research desk (poly_data + pendulumflow)
 - `zmail.html` — redirect stub to `zzzmail.html`
 - `outbid.html` — redirect stub to `vapurrbid.html`
 - `explorer.js`, `floor.js`, `ipc.js`, `shader.js`, `route.js`, `globe.js`, `radio.js`, `zzzmail.js`, `qr.js` — scripts
