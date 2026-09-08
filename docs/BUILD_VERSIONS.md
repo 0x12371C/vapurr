@@ -13,6 +13,7 @@ Track every pack/channel/exe change overnight.
 
 | When (ET) | version | build/rev | artifact | notes |
 |-----------|---------|-----------|----------|-------|
+| 2026-09-07 20:45 ET | Programs/AppData/Cargo **1.1.21** (rev baecab7 sha 899ee4fc2d2f, **NotSigned**); TSL still **1.1.13** | dist vapurr-1.1.21-windows-x64.zip + channel + Programs promote | fix Country/Phone KYC ladder no-ops; version-board --live PASS |
 | 2026-09-07 20:31 ET | Programs/AppData/Cargo **1.1.20** (rev f09e567 sha fbdb2cf5b223, **NotSigned**); TSL still **1.1.13** | dist vapurr-1.1.20-windows-x64.zip + channel + Programs promote | version-board --live PASS; pack always promotes Programs; signing still P0 |
 | 2026-09-06 21:14 ET | Programs/AppData **1.1.17** (rev e590ef3 sha 93A4AAE04C7C, **NotSigned**); TSL channel **1.1.13** (sha 324286bf6f68...); dist/Cargo still **1.1.10** | local Programs+channel | signing P0; DisplayVersion now follows VERSION.txt; hold stranger-ship |
 | 2026-09-04 19:01 ET | 1.1.8 | rev=5bb5616 sha=9D62F13F9609 | dist vapurr-1.1.8-windows-x64.zip (43.3 MB) + channel + setup; vercel thesecretlab.app/vapurr | House pack; Programs still 1.1.7 (7157A0E9A6A4 @18:37); workspace Cargo already 1.1.9 |
