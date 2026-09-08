@@ -3205,7 +3205,7 @@ dependencies = [
  "tokio",
  "tokio-rustls",
  "tower",
- "tower-http",
+ "tower-http 0.6.11",
  "tower-service",
  "url",
  "wasm-bindgen",
@@ -4152,6 +4152,22 @@ dependencies = [
 
 [[package]]
 name = "tower-http"
+version = "0.5.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1e9cd434a998747dd2c4276bc96ee2e0c7a2eadf3cae88e52be55a05fa9053f5"
+dependencies = [
+ "bitflags 2.13.1",
+ "bytes",
+ "http",
+ "http-body",
+ "http-body-util",
+ "pin-project-lite",
+ "tower-layer",
+ "tower-service",
+]
+
+[[package]]
+name = "tower-http"
 version = "0.6.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4cfcf7e2740e6fc6d4d688b4ef00650406bb94adf4731e43c096c3a19fe40840"
@@ -4346,7 +4362,7 @@ checksum = "ba73ea9cf16a25df0c8caa16c51acb937d5712a8429db78a3ee29d5dcacd3a65"
 
 [[package]]
 name = "vapurr-blob"
-version = "1.1.10"
+version = "1.1.20"
 dependencies = [
  "chacha20poly1305",
  "hex",
@@ -4361,7 +4377,7 @@ dependencies = [
 
 [[package]]
 name = "vapurr-core"
-version = "1.1.10"
+version = "1.1.20"
 dependencies = [
  "serde",
  "thiserror 2.0.20",
@@ -4370,7 +4386,7 @@ dependencies = [
 
 [[package]]
 name = "vapurr-econ"
-version = "1.1.10"
+version = "1.1.20"
 dependencies = [
  "hex",
  "serde",
@@ -4383,7 +4399,7 @@ dependencies = [
 
 [[package]]
 name = "vapurr-engine"
-version = "1.1.10"
+version = "1.1.20"
 dependencies = [
  "scraper",
  "thiserror 2.0.20",
@@ -4394,7 +4410,7 @@ dependencies = [
 
 [[package]]
 name = "vapurr-fomo"
-version = "1.1.10"
+version = "1.1.20"
 dependencies = [
  "reqwest",
  "serde",
@@ -4404,7 +4420,7 @@ dependencies = [
 
 [[package]]
 name = "vapurr-id"
-version = "1.1.10"
+version = "1.1.20"
 dependencies = [
  "chrono",
  "hex",
@@ -4418,7 +4434,7 @@ dependencies = [
 
 [[package]]
 name = "vapurr-net"
-version = "1.1.10"
+version = "1.1.20"
 dependencies = [
  "reqwest",
  "thiserror 2.0.20",
@@ -4428,7 +4444,7 @@ dependencies = [
 
 [[package]]
 name = "vapurr-pay"
-version = "1.1.10"
+version = "1.1.20"
 dependencies = [
  "base64",
  "chrono",
@@ -4440,7 +4456,7 @@ dependencies = [
 
 [[package]]
 name = "vapurr-relay"
-version = "1.1.10"
+version = "1.1.20"
 dependencies = [
  "axum",
  "hex",
@@ -4450,6 +4466,7 @@ dependencies = [
  "sha3",
  "thiserror 2.0.20",
  "tokio",
+ "tower-http 0.5.2",
  "tracing",
  "tracing-subscriber",
  "vapurr-rhc",
@@ -4458,7 +4475,7 @@ dependencies = [
 
 [[package]]
 name = "vapurr-rhc"
-version = "1.1.10"
+version = "1.1.20"
 dependencies = [
  "chrono",
  "hex",
@@ -4471,7 +4488,7 @@ dependencies = [
 
 [[package]]
 name = "vapurr-shell"
-version = "1.1.10"
+version = "1.1.20"
 dependencies = [
  "dpi",
  "mimalloc",
@@ -4500,7 +4517,7 @@ dependencies = [
 
 [[package]]
 name = "vapurr-shield"
-version = "1.1.10"
+version = "1.1.20"
 dependencies = [
  "adblock",
  "reqwest",
@@ -4512,14 +4529,14 @@ dependencies = [
 
 [[package]]
 name = "vapurr-ui"
-version = "1.1.10"
+version = "1.1.20"
 dependencies = [
  "egui",
 ]
 
 [[package]]
 name = "vapurr-wallet"
-version = "1.1.10"
+version = "1.1.20"
 dependencies = [
  "bip39",
  "hex",
@@ -4540,7 +4557,7 @@ dependencies = [
 
 [[package]]
 name = "vapurr-zmail"
-version = "1.1.10"
+version = "1.1.20"
 dependencies = [
  "base64",
  "chacha20poly1305",
