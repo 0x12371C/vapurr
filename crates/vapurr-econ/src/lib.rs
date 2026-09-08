@@ -72,6 +72,8 @@ const LEGACY_V_CONVERTER_ABI: &str = include_str!("legacy_v_converter.abi.json")
 const GV_APURR_ABI: &str = include_str!("gv_apurr.abi.json");
 // wgVAPURR ABI stub (wrap gV for House pair walls; ops; no user IPC encode yet).
 const WGV_APURR_ABI: &str = include_str!("wgv_apurr.abi.json");
+// ERC1967Proxy ABI stub (proxy cutover for bare Lithe/V/PUSD; ops; no user IPC encode yet).
+const ERC1967_PROXY_ABI: &str = include_str!("erc1967_proxy.abi.json");
 
 #[derive(Debug, thiserror::Error)]
 pub enum EconError {

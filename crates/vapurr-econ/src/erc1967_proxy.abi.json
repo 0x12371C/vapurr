@@ -1,63 +1,63 @@
 [
   {
+    "type": "constructor",
     "inputs": [
       {
-        "internalType": "address",
         "name": "implementation_",
-        "type": "address"
+        "type": "address",
+        "internalType": "address"
       },
       {
-        "internalType": "bytes",
         "name": "initData",
-        "type": "bytes"
+        "type": "bytes",
+        "internalType": "bytes"
       }
     ],
-    "stateMutability": "payable",
-    "type": "constructor"
+    "stateMutability": "payable"
   },
   {
-    "inputs": [],
-    "name": "ZeroAddr",
-    "type": "error"
+    "type": "fallback",
+    "stateMutability": "payable"
   },
   {
-    "anonymous": false,
+    "type": "receive",
+    "stateMutability": "payable"
+  },
+  {
+    "type": "event",
+    "name": "AdminChanged",
     "inputs": [
       {
-        "indexed": false,
-        "internalType": "address",
         "name": "previousAdmin",
-        "type": "address"
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
       },
       {
-        "indexed": false,
-        "internalType": "address",
         "name": "newAdmin",
-        "type": "address"
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
       }
     ],
-    "name": "AdminChanged",
-    "type": "event"
+    "anonymous": false
   },
   {
-    "anonymous": false,
+    "type": "event",
+    "name": "Upgraded",
     "inputs": [
       {
-        "indexed": true,
-        "internalType": "address",
         "name": "implementation",
-        "type": "address"
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
       }
     ],
-    "name": "Upgraded",
-    "type": "event"
+    "anonymous": false
   },
   {
-    "stateMutability": "payable",
-    "type": "fallback"
-  },
-  {
-    "stateMutability": "payable",
-    "type": "receive"
+    "type": "error",
+    "name": "ZeroAddr",
+    "inputs": []
   }
 ]
