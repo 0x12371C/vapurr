@@ -13,6 +13,7 @@ Track every pack/channel/exe change overnight.
 
 | When (ET) | version | build/rev | artifact | notes |
 |-----------|---------|-----------|----------|-------|
+| 2026-09-07 20:57 ET | Programs/AppData/Cargo **1.1.22** (rev 52ab37a sha 2c0ee308bde9, **NotSigned**); TSL still **1.1.13** | dist vapurr-1.1.22-windows-x64.zip + channel + Programs promote | zer0ID/open-iris/ZKKYC branding (ASCII-safe punct); version-board --live PASS |
 | 2026-09-07 20:45 ET | Programs/AppData/Cargo **1.1.21** (rev baecab7 sha 899ee4fc2d2f, **NotSigned**); TSL still **1.1.13** | dist vapurr-1.1.21-windows-x64.zip + channel + Programs promote | fix Country/Phone KYC ladder no-ops; version-board --live PASS |
 | 2026-09-07 20:31 ET | Programs/AppData/Cargo **1.1.20** (rev f09e567 sha fbdb2cf5b223, **NotSigned**); TSL still **1.1.13** | dist vapurr-1.1.20-windows-x64.zip + channel + Programs promote | version-board --live PASS; pack always promotes Programs; signing still P0 |
 | 2026-09-06 21:14 ET | Programs/AppData **1.1.17** (rev e590ef3 sha 93A4AAE04C7C, **NotSigned**); TSL channel **1.1.13** (sha 324286bf6f68...); dist/Cargo still **1.1.10** | local Programs+channel | signing P0; DisplayVersion now follows VERSION.txt; hold stranger-ship |
